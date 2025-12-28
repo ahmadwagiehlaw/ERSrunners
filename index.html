@@ -76,21 +76,23 @@
     <div class="header-inner">
         
         <div class="header-right">
-            <img src="ers-logo.png" class="brand-logo" alt="ERS Logo">
-            
-            <div class="user-greeting-box">
+            <img src="ers-logo.png" class="brand-logo" alt="Logo"> <div class="user-greeting-box">
                 <span class="hello-text">أهلاً يا بطل</span>
                 <h3 id="headerName">...</h3>
             </div>
         </div>
 
         <div class="header-actions">
+            <div class="icon-badge add-btn" onclick="openLogModal()">
+                <i class="ri-add-line"></i>
+            </div>
+
             <div class="icon-badge" onclick="showNotifications()">
                 <i class="ri-notification-3-line"></i>
                 <span class="badge-dot" id="notif-dot"></span>
             </div>
             
-            <div class="icon-badge" onclick="openSettingsModal()" style="margin-right:10px;">
+            <div class="icon-badge" onclick="openSettingsModal()">
                 <i class="ri-settings-4-line"></i>
             </div>
         </div>
@@ -123,10 +125,7 @@
                     </div>
                 </div>
 
-                <button class="btn-giant" onclick="openLogModal()">
-                    <div class="icon-box"><i class="ri-add-line"></i></div>
-                    <div>تسجيل جرية جديدة</div>
-                </button>
+                
 
                 <div class="section-header">
                     <h4>تحدياتي النشطة</h4>
@@ -157,6 +156,14 @@
 
     <div class="admin-card">
         <h3>إنشاء تحدي جديد 🏆</h3>
+		<div class="admin-card" style="margin-top:20px;">
+            <h3>إدارة المنشورات 👮‍♂️</h3>
+            <p style="font-size:11px; color:#9ca3af; margin-bottom:10px;">حذف المشاركات غير اللائقة</p>
+            <div id="admin-feed-list" class="feed-list">
+                </div>
+        </div>
+
+		
         <div class="form-group" style="margin-top:15px;">
             <label>عنوان التحدي</label>
             <input type="text" id="admin-ch-title" placeholder="مثال: ماراثون القاهرة">
