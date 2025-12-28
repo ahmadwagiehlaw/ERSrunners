@@ -52,24 +52,113 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .btn-text { background: transparent; color: var(--text-muted); font-size: 13px; }
 .btn-outline-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
 
-/* Header */
+/* ==================== Premium Glass Header ==================== */
 .glass-header {
-    position: sticky; top: 0; z-index: 100;
-    background: rgba(17, 24, 39, 0.85);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    padding: 15px 20px;
+    position: sticky; 
+    top: 0; 
+    z-index: 1000; /* رفعنا الطبقة لتكون فوق كل شيء */
+    background: rgba(17, 24, 39, 0.6); /* شفافية أكبر */
+    backdrop-filter: blur(20px) saturate(180%); /* تمويه قوي مثل iOS */
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    
+    /* 🔥 حل مشكلة الآيفون والجزيرة الديناميكية 🔥 */
+    padding-top: calc(15px + env(safe-area-inset-top)); 
+    padding-bottom: 15px;
+    padding-left: 20px;
+    padding-right: 20px;
+    
+    transition: 0.3s ease;
 }
-.header-inner { display: flex; justify-content: space-between; align-items: center; }
-.user-greeting { display: flex; align-items: center; gap: 10px; }
-.avatar-circle {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: var(--bg-card); border: 2px solid var(--border);
+
+.header-inner { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+/* تنسيق الجزء الأيمن (اللوجو والاسم) */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px; 
+}
+
+/* اللوجو المتوهج */
+.brand-logo {
+    height: 55px; /* تكبير الحجم */
+    width: auto;
+    object-fit: contain;
+    /* إلغاء الإطارات والخلفيات */
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    
+    /* ✨ التوهج الأبيض حول اللوجو (Drop Shadow) ✨ */
+    /* هذا يعمل بامتياز مع الصور PNG الشفافة */
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+    transition: transform 0.3s;
+}
+.brand-logo:active { transform: scale(0.95); }
+
+/* نصوص الترحيب */
+.user-greeting-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hello-text { 
+    font-size: 11px; 
+    color: var(--primary); /* تلوين كلمة الترحيب بالأخضر */
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+
+.user-greeting-box h3 {
+    margin: 0;
+    font-size: 15px; /* حجم مناسب للاسم الثلاثي */
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    max-width: 160px; /* لضمان عدم تداخل الأسماء الطويلة جداً */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* الأيقونات (اليسار) */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* مسافة بين الأيقونات */
+    background: rgba(255,255,255,0.05); /* خلفية موحدة خفيفة للأيقونات */
+    padding: 6px;
+    border-radius: 50px; /* شكل كبسولة */
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.icon-badge {
+    width: 38px; height: 38px;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 800; color: var(--primary);
+    border-radius: 50%;
+    color: #fff;
+    cursor: pointer;
+    transition: 0.2s;
+    position: relative;
 }
-.hello-text { font-size: 11px; color: var(--text-muted); display: block; }
-.header-actions i { font-size: 22px; color: var(--text-main); }
+.icon-badge:active { background: rgba(255,255,255,0.1); transform: scale(0.9); }
+.icon-badge i { font-size: 20px; }
+
+/* تمييز زر الإضافة */
+.icon-badge.add-btn {
+    background: var(--primary);
+    color: #000;
+    box-shadow: 0 0 10px var(--primary-glow);
+    margin-left: 0; /* إلغاء المارجن القديم */
+}
 
 /* Main Views */
 .view { display: none; animation: fadeIn 0.3s ease; padding: 20px; }
