@@ -484,3 +484,11 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     display: flex; align-items: center; gap: 4px; transition: 0.2s;
 }
 .btn-comment:hover { color: #fff; }
+
+
+<div class="badges-section" style="margin-top: 20px;">
+                    <h3 class="section-title">إنجازاتي 🎖️</h3>
+                    <div id="badges-grid" class="badges-grid">
+                        <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...</div>
+                    </div>
+                </div>
