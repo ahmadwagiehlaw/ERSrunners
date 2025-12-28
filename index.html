@@ -4,14 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>ERS Runners</title>
-
-   
+    
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#111827">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png"> <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="apple-touch-icon" href="icon.png"> 
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
     <link rel="stylesheet" href="style.css">
@@ -33,33 +33,34 @@
                     <input type="text" id="username" placeholder="الاسم ثلاثي">
                     <select id="region">
                         <option value="" disabled selected>اختر منطقتك (للمنافسة)</option>
-                      <option value="Cairo">القاهرة</option>
-<option value="Giza">الجيزة</option>
-<option value="Alexandria">الإسكندرية</option>
-<option value="Dakahlia">الدقهلية</option>
-<option value="Red Sea">البحر الأحمر</option>
-<option value="Beheira">البحيرة</option>
-<option value="Fayoum">الفيوم</option>
-<option value="Gharbia">الغربية</option>
-<option value="Ismailia">الإسماعيلية</option>
-<option value="Monufia">المنوفية</option>
-<option value="Minya">المنيا</option>
-<option value="Qalyubia">القليوبية</option>
-<option value="New Valley">الوادي الجديد</option>
-<option value="Suez">السويس</option>
-<option value="Aswan">أسوان</option>
-<option value="Assiut">أسيوط</option>
-<option value="Beni Suef">بني سويف</option>
-<option value="Sohag">سوهاج</option>
-<option value="Port Said">بورسعيد</option>
-<option value="Damietta">دمياط</option>
-<option value="Sharkia">الشرقية</option>
-<option value="South Sinai">جنوب سيناء</option>
-<option value="Kafr El Sheikh">كفر الشيخ</option>
-<option value="Matrouh">مطروح</option>
-<option value="Luxor">الأقصر</option>
-<option value="Qena">قنا</option>
-<option value="North Sinai">شمال سيناء</option>
+                        <option value="Cairo">القاهرة</option>
+                        <option value="Giza">الجيزة</option>
+                        <option value="Alexandria">الإسكندرية</option>
+                        <option value="Dakahlia">الدقهلية</option>
+                        <option value="Red Sea">البحر الأحمر</option>
+                        <option value="Beheira">البحيرة</option>
+                        <option value="Fayoum">الفيوم</option>
+                        <option value="Gharbia">الغربية</option>
+                        <option value="Ismailia">الإسماعيلية</option>
+                        <option value="Monufia">المنوفية</option>
+                        <option value="Minya">المنيا</option>
+                        <option value="Qalyubia">القليوبية</option>
+                        <option value="New Valley">الوادي الجديد</option>
+                        <option value="Suez">السويس</option>
+                        <option value="Aswan">أسوان</option>
+                        <option value="Assiut">أسيوط</option>
+                        <option value="Beni Suef">بني سويف</option>
+                        <option value="Port Said">بورسعيد</option>
+                        <option value="Damietta">دمياط</option>
+                        <option value="Sharkia">الشرقية</option>
+                        <option value="South Sinai">جنوب سيناء</option>
+                        <option value="Kafr El Sheikh">كفر الشيخ</option>
+                        <option value="Matrouh">مطروح</option>
+                        <option value="Luxor">الأقصر</option>
+                        <option value="Qena">قنا</option>
+                        <option value="North Sinai">شمال سيناء</option>
+                        <option value="Sohag">سوهاج</option>
+                        <option value="Other">أخرى</option>
                     </select>
                 </div>
 
@@ -73,32 +74,29 @@
     <div id="app-content" style="display:none;">
         
         <header class="glass-header">
-    <div class="header-inner">
-        
-        <div class="header-right">
-            <img src="ers-logo.png" class="brand-logo" alt="Logo"> <div class="user-greeting-box">
-                <span class="hello-text">أهلاً يا بطل</span>
-                <h3 id="headerName">...</h3>
-            </div>
-        </div>
+            <div class="header-inner">
+                <div class="header-right">
+                    <img src="ers-logo.png" class="brand-logo" alt="Logo"> 
+                    <div class="user-greeting-box">
+                        <span class="hello-text">أهلاً يا بطل</span>
+                        <h3 id="headerName">...</h3>
+                    </div>
+                </div>
 
-        <div class="header-actions">
-            <div class="icon-badge add-btn" onclick="openLogModal()">
-                <i class="ri-add-line"></i>
+                <div class="header-actions">
+                    <div class="icon-badge add-btn" onclick="openLogModal()">
+                        <i class="ri-add-line"></i>
+                    </div>
+                    <div class="icon-badge" onclick="showNotifications()">
+                        <i class="ri-notification-3-line"></i>
+                        <span class="badge-dot" id="notif-dot"></span>
+                    </div>
+                    <div class="icon-badge" onclick="openSettingsModal()">
+                        <i class="ri-settings-4-line"></i>
+                    </div>
+                </div>
             </div>
-
-            <div class="icon-badge" onclick="showNotifications()">
-                <i class="ri-notification-3-line"></i>
-                <span class="badge-dot" id="notif-dot"></span>
-            </div>
-            
-            <div class="icon-badge" onclick="openSettingsModal()">
-                <i class="ri-settings-4-line"></i>
-            </div>
-        </div>
-        
-    </div>
-</header>
+        </header>
 
         <main class="main-container">
             <section id="view-home" class="view active">
@@ -111,21 +109,7 @@
                         </div>
                         <span class="rank-badge" id="userRankBadge">مبتدئ</span>
                     </div>
-
-
-					<div class="goal-card" onclick="setPersonalGoal()">
-                    <div class="goal-info">
-                        <span class="goal-title">هدفي الشهري 🎯</span>
-                        <h3 id="goalText">اضغط لتحديد هدف</h3>
-                        <span class="goal-sub" id="goalSub">0 كم متبقي</span>
-                    </div>
                     
-                    <div class="goal-ring-wrapper">
-                        <div class="goal-ring" id="goalRing" style="--p:0"></div>
-                        <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
-                    </div>
-                </div>
-					
                     <div class="stats-grid">
                         <div class="stat-item">
                             <span class="stat-val" id="monthDist">0</span>
@@ -153,89 +137,81 @@
                     </div>
                 </div>
 
-                
+                <div class="goal-card" onclick="setPersonalGoal()">
+                    <div class="goal-info">
+                        <span class="goal-title">هدفي الشهري 🎯</span>
+                        <h3 id="goalText">اضغط لتحديد هدف</h3>
+                        <span class="goal-sub" id="goalSub">0 كم متبقي</span>
+                    </div>
+                    <div class="goal-ring-wrapper">
+                        <div class="goal-ring" id="goalRing" style="--p:0"></div>
+                        <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
+                    </div>
+                </div>
 
                 <div class="section-header">
                     <h4>تحدياتي النشطة</h4>
                     <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
                 </div>
-				                <div id="my-active-challenges" class="horizontal-scroll">
+                <div id="my-active-challenges" class="horizontal-scroll">
                     <div class="empty-state-mini">لا توجد تحديات حالياً</div>
                 </div>
 
-
-
-<div class="section-header" style="margin-top:25px;">
-    <h4>نشاط الفريق ⚡</h4>
-</div>
-<div id="global-feed-list" class="feed-list">
-    <div style="text-align:center; padding:10px;">جاري التحميل...</div>
-</div>
-
-
+                <div class="section-header" style="margin-top:25px;">
+                    <h4>نشاط الفريق ⚡</h4>
+                </div>
+                <div id="global-feed-list" class="feed-list">
+                    <div style="text-align:center; padding:10px;">جاري التحميل...</div>
+                </div>
             </section>
 
-
-<section id="view-admin" class="view">
-    <div class="section-header">
-        <h4>لوحة التحكم 🛠️</h4>
-        <span class="link-text" onclick="switchView('profile')">خروج</span>
-    </div>
-
-    <div class="admin-card">
-        <h3>إنشاء تحدي جديد 🏆</h3>
-		<div class="admin-card" style="margin-top:20px;">
-            <h3>إدارة المنشورات 👮‍♂️</h3>
-            <p style="font-size:11px; color:#9ca3af; margin-bottom:10px;">حذف المشاركات غير اللائقة</p>
-            <div id="admin-feed-list" class="feed-list">
+            <section id="view-admin" class="view">
+                <div class="section-header">
+                    <h4>لوحة التحكم 🛠️</h4>
+                    <span class="link-text" onclick="switchView('home')">خروج</span>
                 </div>
-        </div>
 
-		
-        <div class="form-group" style="margin-top:15px;">
-            <label>عنوان التحدي</label>
-            <input type="text" id="admin-ch-title" placeholder="مثال: ماراثون القاهرة">
-
-            <label>الوصف</label>
-            <input type="text" id="admin-ch-desc" placeholder="وصف قصير للتحدي">
-
-            <div class="input-row">
-                <div class="input-wrap">
-                    <label>الهدف (كم)</label>
-                    <input type="number" id="admin-ch-target" placeholder="50">
+                <div class="admin-card">
+                    <h3>إنشاء تحدي جديد 🏆</h3>
+                    <div class="form-group" style="margin-top:15px;">
+                        <label>عنوان التحدي</label>
+                        <input type="text" id="admin-ch-title" placeholder="مثال: ماراثون القاهرة">
+                        <label>الوصف</label>
+                        <input type="text" id="admin-ch-desc" placeholder="وصف قصير للتحدي">
+                        <div class="input-row">
+                            <div class="input-wrap">
+                                <label>الهدف (كم)</label>
+                                <input type="number" id="admin-ch-target" placeholder="50">
+                            </div>
+                            <div class="input-wrap">
+                                <label>المدة (أيام)</label>
+                                <input type="number" id="admin-ch-days" placeholder="30">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:15px;">نشر التحدي</button>
+                    </div>
                 </div>
-                <div class="input-wrap">
-                    <label>المدة (أيام)</label>
-                    <input type="number" id="admin-ch-days" placeholder="30">
+
+                <div class="admin-card" style="margin-top:20px;">
+                    <h3>إدارة المنشورات 👮‍♂️</h3>
+                    <div id="admin-feed-list" class="feed-list"></div>
                 </div>
-            </div>
 
-            <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:15px;">
-                نشر التحدي
-            </button>
-        </div>
-    </div>
+                <div class="admin-card" style="margin-top:20px;">
+                    <h3>إحصائيات سريعة 📊</h3>
+                    <div id="admin-stats" style="color:#9ca3af; font-size:13px; margin-top:10px;">جاري التحميل...</div>
+                </div>
+            </section>
 
-    <div class="admin-card" style="margin-top:20px;">
-        <h3>إحصائيات سريعة 📊</h3>
-        <div id="admin-stats" style="color:#9ca3af; font-size:13px; margin-top:10px;">
-            جاري التحميل...
-        </div>
-    </div>
-</section>
-
-			
             <section id="view-challenges" class="view">
                 <div class="tabs-nav">
                     <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
                     <div class="tab-item" onclick="setTab('leaderboard')">المتصدرون</div>
                     <div class="tab-item" onclick="setTab('squads')">المناطق</div>
                 </div>
-
                 <div id="tab-active-challenges" class="tab-content active">
                     <div id="challenges-list" class="challenges-grid"></div>
                 </div>
-
                 <div id="tab-leaderboard" class="tab-content">
                     <div class="filter-bar">
                         <button class="filter-btn active" onclick="filterLeaderboard('all')">الكل</button>
@@ -243,13 +219,12 @@
                     </div>
                     <div id="leaderboard-list" class="rank-list"></div>
                 </div>
-
                 <div id="tab-squads" class="tab-content">
                     <div id="region-battle-list"></div>
                 </div>
             </section>
 
-           <section id="view-profile" class="view">
+            <section id="view-profile" class="view">
                 <div class="profile-header-card">
                     <div class="profile-top">
                         <div class="big-avatar" id="profileAvatar"></div>
@@ -259,124 +234,75 @@
                     </div>
                     <h2 id="profileName">...</h2>
                     <div class="profile-region-badge" id="profileRegion">...</div>
-                    
                     <div class="profile-stats-row">
-                        <div class="p-stat">
-                            <span class="p-val" id="profileTotalDist">0</span>
-                            <span class="p-lbl">كم إجمالي</span>
-                        </div>
-                        <div class="p-stat">
-                            <span class="p-val" id="profileTotalRuns">0</span>
-                            <span class="p-lbl">جرية</span>
-                        </div>
+                        <div class="p-stat"><span class="p-val" id="profileTotalDist">0</span><span class="p-lbl">كم إجمالي</span></div>
+                        <div class="p-stat"><span class="p-val" id="profileTotalRuns">0</span><span class="p-lbl">جرية</span></div>
                     </div>
                 </div>
-                
                 <div class="log-section">
                     <h3 class="section-title">سجل الأنشطة</h3>
                     <div id="activity-log" class="log-list"></div>
                 </div>
-                
-               
-<button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
-                    <i class="ri-logout-box-r-line"></i> تسجيل خروج
-                </button>
-                
-                <div style="margin-top: 20px; display:flex; gap:10px; justify-content:center;">
-                    <button class="btn-text" onclick="openAdminAuth()" style="opacity:0.5; font-size:11px;">
-                        <i class="ri-shield-keyhole-line"></i> مشرف
-                    </button>
-                    <button class="btn-text" onclick="forceUpdate()" style="opacity:0.5; font-size:11px; color:var(--accent);">
-                        <i class="ri-refresh-line"></i> تحديث إجباري
-                    </button>
-                </div>
             </section>
-<button class="btn btn-text" onclick="openAdminAuth()" style="margin-top:10px; opacity:0.3;">
-    <i class="ri-shield-keyhole-line"></i> دخول الأدمن
-</button>
-			   
-		   </section>
 
         </main>
 
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="switchView('home')">
-                <i class="ri-home-4-line"></i>
-                <span>الرئيسية</span>
+                <i class="ri-home-4-line"></i><span>الرئيسية</span>
             </div>
             <div class="nav-item" onclick="switchView('challenges')">
-                <i class="ri-trophy-line"></i>
-                <span>المنافسة</span>
+                <i class="ri-trophy-line"></i><span>المنافسة</span>
             </div>
             <div class="nav-item" onclick="switchView('profile')">
-                <i class="ri-user-smile-line"></i>
-                <span>بروفايل</span>
+                <i class="ri-user-smile-line"></i><span>بروفايل</span>
             </div>
         </nav>
-
     </div>
 
-   <div id="modal-log" class="modal-overlay">
+    <div id="modal-log" class="modal-overlay">
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>
             <div class="input-row">
-                <div class="input-wrap">
-                    <label>المسافة (كم)</label>
-                    <input type="number" id="log-dist" step="0.1" inputmode="decimal">
-                </div>
-                <div class="input-wrap">
-                    <label>الزمن (دقائق)</label>
-                    <input type="number" id="log-time" inputmode="numeric">
-                </div>
+                <div class="input-wrap"><label>المسافة (كم)</label><input type="number" id="log-dist" step="0.1" inputmode="decimal"></div>
+                <div class="input-wrap"><label>الزمن (دقائق)</label><input type="number" id="log-time" inputmode="numeric"></div>
             </div>
             <select id="log-type" class="full-select">
                 <option value="Run">جري (Run)</option>
                 <option value="Walk">مشي (Walk)</option>
                 <option value="Race">سباق (Race)</option>
             </select>
-			<div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
+            <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
                 <label>رابط إثبات الجرية (Strava/Nike) - اختياري</label>
                 <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
             </div>
-
-                   <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
+            <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
         </div>
     </div>
 
-<div id="modal-settings" class="modal-overlay">
+    <div id="modal-settings" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-bottom:20px;">الإعدادات ⚙️</h3>
-            
             <div class="settings-list">
                 <button class="setting-item" onclick="forceUpdateApp()">
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
-                    <div class="setting-text">
-                        <span>تحديث التطبيق</span>
-                        <small>اضغط هنا إذا لم تظهر الميزات الجديدة</small>
-                    </div>
+                    <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
                 </button>
-
                 <button class="setting-item" onclick="openAdminAuth()">
                     <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
-                    <div class="setting-text">
-                        <span>دخول المشرفين</span>
-                        <small>للأدمن فقط</small>
-                    </div>
+                    <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
                 </button>
-                
                 <button class="setting-item delete" onclick="logout()">
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
                     <div class="setting-text">تسجيل الخروج</div>
                 </button>
             </div>
-
             <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
         </div>
     </div>
-	
-	
-<div id="modal-notifications" class="modal-overlay">
+    
+    <div id="modal-notifications" class="modal-overlay">
         <div class="modal-box">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h3 style="margin:0;">الإشعارات 🔔</h3>
@@ -388,14 +314,27 @@
         </div>
     </div>
 
-
+    <div id="modal-edit-profile" class="modal-overlay">
+        <div class="modal-box">
+            <h3>تعديل البيانات ✏️</h3>
+            <div class="form-group" style="margin-top:20px;">
+                <label style="color:#9ca3af; font-size:12px;">الاسم</label>
+                <input type="text" id="edit-name">
+                <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
+                <select id="edit-region">
+                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Sohag">سوهاج</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Other">أخرى</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
+            <button class="btn btn-text" onclick="closeModal('modal-edit-profile')">إلغاء</button>
+        </div>
+    </div>
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="app.js"></script>
-
+    <script src="app-v2.js"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
@@ -406,50 +345,5 @@
         });
       }
     </script>
-
-
-    <div id="modal-edit-profile" class="modal-overlay">
-        <div class="modal-box">
-            <h3>تعديل البيانات ✏️</h3>
-            <div class="form-group" style="margin-top:20px;">
-                <label style="color:#9ca3af; font-size:12px;">الاسم</label>
-                <input type="text" id="edit-name">
-                
-                <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
-                <select id="edit-region">
-      <option value="Cairo">القاهرة</option>
-<option value="Giza">الجيزة</option>
-<option value="Alexandria">الإسكندرية</option>
-<option value="Dakahlia">الدقهلية</option>
-<option value="Red Sea">البحر الأحمر</option>
-<option value="Beheira">البحيرة</option>
-<option value="Fayoum">الفيوم</option>
-<option value="Gharbia">الغربية</option>
-<option value="Ismailia">الإسماعيلية</option>
-<option value="Monufia">المنوفية</option>
-<option value="Minya">المنيا</option>
-<option value="Qalyubia">القليوبية</option>
-<option value="New Valley">الوادي الجديد</option>
-<option value="Suez">السويس</option>
-<option value="Aswan">أسوان</option>
-<option value="Assiut">أسيوط</option>
-<option value="Beni Suef">بني سويف</option>
-<option value="Sohag">سوهاج</option>
-<option value="Port Said">بورسعيد</option>
-<option value="Damietta">دمياط</option>
-<option value="Sharkia">الشرقية</option>
-<option value="South Sinai">جنوب سيناء</option>
-<option value="Kafr El Sheikh">كفر الشيخ</option>
-<option value="Matrouh">مطروح</option>
-<option value="Luxor">الأقصر</option>
-<option value="Qena">قنا</option>
-<option value="North Sinai">شمال سيناء</option>
-                    <option value="Other">أخرى</option>
-                </select>
-            </div>
-            <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
-            <button class="btn btn-text" onclick="closeModal('modal-edit-profile')">إلغاء</button>
-        </div>
-    </div>
 </body>
 </html>
