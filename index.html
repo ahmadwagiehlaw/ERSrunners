@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=18">
+    <link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 
@@ -28,42 +28,13 @@
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
                 <input type="password" id="password" placeholder="كلمة المرور">
-                
                 <div id="signup-fields" style="display:none;">
                     <input type="text" id="username" placeholder="الاسم ثلاثي">
                     <select id="region">
-                        <option value="" disabled selected>اختر منطقتك (للمنافسة)</option>
-                        <option value="Cairo">القاهرة</option>
-                        <option value="Giza">الجيزة</option>
-                        <option value="Alexandria">الإسكندرية</option>
-                        <option value="Dakahlia">الدقهلية</option>
-                        <option value="Red Sea">البحر الأحمر</option>
-                        <option value="Beheira">البحيرة</option>
-                        <option value="Fayoum">الفيوم</option>
-                        <option value="Gharbia">الغربية</option>
-                        <option value="Ismailia">الإسماعيلية</option>
-                        <option value="Monufia">المنوفية</option>
-                        <option value="Minya">المنيا</option>
-                        <option value="Qalyubia">القليوبية</option>
-                        <option value="New Valley">الوادي الجديد</option>
-                        <option value="Suez">السويس</option>
-                        <option value="Aswan">أسوان</option>
-                        <option value="Assiut">أسيوط</option>
-                        <option value="Beni Suef">بني سويف</option>
-                        <option value="Port Said">بورسعيد</option>
-                        <option value="Damietta">دمياط</option>
-                        <option value="Sharkia">الشرقية</option>
-                        <option value="South Sinai">جنوب سيناء</option>
-                        <option value="Kafr El Sheikh">كفر الشيخ</option>
-                        <option value="Matrouh">مطروح</option>
-                        <option value="Luxor">الأقصر</option>
-                        <option value="Qena">قنا</option>
-                        <option value="North Sinai">شمال سيناء</option>
-                        <option value="Sohag">سوهاج</option>
-                        <option value="Other">أخرى</option>
+                        <option value="" disabled selected>اختر منطقتك</option>
+                        <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                     </select>
                 </div>
-
                 <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
                 <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
                 <div id="auth-msg" class="error-msg"></div>
@@ -72,7 +43,6 @@
     </div>
 
     <div id="app-content" style="display:none;">
-        
         <header class="glass-header">
             <div class="header-inner">
                 <div class="header-right">
@@ -82,58 +52,34 @@
                         <h3 id="headerName">...</h3>
                     </div>
                 </div>
-
                 <div class="header-actions">
-                    <div class="icon-badge add-btn" onclick="openLogModal()">
-                        <i class="ri-add-line"></i>
-                    </div>
+                    <div class="icon-badge add-btn" onclick="openLogModal()"><i class="ri-add-line"></i></div>
                     <div class="icon-badge" onclick="showNotifications()">
-                        <i class="ri-notification-3-line"></i>
-                        <span class="badge-dot" id="notif-dot"></span>
+                        <i class="ri-notification-3-line"></i><span class="badge-dot" id="notif-dot"></span>
                     </div>
-                    <div class="icon-badge" onclick="openSettingsModal()">
-                        <i class="ri-settings-4-line"></i>
-                    </div>
+                    <div class="icon-badge" onclick="openSettingsModal()"><i class="ri-settings-4-line"></i></div>
                 </div>
             </div>
         </header>
 
         <main class="main-container">
             <section id="view-home" class="view active">
-                
                 <div class="status-card">
                     <div class="status-header">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span>مستواك الحالي</span>
-                            <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
+                            <span>مستواك الحالي</span><i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
                         </div>
                         <span class="rank-badge" id="userRankBadge">مبتدئ</span>
                     </div>
-                    
                     <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-val" id="monthDist">0</span>
-                            <span class="stat-lbl">كم (شهر)</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-val" id="totalRuns">0</span>
-                            <span class="stat-lbl">جرية</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-val" id="nextLevelDist">50</span>
-                            <span class="stat-lbl">باقي للترقية</span>
-                        </div>
+                        <div class="stat-item"><span class="stat-val" id="monthDist">0</span><span class="stat-lbl">كم (شهر)</span></div>
+                        <div class="stat-item"><span class="stat-val" id="totalRuns">0</span><span class="stat-lbl">جرية</span></div>
+                        <div class="stat-item"><span class="stat-val" id="nextLevelDist">50</span><span class="stat-lbl">باقي للترقية</span></div>
                     </div>
-
                     <div class="xp-container" style="margin-top:15px;">
-                        <div class="xp-header">
-                            <span class="xp-text" id="xpText">0 / 50 كم</span>
-                            <span class="xp-perc" id="xpPerc">0%</span>
-                        </div>
-                        <div class="xp-track">
-                            <div class="xp-fill" id="xpBar"></div>
-                        </div>
-                        <div class="xp-message" id="xpMessage">واصل الجري للوصول لمستوى هاوي!</div>
+                        <div class="xp-header"><span class="xp-text" id="xpText">0 / 50 كم</span><span class="xp-perc" id="xpPerc">0%</span></div>
+                        <div class="xp-track"><div class="xp-fill" id="xpBar"></div></div>
+                        <div class="xp-message" id="xpMessage">واصل الجري!</div>
                     </div>
                 </div>
 
@@ -149,19 +95,19 @@
                     </div>
                 </div>
 
-                <div class="section-header">
-                    <h4>تحدياتي النشطة</h4>
+                <div class="section-title-row">
+                    <h4>تحدياتي النشطة 🔥</h4>
                     <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
                 </div>
-                <div id="my-active-challenges" class="horizontal-scroll">
+                <div id="my-active-challenges" class="mini-challenges-scroll">
                     <div class="empty-state-mini">لا توجد تحديات حالياً</div>
                 </div>
 
-                <div class="section-header" style="margin-top:25px;">
+                <div class="section-title-row" style="margin-top:25px;">
                     <h4>نشاط الفريق ⚡</h4>
                 </div>
-                <div id="global-feed-list" class="feed-list">
-                    <div style="text-align:center; padding:10px;">جاري التحميل...</div>
+                <div id="global-feed-list" class="feed-list-compact">
+                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
                 </div>
             </section>
 
@@ -170,36 +116,25 @@
                     <h4>لوحة التحكم 🛠️</h4>
                     <span class="link-text" onclick="switchView('home')">خروج</span>
                 </div>
-
                 <div class="admin-card">
                     <h3>إنشاء تحدي جديد 🏆</h3>
-                    <div class="form-group" style="margin-top:15px;">
-                        <label>عنوان التحدي</label>
-                        <input type="text" id="admin-ch-title" placeholder="مثال: ماراثون القاهرة">
-                        <label>الوصف</label>
-                        <input type="text" id="admin-ch-desc" placeholder="وصف قصير للتحدي">
+                    <div class="form-group" style="margin-top:10px;">
+                        <input type="text" id="admin-ch-title" placeholder="عنوان التحدي">
+                        <input type="text" id="admin-ch-desc" placeholder="الوصف">
                         <div class="input-row">
-                            <div class="input-wrap">
-                                <label>الهدف (كم)</label>
-                                <input type="number" id="admin-ch-target" placeholder="50">
-                            </div>
-                            <div class="input-wrap">
-                                <label>المدة (أيام)</label>
-                                <input type="number" id="admin-ch-days" placeholder="30">
-                            </div>
+                            <div class="input-wrap"><input type="number" id="admin-ch-target" placeholder="الهدف (كم)"></div>
+                            <div class="input-wrap"><input type="number" id="admin-ch-days" placeholder="المدة (أيام)"></div>
                         </div>
-                        <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:15px;">نشر التحدي</button>
+                        <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:10px;">نشر التحدي</button>
                     </div>
                 </div>
-
-                <div class="admin-card" style="margin-top:20px;">
+                <div class="admin-card" style="margin-top:15px;">
                     <h3>إدارة المنشورات 👮‍♂️</h3>
                     <div id="admin-feed-list" class="feed-list"></div>
                 </div>
-
-                <div class="admin-card" style="margin-top:20px;">
-                    <h3>إحصائيات سريعة 📊</h3>
-                    <div id="admin-stats" style="color:#9ca3af; font-size:13px; margin-top:10px;">جاري التحميل...</div>
+                <div class="admin-card" style="margin-top:15px;">
+                    <h3>إحصائيات 📊</h3>
+                    <div id="admin-stats" style="color:#9ca3af; font-size:12px;">...</div>
                 </div>
             </section>
 
@@ -228,9 +163,7 @@
                 <div class="profile-header-card">
                     <div class="profile-top">
                         <div class="big-avatar" id="profileAvatar"></div>
-                        <button class="btn-icon-edit" onclick="openEditProfile()">
-                            <i class="ri-pencil-line"></i>
-                        </button>
+                        <button class="btn-icon-edit" onclick="openEditProfile()"><i class="ri-pencil-line"></i></button>
                     </div>
                     <h2 id="profileName">...</h2>
                     <div class="profile-region-badge" id="profileRegion">...</div>
@@ -271,12 +204,10 @@
                 <div class="input-wrap"><label>الزمن (دقائق)</label><input type="number" id="log-time" inputmode="numeric"></div>
             </div>
             <select id="log-type" class="full-select">
-                <option value="Run">جري (Run)</option>
-                <option value="Walk">مشي (Walk)</option>
-                <option value="Race">سباق (Race)</option>
+                <option value="Run">جري (Run)</option><option value="Walk">مشي (Walk)</option><option value="Race">سباق (Race)</option>
             </select>
             <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
-                <label>رابط إثبات الجرية (Strava/Nike) - اختياري</label>
+                <label>رابط إثبات (Strava/Nike) - اختياري</label>
                 <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
             </div>
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
@@ -337,7 +268,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="app.js?v=18"></script> 
+    <script src="app.js?v=19"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
