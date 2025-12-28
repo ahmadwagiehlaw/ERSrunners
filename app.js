@@ -748,3 +748,71 @@ async function loadRegionBattle() {
         `;
     });
 }
+// ==================== 5. لوحة تحكم الأدمن (Admin Dashboard) ====================
+
+// 1. التحقق من الصلاحية (دخول بكلمة سر)
+function openAdminAuth() {
+    const pin = prompt("أدخل كود المشرف:");
+    // يمكنك تغيير "1234" لأي رقم سري تريده
+    if(pin === "a4450422") {
+        switchView('admin');
+        loadAdminStats();
+    } else {
+        alert("كود خاطئ! 🚫");
+    }
+}
+
+// 2. إنشاء تحدي من الواجهة
+async function createChallengeUI() {
+    const title = document.getElementById('admin-ch-title').value;
+    const desc = document.getElementById('admin-ch-desc').value;
+    const target = parseFloat(document.getElementById('admin-ch-target').value);
+    const days = parseInt(document.getElementById('admin-ch-days').value);
+
+    if(!title || !target) return alert("البيانات ناقصة!");
+
+    const btn = document.querySelector('#view-admin .btn-primary');
+    btn.innerText = "جاري النشر...";
+    btn.disabled = true;
+
+    try {
+        await db.collection('challenges').add({
+            title: title,
+            desc: desc,
+            target: target,
+            active: true,
+            type: "distance",
+            startDate: new Date().toISOString(),
+            // حساب تاريخ النهاية
+            endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() 
+        });
+
+        alert("تم نشر التحدي بنجاح! 🚀");
+        
+        // تنظيف الحقول
+        document.getElementById('admin-ch-title').value = "";
+        document.getElementById('admin-ch-desc').value = "";
+        document.getElementById('admin-ch-target').value = "";
+        
+        // العودة للرئيسية
+        switchView('home');
+        loadActiveChallenges(); // تحديث القائمة
+
+    } catch(e) {
+        console.error(e);
+        alert("حدث خطأ: " + e.message);
+    } finally {
+        btn.innerText = "نشر التحدي";
+        btn.disabled = false;
+    }
+}
+
+// 3. إحصائيات سريعة
+function loadAdminStats() {
+    const statsDiv = document.getElementById('admin-stats');
+    db.collection('users').get().then(snap => {
+        const usersCount = snap.size;
+        // ممكن نضيف حاجات تانية هنا مستقبلاً
+        statsDiv.innerHTML = `عدد الأعضاء المسجلين: <strong style="color:#fff">${usersCount}</strong>`;
+    });
+}
