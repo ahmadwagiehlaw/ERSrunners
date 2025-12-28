@@ -1,4 +1,4 @@
-/* ERS Runners - V1.2 (Challenge Engine) */
+/* ERS Runners - V1.3 (Stable Build) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -36,23 +36,31 @@ function toggleAuthMode() {
     isSignupMode = !isSignupMode;
     const fields = document.getElementById('signup-fields');
     const btn = document.getElementById('toggleAuthBtn');
-    const mainBtn = document.querySelector('.btn-primary');
-    if (isSignupMode) {
-        fields.style.display = 'block';
-        btn.innerText = "لديك حساب بالفعل؟ تسجيل الدخول";
-        mainBtn.innerText = "إنشاء حساب جديد";
-    } else {
-        fields.style.display = 'none';
-        btn.innerText = "ليس لديك حساب؟ سجل الآن";
-        mainBtn.innerText = "دخول";
+    const mainBtn = document.querySelector('.auth-box .btn-primary');
+    
+    if (fields && btn && mainBtn) {
+        if (isSignupMode) {
+            fields.style.display = 'block';
+            btn.innerText = "لديك حساب بالفعل؟ تسجيل الدخول";
+            mainBtn.innerText = "إنشاء حساب جديد";
+        } else {
+            fields.style.display = 'none';
+            btn.innerText = "ليس لديك حساب؟ سجل الآن";
+            mainBtn.innerText = "دخول";
+        }
     }
 }
 
 async function handleAuth() {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    const msg = document.getElementById('auth-msg');
-    msg.innerText = "";
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const msgEl = document.getElementById('auth-msg');
+    
+    if (!emailEl || !passEl) return;
+    
+    const email = emailEl.value;
+    const pass = passEl.value;
+    if (msgEl) msgEl.innerText = "";
 
     try {
         if (!email || !pass) throw new Error("يرجى ملء البيانات");
@@ -72,7 +80,8 @@ async function handleAuth() {
             await auth.signInWithEmailAndPassword(email, pass);
         }
     } catch (err) {
-        msg.innerText = err.message;
+        if (msgEl) msgEl.innerText = err.message;
+        console.error("Auth Error:", err);
     }
 }
 
@@ -82,36 +91,37 @@ function logout() {
 
 // -------------------------------- UI & Core --------------------------------
 function showAuthScreen() {
-    document.getElementById('auth-screen').style.display = 'flex';
-    document.getElementById('app-content').style.display = 'none';
+    const authScreen = document.getElementById('auth-screen');
+    const appContent = document.getElementById('app-content');
+    if(authScreen) authScreen.style.display = 'flex';
+    if(appContent) appContent.style.display = 'none';
 }
 
 function initApp() {
-    document.getElementById('auth-screen').style.display = 'none';
-    document.getElementById('app-content').style.display = 'block';
+    const authScreen = document.getElementById('auth-screen');
+    const appContent = document.getElementById('app-content');
+    if(authScreen) authScreen.style.display = 'none';
+    if(appContent) appContent.style.display = 'block';
     
     updateUI();
     loadActivityLog();
-    loadActiveChallenges(); // New: Load challenges
+    loadActiveChallenges(); 
 }
 
+// الدالة المؤمنة بالكامل لتحديث الواجهة
 function updateUI() {
-    // 1. تحديث الاسم في الهيدر (مع التأكد أن العنصر موجود)
+    // 1. تحديث الاسم في الهيدر
     const headerName = document.getElementById('headerName');
-    if (headerName) {
-        headerName.innerText = userData.name || "Runner";
-    }
+    if (headerName) headerName.innerText = userData.name || "Runner";
 
-    // ❌ تم حذف السطر الذي يسبب المشكلة (headerAvatar) لأننا نستخدم اللوجو الآن
-
-    // 2. كارت الإحصائيات (الداشبورد)
+    // 2. كارت الإحصائيات
     const monthDistEl = document.getElementById('monthDist');
     const totalRunsEl = document.getElementById('totalRuns');
     
     if (monthDistEl) monthDistEl.innerText = (userData.totalDist || 0).toFixed(1);
     if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
     
-    // 3. البروفايل (ما زال يحتاج الافتار في صفحة البروفايل)
+    // 3. البروفايل
     const profileName = document.getElementById('profileName');
     const profileRegion = document.getElementById('profileRegion');
     const profileAvatar = document.getElementById('profileAvatar');
@@ -135,31 +145,46 @@ function updateUI() {
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    document.getElementById('view-' + viewId).classList.add('active');
+    
+    const view = document.getElementById('view-' + viewId);
+    if(view) view.classList.add('active');
     
     const navMap = {'home': 0, 'challenges': 1, 'profile': 2};
-    document.querySelectorAll('.nav-item')[navMap[viewId]].classList.add('active');
+    const navItems = document.querySelectorAll('.nav-item');
+    if(navItems[navMap[viewId]]) navItems[navMap[viewId]].classList.add('active');
 }
 
 function setTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tabName).classList.add('active');
+    const targetTab = document.getElementById('tab-' + tabName);
+    if(targetTab) targetTab.classList.add('active');
     
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-    event.target.classList.add('active');
+    if(event && event.target) event.target.classList.add('active');
+
+    // تحميل البيانات عند الضغط
+    if (tabName === 'leaderboard') loadLeaderboard('all');
+    if (tabName === 'squads') loadRegionBattle();
+    if (tabName === 'active-challenges') loadActiveChallenges();
 }
 
-function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function openLogModal() { 
+    const m = document.getElementById('modal-log');
+    if(m) m.style.display = 'flex'; 
+}
+function closeModal(id) { 
+    const m = document.getElementById(id);
+    if(m) m.style.display = 'none'; 
+}
 
-// -------------------------------- CHALLENGES ENGINE 🏆 --------------------------------
+// -------------------------------- CHALLENGES ENGINE --------------------------------
 
-// 1. عرض التحديات
 function loadActiveChallenges() {
-    const list = document.getElementById('challenges-list'); // في صفحة المنافسة
-    const miniList = document.getElementById('my-active-challenges'); // في الرئيسية
+    const list = document.getElementById('challenges-list');
+    const miniList = document.getElementById('my-active-challenges');
     
-    if(!list) return;
+    // أمان: لو العناصر مش موجودة، وقف الدالة
+    if(!list || !miniList) return;
 
     db.collection('challenges').where('active', '==', true).get().then(async (snap) => {
         list.innerHTML = '';
@@ -167,6 +192,7 @@ function loadActiveChallenges() {
         
         if(snap.empty) {
             list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد تحديات نشطة</div>';
+            miniList.innerHTML = '<div class="empty-state-mini">لا توجد تحديات حالياً</div>';
             return;
         }
 
@@ -174,14 +200,22 @@ function loadActiveChallenges() {
             const ch = doc.data();
             const chId = doc.id;
             
-            // تحقق هل المستخدم مشترك؟
-            const partRef = await db.collection('challenges').doc(chId).collection('participants').doc(currentUser.uid).get();
-            const isJoined = partRef.exists;
-            const progress = isJoined ? partRef.data().progress : 0;
+            // تحقق من الاشتراك
+            let isJoined = false;
+            let progress = 0;
+            
+            if(currentUser) {
+                const partRef = await db.collection('challenges').doc(chId).collection('participants').doc(currentUser.uid).get();
+                if(partRef.exists) {
+                    isJoined = true;
+                    progress = partRef.data().progress || 0;
+                }
+            }
+
             const percentage = Math.min((progress / ch.target) * 100, 100);
 
-            // كارت التحدي الكامل (صفحة المنافسة)
-            const cardHTML = `
+            // رسم الكارت الكبير
+            list.innerHTML += `
                 <div class="challenge-card" style="background: linear-gradient(135deg, #1f2937, #111827); border:1px solid #374151; border-radius:15px; padding:15px; margin-bottom:15px; position:relative; overflow:hidden;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <h3 style="margin:0; font-size:16px;">${ch.title}</h3>
@@ -205,9 +239,8 @@ function loadActiveChallenges() {
                     `}
                 </div>
             `;
-            list.innerHTML += cardHTML;
 
-            // كارت مصغر للرئيسية (فقط إذا كان مشتركاً)
+            // رسم الكارت المصغر
             if(isJoined) {
                 miniList.innerHTML += `
                     <div style="min-width:140px; background:#1f2937; padding:10px; border-radius:10px; margin-left:10px; border:1px solid #374151;">
@@ -223,131 +256,127 @@ function loadActiveChallenges() {
     });
 }
 
-// 2. الانضمام للتحدي
 window.joinChallenge = async function(challengeId) {
     if(!confirm("تأكيد الانضمام لهذا التحدي؟")) return;
-    
     try {
         await db.collection('challenges').doc(challengeId).collection('participants').doc(currentUser.uid).set({
-            name: userData.name,
-            region: userData.region,
-            progress: 0,
+            name: userData.name, region: userData.region, progress: 0,
             joinedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        alert("تم الانضمام بنجاح! أي جرية جديدة ستحسب في هذا التحدي.");
-        initApp(); // Refresh UI
-    } catch(e) {
-        console.error(e);
-        alert("حدث خطأ");
-    }
+        alert("تم الانضمام بنجاح!");
+        initApp();
+    } catch(e) { console.error(e); alert("حدث خطأ"); }
 }
 
 // -------------------------------- RUN LOGGING & ENGINE --------------------------------
 
 async function submitRun() {
-    console.log("بدء عملية الحفظ...");
-
+    // استخدمنا الـ ID الجديد للزر
+    const btn = document.getElementById('save-run-btn');
     const distInput = document.getElementById('log-dist');
     const timeInput = document.getElementById('log-time');
     const typeInput = document.getElementById('log-type');
 
-    // التأكد من أن العناصر موجودة
-    if (!distInput || !timeInput) {
-        alert("خطأ في النظام: حقول الإدخال غير موجودة");
-        return;
-    }
+    if (!distInput || !timeInput) { alert("خطأ داخلي: الحقول مفقودة"); return; }
 
     const dist = parseFloat(distInput.value);
     const time = parseFloat(timeInput.value);
     const type = typeInput.value;
 
-    if (!dist || !time) {
-        alert("من فضلك اكتب المسافة والزمن");
-        return;
-    }
+    if (!dist || !time) { alert("من فضلك اكتب المسافة والزمن"); return; }
+    if (!currentUser) { alert("يجب تسجيل الدخول أولاً!"); return; }
 
-    if (!currentUser) {
-        alert("يجب تسجيل الدخول أولاً!");
-        return;
+    let originalText = "حفظ النشاط";
+    if(btn) {
+        originalText = btn.innerText;
+        btn.innerText = "جاري الحفظ...";
+        btn.disabled = true;
+        btn.style.opacity = "0.7";
     }
-
-    // 1. تغيير شكل الزر ليعرف المستخدم أننا نحمل
-    const btn = document.querySelector('#modal-log .btn-primary');
-    const originalText = btn.innerText;
-    btn.innerText = "جاري الحفظ...";
-    btn.disabled = true;
-    btn.style.opacity = "0.7";
 
     try {
         const uid = currentUser.uid;
 
-        // 2. حفظ الجرية في السجل
+        // 1. حفظ الجرية
         await db.collection('users').doc(uid).collection('runs').add({
-            dist: dist,
-            time: time,
-            type: type,
+            dist: dist, time: time, type: type,
             date: new Date().toISOString(),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // 3. تحديث إجمالي المستخدم
+        // 2. تحديث الإجمالي
         await db.collection('users').doc(uid).set({
             totalDist: firebase.firestore.FieldValue.increment(dist),
             totalRuns: firebase.firestore.FieldValue.increment(1)
         }, { merge: true });
 
-        // 4. تحديث التحديات (محمية لتجنب توقف التطبيق لو فشلت)
+        // 3. تحديث التحديات
         try {
             const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
             if (!activeChCalls.empty) {
                 const batch = db.batch();
                 activeChCalls.forEach(doc => {
                     const pRef = doc.ref.collection('participants').doc(uid);
+                    // استخدام merge لتفادي الأخطاء لو الوثيقة مش موجودة
                     batch.set(pRef, {
                         progress: firebase.firestore.FieldValue.increment(dist),
                         lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-                        // ضمان وجود البيانات الأساسية
                         name: userData.name || "Runner",
                         region: userData.region || "General"
                     }, { merge: true });
                 });
                 await batch.commit();
             }
-        } catch (chErr) {
-            console.warn("خطأ بسيط في تحديث التحدي:", chErr);
-        }
+        } catch (chErr) { console.warn("تنبيه تحديث التحدي:", chErr); }
 
-        // 5. نجاح العملية
+        // نجاح
         alert("تم الحفظ يا بطل! 🔥");
         closeModal('modal-log');
 
-        // تحديث الواجهة فوراً
+        // تحديث الواجهة محلياً
         userData.totalDist = (userData.totalDist || 0) + dist;
         userData.totalRuns = (userData.totalRuns || 0) + 1;
         updateUI();
         loadActivityLog();
         loadActiveChallenges();
         
-        // تصفير الحقول
         distInput.value = '';
         timeInput.value = '';
 
     } catch (error) {
         console.error("خطأ في الحفظ:", error);
-        // هذه الرسالة ستخبرنا بالسبب الحقيقي
-        alert("حدث خطأ أثناء الحفظ:\n" + error.message);
+        alert("حدث خطأ: " + error.message);
     } finally {
-        // إعادة الزر لوضعه الطبيعي
-        btn.innerText = originalText;
-        btn.disabled = false;
-        btn.style.opacity = "1";
+        if(btn) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            btn.style.opacity = "1";
+        }
     }
 }
 
-// -------------------------------- COMPETITION ENGINE 🥇 --------------------------------
+function loadActivityLog() {
+    const list = document.getElementById('activity-log');
+    if(!list) return;
+    
+    db.collection('users').doc(currentUser.uid).collection('runs').orderBy('timestamp', 'desc').limit(5).get().then((snap) => {
+        let html = '';
+        snap.forEach(doc => {
+            const r = doc.data();
+            const dateStr = r.timestamp ? r.timestamp.toDate().toLocaleDateString('ar-EG') : 'الآن';
+            html += `
+            <div style="background:rgba(255,255,255,0.05); padding:10px; margin-bottom:8px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
+                <div><span style="font-weight:bold;">${r.dist} كم</span> <span style="font-size:11px; color:#9ca3af;">${r.type}</span></div>
+                <div style="font-size:11px; color:#6b7280;">${dateStr}</div>
+            </div>`;
+        });
+        list.innerHTML = html || '<div style="text-align:center; font-size:12px; padding:10px;">لا يوجد نشاط</div>';
+    });
+}
 
-// 1. تحميل لوحة المتصدرين
-let allUsersCache = []; // عشان منعملش تحميل كل شوية
+// -------------------------------- COMPETITION (Leaderboard & Squads) --------------------------------
+
+let allUsersCache = []; 
 
 async function loadLeaderboard(filterType = 'all') {
     const list = document.getElementById('leaderboard-list');
@@ -355,85 +384,73 @@ async function loadLeaderboard(filterType = 'all') {
 
     list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">جاري تحميل الأبطال...</div>';
 
-    // لو البيانات مش عندنا، نجيبها من قاعدة البيانات
     if (allUsersCache.length === 0) {
         const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
         snap.forEach(doc => allUsersCache.push(doc.data()));
     }
 
-    // الفلترة (الكل أو منطقتي فقط)
     let displayUsers = allUsersCache;
     if (filterType === 'region') {
         displayUsers = allUsersCache.filter(u => u.region === userData.region);
     }
 
-    // الرسم (Rendering)
     list.innerHTML = '';
     if (displayUsers.length === 0) {
-        list.innerHTML = '<div style="text-align:center; padding:20px;">لا يوجد منافسين في منطقتك حتى الآن!</div>';
+        list.innerHTML = '<div style="text-align:center; padding:20px;">لا يوجد منافسين!</div>';
         return;
     }
 
     displayUsers.forEach((u, index) => {
-        // تحديد الميداليات للثلاثة الأوائل
         let rankBadge = `<span class="rank-num">${index + 1}</span>`;
         if (index === 0) rankBadge = '🥇';
         if (index === 1) rankBadge = '🥈';
         if (index === 2) rankBadge = '🥉';
 
-        // تمييز كارت المستخدم نفسه
         const isMe = (u.email === userData.email) ? 'border:1px solid #10b981; background:rgba(16,185,129,0.1);' : '';
 
         list.innerHTML += `
             <div class="leader-row" style="${isMe}">
                 <div class="rank-col">${rankBadge}</div>
-                <div class="avatar-col">${u.name.charAt(0)}</div>
+                <div class="avatar-col">${(u.name || "?").charAt(0)}</div>
                 <div class="info-col">
                     <div class="name">${u.name} ${isMe ? '(أنت)' : ''}</div>
                     <div class="region">${u.region}</div>
                 </div>
-                <div class="dist-col">${u.totalDist.toFixed(1)} كم</div>
+                <div class="dist-col">${(u.totalDist||0).toFixed(1)} كم</div>
             </div>
         `;
     });
 }
 
-// 2. تفعيل أزرار الفلتر (الكل / منطقتي)
 function filterLeaderboard(type) {
-    // تحديث شكل الأزرار
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
-    
-    // إعادة التحميل بالفلتر الجديد
+    if(event && event.target) event.target.classList.add('active');
     loadLeaderboard(type);
 }
 
-// 3. حرب المناطق (Squads Battle) 🗺️
 async function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
 
-    list.innerHTML = '<div style="text-align:center;">جاري حساب النتائج...</div>';
+    list.innerHTML = '<div style="text-align:center;">جاري الحساب...</div>';
 
-    // تجميع النقاط (في التطبيق الحقيقي يفضل عمل هذا في الـ Backend، هنا هنعمله Client-side للتجربة)
-    // هنجيب كل المستخدمين ونجمع مسافاتهم حسب المنطقة
     const snap = await db.collection('users').get();
     let regionMap = {};
 
     snap.forEach(doc => {
         const u = doc.data();
-        if (!regionMap[u.region]) regionMap[u.region] = 0;
-        regionMap[u.region] += (u.totalDist || 0);
+        if(u.region) {
+            if (!regionMap[u.region]) regionMap[u.region] = 0;
+            regionMap[u.region] += (u.totalDist || 0);
+        }
     });
 
-    // تحويل الـ Map لمصفوفة وترتيبها
     const sortedRegions = Object.keys(regionMap)
         .map(key => ({ name: key, total: regionMap[key] }))
         .sort((a, b) => b.total - a.total);
 
-    // العرض
     list.innerHTML = '';
-    const maxVal = sortedRegions[0]?.total || 1; // عشان نحسب نسبة الشريط
+    const maxVal = sortedRegions[0]?.total || 1; 
 
     sortedRegions.forEach((r, idx) => {
         const percent = (r.total / maxVal) * 100;
