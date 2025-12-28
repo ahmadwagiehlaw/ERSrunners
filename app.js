@@ -296,6 +296,34 @@ async function submitRun() {
             timestamp
         };
 
+
+      // ... نضيف دا عشان التحديات الشهرية .. داخل دالة submitRun ...
+
+        // التحقق من الشهر (عشان نصفر العداد لو شهر جديد)
+        const currentMonthKey = new Date().toISOString().slice(0, 7); // "2023-10"
+        let newMonthDist = (userData.monthDist || 0) + dist;
+        
+        // لو الشهر اختلف عن المسجل، نبدأ من جديد (تصفير)
+        if(userData.lastMonthKey !== currentMonthKey) {
+            newMonthDist = dist;
+        }
+
+        // 3. تحديث الإجمالي + الشهر
+        await db.collection('users').doc(uid).set({
+            totalDist: firebase.firestore.FieldValue.increment(dist),
+            totalRuns: firebase.firestore.FieldValue.increment(1),
+            monthDist: newMonthDist, // <--- الحقل الجديد
+            lastMonthKey: currentMonthKey // <--- عشان نعرف احنا في شهر ايه
+        }, { merge: true });
+        
+        // تحديث اللوكل
+        userData.monthDist = newMonthDist;
+        userData.lastMonthKey = currentMonthKey;
+
+        // ... باقي الكود ...
+
+      
+
         // 1. حفظ في البروفايل
         await db.collection('users').doc(uid).collection('runs').add(runData);
 
@@ -804,6 +832,40 @@ function calculateRank(totalDist) {
         distInLevel: distInLevel,
         distRequired: distRequired
     };
+  // ... داخل updateUI ...
+
+    // 4. تحديث كارت الهدف الشخصي 🎯
+    const goalRing = document.getElementById('goalRing');
+    const goalText = document.getElementById('goalText');
+    const goalSub = document.getElementById('goalSub');
+    
+    if(goalRing && goalText) {
+        const myGoal = userData.monthlyGoal || 0;
+        const currentMonthDist = userData.monthDist || 0; // المسافة هذا الشهر
+        
+        if(myGoal === 0) {
+            goalText.innerText = "اضغط لتحديد هدف";
+            goalSub.innerText = "تحدى نفسك هذا الشهر";
+            goalRing.style.background = `conic-gradient(#374151 0deg, rgba(255,255,255,0.05) 0deg)`; // حلقة فارغة
+        } else {
+            const perc = Math.min((currentMonthDist / myGoal) * 100, 100);
+            const deg = (perc / 100) * 360;
+            const remaining = Math.max(myGoal - currentMonthDist, 0).toFixed(1);
+            
+            goalText.innerText = `${currentMonthDist.toFixed(1)} / ${myGoal} كم`;
+            
+            if(remaining == 0) {
+                goalSub.innerText = "أنت أسطورة! 🎉";
+                goalSub.style.color = "#10b981"; // أخضر
+            } else {
+                goalSub.innerText = `باقي ${remaining} كم`;
+                goalSub.style.color = "#a78bfa"; // بنفسجي
+            }
+
+            // رسم الدائرة
+            goalRing.style.background = `conic-gradient(#8b5cf6 ${deg}deg, rgba(255,255,255,0.1) 0deg)`;
+        }
+    }
 }
 
 // ==================== تحديث الواجهة الشامل (Update UI) ====================
