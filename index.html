@@ -24,9 +24,11 @@
                 <h1>ERS <span class="accent-text">RUNNERS</span></h1>
                 <p>منصة العدائين المحترفين</p>
             </div>
+            
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
                 <input type="password" id="password" placeholder="كلمة المرور">
+                
                 <div id="signup-fields" style="display:none;">
                     <input type="text" id="username" placeholder="الاسم ثلاثي">
                     <select id="region">
@@ -34,6 +36,7 @@
                         <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                     </select>
                 </div>
+
                 <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
                 <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
                 <div id="auth-msg" class="error-msg"></div>
@@ -42,6 +45,7 @@
     </div>
 
     <div id="app-content" style="display:none;">
+        
         <header class="glass-header">
             <div class="header-inner">
                 <div class="header-right">
@@ -51,6 +55,7 @@
                         <h3 id="headerName">...</h3>
                     </div>
                 </div>
+
                 <div class="header-actions">
                     <div class="icon-badge add-btn" onclick="openLogModal()"><i class="ri-add-line"></i></div>
                     <div class="icon-badge" onclick="showNotifications()">
@@ -63,6 +68,7 @@
 
         <main class="main-container">
             <section id="view-home" class="view active">
+                
                 <div class="status-card">
                     <div class="status-header">
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -200,9 +206,9 @@
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>
             
-            <div class="input-wrap" style="margin-bottom:10px;">
-                <label>توقيت الجري (لحساب الأوسمة)</label>
-                <input type="datetime-local" id="log-date" style="font-size:14px;">
+            <div class="input-wrap" style="margin-bottom:15px;">
+                <label>توقيت الجري (لحساب الأوسمة 🌅🌙)</label>
+                <input type="datetime-local" id="log-date" style="font-size:14px; direction:ltr;">
             </div>
 
             <div class="input-row">
@@ -233,13 +239,13 @@
                     <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
                     <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
                 </button>
-                <button class="setting-item delete" onclick="logout()">
-                    <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
-                    <div class="setting-text">تسجيل الخروج</div>
-                </button>
                 <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
                     <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
                     <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
+                </button>
+                <button class="setting-item delete" onclick="logout()" style="margin-top:5px;">
+                    <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
+                    <div class="setting-text">تسجيل الخروج</div>
                 </button>
             </div>
             <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
