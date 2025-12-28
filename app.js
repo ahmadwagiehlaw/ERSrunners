@@ -1,4 +1,4 @@
-/* ERS Runners - V19 (Final Polish) */
+/* ERS Runners - V1.9 (Final Polish) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
