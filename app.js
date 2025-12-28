@@ -352,17 +352,15 @@ async function submitRun() {
     }
 }
 
-// ==================== دالة تحميل الـ Feed ====================
+// ==================== 1. تحديث دالة الـ Feed (مع اللايكات) ====================
 function loadGlobalFeed() {
     const feedContainer = document.getElementById('global-feed-list');
     if(!feedContainer) return;
 
-    // عرض آخر 10 أنشطة
     db.collection('activity_feed')
       .orderBy('timestamp', 'desc')
-      .limit(10)
-      .get()
-      .then(snap => {
+      .limit(20) // زودنا العدد شوية
+      .onSnapshot(snap => { // خليناها Real-time عشان اللايكات تظهر لحظياً
           let html = '';
           if(snap.empty) {
               feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة حديثة</div>';
@@ -371,7 +369,9 @@ function loadGlobalFeed() {
 
           snap.forEach(doc => {
               const post = doc.data();
-              // حساب الوقت المنقضي (مثلاً: منذ 5 دقائق)
+              const postId = doc.id;
+              
+              // حساب الوقت
               let timeAgo = "الآن";
               if(post.timestamp) {
                   const diff = new Date() - post.timestamp.toDate();
@@ -380,6 +380,13 @@ function loadGlobalFeed() {
                   else if(mins < 1440) timeAgo = `منذ ${Math.floor(mins/60)} س`;
                   else timeAgo = `منذ ${Math.floor(mins/1440)} يوم`;
               }
+
+              // منطق اللايك ❤️
+              const likes = post.likes || [];
+              const isLiked = likes.includes(currentUser.uid);
+              const likeCount = likes.length;
+              const likeClass = isLiked ? 'liked' : '';
+              const likeIcon = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
 
               html += `
                 <div class="feed-card">
@@ -397,10 +404,118 @@ function loadGlobalFeed() {
                         <span class="highlight">${post.dist} كم</span> 
                         في ${post.time} دقيقة 🔥
                     </div>
+                    <div class="feed-actions">
+                        <button class="btn-like ${likeClass}" onclick="toggleLike('${postId}', '${post.uid}')">
+                            <i class="${likeIcon}"></i>
+                            <span>${likeCount > 0 ? likeCount : 'تشجيع'}</span>
+                        </button>
+                    </div>
                 </div>
               `;
           });
           feedContainer.innerHTML = html;
+      });
+}
+
+// ==================== 2. دالة عمل اللايك (Toggle Like) ====================
+async function toggleLike(postId, postOwnerId) {
+    if(!currentUser) return;
+    
+    const postRef = db.collection('activity_feed').doc(postId);
+    const uid = currentUser.uid;
+
+    try {
+        const doc = await postRef.get();
+        if(!doc.exists) return;
+
+        const likes = doc.data().likes || [];
+        
+        if (likes.includes(uid)) {
+            // إزالة اللايك (Unlike)
+            await postRef.update({
+                likes: firebase.firestore.FieldValue.arrayRemove(uid)
+            });
+        } else {
+            // إضافة لايك (Like)
+            await postRef.update({
+                likes: firebase.firestore.FieldValue.arrayUnion(uid)
+            });
+
+            // إرسال إشعار لصاحب البوست (لو مش أنا اللي عامل اللايك لنفسي)
+            if(postOwnerId !== uid) {
+                sendNotification(postOwnerId, "قام " + userData.name + " بتشجيعك ❤️");
+            }
+        }
+    } catch(e) {
+        console.error("Like Error:", e);
+    }
+}
+
+// ==================== 3. نظام الإشعارات (Notifications) ====================
+
+// إرسال إشعار
+async function sendNotification(receiverId, message) {
+    try {
+        await db.collection('users').doc(receiverId).collection('notifications').add({
+            msg: message,
+            read: false,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) { console.error(e); }
+}
+
+// فتح قائمة الإشعارات
+function showNotifications() {
+    const modal = document.getElementById('modal-notifications');
+    const list = document.getElementById('notifications-list');
+    const badge = document.getElementById('notif-dot');
+    
+    if(modal) modal.style.display = 'flex';
+    if(badge) badge.classList.remove('active'); // إخفاء النقطة الحمراء
+
+    // تحميل الإشعارات
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+      .orderBy('timestamp', 'desc')
+      .limit(10)
+      .get()
+      .then(snap => {
+          if(snap.empty) {
+              list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات</div>';
+              return;
+          }
+          let html = '';
+          snap.forEach(doc => {
+              const n = doc.data();
+              // تحديث الإشعار ليصبح مقروء
+              doc.ref.update({ read: true }); 
+              
+              const time = n.timestamp ? new Date(n.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
+              
+              html += `
+                <div class="notif-item">
+                    <div class="notif-icon"><i class="ri-notification-3-fill"></i></div>
+                    <div class="notif-content">
+                        ${n.msg}
+                        <span class="notif-time">${time}</span>
+                    </div>
+                </div>
+              `;
+          });
+          list.innerHTML = html;
+      });
+}
+
+// مراقبة الإشعارات الجديدة (لتنويير الجرس)
+function listenForNotifications() {
+    if(!currentUser) return;
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+      .where('read', '==', false)
+      .onSnapshot(snap => {
+          const badge = document.getElementById('notif-dot');
+          if(!snap.empty && badge) {
+              badge.classList.add('active');
+              // ممكن تشغيل صوت هنا مستقبلاً
+          }
       });
 }
 
