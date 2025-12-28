@@ -1,4 +1,4 @@
-/* ERS Runners - V17 Ultimate (All Features) */
+/* ERS Runners - V18 Ultimate (Clean Single File) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -9,10 +9,7 @@ const firebaseConfig = {
   appId: "1:493110452684:web:db892ab6e6c88b3e6dbd69"
 };
 
-// تهيئة التطبيق
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
 const auth = firebase.auth();
 const db = firebase.firestore();
 
@@ -20,7 +17,7 @@ let currentUser = null;
 let userData = {};
 let isSignupMode = false;
 
-// ==================== 1. نظام المصادقة (Auth) ====================
+// ==================== 1. Auth & Init ====================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
@@ -30,178 +27,43 @@ auth.onAuthStateChanged(async (user) => {
                 userData = doc.data();
                 initApp();
             } else {
-                // حالة نادرة: المستخدم مسجل في Auth بس ملوش داتا
-                console.warn("User data missing, creating default...");
                 userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0 };
                 initApp();
             }
-        } catch (e) { console.error("Auth Data Error:", e); }
+        } catch (e) { console.error("Auth Error:", e); }
     } else {
         currentUser = null;
         showAuthScreen();
     }
 });
 
-function toggleAuthMode() {
-    isSignupMode = !isSignupMode;
-    const fields = document.getElementById('signup-fields');
-    const btn = document.getElementById('toggleAuthBtn');
-    const mainBtn = document.querySelector('.auth-box .btn-primary');
-    
-    if (fields && btn && mainBtn) {
-        if (isSignupMode) {
-            fields.style.display = 'block';
-            btn.innerText = "لديك حساب بالفعل؟ تسجيل الدخول";
-            mainBtn.innerText = "إنشاء حساب جديد";
-        } else {
-            fields.style.display = 'none';
-            btn.innerText = "ليس لديك حساب؟ سجل الآن";
-            mainBtn.innerText = "دخول";
-        }
-    }
-}
-
-async function handleAuth() {
-    const emailEl = document.getElementById('email');
-    const passEl = document.getElementById('password');
-    const msgEl = document.getElementById('auth-msg');
-    
-    if (!emailEl || !passEl) return;
-    const email = emailEl.value;
-    const pass = passEl.value;
-    if (msgEl) msgEl.innerText = "";
-
-    try {
-        if (!email || !pass) throw new Error("يرجى ملء البيانات");
-
-        if (isSignupMode) {
-            const name = document.getElementById('username').value;
-            const region = document.getElementById('region').value;
-            if (!name || !region) throw new Error("أكمل البيانات المطلوبة");
-
-            const cred = await auth.createUserWithEmailAndPassword(email, pass);
-            await db.collection('users').doc(cred.user.uid).set({
-                name: name, region: region, email: email,
-                totalDist: 0, totalRuns: 0, level: "Mubtadi",
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-        } else {
-            await auth.signInWithEmailAndPassword(email, pass);
-        }
-    } catch (err) {
-        if (msgEl) msgEl.innerText = err.message;
-    }
-}
-
-function logout() {
-    if(confirm("خروج؟")) { auth.signOut(); window.location.reload(); }
-}
-
-// ==================== 2. إدارة الواجهة (UI Management) ====================
-function showAuthScreen() {
-    const authScreen = document.getElementById('auth-screen');
-    const appContent = document.getElementById('app-content');
-    if(authScreen) authScreen.style.display = 'flex';
-    if(appContent) appContent.style.display = 'none';
-}
-
 function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
-    
-    updateUI(); // تحديث الواجهة بكل البيانات
+    updateUI();
     loadActivityLog();
     loadActiveChallenges(); 
     loadGlobalFeed();
     listenForNotifications();
 }
 
-function switchView(viewId) {
-    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-    
-    const view = document.getElementById('view-' + viewId);
-    if(view) view.classList.add('active');
-    
-    const navMap = {'home': 0, 'challenges': 1, 'profile': 2};
-    const navItems = document.querySelectorAll('.nav-item');
-    if(navItems[navMap[viewId]]) navItems[navMap[viewId]].classList.add('active');
-}
-
-function setTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-    const targetTab = document.getElementById('tab-' + tabName);
-    if(targetTab) targetTab.classList.add('active');
-    
-    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
-    if(event && event.target) event.target.classList.add('active');
-
-    if (tabName === 'leaderboard') loadLeaderboard('all');
-    if (tabName === 'squads') loadRegionBattle();
-    if (tabName === 'active-challenges') loadActiveChallenges();
-}
-
-// ==================== 3. نظام المستويات (Rank Calculation) ====================
-function calculateRank(totalDist) {
-    // تعريف المستويات
-    const levels = [
-        { name: "مبتدئ", min: 0, class: "rank-mubtadi", next: 50 },
-        { name: "هاوي", min: 50, class: "rank-hawy", next: 150 },
-        { name: "عداء", min: 150, class: "rank-runner", next: 500 },
-        { name: "محترف", min: 500, class: "rank-pro", next: 1000 },
-        { name: "أسطورة", min: 1000, class: "rank-legend", next: 10000 }
-    ];
-
-    let currentLevel = levels[0];
-    for (let i = levels.length - 1; i >= 0; i--) {
-        if (totalDist >= levels[i].min) {
-            currentLevel = levels[i];
-            break;
-        }
-    }
-
-    const distRequired = currentLevel.next - currentLevel.min;
-    const distInLevel = totalDist - currentLevel.min;
-    let percentage = (distInLevel / distRequired) * 100;
-    if (percentage > 100) percentage = 100;
-
-    return {
-        name: currentLevel.name,
-        class: currentLevel.class,
-        nextTarget: currentLevel.next,
-        remaining: currentLevel.next - totalDist,
-        percentage: percentage,
-        distInLevel: distInLevel,
-        distRequired: distRequired
-    };
-}
-
-function getNextRankName(current) {
-    if(current === "مبتدئ") return "هاوي";
-    if(current === "هاوي") return "عداء";
-    if(current === "عداء") return "محترف";
-    if(current === "محترف") return "أسطورة";
-    return "";
-}
-
-// ==================== 4. تحديث الواجهة الشامل (Update UI) ====================
+// ==================== 2. UI Updates (The Captain Logic) ====================
 function updateUI() {
     try {
-      
-    // 1. البيانات الأساسية
-    const headerName = document.getElementById('headerName');
-    
-    // هنا نقوم بتغيير النص في الـ HTML مباشرة قبل وضع الاسم
-    const helloText = document.querySelector('.hello-text');
-    if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; // التعديل هنا
+        // Basic Info
+        const headerName = document.getElementById('headerName');
+        const helloText = document.querySelector('.hello-text');
+        
+        // تغيير الترحيب
+        if(helloText) helloText.innerHTML = "أهلاً يا كابتن 👋"; 
+        if (headerName) headerName.innerText = userData.name || "Runner";
 
-    if (headerName) {
-        // نعرض الاسم كما هو (UserData.name) الذي يحتوي الاسم الثلاثي المسجل
-        headerName.innerText = userData.name || "Runner";
-    }
+        const monthDistEl = document.getElementById('monthDist');
+        const totalRunsEl = document.getElementById('totalRuns');
+        if (monthDistEl) monthDistEl.innerText = (userData.monthDist || 0).toFixed(1);
+        if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
 
-// ... باقي الكود ...
-        // ب) البروفايل
+        // Profile
         const profileName = document.getElementById('profileName');
         const profileRegion = document.getElementById('profileRegion');
         const profileAvatar = document.getElementById('profileAvatar');
@@ -214,7 +76,7 @@ function updateUI() {
         if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
         if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
 
-        // ج) نظام المستويات (Rank & XP)
+        // Rank & XP Bar
         const totalDist = userData.totalDist || 0;
         const rankData = calculateRank(totalDist);
 
@@ -242,7 +104,7 @@ function updateUI() {
         if(xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
         if(xpMessage) xpMessage.innerText = rankData.name === "أسطورة" ? "أنت الملك!" : `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
 
-        // د) الهدف الشهري (Personal Goal) 🎯
+        // Goal Ring 🎯
         const goalRing = document.getElementById('goalRing');
         const goalText = document.getElementById('goalText');
         const goalSub = document.getElementById('goalSub');
@@ -269,21 +131,37 @@ function updateUI() {
                     goalSub.innerText = `باقي ${remaining} كم`;
                     goalSub.style.color = "#a78bfa";
                 }
-                
-                // رسم الدائرة
                 goalRing.style.background = `conic-gradient(#8b5cf6 ${deg}deg, rgba(255,255,255,0.1) 0deg)`;
             }
         }
-
-    } catch (error) {
-        console.error("UpdateUI Error:", error);
-    }
+    } catch (error) { console.error("UI Update Error:", error); }
 }
 
-// ==================== 5. تسجيل النشاط (Run Logic) ====================
-function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
-function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function calculateRank(totalDist) {
+    const levels = [
+        { name: "مبتدئ", min: 0, class: "rank-mubtadi", next: 50 },
+        { name: "هاوي", min: 50, class: "rank-hawy", next: 150 },
+        { name: "عداء", min: 150, class: "rank-runner", next: 500 },
+        { name: "محترف", min: 500, class: "rank-pro", next: 1000 },
+        { name: "أسطورة", min: 1000, class: "rank-legend", next: 10000 }
+    ];
+    let currentLevel = levels[0];
+    for (let i = levels.length - 1; i >= 0; i--) {
+        if (totalDist >= levels[i].min) { currentLevel = levels[i]; break; }
+    }
+    const distRequired = currentLevel.next - currentLevel.min;
+    const distInLevel = totalDist - currentLevel.min;
+    let percentage = (distInLevel / distRequired) * 100;
+    if (percentage > 100) percentage = 100;
+    return { name: currentLevel.name, class: currentLevel.class, nextTarget: currentLevel.next, remaining: currentLevel.next - totalDist, percentage: percentage, distInLevel: distInLevel, distRequired: distRequired };
+}
 
+function getNextRankName(current) {
+    if(current === "مبتدئ") return "هاوي"; if(current === "هاوي") return "عداء";
+    if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
+}
+
+// ==================== 3. Core Features (Run, Goal, Likes) ====================
 async function submitRun() {
     const btn = document.getElementById('save-run-btn');
     const dist = parseFloat(document.getElementById('log-dist').value);
@@ -291,175 +169,154 @@ async function submitRun() {
     const type = document.getElementById('log-type').value;
     const link = document.getElementById('log-link').value;
 
-    if (!dist || !time) { alert("المسافة والزمن مطلوبين!"); return; }
-    
+    if (!dist || !time) return alert("البيانات ناقصة");
     if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
         const timestamp = firebase.firestore.FieldValue.serverTimestamp();
         
-        // منطق حساب مسافة الشهر
-        const currentMonthKey = new Date().toISOString().slice(0, 7); // "2023-12"
+        // Month Logic
+        const currentMonthKey = new Date().toISOString().slice(0, 7); 
         let newMonthDist = (userData.monthDist || 0) + dist;
-        // تصفير لو شهر جديد
-        if(userData.lastMonthKey !== currentMonthKey) {
-            newMonthDist = dist;
-        }
+        if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
 
         const runData = { dist, time, type, link, date: new Date().toISOString(), timestamp };
 
-        // 1. حفظ في المستخدم
         await db.collection('users').doc(uid).collection('runs').add(runData);
-
-        // 2. حفظ في الـ Feed
         await db.collection('activity_feed').add({
-            uid: uid,
-            userName: userData.name || "Unknown",
-            userRegion: userData.region || "General",
-            ...runData,
-            likes: []
+            uid: uid, userName: userData.name, userRegion: userData.region,
+            ...runData, likes: []
         });
-
-        // 3. تحديث الإحصائيات (الإجمالي + الشهر)
         await db.collection('users').doc(uid).set({
             totalDist: firebase.firestore.FieldValue.increment(dist),
             totalRuns: firebase.firestore.FieldValue.increment(1),
-            monthDist: newMonthDist,
-            lastMonthKey: currentMonthKey
+            monthDist: newMonthDist, lastMonthKey: currentMonthKey
         }, { merge: true });
 
-        // 4. تحديث التحديات
-        const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
-        if (!activeChCalls.empty) {
-            const batch = db.batch();
-            activeChCalls.forEach(doc => {
-                batch.set(doc.ref.collection('participants').doc(uid), {
-                    progress: firebase.firestore.FieldValue.increment(dist),
-                    lastUpdate: timestamp,
-                    name: userData.name, region: userData.region
-                }, { merge: true });
-            });
-            await batch.commit();
-        }
+        // Challenges Update
+        const activeCh = await db.collection('challenges').where('active', '==', true).get();
+        const batch = db.batch();
+        activeCh.forEach(doc => {
+            batch.set(doc.ref.collection('participants').doc(uid), {
+                progress: firebase.firestore.FieldValue.increment(dist),
+                lastUpdate: timestamp, name: userData.name, region: userData.region
+            }, { merge: true });
+        });
+        await batch.commit();
 
-        // تحديث البيانات المحلية فوراً
-        userData.totalDist = (userData.totalDist || 0) + dist;
-        userData.totalRuns = (userData.totalRuns || 0) + 1;
-        userData.monthDist = newMonthDist;
-        userData.lastMonthKey = currentMonthKey;
+        // Local Update
+        userData.totalDist += dist; userData.totalRuns += 1;
+        userData.monthDist = newMonthDist; userData.lastMonthKey = currentMonthKey;
         
-        alert("تم الحفظ بنجاح! 🚀");
+        alert("تم الحفظ!");
         closeModal('modal-log');
-        
-        // تصفير الحقول
         document.getElementById('log-dist').value = '';
         document.getElementById('log-time').value = '';
         document.getElementById('log-link').value = '';
         
-        updateUI(); // هذا سيحدث الدائرة وشريط المستويات
-        loadGlobalFeed();
-        loadActivityLog();
+        updateUI(); loadGlobalFeed(); loadActivityLog();
 
-    } catch (error) {
-        console.error(error);
-        alert("خطأ: " + error.message);
-    } finally {
-        if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
-    }
+    } catch (error) { alert("خطأ: " + error.message); } 
+    finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
 }
 
-// ==================== 6. الهدف الشخصي (Set Goal) ====================
 async function setPersonalGoal() {
-    const currentGoal = userData.monthlyGoal || 0;
-    const newGoal = prompt("حددي هدفك لهذا الشهر (كم):", currentGoal);
-    
-    if(newGoal !== null && newGoal > 0) {
-        try {
-            await db.collection('users').doc(currentUser.uid).update({
-                monthlyGoal: parseFloat(newGoal)
-            });
-            userData.monthlyGoal = parseFloat(newGoal);
-            alert("تم تحديد الهدف! 🎯");
-            updateUI();
-        } catch(e) { console.error(e); }
+    const newGoal = prompt("حددي هدفك لهذا الشهر (كم):", userData.monthlyGoal || 0);
+    if(newGoal && newGoal > 0) {
+        await db.collection('users').doc(currentUser.uid).update({ monthlyGoal: parseFloat(newGoal) });
+        userData.monthlyGoal = parseFloat(newGoal);
+        updateUI();
     }
 }
 
-// ==================== 7. الفيد واللايكات والإشعارات ====================
+// ==================== 4. Feed & Likes ====================
 function loadGlobalFeed() {
-    const feedContainer = document.getElementById('global-feed-list');
-    if(!feedContainer) return;
-
-    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20)
-      .onSnapshot(snap => {
-          let html = '';
-          if(snap.empty) {
-              feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة</div>';
-              return;
-          }
-
-          snap.forEach(doc => {
-              const post = doc.data();
-              let timeAgo = "الآن";
-              if(post.timestamp) {
-                  const diff = new Date() - post.timestamp.toDate();
-                  const mins = Math.floor(diff / 60000);
-                  if(mins < 60) timeAgo = `منذ ${mins} د`;
-                  else if(mins < 1440) timeAgo = `منذ ${Math.floor(mins/60)} س`;
-                  else timeAgo = `منذ ${Math.floor(mins/1440)} يوم`;
-              }
-              
-              let linkBtn = '';
-              if(post.link && post.link.includes('http')) {
-                  linkBtn = `<a href="${post.link}" target="_blank" class="btn-link-proof"><i class="ri-link"></i> إثبات</a>`;
-              }
-
-              const isLiked = post.likes && post.likes.includes(currentUser.uid);
-              const likeClass = isLiked ? 'liked' : '';
-              const likeIcon = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
-
-              html += `
-                <div class="feed-card">
-                    <div class="feed-header">
-                        <div class="feed-user">
-                            <div class="feed-avatar">${(post.userName||"?").charAt(0)}</div>
-                            <div>
-                                <div class="feed-name">${post.userName}</div>
-                                <div class="feed-meta">${post.userRegion} • ${timeAgo}</div>
-                            </div>
-                        </div>
-                        ${linkBtn}
+    const list = document.getElementById('global-feed-list');
+    if(!list) return;
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+        let html = '';
+        if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:10px;">لا توجد أنشطة</div>'; return; }
+        snap.forEach(doc => {
+            const p = doc.data();
+            const isLiked = p.likes && p.likes.includes(currentUser.uid);
+            const linkBtn = (p.link && p.link.includes('http')) ? `<a href="${p.link}" target="_blank" class="btn-link-proof"><i class="ri-link"></i> إثبات</a>` : '';
+            
+            html += `
+            <div class="feed-card">
+                <div class="feed-header">
+                    <div class="feed-user">
+                        <div class="feed-avatar">${(p.userName||"?").charAt(0)}</div>
+                        <div><div class="feed-name">${p.userName}</div><div class="feed-meta">${p.userRegion}</div></div>
                     </div>
-                    <div class="feed-body">
-                        أكمل <strong>${post.type}</strong> لمسافة <span class="highlight">${post.dist} كم</span> في ${post.time} دقيقة
-                    </div>
-                    <div class="feed-actions">
-                        <button class="btn-like ${likeClass}" onclick="toggleLike('${doc.id}', '${post.uid}')">
-                            <i class="${likeIcon}"></i> <span>${(post.likes||[]).length || ''}</span>
-                        </button>
-                    </div>
-                </div>`;
-          });
-          feedContainer.innerHTML = html;
-      });
+                    ${linkBtn}
+                </div>
+                <div class="feed-body">أكمل <strong>${p.type}</strong> لمسافة <span class="highlight">${p.dist} كم</span> في ${p.time} دقيقة</div>
+                <div class="feed-actions">
+                    <button class="btn-like ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
+                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i> <span>${(p.likes||[]).length || ''}</span>
+                    </button>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    });
 }
 
-async function toggleLike(postId, postOwnerId) {
+async function toggleLike(pid, uid) {
     if(!currentUser) return;
-    const postRef = db.collection('activity_feed').doc(postId);
-    const uid = currentUser.uid;
-    try {
-        const doc = await postRef.get();
-        if(!doc.exists) return;
+    const ref = db.collection('activity_feed').doc(pid);
+    const doc = await ref.get();
+    if(doc.exists) {
         const likes = doc.data().likes || [];
-        if (likes.includes(uid)) {
-            await postRef.update({ likes: firebase.firestore.FieldValue.arrayRemove(uid) });
+        if(likes.includes(currentUser.uid)) {
+            await ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
         } else {
-            await postRef.update({ likes: firebase.firestore.FieldValue.arrayUnion(uid) });
-            if(postOwnerId !== uid) sendNotification(postOwnerId, "قام " + userData.name + " بتشجيعك ❤️");
+            await ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
+            if(uid !== currentUser.uid) sendNotification(uid, `${userData.name} شجعك ❤️`);
         }
-    } catch(e) { console.error(e); }
+    }
+}
+
+// ==================== 5. Helper Functions ====================
+function toggleAuthMode() {
+    isSignupMode = !isSignupMode;
+    document.getElementById('signup-fields').style.display = isSignupMode ? 'block' : 'none';
+    document.getElementById('toggleAuthBtn').innerText = isSignupMode ? "لديك حساب؟" : "سجل الآن";
+}
+async function handleAuth() {
+    const email = document.getElementById('email').value;
+    const pass = document.getElementById('password').value;
+    if(isSignupMode) {
+        const name = document.getElementById('username').value;
+        const region = document.getElementById('region').value;
+        const c = await auth.createUserWithEmailAndPassword(email, pass);
+        await db.collection('users').doc(c.user.uid).set({name, region, email, totalDist:0, totalRuns:0});
+    } else {
+        await auth.signInWithEmailAndPassword(email, pass);
+    }
+}
+function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function showAuthScreen() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('app-content').style.display='none';}
+function openSettingsModal() { document.getElementById('modal-settings').style.display='flex'; }
+function showNotifications() { document.getElementById('modal-notifications').style.display='flex'; document.getElementById('notif-dot').classList.remove('active'); loadNotifications(); }
+function openEditProfile() { document.getElementById('modal-edit-profile').style.display='flex'; }
+
+// Load Notifications logic
+function loadNotifications() {
+    const list = document.getElementById('notifications-list');
+    db.collection('users').doc(currentUser.uid).collection('notifications').orderBy('timestamp','desc').limit(10).get().then(snap => {
+        let html = '';
+        snap.forEach(d => { html += `<div class="notif-item"><div class="notif-content">${d.data().msg}</div></div>`; d.ref.update({read:true}); });
+        list.innerHTML = html || 'لا يوجد إشعارات';
+    });
+}
+function listenForNotifications() {
+    if(!currentUser) return;
+    db.collection('users').doc(currentUser.uid).collection('notifications').where('read','==',false).onSnapshot(s => {
+        if(!s.empty) document.getElementById('notif-dot').classList.add('active');
+    });
 }
 
 async function sendNotification(receiverId, message) {
@@ -470,116 +327,34 @@ async function sendNotification(receiverId, message) {
     } catch(e) {}
 }
 
-function showNotifications() {
-    const modal = document.getElementById('modal-notifications');
-    const list = document.getElementById('notifications-list');
-    const badge = document.getElementById('notif-dot');
-    if(modal) modal.style.display = 'flex';
-    if(badge) badge.classList.remove('active');
-
-    db.collection('users').doc(currentUser.uid).collection('notifications')
-      .orderBy('timestamp', 'desc').limit(10).get()
-      .then(snap => {
-          if(snap.empty) {
-              list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات</div>';
-              return;
-          }
-          let html = '';
-          snap.forEach(doc => {
-              const n = doc.data();
-              doc.ref.update({ read: true }); 
-              html += `
-                <div class="notif-item">
-                    <div class="notif-icon"><i class="ri-notification-3-fill"></i></div>
-                    <div class="notif-content">${n.msg}</div>
-                </div>`;
-          });
-          list.innerHTML = html;
-      });
-}
-
-function listenForNotifications() {
-    if(!currentUser) return;
-    db.collection('users').doc(currentUser.uid).collection('notifications')
-      .where('read', '==', false)
-      .onSnapshot(snap => {
-          const badge = document.getElementById('notif-dot');
-          if(!snap.empty && badge) badge.classList.add('active');
-      });
-}
-
-// ==================== 8. الأدمن والإعدادات ====================
-function openSettingsModal() { document.getElementById('modal-settings').style.display = 'flex'; }
-
+// Admin & Updates
 function openAdminAuth() {
-    const pin = prompt("أدخل كود المشرف:");
-    if(pin === "1234") { 
-        switchView('admin');
-        loadAdminFeed();
-        closeModal('modal-settings');
-    } else {
-        alert("كود خاطئ");
-    }
+    if(prompt("Code:") === "1234") { switchView('admin'); closeModal('modal-settings'); loadAdminFeed(); }
 }
-
-async function createChallengeUI() {
-    const title = document.getElementById('admin-ch-title').value;
-    const desc = document.getElementById('admin-ch-desc').value;
-    const target = parseFloat(document.getElementById('admin-ch-target').value);
-    const days = parseInt(document.getElementById('admin-ch-days').value);
-
-    if(!title || !target) return alert("البيانات ناقصة");
-
-    try {
-        await db.collection('challenges').add({
-            title, desc, target,
-            active: true, type: "distance",
-            startDate: new Date().toISOString(),
-            endDate: new Date(Date.now() + days * 86400000).toISOString()
-        });
-        alert("تم النشر!");
-        switchView('challenges');
-    } catch(e) { alert("خطأ: " + e.message); }
-}
-
-function loadAdminFeed() {
-    const list = document.getElementById('admin-feed-list');
-    if(!list) return;
-    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(10).get()
-      .then(snap => {
-          let html = '';
-          snap.forEach(doc => {
-              const p = doc.data();
-              html += `
-                <div class="feed-card" style="margin-bottom:10px; border-color:rgba(255,255,255,0.1);">
-                    <div style="display:flex; justify-content:space-between;">
-                        <span style="font-weight:bold;">${p.userName}</span>
-                        <span>${p.dist} كم</span>
-                    </div>
-                    <button class="btn-admin-delete" onclick="adminDeletePost('${doc.id}')" style="margin-top:5px; color:red;">حذف</button>
-                </div>`;
-          });
-          list.innerHTML = html || 'لا يوجد';
-      });
-}
-
-async function adminDeletePost(id) {
-    if(confirm("حذف؟")) {
-        await db.collection('activity_feed').doc(id).delete();
-        alert("تم الحذف");
-        loadAdminFeed();
-        loadGlobalFeed();
-    }
-}
-
 async function forceUpdateApp() {
-    if(confirm("تحديث التطبيق؟")) {
-        if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            for(let reg of regs) await reg.unregister();
-        }
+    if(confirm("تحديث؟")) {
+        if('serviceWorker' in navigator) { (await navigator.serviceWorker.getRegistrations()).forEach(r => r.unregister()); }
         window.location.reload(true);
     }
+}
+async function createChallengeUI() {
+    const t = document.getElementById('admin-ch-title').value;
+    const target = document.getElementById('admin-ch-target').value;
+    await db.collection('challenges').add({title:t, target:parseFloat(target), active:true, startDate: new Date().toISOString()});
+    alert("تم");
+}
+function loadAdminFeed() {
+    const list = document.getElementById('admin-feed-list');
+    db.collection('activity_feed').orderBy('timestamp','desc').limit(10).get().then(s => {
+        let h = ''; s.forEach(d => h += `<div>${d.data().userName} <button onclick="adminDelete('${d.id}')">حذف</button></div>`);
+        list.innerHTML = h;
+    });
+}
+async function adminDelete(id) { await db.collection('activity_feed').doc(id).delete(); alert("حذف"); loadAdminFeed(); }
+async function saveProfileChanges() {
+    const name = document.getElementById('edit-name').value;
+    await db.collection('users').doc(currentUser.uid).update({name});
+    updateUI(); closeModal('modal-edit-profile');
 }
 
 // السجل الشخصي
