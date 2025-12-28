@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=20">
+    <link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
 
@@ -24,7 +24,6 @@
                 <h1>ERS <span class="accent-text">RUNNERS</span></h1>
                 <p>منصة العدائين المحترفين</p>
             </div>
-            
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
                 <input type="password" id="password" placeholder="كلمة المرور">
@@ -48,7 +47,7 @@
                 <div class="header-right">
                     <img src="ers-logo.png" class="brand-logo" alt="Logo"> 
                     <div class="user-greeting-box">
-                        <span class="hello-text">أهلاً كابتن👋</span>
+                        <span class="hello-text">أهلاً يا كابتن 👋</span>
                         <h3 id="headerName">...</h3>
                     </div>
                 </div>
@@ -165,9 +164,6 @@
                         <div class="big-avatar" id="profileAvatar"></div>
                         <button class="btn-icon-edit" onclick="openEditProfile()"><i class="ri-pencil-line"></i></button>
                     </div>
-
-
-                    
                     <h2 id="profileName">...</h2>
                     <div class="profile-region-badge" id="profileRegion">...</div>
                     <div class="profile-stats-row">
@@ -183,8 +179,6 @@
                     </div>
                 </div>
 
-
-                
                 <div class="log-section">
                     <h3 class="section-title">سجل الأنشطة</h3>
                     <div id="activity-log" class="log-list"></div>
@@ -193,25 +187,24 @@
                     <i class="ri-logout-box-r-line"></i> تسجيل خروج
                 </button>
             </section>
-
         </main>
 
         <nav class="bottom-nav">
-            <div class="nav-item active" onclick="switchView('home')">
-                <i class="ri-home-4-line"></i><span>الرئيسية</span>
-            </div>
-            <div class="nav-item" onclick="switchView('challenges')">
-                <i class="ri-trophy-line"></i><span>المنافسة</span>
-            </div>
-            <div class="nav-item" onclick="switchView('profile')">
-                <i class="ri-user-smile-line"></i><span>بروفايل</span>
-            </div>
+            <div class="nav-item active" onclick="switchView('home')"><i class="ri-home-4-line"></i><span>الرئيسية</span></div>
+            <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>المنافسة</span></div>
+            <div class="nav-item" onclick="switchView('profile')"><i class="ri-user-smile-line"></i><span>بروفايل</span></div>
         </nav>
     </div>
 
     <div id="modal-log" class="modal-overlay">
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>
+            
+            <div class="input-wrap" style="margin-bottom:10px;">
+                <label>توقيت الجري (لحساب الأوسمة)</label>
+                <input type="datetime-local" id="log-date" style="font-size:14px;">
+            </div>
+
             <div class="input-row">
                 <div class="input-wrap"><label>المسافة (كم)</label><input type="number" id="log-dist" step="0.1" inputmode="decimal"></div>
                 <div class="input-wrap"><label>الزمن (دقائق)</label><input type="number" id="log-time" inputmode="numeric"></div>
@@ -244,20 +237,12 @@
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
                     <div class="setting-text">تسجيل الخروج</div>
                 </button>
+                <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
+                    <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
+                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
+                </button>
             </div>
             <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
-            <button class="setting-item" onclick="logout()">
-        <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
-        <div class="setting-text">تسجيل الخروج</div>
-    </button>
-
-    <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
-        <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
-        <div class="setting-text" style="color:#ef4444;">
-            <span>حذف الحساب والبيانات</span>
-            <small>لا يمكن التراجع عن هذا الإجراء</small>
-        </div>
-    </button>
         </div>
     </div>
     
@@ -273,6 +258,22 @@
         </div>
     </div>
 
+    <div id="modal-comments" class="modal-overlay">
+        <div class="modal-box" style="height: 70vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:16px;">التعليقات 💬</h3>
+                <button onclick="closeModal('modal-comments')" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
+            </div>
+            <div id="comments-list" class="comments-scroll-area">
+                <div style="text-align:center; padding:20px; color:#9ca3af;">جاري التحميل...</div>
+            </div>
+            <div class="comment-input-area">
+                <input type="text" id="comment-text" placeholder="اكتب تعليقاً مشجعاً..." autocomplete="off">
+                <button class="btn-send" onclick="sendComment()"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </div>
+    </div>
+
     <div id="modal-edit-profile" class="modal-overlay">
         <div class="modal-box">
             <h3>تعديل البيانات ✏️</h3>
@@ -281,7 +282,7 @@
                 <input type="text" id="edit-name">
                 <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
-                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Sohag">سوهاج</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Other">أخرى</option>
+                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                 </select>
             </div>
             <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
@@ -289,32 +290,11 @@
         </div>
     </div>
 
-<div id="modal-comments" class="modal-overlay">
-        <div class="modal-box" style="height: 70vh; display:flex; flex-direction:column;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
-                <h3 style="margin:0; font-size:16px;">التعليقات 💬</h3>
-                <button onclick="closeModal('modal-comments')" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
-            </div>
-            
-            <div id="comments-list" class="comments-scroll-area">
-                <div style="text-align:center; padding:20px; color:#9ca3af;">جاري التحميل...</div>
-            </div>
-
-            <div class="comment-input-area">
-                <input type="text" id="comment-text" placeholder="اكتب تعليقاً مشجعاً..." autocomplete="off">
-                <button class="btn-send" onclick="sendComment()">
-                    <i class="ri-send-plane-fill"></i>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="app.js?v=20"></script> 
+    <script src="app.js?v=21"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
