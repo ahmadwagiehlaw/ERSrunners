@@ -96,16 +96,14 @@ function initApp() {
 }
 
 function updateUI() {
-    // 1. تحديث الاسم في الهيدر
+    // 1. تحديث الاسم في الهيدر (مع التأكد أن العنصر موجود)
     const headerName = document.getElementById('headerName');
     if (headerName) {
         headerName.innerText = userData.name || "Runner";
     }
 
-    /* تم إلغاء هذا السطر لأننا استبدلنا الافتار باللوجو
-       document.getElementById('headerAvatar').innerText = ... 
-    */
-    
+    // ❌ تم حذف السطر الذي يسبب المشكلة (headerAvatar) لأننا نستخدم اللوجو الآن
+
     // 2. كارت الإحصائيات (الداشبورد)
     const monthDistEl = document.getElementById('monthDist');
     const totalRunsEl = document.getElementById('totalRuns');
@@ -113,14 +111,13 @@ function updateUI() {
     if (monthDistEl) monthDistEl.innerText = (userData.totalDist || 0).toFixed(1);
     if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
     
-    // 3. البروفايل
+    // 3. البروفايل (ما زال يحتاج الافتار في صفحة البروفايل)
     const profileName = document.getElementById('profileName');
     const profileRegion = document.getElementById('profileRegion');
     const profileAvatar = document.getElementById('profileAvatar');
 
     if (profileName) profileName.innerText = userData.name;
     if (profileRegion) profileRegion.innerHTML = `<i class="ri-map-pin-line"></i> ${userData.region}`;
-    // البروفايل ما زال يحتاج الافتار، لذا نتركه هنا فقط
     if (profileAvatar) profileAvatar.innerText = (userData.name || "U").charAt(0); 
     
     // 4. حساب الرتبة
@@ -133,6 +130,7 @@ function updateUI() {
     const rankBadge = document.getElementById('userRankBadge');
     if (rankBadge) rankBadge.innerText = rank;
 }
+
 
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
