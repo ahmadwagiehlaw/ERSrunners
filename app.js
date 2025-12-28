@@ -538,3 +538,143 @@ async function saveProfileChanges() {
         alert("تم الحفظ");
     }
 }
+
+
+// ==================== تحديث: إضافة زر التعليق في الـ Feed ====================
+// استبدل دالة loadGlobalFeed الحالية بهذه النسخة المحدثة
+function loadGlobalFeed() {
+    const list = document.getElementById('global-feed-list');
+    if(!list) return;
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+        let html = '';
+        if(snap.empty) { list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة</div>'; return; }
+        
+        snap.forEach(doc => {
+            const p = doc.data();
+            const isLiked = p.likes && p.likes.includes(currentUser.uid);
+            const commentsCount = p.commentsCount || 0; // سنحتاج لإضافة هذا العداد لاحقاً
+            
+            // ... (نفس كود حساب الوقت السابق) ...
+            let timeAgo = "الآن";
+            if(p.timestamp) {
+                const diff = (new Date() - p.timestamp.toDate()) / 60000;
+                if(diff < 60) timeAgo = `${Math.floor(diff)} د`;
+                else if(diff < 1440) timeAgo = `${Math.floor(diff/60)} س`;
+                else timeAgo = `${Math.floor(diff/1440)} يوم`;
+            }
+
+            html += `
+            <div class="feed-card-compact">
+                <div class="feed-compact-content">
+                    <div class="feed-compact-avatar">${(p.userName||"?").charAt(0)}</div>
+                    <div>
+                        <div class="feed-compact-text">
+                            <strong>${p.userName}</strong> <span style="opacity:0.7">(${p.userRegion})</span>
+                        </div>
+                        <div class="feed-compact-text" style="margin-top:2px;">
+                            ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${p.dist} كم</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feed-compact-action">
+                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
+                    
+                    <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
+                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
+                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
+                    </button>
+
+                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
+                        <i class="ri-chat-3-line"></i>
+                        <span class="feed-compact-count" id="count-${doc.id}">${commentsCount > 0 ? commentsCount : ''}</span>
+                    </button>
+
+                    <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    });
+}
+
+// ==================== جديد: نظام التعليقات (Logic) ====================
+let currentPostId = null; // لنعرف نحن نعلق على أي بوست
+let currentPostOwner = null;
+
+function openComments(postId, postOwnerId) {
+    currentPostId = postId;
+    currentPostOwner = postOwnerId;
+    
+    document.getElementById('modal-comments').style.display = 'flex';
+    document.getElementById('comment-text').value = ''; // مسح الخانة
+    loadComments(postId);
+}
+
+function loadComments(postId) {
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:20px;">جاري تحميل المحادثة...</div>';
+
+    // الاستماع للتعليقات في الوقت الفعلي
+    db.collection('activity_feed').doc(postId).collection('comments')
+      .orderBy('timestamp', 'asc')
+      .onSnapshot(snap => {
+          let html = '';
+          if(snap.empty) {
+              list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:50px; opacity:0.7;"><i class="ri-chat-1-line" style="font-size:30px;"></i><br>كن أول من يشجع الكابتن!</div>';
+              return;
+          }
+
+          snap.forEach(doc => {
+              const c = doc.data();
+              const time = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
+              
+              html += `
+                <div class="comment-item">
+                    <div class="comment-avatar">${c.userName.charAt(0)}</div>
+                    <div class="comment-bubble">
+                        <span class="comment-user">${c.userName}</span>
+                        <span class="comment-msg">${c.text}</span>
+                        <span class="comment-time">${time}</span>
+                    </div>
+                </div>`;
+          });
+          list.innerHTML = html;
+          // التمرير للأسفل تلقائياً لرؤية آخر تعليق
+          list.scrollTop = list.scrollHeight;
+      });
+}
+
+async function sendComment() {
+    const input = document.getElementById('comment-text');
+    const text = input.value.trim();
+    
+    if(!text || !currentPostId) return;
+    
+    input.value = ''; // مسح فوري لتحسين التجربة
+    
+    try {
+        // 1. إضافة التعليق في Sub-collection
+        await db.collection('activity_feed').doc(currentPostId).collection('comments').add({
+            text: text,
+            userId: currentUser.uid,
+            userName: userData.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // 2. تحديث عداد التعليقات في البوست الأصلي (اختياري لكن جيد للأداء)
+        await db.collection('activity_feed').doc(currentPostId).update({
+            commentsCount: firebase.firestore.FieldValue.increment(1)
+        });
+
+        // 3. إرسال إشعار لصاحب البوست (لو مش أنا اللي بعلق لنفسي)
+        if(currentPostOwner !== currentUser.uid) {
+            sendNotification(currentPostOwner, `علق ${userData.name} على نشاطك: "${text.substring(0, 20)}..."`);
+        }
+
+    } catch(e) {
+        console.error("Comment Error:", e);
+        alert("فشل إرسال التعليق");
+    }
+}
