@@ -768,38 +768,115 @@ async function saveProfileChanges() {
 }
 
 // ==================== 4. تحديث دالة updateUI لتعرض الإحصائيات الجديدة ====================
+// ==================== 6. نظام المستويات (Gamification System) ====================
+
+function calculateRank(totalDist) {
+    // تعريف المستويات: [الاسم، الحد الأدنى، اللون(css class)]
+    const levels = [
+        { name: "مبتدئ", min: 0, class: "rank-mubtadi", next: 50 },
+        { name: "هاوي", min: 50, class: "rank-hawy", next: 150 },
+        { name: "عداء", min: 150, class: "rank-runner", next: 500 },
+        { name: "محترف", min: 500, class: "rank-pro", next: 1000 },
+        { name: "أسطورة", min: 1000, class: "rank-legend", next: 10000 }
+    ];
+
+    // تحديد المستوى الحالي
+    let currentLevel = levels[0];
+    for (let i = levels.length - 1; i >= 0; i--) {
+        if (totalDist >= levels[i].min) {
+            currentLevel = levels[i];
+            break;
+        }
+    }
+
+    // حساب التقدم للمستوى القادم
+    const distInLevel = totalDist - currentLevel.min;
+    const distRequired = currentLevel.next - currentLevel.min;
+    let percentage = (distInLevel / distRequired) * 100;
+    if (percentage > 100) percentage = 100;
+
+    return {
+        name: currentLevel.name,
+        class: currentLevel.class,
+        nextTarget: currentLevel.next,
+        remaining: currentLevel.next - totalDist,
+        percentage: percentage,
+        distInLevel: distInLevel,
+        distRequired: distRequired
+    };
+}
+
+// ==================== تحديث الواجهة الشامل (Update UI) ====================
 function updateUI() {
-    // الهيدر
+    // 1. البيانات الأساسية
     const headerName = document.getElementById('headerName');
     if (headerName) headerName.innerText = userData.name || "Runner";
 
-    // الداشبورد الرئيسية
     const monthDistEl = document.getElementById('monthDist');
     const totalRunsEl = document.getElementById('totalRuns');
     if (monthDistEl) monthDistEl.innerText = (userData.totalDist || 0).toFixed(1);
     if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
-    
-    // === تحديث قسم البروفايل الجديد ===
+
+    // 2. تحديث البروفايل
     const profileName = document.getElementById('profileName');
     const profileRegion = document.getElementById('profileRegion');
     const profileAvatar = document.getElementById('profileAvatar');
     const pTotalDist = document.getElementById('profileTotalDist');
-    const pTotalRuns = document.getElementById('profileTotalRuns');
 
     if (profileName) profileName.innerText = userData.name;
     if (profileRegion) profileRegion.innerText = userData.region;
     if (profileAvatar) profileAvatar.innerText = (userData.name || "U").charAt(0);
     if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
-    if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
-    
-    // الرتبة
-    let rank = "مبتدئ";
-    const d = userData.totalDist || 0;
-    if (d > 50) rank = "هاوي";
-    if (d > 100) rank = "محترف";
-    if (d > 500) rank = "نخبة";
+
+    // 3. === الجديد: تطبيق نظام المستويات === 🎖️
+    const totalDist = userData.totalDist || 0;
+    const rankData = calculateRank(totalDist);
+
+    // تحديث النصوص
     const rankBadge = document.getElementById('userRankBadge');
-    if (rankBadge) rankBadge.innerText = rank;
+    const nextLevelDist = document.getElementById('nextLevelDist');
+    const xpText = document.getElementById('xpText');
+    const xpPerc = document.getElementById('xpPerc');
+    const xpMessage = document.getElementById('xpMessage');
+    
+    if(rankBadge) {
+        rankBadge.innerText = rankData.name;
+        // تغيير لون البادج حسب الرتبة
+        rankBadge.className = `rank-badge ${rankData.class}`;
+        // تغيير لون أيقونة المستوي بجانبه
+        const rankIcon = document.getElementById('rankIcon');
+        if(rankIcon) rankIcon.className = `ri-medal-fill ${rankData.class}`;
+    }
+
+    if(nextLevelDist) nextLevelDist.innerText = rankData.remaining.toFixed(1);
+    
+    // تحديث شريط الـ XP
+    const xpBar = document.getElementById('xpBar');
+    if(xpBar) {
+        xpBar.style.width = `${rankData.percentage}%`;
+        // تغيير لون الشريط ليطابق الرتبة
+        xpBar.style.backgroundColor = `var(--rank-color)`; 
+        // (حيلة CSS: المتغير --rank-color يتم تعريفه داخل الكلاس rank-*)
+        xpBar.parentElement.className = `xp-track ${rankData.class}`; 
+    }
+
+    if(xpText) xpText.innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
+    if(xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
+    
+    // رسالة تشجيعية
+    if(xpMessage) {
+        if(rankData.name === "أسطورة") xpMessage.innerText = "أنت الملك المتوج! 👑";
+        else xpMessage.innerText = `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
+    }
+}
+
+// دالة مساعدة لمعرفة اسم الرتبة القادمة
+function getNextRankName(current) {
+    if(current === "مبتدئ") return "هاوي";
+    if(current === "هاوي") return "عداء";
+    if(current === "عداء") return "محترف";
+    if(current === "محترف") return "أسطورة";
+    return "";
 }
 
 // -------------------------------- COMPETITION (Leaderboard & Squads) --------------------------------
