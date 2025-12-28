@@ -378,3 +378,29 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .admin-card h3 { margin: 0; color: var(--accent); font-size: 16px; }
 .admin-card label { color: #fff; margin-top: 10px; display: block; font-size: 12px; }
 .admin-card input { background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); }
+
+
+
+/* زر الإضافة المميز في الهيدر */
+.icon-badge.add-btn {
+    background: linear-gradient(135deg, var(--primary), #059669);
+    color: #000; /* لون الأيقونة أسود ليكون واضحاً */
+    border: none;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    transform: scale(1.1); /* أكبر قليلاً من الباقي */
+    margin-left: 8px; /* مسافة عن باقي الأزرار */
+}
+.icon-badge.add-btn:active {
+    transform: scale(0.95);
+}
+
+/* تحسين زر الحذف للأدمن */
+.btn-admin-delete {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    cursor: pointer;
+}
