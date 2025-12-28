@@ -355,23 +355,162 @@ async function submitRun() {
     }
 }
 
+// ==================== 1. تحديث دالة عرض السجل (بشكل محترف) ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
     
-    db.collection('users').doc(currentUser.uid).collection('runs').orderBy('timestamp', 'desc').limit(5).get().then((snap) => {
-        let html = '';
-        snap.forEach(doc => {
-            const r = doc.data();
-            const dateStr = r.timestamp ? r.timestamp.toDate().toLocaleDateString('ar-EG') : 'الآن';
-            html += `
-            <div style="background:rgba(255,255,255,0.05); padding:10px; margin-bottom:8px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-                <div><span style="font-weight:bold;">${r.dist} كم</span> <span style="font-size:11px; color:#9ca3af;">${r.type}</span></div>
-                <div style="font-size:11px; color:#6b7280;">${dateStr}</div>
-            </div>`;
+    // استخدام onSnapshot للتحديث اللحظي (Real-time)
+    // لاحظ: في التطبيق الكبير يفضل استخدام pagination، لكن هنا سنعرض آخر 20
+    db.collection('users').doc(currentUser.uid).collection('runs')
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+      .onSnapshot((snap) => {
+          let html = '';
+          if(snap.empty) {
+              list.innerHTML = `
+                <div style="text-align:center; padding:40px 20px; color:#6b7280;">
+                    <i class="ri-run-line" style="font-size:32px; display:block; margin-bottom:10px; opacity:0.5;"></i>
+                    ابدأ رحلتك وسجل أول نشاط!
+                </div>`;
+              return;
+          }
+
+          snap.forEach(doc => {
+              const r = doc.data();
+              const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
+              // تنسيق التاريخ: "الجمعة، 20 أكتوبر"
+              const dateStr = dateObj.toLocaleDateString('ar-EG', { weekday: 'long', month: 'short', day: 'numeric' });
+              
+              // أيقونة حسب النوع
+              let iconClass = 'ri-run-line type-run';
+              if(r.type === 'Walk') iconClass = 'ri-walk-line type-walk';
+
+              html += `
+              <div class="log-card">
+                  <div class="log-info">
+                      <h4>
+                          <i class="${iconClass} type-icon"></i>
+                          ${r.dist} كم
+                      </h4>
+                      <div class="log-meta">
+                          <span><i class="ri-time-line"></i> ${r.time} دقيقة</span>
+                          <span>|</span>
+                          <span>${dateStr}</span>
+                      </div>
+                  </div>
+                  <div class="log-actions">
+                      <button class="btn-delete" onclick="deleteRun('${doc.id}', ${r.dist})">
+                          <i class="ri-delete-bin-line"></i>
+                      </button>
+                  </div>
+              </div>`;
+          });
+          list.innerHTML = html;
+      });
+}
+
+// ==================== 2. دالة حذف النشاط (Delete) ====================
+async function deleteRun(runId, dist) {
+    if(!confirm("هل أنت متأكد من حذف هذا النشاط؟ سيتم خصم المسافة من رصيدك.")) return;
+
+    try {
+        // 1. حذف الوثيقة
+        await db.collection('users').doc(currentUser.uid).collection('runs').doc(runId).delete();
+
+        // 2. خصم المسافة من الإجمالي
+        await db.collection('users').doc(currentUser.uid).update({
+            totalDist: firebase.firestore.FieldValue.increment(-dist),
+            totalRuns: firebase.firestore.FieldValue.increment(-1)
         });
-        list.innerHTML = html || '<div style="text-align:center; font-size:12px; padding:10px;">لا يوجد نشاط</div>';
-    });
+
+        // 3. (اختياري) خصمها من التحديات - معقد قليلاً سنتركه للمرحلة القادمة أو نقوم به الآن
+        // للتبسيط الآن: سنكتفي بخصمها من البروفايل
+
+        // تحديث الواجهة
+        userData.totalDist -= dist;
+        userData.totalRuns -= 1;
+        updateUI();
+        
+    } catch(e) {
+        console.error(e);
+        alert("حدث خطأ أثناء الحذف");
+    }
+}
+
+// ==================== 3. دوال تعديل البروفايل ====================
+function openEditProfile() {
+    document.getElementById('edit-name').value = userData.name || "";
+    document.getElementById('edit-region').value = userData.region || "Cairo";
+    document.getElementById('modal-edit-profile').style.display = 'flex';
+}
+
+async function saveProfileChanges() {
+    const newName = document.getElementById('edit-name').value;
+    const newRegion = document.getElementById('edit-region').value;
+    
+    if(!newName) return alert("الاسم مطلوب");
+
+    const btn = document.querySelector('#modal-edit-profile .btn-primary');
+    btn.innerText = "جاري الحفظ...";
+    btn.disabled = true;
+
+    try {
+        await db.collection('users').doc(currentUser.uid).update({
+            name: newName,
+            region: newRegion
+        });
+
+        // تحديث البيانات المحلية
+        userData.name = newName;
+        userData.region = newRegion;
+        
+        updateUI();
+        closeModal('modal-edit-profile');
+        alert("تم تحديث بياناتك بنجاح ✅");
+
+    } catch(e) {
+        console.error(e);
+        alert("فشل التحديث");
+    } finally {
+        btn.innerText = "حفظ التغييرات";
+        btn.disabled = false;
+    }
+}
+
+// ==================== 4. تحديث دالة updateUI لتعرض الإحصائيات الجديدة ====================
+function updateUI() {
+    // الهيدر
+    const headerName = document.getElementById('headerName');
+    if (headerName) headerName.innerText = userData.name || "Runner";
+
+    // الداشبورد الرئيسية
+    const monthDistEl = document.getElementById('monthDist');
+    const totalRunsEl = document.getElementById('totalRuns');
+    if (monthDistEl) monthDistEl.innerText = (userData.totalDist || 0).toFixed(1);
+    if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
+    
+    // === تحديث قسم البروفايل الجديد ===
+    const profileName = document.getElementById('profileName');
+    const profileRegion = document.getElementById('profileRegion');
+    const profileAvatar = document.getElementById('profileAvatar');
+    const pTotalDist = document.getElementById('profileTotalDist');
+    const pTotalRuns = document.getElementById('profileTotalRuns');
+
+    if (profileName) profileName.innerText = userData.name;
+    if (profileRegion) profileRegion.innerText = userData.region;
+    if (profileAvatar) profileAvatar.innerText = (userData.name || "U").charAt(0);
+    if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
+    if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
+    
+    // الرتبة
+    let rank = "مبتدئ";
+    const d = userData.totalDist || 0;
+    if (d > 50) rank = "هاوي";
+    if (d > 100) rank = "محترف";
+    if (d > 500) rank = "نخبة";
+    const rankBadge = document.getElementById('userRankBadge');
+    if (rankBadge) rankBadge.innerText = rank;
 }
 
 // -------------------------------- COMPETITION (Leaderboard & Squads) --------------------------------
