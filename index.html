@@ -243,6 +243,21 @@
         </div>
     </div>
 
+
+<div id="modal-notifications" class="modal-overlay">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="margin:0;">الإشعارات 🔔</h3>
+                <button onclick="closeModal('modal-notifications')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+            </div>
+            <div id="notifications-list" class="notif-list">
+                <div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات جديدة</div>
+            </div>
+        </div>
+    </div>
+
+
+	//===scripts============
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
