@@ -422,3 +422,65 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .feed-compact-btn { background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 3px; }
 .feed-compact-btn.liked { color: #ef4444; }
 .feed-compact-count { font-size: 9px; }
+
+
+/* Comments System Styles */
+.comments-scroll-area {
+    flex: 1; /* يأخذ باقي المساحة المتاحة */
+    overflow-y: auto;
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.comment-item {
+    display: flex; gap: 10px;
+    animation: fadeIn 0.2s ease;
+}
+
+.comment-avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #374151; color: #fff; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: bold;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.comment-bubble {
+    background: rgba(255,255,255,0.05);
+    border-radius: 0 12px 12px 12px;
+    padding: 8px 12px;
+    max-width: 85%;
+}
+.comment-user { font-size: 11px; font-weight: bold; color: var(--primary); margin-bottom: 2px; display: block; }
+.comment-msg { font-size: 13px; color: #e5e7eb; line-height: 1.4; word-break: break-word; }
+.comment-time { font-size: 9px; color: var(--text-muted); display: block; margin-top: 4px; text-align: left; }
+
+/* مربع الكتابة السفلي */
+.comment-input-area {
+    display: flex; gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.comment-input-area input {
+    flex: 1; padding: 12px; background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 25px;
+    color: #fff; font-size: 14px;
+}
+.btn-send {
+    width: 45px; height: 45px; border-radius: 50%;
+    background: var(--primary); color: #000; border: none;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 0 10px var(--primary-glow);
+    transition: 0.2s;
+}
+.btn-send:active { transform: scale(0.9); }
+
+/* زر التعليقات في الفيد */
+.btn-comment {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 14px;
+    display: flex; align-items: center; gap: 4px; transition: 0.2s;
+}
+.btn-comment:hover { color: #fff; }
