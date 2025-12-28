@@ -160,7 +160,8 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-
+renderBadges(); 
+}
 // ==================== 9. نظام الأوسمة (The Trophy Cabinet) ====================
 
 // تعريف الأوسمة وشروطها
@@ -303,7 +304,7 @@ async function submitRun() {
 
         userData.totalDist += dist; userData.totalRuns += 1;
         userData.monthDist = newMonthDist; userData.lastMonthKey = currentMonthKey;
-        
+        await checkNewBadges(dist, time);
         alert("تم الحفظ!");
         closeModal('modal-log');
         document.getElementById('log-dist').value = '';
