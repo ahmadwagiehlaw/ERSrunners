@@ -1,5 +1,5 @@
 // ERS Runners - Service Worker
-const CACHE_NAME = 'ers-runners-v16-final';
+const CACHE_NAME = 'ers-runners-v1.6-final';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
