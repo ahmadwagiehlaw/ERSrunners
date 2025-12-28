@@ -160,6 +160,105 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
+
+// ==================== 9. نظام الأوسمة (The Trophy Cabinet) ====================
+
+// تعريف الأوسمة وشروطها
+const BADGES_CONFIG = [
+    { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
+    { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
+    { id: 'night_owl', name: 'ساهر الليل', icon: '🌙', desc: 'نشاط بعد 10 مساءً' },
+    { id: 'weekend_warrior', name: 'بطل العطلة', icon: '🎉', desc: 'نشاط يوم الجمعة' },
+    { id: 'half_marathon', name: 'نصف ماراثون', icon: '🔥', desc: 'جرية واحدة +20 كم' },
+    { id: 'club_100', name: 'نادي المئة', icon: '💎', desc: 'إجمالي مسافة 100 كم' },
+    { id: 'club_500', name: 'المحترف', icon: '👑', desc: 'إجمالي مسافة 500 كم' },
+    { id: 'sprinter', name: 'السرعة القصوى', icon: '⚡', desc: 'جرية سريعة (زمن قليل)' } // مثال
+];
+
+// دالة فحص الجوائز (تُستدعى بعد كل جرية)
+async function checkNewBadges(currentRunDist, currentRunTime) {
+    const myBadges = userData.badges || []; // الأوسمة التي أملكها حالياً
+    let newBadgesEarned = [];
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentDay = now.getDay(); // 5 = الجمعة
+
+    // 1. وسام الانطلاقة (أول مرة يجري)
+    if (!myBadges.includes('first_step')) {
+        newBadgesEarned.push('first_step');
+    }
+
+    // 2. طائر الصباح (بين 5 و 8 صباحاً)
+    if (!myBadges.includes('early_bird') && currentHour >= 5 && currentHour <= 8) {
+        newBadgesEarned.push('early_bird');
+    }
+
+    // 3. ساهر الليل (بعد 10 مساءً)
+    if (!myBadges.includes('night_owl') && (currentHour >= 22 || currentHour <= 3)) {
+        newBadgesEarned.push('night_owl');
+    }
+
+    // 4. بطل العطلة (الجمعة)
+    if (!myBadges.includes('weekend_warrior') && currentDay === 5) {
+        newBadgesEarned.push('weekend_warrior');
+    }
+
+    // 5. نصف ماراثون (20 كم في مرة واحدة)
+    if (!myBadges.includes('half_marathon') && currentRunDist >= 20) {
+        newBadgesEarned.push('half_marathon');
+    }
+
+    // 6. نادي المئة (تراكمي)
+    // ملاحظة: userData.totalDist تم تحديثه بالفعل في submitRun
+    if (!myBadges.includes('club_100') && userData.totalDist >= 100) {
+        newBadgesEarned.push('club_100');
+    }
+    
+    // 7. نادي 500
+    if (!myBadges.includes('club_500') && userData.totalDist >= 500) {
+        newBadgesEarned.push('club_500');
+    }
+
+    // حفظ الجوائز الجديدة
+    if (newBadgesEarned.length > 0) {
+        // تحديث قاعدة البيانات
+        await db.collection('users').doc(currentUser.uid).update({
+            badges: firebase.firestore.FieldValue.arrayUnion(...newBadgesEarned)
+        });
+
+        // تحديث اللوكل
+        if(!userData.badges) userData.badges = [];
+        userData.badges.push(...newBadgesEarned);
+
+        // إظهار احتفال للمستخدم 🎉
+        const badgeNames = newBadgesEarned.map(b => BADGES_CONFIG.find(x => x.id === b).name).join(" و ");
+        alert(`🎉 مبروووك! لقد فتحت إنجازاً جديداً:\n\n✨ ${badgeNames} ✨\n\nاستمر يا بطل!`);
+    }
+}
+
+// دالة عرض الأوسمة في البروفايل (تحديث لـ updateUI)
+function renderBadges() {
+    const grid = document.getElementById('badges-grid');
+    if(!grid) return;
+
+    const myBadges = userData.badges || [];
+    let html = '';
+
+    BADGES_CONFIG.forEach(badge => {
+        const isUnlocked = myBadges.includes(badge.id);
+        const lockClass = isUnlocked ? 'unlocked' : '';
+        const title = isUnlocked ? badge.desc : 'مغلق'; // تلميح يظهر عند اللمس
+
+        html += `
+            <div class="badge-item ${lockClass}" title="${title}" onclick="if(this.classList.contains('unlocked')) alert('${badge.desc}')">
+                <span class="badge-icon">${badge.icon}</span>
+                <span class="badge-name">${badge.name}</span>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
 // ==================== 3. Core Features ====================
 async function submitRun() {
     const btn = document.getElementById('save-run-btn');
