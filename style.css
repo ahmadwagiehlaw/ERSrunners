@@ -280,3 +280,27 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .type-icon { font-size: 14px; }
 .type-run { color: var(--primary); }
 .type-walk { color: var(--accent); }
+
+
+
+
+/* Feed Styles */
+.feed-list { display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; }
+.feed-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 15px;
+}
+.feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.feed-user { display: flex; align-items: center; gap: 10px; }
+.feed-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #374151; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 12px;
+}
+.feed-name { font-weight: bold; font-size: 13px; color: var(--text-main); }
+.feed-meta { font-size: 10px; color: var(--text-muted); }
+.feed-body { font-size: 13px; color: #d1d5db; line-height: 1.5; }
+.highlight { color: var(--primary); font-weight: bold; font-size: 14px; }
