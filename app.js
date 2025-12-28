@@ -418,13 +418,65 @@ function forceUpdate() {
     }
 }
 
-// 2. دخول الأدمن
+// ==================== تحديث: دخول الأدمن وتحميل البيانات ====================
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
-    if(pin === "1234") { // يمكنك تغيير الكود
+    if(pin === "1234") { 
         switchView('admin');
+        loadAdminStats();
+        loadAdminFeed(); // <--- دالة جديدة
+        closeModal('modal-settings'); // نغلق المودال
     } else {
         alert("كود خاطئ");
+    }
+}
+
+// ==================== جديد: تحميل البوستات للأدمن (مع زر الحذف) ====================
+function loadAdminFeed() {
+    const list = document.getElementById('admin-feed-list');
+    if(!list) return;
+
+    list.innerHTML = '<div style="text-align:center;">جاري التحميل...</div>';
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(10).get()
+      .then(snap => {
+          let html = '';
+          snap.forEach(doc => {
+              const p = doc.data();
+              html += `
+                <div class="feed-card" style="margin-bottom:10px; border-color:rgba(255,255,255,0.1);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:12px; font-weight:bold;">${p.userName}</span>
+                        <span style="font-size:10px; color:#9ca3af;">${p.dist} كم</span>
+                    </div>
+                    <div style="margin-top:5px; font-size:11px; color:#d1d5db;">
+                        ${p.link ? '<span style="color:#3b82f6">[يوجد رابط]</span>' : ''} 
+                        ${new Date(p.timestamp?.toDate()).toLocaleDateString('ar-EG')}
+                    </div>
+                    <div style="margin-top:10px; text-align:left;">
+                        <button class="btn-admin-delete" onclick="adminDeletePost('${doc.id}')">
+                            <i class="ri-delete-bin-line"></i> حذف نهائي
+                        </button>
+                    </div>
+                </div>
+              `;
+          });
+          list.innerHTML = html || '<div style="text-align:center;">لا توجد منشورات</div>';
+      });
+}
+
+// ==================== جديد: تنفيذ الحذف كأدمن ====================
+async function adminDeletePost(postId) {
+    if(!confirm("تحذير: سيتم حذف هذا البوست من الـ Feed العام. هل أنت متأكد؟")) return;
+    
+    try {
+        await db.collection('activity_feed').doc(postId).delete();
+        alert("تم الحذف بنجاح 👮‍♂️");
+        loadAdminFeed(); // تحديث القائمة
+        loadGlobalFeed(); // تحديث الصفحة الرئيسية أيضاً
+    } catch(e) {
+        console.error(e);
+        alert("حدث خطأ");
     }
 }
 
