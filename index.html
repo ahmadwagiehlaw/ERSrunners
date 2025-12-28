@@ -165,16 +165,49 @@
             </section>
 
             <section id="view-profile" class="view">
-                <div class="profile-header-card">
-                    <div class="profile-top">
-                        <div class="big-avatar" id="profileAvatar"></div>
-                        <button class="btn-icon-edit" onclick="openEditProfile()"><i class="ri-pencil-line"></i></button>
+                
+                <div class="bib-card">
+                    <div class="bib-hole top-left"></div>
+                    <div class="bib-hole top-right"></div>
+                    
+                    <div class="bib-content">
+                        <div class="bib-main">
+                            <div class="bib-avatar" id="profileAvatar">A</div>
+                            <div class="bib-info">
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <h2 id="profileName">...</h2>
+                                    <button class="btn-tiny-edit" onclick="openEditProfile()"><i class="ri-pencil-line"></i></button>
+                                </div>
+                                <span class="bib-region" id="profileRegion">...</span>
+                            </div>
+                        </div>
+                        
+                        <div class="bib-rank-box">
+                            <span class="bib-label">RANK</span>
+                            <span class="bib-number" id="profileRankText">مبتدئ</span>
+                        </div>
                     </div>
-                    <h2 id="profileName">...</h2>
-                    <div class="profile-region-badge" id="profileRegion">...</div>
-                    <div class="profile-stats-row">
-                        <div class="p-stat"><span class="p-val" id="profileTotalDist">0</span><span class="p-lbl">كم إجمالي</span></div>
-                        <div class="p-stat"><span class="p-val" id="profileTotalRuns">0</span><span class="p-lbl">جرية</span></div>
+
+                    <div class="bib-footer">
+                        <div class="bib-stat">
+                            <span class="val" id="profileTotalDist">0</span>
+                            <span class="lbl">كم إجمالي</span>
+                        </div>
+                        <div class="bib-stat">
+                            <span class="val" id="profileTotalRuns">0</span>
+                            <span class="lbl">جرية</span>
+                        </div>
+                        <div class="bib-stat">
+                            <span class="val" id="profilePace">--</span>
+                            <span class="lbl">متوسط السرعة</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-section" style="margin-top: 15px;">
+                    <h3 class="section-title" style="font-size:13px; margin-bottom:10px;">أداء آخر 7 أيام 📈</h3>
+                    <div class="chart-container">
+                        <div id="weekly-chart" class="bar-chart"></div>
                     </div>
                 </div>
                 
@@ -189,10 +222,13 @@
                     <h3 class="section-title">سجل الأنشطة</h3>
                     <div id="activity-log" class="log-list"></div>
                 </div>
+
                 <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
                     <i class="ri-logout-box-r-line"></i> تسجيل خروج
                 </button>
             </section>
+
+            
         </main>
 
         <nav class="bottom-nav">
