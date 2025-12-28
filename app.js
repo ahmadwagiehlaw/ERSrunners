@@ -596,3 +596,105 @@ window.joinChallenge = async function(id) {
         alert("تم الانضمام"); loadActiveChallenges();
     }
 }
+
+// ==================== 10. تحديث واجهة البيب والرسم البياني ====================
+
+// أضف هذه الدالة لرسم الشارت
+function loadWeeklyChart() {
+    const chartDiv = document.getElementById('weekly-chart');
+    if(!chartDiv) return;
+
+    // 1. تجهيز الأيام الـ 7 الماضية
+    const days = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    let last7Days = [];
+    for(let i=6; i>=0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        last7Days.push({
+            dayName: days[d.getDay()],
+            dateKey: d.toISOString().slice(0, 10), // "2023-10-27"
+            dist: 0
+        });
+    }
+
+    // 2. جلب البيانات وحساب المسافات
+    db.collection('users').doc(currentUser.uid).collection('runs')
+      .where('timestamp', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)) // آخر 7 أيام
+      .get().then(snap => {
+          
+          snap.forEach(doc => {
+              const run = doc.data();
+              if(run.timestamp) {
+                  const runDate = run.timestamp.toDate().toISOString().slice(0, 10);
+                  // البحث عن اليوم المطابق في مصفوفتنا
+                  const targetDay = last7Days.find(d => d.dateKey === runDate);
+                  if(targetDay) {
+                      targetDay.dist += (run.dist || 0);
+                  }
+              }
+          });
+
+          // 3. رسم الأعمدة HTML
+          let html = '';
+          const maxDist = Math.max(...last7Days.map(d => d.dist), 5); // الحد الأقصى للجراف (على الأقل 5كم)
+
+          last7Days.forEach(day => {
+              const heightPerc = (day.dist / maxDist) * 100;
+              let barClass = 'low';
+              if(day.dist > 5) barClass = 'med';
+              if(day.dist > 10) barClass = 'high';
+              if(day.dist === 0) barClass = 'low';
+
+              html += `
+                <div class="chart-column">
+                    <span class="bar-tooltip">${day.dist > 0 ? day.dist.toFixed(1) : ''}</span>
+                    <div class="bar-bg">
+                        <div class="bar-fill ${barClass}" style="height: ${heightPerc}%"></div>
+                    </div>
+                    <span class="bar-label">${day.dayName}</span>
+                </div>
+              `;
+          });
+          
+          chartDiv.innerHTML = html;
+      });
+}
+
+// ==================== تعديل دالة updateUI (لتعبئة البطاقة الجديدة) ====================
+// استبدل الجزء الخاص بالبروفايل في دالة updateUI الحالية بهذا الكود:
+
+/* داخل دالة updateUI ...
+*/
+
+        // ... الأكواد السابقة ...
+
+        // تحديث بطاقة الـ Bib الجديدة 🎽
+        const pName = document.getElementById('profileName');
+        const pRegion = document.getElementById('profileRegion');
+        const pAvatar = document.querySelector('.bib-avatar'); // لاحظ الكلاس الجديد
+        const pTotalDist = document.getElementById('profileTotalDist');
+        const pTotalRuns = document.getElementById('profileTotalRuns');
+        const pRankText = document.getElementById('profileRankText');
+        const pPace = document.getElementById('profilePace');
+
+        if (pName) pName.innerText = userData.name;
+        if (pRegion) pRegion.innerText = userData.region;
+        if (pAvatar) pAvatar.innerText = (userData.name || "U").charAt(0);
+        if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
+        if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
+        
+        // حساب متوسط السرعة (Pace) تقريبي
+        // (المسافة / الزمن) * 60
+        // سنفترض هنا رقم تقريبي أو نحسبه لو البيانات متاحة بدقة
+        // للعرض فقط الآن:
+        if (pPace) pPace.innerText = userData.totalRuns > 0 ? ((userData.totalDist/userData.totalRuns)*5).toFixed(1) : "-"; 
+
+        // الرتبة داخل البطاقة
+        const rankData = calculateRank(userData.totalDist || 0);
+        if(pRankText) pRankText.innerText = rankData.name;
+
+        // ... استدعاءات البادجات ...
+        renderBadges();
+        
+        // ... استدعاء الرسم البياني ...
+        loadWeeklyChart(); // <--- لا تنسَ هذا السطر!
