@@ -1,4 +1,4 @@
-/* ERS Runners - V18 Ultimate (Clean Single File) */
+/* ERS Runners - V19 (Final Polish) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -47,23 +47,22 @@ function initApp() {
     listenForNotifications();
 }
 
-// ==================== 2. UI Updates (The Captain Logic) ====================
+// ==================== 2. UI Updates ====================
 function updateUI() {
     try {
-        // Basic Info
         const headerName = document.getElementById('headerName');
         const helloText = document.querySelector('.hello-text');
         
-        // تغيير الترحيب
-        if(helloText) helloText.innerHTML = "أهلاً يا كابتن 👋"; 
+        if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; 
         if (headerName) headerName.innerText = userData.name || "Runner";
 
+        // Dashboard Stats
         const monthDistEl = document.getElementById('monthDist');
         const totalRunsEl = document.getElementById('totalRuns');
         if (monthDistEl) monthDistEl.innerText = (userData.monthDist || 0).toFixed(1);
         if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
 
-        // Profile
+        // Profile Stats
         const profileName = document.getElementById('profileName');
         const profileRegion = document.getElementById('profileRegion');
         const profileAvatar = document.getElementById('profileAvatar');
@@ -76,7 +75,7 @@ function updateUI() {
         if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
         if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
 
-        // Rank & XP Bar
+        // Rank Calculation
         const totalDist = userData.totalDist || 0;
         const rankData = calculateRank(totalDist);
 
@@ -104,7 +103,7 @@ function updateUI() {
         if(xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
         if(xpMessage) xpMessage.innerText = rankData.name === "أسطورة" ? "أنت الملك!" : `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
 
-        // Goal Ring 🎯
+        // Goal Ring
         const goalRing = document.getElementById('goalRing');
         const goalText = document.getElementById('goalText');
         const goalSub = document.getElementById('goalSub');
@@ -161,7 +160,7 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-// ==================== 3. Core Features (Run, Goal, Likes) ====================
+// ==================== 3. Core Features ====================
 async function submitRun() {
     const btn = document.getElementById('save-run-btn');
     const dist = parseFloat(document.getElementById('log-dist').value);
@@ -175,8 +174,6 @@ async function submitRun() {
     try {
         const uid = currentUser.uid;
         const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        
-        // Month Logic
         const currentMonthKey = new Date().toISOString().slice(0, 7); 
         let newMonthDist = (userData.monthDist || 0) + dist;
         if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
@@ -194,7 +191,7 @@ async function submitRun() {
             monthDist: newMonthDist, lastMonthKey: currentMonthKey
         }, { merge: true });
 
-        // Challenges Update
+        // Update Challenges
         const activeCh = await db.collection('challenges').where('active', '==', true).get();
         const batch = db.batch();
         activeCh.forEach(doc => {
@@ -205,7 +202,6 @@ async function submitRun() {
         });
         await batch.commit();
 
-        // Local Update
         userData.totalDist += dist; userData.totalRuns += 1;
         userData.monthDist = newMonthDist; userData.lastMonthKey = currentMonthKey;
         
@@ -214,7 +210,6 @@ async function submitRun() {
         document.getElementById('log-dist').value = '';
         document.getElementById('log-time').value = '';
         document.getElementById('log-link').value = '';
-        
         updateUI(); loadGlobalFeed(); loadActivityLog();
 
     } catch (error) { alert("خطأ: " + error.message); } 
@@ -230,32 +225,49 @@ async function setPersonalGoal() {
     }
 }
 
-// ==================== 4. Feed & Likes ====================
+// ==================== 4. Feed (New Compact Design) ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
+
     db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
         let html = '';
-        if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:10px;">لا توجد أنشطة</div>'; return; }
+        if(snap.empty) { list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة</div>'; return; }
+        
         snap.forEach(doc => {
             const p = doc.data();
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
-            const linkBtn = (p.link && p.link.includes('http')) ? `<a href="${p.link}" target="_blank" class="btn-link-proof"><i class="ri-link"></i> إثبات</a>` : '';
             
+            let timeAgo = "الآن";
+            if(p.timestamp) {
+                const diff = (new Date() - p.timestamp.toDate()) / 60000;
+                if(diff < 60) timeAgo = `${Math.floor(diff)} د`;
+                else if(diff < 1440) timeAgo = `${Math.floor(diff/60)} س`;
+                else timeAgo = `${Math.floor(diff/1440)} يوم`;
+            }
+
             html += `
-            <div class="feed-card">
-                <div class="feed-header">
-                    <div class="feed-user">
-                        <div class="feed-avatar">${(p.userName||"?").charAt(0)}</div>
-                        <div><div class="feed-name">${p.userName}</div><div class="feed-meta">${p.userRegion}</div></div>
+            <div class="feed-card-compact">
+                <div class="feed-compact-content">
+                    <div class="feed-compact-avatar">${(p.userName||"?").charAt(0)}</div>
+                    <div>
+                        <div class="feed-compact-text">
+                            <strong>${p.userName}</strong> 
+                            <span style="opacity:0.7">(${p.userRegion})</span>
+                        </div>
+                        <div class="feed-compact-text" style="margin-top:2px;">
+                            ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${p.dist} كم</span>
+                        </div>
                     </div>
-                    ${linkBtn}
                 </div>
-                <div class="feed-body">أكمل <strong>${p.type}</strong> لمسافة <span class="highlight">${p.dist} كم</span> في ${p.time} دقيقة</div>
-                <div class="feed-actions">
-                    <button class="btn-like ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
-                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i> <span>${(p.likes||[]).length || ''}</span>
+                
+                <div class="feed-compact-action">
+                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
+                    <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
+                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
+                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
                     </button>
+                    <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
                 </div>
             </div>`;
         });
@@ -278,7 +290,28 @@ async function toggleLike(pid, uid) {
     }
 }
 
-// ==================== 5. Helper Functions ====================
+// ==================== 5. Navigation & Helper Functions ====================
+function switchView(viewId) {
+    document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+    document.getElementById('view-' + viewId).classList.add('active');
+    
+    const navMap = {'home': 0, 'challenges': 1, 'profile': 2};
+    const navItems = document.querySelectorAll('.nav-item');
+    if(navItems[navMap[viewId]]) navItems[navMap[viewId]].classList.add('active');
+}
+
+function setTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabName).classList.add('active');
+    document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+    if(event && event.target) event.target.classList.add('active');
+
+    if (tabName === 'leaderboard') loadLeaderboard('all');
+    if (tabName === 'squads') loadRegionBattle();
+    if (tabName === 'active-challenges') loadActiveChallenges();
+}
+
 function toggleAuthMode() {
     isSignupMode = !isSignupMode;
     document.getElementById('signup-fields').style.display = isSignupMode ? 'block' : 'none';
@@ -303,7 +336,6 @@ function openSettingsModal() { document.getElementById('modal-settings').style.d
 function showNotifications() { document.getElementById('modal-notifications').style.display='flex'; document.getElementById('notif-dot').classList.remove('active'); loadNotifications(); }
 function openEditProfile() { document.getElementById('modal-edit-profile').style.display='flex'; }
 
-// Load Notifications logic
 function loadNotifications() {
     const list = document.getElementById('notifications-list');
     db.collection('users').doc(currentUser.uid).collection('notifications').orderBy('timestamp','desc').limit(10).get().then(snap => {
@@ -318,7 +350,6 @@ function listenForNotifications() {
         if(!s.empty) document.getElementById('notif-dot').classList.add('active');
     });
 }
-
 async function sendNotification(receiverId, message) {
     try {
         await db.collection('users').doc(receiverId).collection('notifications').add({
@@ -327,12 +358,11 @@ async function sendNotification(receiverId, message) {
     } catch(e) {}
 }
 
-/ ==================== إصلاح مشكلة الأدمن (ترتيب العمليات) ====================
+// ==================== 6. Admin & Updates (Fixed) ====================
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
     if(pin === "1234") { 
         closeModal('modal-settings'); // نغلق المودال أولاً
-        
         // تأخير بسيط لضمان اختفاء المودال قبل الانتقال
         setTimeout(() => {
             switchView('admin');
@@ -343,12 +373,61 @@ function openAdminAuth() {
         alert("كود خاطئ");
     }
 }
+
 async function forceUpdateApp() {
     if(confirm("تحديث؟")) {
         if('serviceWorker' in navigator) { (await navigator.serviceWorker.getRegistrations()).forEach(r => r.unregister()); }
         window.location.reload(true);
     }
 }
+
+// 7. Challenges (New Mini Design)
+function loadActiveChallenges() {
+    const list = document.getElementById('challenges-list');
+    const mini = document.getElementById('my-active-challenges');
+    if(!list) return;
+    
+    db.collection('challenges').where('active', '==', true).get().then(async snap => {
+        let html = '';
+        let miniHtml = '';
+        if(snap.empty) { 
+            list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد تحديات</div>';
+            mini.innerHTML = '<div class="empty-state-mini">لا توجد تحديات حالياً</div>';
+            return; 
+        }
+        
+        for (const doc of snap.docs) {
+            const ch = doc.data();
+            let isJoined = false; 
+            let progress = 0;
+            if(currentUser) {
+                const part = await doc.ref.collection('participants').doc(currentUser.uid).get();
+                if(part.exists) { isJoined = true; progress = part.data().progress || 0; }
+            }
+            const perc = Math.min((progress/ch.target)*100, 100);
+            
+            // الكارت الكبير (للصفحة الكاملة)
+            html += `<div class="challenge-card">
+                <h3>${ch.title} <small>${ch.target} كم</small></h3>
+                ${isJoined ? `<div class="xp-track"><div class="xp-fill" style="width:${perc}%"></div></div>` : `<button onclick="joinChallenge('${doc.id}')">انضمام</button>`}
+            </div>`;
+            
+            // الكارت المصغر (للصفحة الرئيسية)
+            if(isJoined) {
+                miniHtml += `
+                <div class="mini-challenge-card">
+                    <div class="mini-ch-title">${ch.title}</div>
+                    <div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div>
+                    <div class="mini-ch-stats"><span>${progress.toFixed(1)} كم</span><span>${Math.floor(perc)}%</span></div>
+                </div>`;
+            }
+        }
+        list.innerHTML = html;
+        mini.innerHTML = miniHtml || '<div class="empty-state-mini" style="font-size:11px; color:#6b7280; padding:5px;">لم تنضم لتحديات</div>';
+    });
+}
+
+// Admin Functions
 async function createChallengeUI() {
     const t = document.getElementById('admin-ch-title').value;
     const target = document.getElementById('admin-ch-target').value;
@@ -362,14 +441,16 @@ function loadAdminFeed() {
         list.innerHTML = h;
     });
 }
-async function adminDelete(id) { await db.collection('activity_feed').doc(id).delete(); alert("حذف"); loadAdminFeed(); }
-async function saveProfileChanges() {
-    const name = document.getElementById('edit-name').value;
-    await db.collection('users').doc(currentUser.uid).update({name});
-    updateUI(); closeModal('modal-edit-profile');
+async function adminDelete(id) { await db.collection('activity_feed').doc(id).delete(); alert("حذف"); loadAdminFeed(); loadGlobalFeed(); }
+function loadAdminStats() {
+    const statsDiv = document.getElementById('admin-stats');
+    if(!statsDiv) return;
+    db.collection('users').get().then(snap => {
+        statsDiv.innerHTML = `عدد الأعضاء: <strong style="color:#fff">${snap.size}</strong>`;
+    });
 }
 
-// السجل الشخصي
+// Activity Log & Leaderboard
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
@@ -389,7 +470,6 @@ function loadActivityLog() {
           list.innerHTML = html;
       });
 }
-
 async function deleteRun(id, dist) {
     if(confirm("حذف؟")) {
         await db.collection('users').doc(currentUser.uid).collection('runs').doc(id).delete();
@@ -404,8 +484,6 @@ async function deleteRun(id, dist) {
         updateUI();
     }
 }
-
-// المتصدرين والتحديات
 async function loadLeaderboard(filter) {
     const list = document.getElementById('leaderboard-list');
     if(!list) return;
@@ -423,51 +501,33 @@ async function loadLeaderboard(filter) {
     });
     list.innerHTML = html || 'لا يوجد';
 }
-
-function loadActiveChallenges() {
-    const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges');
-    if(!list) return;
-    
-    db.collection('challenges').where('active', '==', true).get().then(async snap => {
-        let html = '';
-        let miniHtml = '';
-        if(snap.empty) { list.innerHTML = 'لا يوجد تحديات'; return; }
-        
-        for (const doc of snap.docs) {
-            const ch = doc.data();
-            let isJoined = false; 
-            let progress = 0;
-            if(currentUser) {
-                const part = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(part.exists) { isJoined = true; progress = part.data().progress || 0; }
-            }
-            const perc = Math.min((progress/ch.target)*100, 100);
-            
-            html += `<div class="challenge-card">
-                <h3>${ch.title} <small>${ch.target} كم</small></h3>
-                ${isJoined ? `<div class="xp-track"><div class="xp-fill" style="width:${perc}%"></div></div>` : `<button onclick="joinChallenge('${doc.id}')">انضمام</button>`}
-            </div>`;
-            
-            if(isJoined) miniHtml += `<div class="feed-card" style="min-width:150px;">${ch.title} <br> ${progress.toFixed(1)}%</div>`;
+function filterLeaderboard(type) {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    if(event && event.target) event.target.classList.add('active');
+    loadLeaderboard(type);
+}
+async function loadRegionBattle() {
+    const list = document.getElementById('region-battle-list');
+    if (!list) return;
+    list.innerHTML = '<div style="text-align:center;">جاري الحساب...</div>';
+    const snap = await db.collection('users').get();
+    let regionMap = {};
+    snap.forEach(doc => {
+        const u = doc.data();
+        if(u.region) {
+            if (!regionMap[u.region]) regionMap[u.region] = 0;
+            regionMap[u.region] += (u.totalDist || 0);
         }
-        list.innerHTML = html;
-        mini.innerHTML = miniHtml || 'لم تنضم لتحديات';
+    });
+    const sortedRegions = Object.keys(regionMap).map(key => ({ name: key, total: regionMap[key] })).sort((a, b) => b.total - a.total);
+    list.innerHTML = '';
+    const maxVal = sortedRegions[0]?.total || 1; 
+    sortedRegions.forEach((r, idx) => {
+        const percent = (r.total / maxVal) * 100;
+        list.innerHTML += `<div class="squad-card"><div class="squad-header"><span class="squad-rank">#${idx + 1}</span><span class="squad-name">${r.name}</span><span class="squad-total">${r.total.toFixed(0)} كم</span></div><div class="squad-bar-bg"><div class="squad-bar-fill" style="width:${percent}%"></div></div></div>`;
     });
 }
-
-window.joinChallenge = async function(id) {
-    if(confirm("انضمام؟")) {
-        await db.collection('challenges').doc(id).collection('participants').doc(currentUser.uid).set({
-            progress: 0, name: userData.name, region: userData.region
-        });
-        alert("تم الانضمام");
-        loadActiveChallenges();
-    }
-}
-
-// 404 Fixer: Save Profile changes
-window.saveProfileChanges = async function() {
+async function saveProfileChanges() {
     const name = document.getElementById('edit-name').value;
     const region = document.getElementById('edit-region').value;
     if(name) {
