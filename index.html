@@ -100,7 +100,6 @@
 
         <main class="main-container">
             <section id="view-home" class="view active">
-                
                 <div class="status-card">
                     <div class="status-header">
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -165,44 +164,6 @@
                 </div>
             </section>
 
-            <section id="view-admin" class="view">
-                <div class="section-header">
-                    <h4>لوحة التحكم 🛠️</h4>
-                    <span class="link-text" onclick="switchView('home')">خروج</span>
-                </div>
-
-                <div class="admin-card">
-                    <h3>إنشاء تحدي جديد 🏆</h3>
-                    <div class="form-group" style="margin-top:15px;">
-                        <label>عنوان التحدي</label>
-                        <input type="text" id="admin-ch-title" placeholder="مثال: ماراثون القاهرة">
-                        <label>الوصف</label>
-                        <input type="text" id="admin-ch-desc" placeholder="وصف قصير للتحدي">
-                        <div class="input-row">
-                            <div class="input-wrap">
-                                <label>الهدف (كم)</label>
-                                <input type="number" id="admin-ch-target" placeholder="50">
-                            </div>
-                            <div class="input-wrap">
-                                <label>المدة (أيام)</label>
-                                <input type="number" id="admin-ch-days" placeholder="30">
-                            </div>
-                        </div>
-                        <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:15px;">نشر التحدي</button>
-                    </div>
-                </div>
-
-                <div class="admin-card" style="margin-top:20px;">
-                    <h3>إدارة المنشورات 👮‍♂️</h3>
-                    <div id="admin-feed-list" class="feed-list"></div>
-                </div>
-
-                <div class="admin-card" style="margin-top:20px;">
-                    <h3>إحصائيات سريعة 📊</h3>
-                    <div id="admin-stats" style="color:#9ca3af; font-size:13px; margin-top:10px;">جاري التحميل...</div>
-                </div>
-            </section>
-
             <section id="view-challenges" class="view">
                 <div class="tabs-nav">
                     <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
@@ -245,6 +206,32 @@
                 </div>
             </section>
 
+            <section id="view-admin" class="view">
+                <div class="section-header">
+                    <h4>لوحة التحكم 🛠️</h4>
+                    <span class="link-text" onclick="switchView('home')">خروج</span>
+                </div>
+                <div class="admin-card">
+                    <h3>إنشاء تحدي جديد 🏆</h3>
+                    <div class="form-group" style="margin-top:15px;">
+                        <input type="text" id="admin-ch-title" placeholder="عنوان التحدي">
+                        <input type="text" id="admin-ch-desc" placeholder="وصف قصير">
+                        <div class="input-row">
+                            <div class="input-wrap"><input type="number" id="admin-ch-target" placeholder="الهدف (كم)"></div>
+                            <div class="input-wrap"><input type="number" id="admin-ch-days" placeholder="المدة (أيام)"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:15px;">نشر التحدي</button>
+                    </div>
+                </div>
+                <div class="admin-card" style="margin-top:20px;">
+                    <h3>إدارة المنشورات 👮‍♂️</h3>
+                    <div id="admin-feed-list" class="feed-list"></div>
+                </div>
+                <div class="admin-card" style="margin-top:20px;">
+                    <h3>إحصائيات</h3>
+                    <div id="admin-stats" style="color:#9ca3af; font-size:13px; margin-top:10px;">جاري التحميل...</div>
+                </div>
+            </section>
         </main>
 
         <nav class="bottom-nav">
@@ -273,8 +260,8 @@
                 <option value="Race">سباق (Race)</option>
             </select>
             <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
-                <label>رابط إثبات الجرية (Strava/Nike) - اختياري</label>
-                <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
+                <label>رابط إثبات (Strava/Nike)</label>
+                <input type="url" id="log-link" placeholder="الرابط هنا" style="font-size:12px;">
             </div>
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
@@ -287,11 +274,11 @@
             <div class="settings-list">
                 <button class="setting-item" onclick="forceUpdateApp()">
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
-                    <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
+                    <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الكاش</small></div>
                 </button>
                 <button class="setting-item" onclick="openAdminAuth()">
                     <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
-                    <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
+                    <div class="setting-text"><span>دخول المشرفين</span></div>
                 </button>
                 <button class="setting-item delete" onclick="logout()">
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
@@ -301,7 +288,7 @@
             <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
         </div>
     </div>
-    
+
     <div id="modal-notifications" class="modal-overlay">
         <div class="modal-box">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -309,7 +296,7 @@
                 <button onclick="closeModal('modal-notifications')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
             </div>
             <div id="notifications-list" class="notif-list">
-                <div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات جديدة</div>
+                <div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات</div>
             </div>
         </div>
     </div>
@@ -322,10 +309,13 @@
                 <input type="text" id="edit-name">
                 <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
-                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Sohag">سوهاج</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Other">أخرى</option>
+                    <option value="Cairo">القاهرة</option>
+                    <option value="Giza">الجيزة</option>
+                    <option value="Alexandria">الإسكندرية</option>
+                    <option value="Other">أخرى</option>
                 </select>
             </div>
-            <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
+            <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ</button>
             <button class="btn btn-text" onclick="closeModal('modal-edit-profile')">إلغاء</button>
         </div>
     </div>
@@ -334,7 +324,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
-    <script src="app-v2.js"></script> 
+    <script src="app-v2.js"></script>
 
     <script>
       if ('serviceWorker' in navigator) {
