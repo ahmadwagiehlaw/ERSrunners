@@ -143,7 +143,48 @@
 
 
             </section>
+//==سكشن الأدمن
+<section id="view-admin" class="view">
+    <div class="section-header">
+        <h4>لوحة التحكم 🛠️</h4>
+        <span class="link-text" onclick="switchView('profile')">خروج</span>
+    </div>
 
+    <div class="admin-card">
+        <h3>إنشاء تحدي جديد 🏆</h3>
+        <div class="form-group" style="margin-top:15px;">
+            <label>عنوان التحدي</label>
+            <input type="text" id="admin-ch-title" placeholder="مثال: ماراثون القاهرة">
+
+            <label>الوصف</label>
+            <input type="text" id="admin-ch-desc" placeholder="وصف قصير للتحدي">
+
+            <div class="input-row">
+                <div class="input-wrap">
+                    <label>الهدف (كم)</label>
+                    <input type="number" id="admin-ch-target" placeholder="50">
+                </div>
+                <div class="input-wrap">
+                    <label>المدة (أيام)</label>
+                    <input type="number" id="admin-ch-days" placeholder="30">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:15px;">
+                نشر التحدي
+            </button>
+        </div>
+    </div>
+
+    <div class="admin-card" style="margin-top:20px;">
+        <h3>إحصائيات سريعة 📊</h3>
+        <div id="admin-stats" style="color:#9ca3af; font-size:13px; margin-top:10px;">
+            جاري التحميل...
+        </div>
+    </div>
+</section>
+
+			
             <section id="view-challenges" class="view">
                 <div class="tabs-nav">
                     <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
@@ -199,7 +240,12 @@
                 <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
                     <i class="ri-logout-box-r-line"></i> تسجيل خروج
                 </button>
-            </section>
+
+<button class="btn btn-text" onclick="openAdminAuth()" style="margin-top:10px; opacity:0.3;">
+    <i class="ri-shield-keyhole-line"></i> دخول الأدمن
+</button>
+			   
+		   </section>
 
         </main>
 
