@@ -353,15 +353,15 @@ async function submitRun() {
     }
 }
 
-// ==================== 1. تحديث دالة الـ Feed (مع اللايكات) ====================
+// ==================== تحديث دالة الـ Feed (مع اللايكات) ====================
 function loadGlobalFeed() {
     const feedContainer = document.getElementById('global-feed-list');
     if(!feedContainer) return;
 
     db.collection('activity_feed')
       .orderBy('timestamp', 'desc')
-      .limit(20) // زودنا العدد شوية
-      .onSnapshot(snap => { // خليناها Real-time عشان اللايكات تظهر لحظياً
+      .limit(20)
+      .onSnapshot(snap => {
           let html = '';
           if(snap.empty) {
               feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة حديثة</div>';
@@ -372,7 +372,6 @@ function loadGlobalFeed() {
               const post = doc.data();
               const postId = doc.id;
               
-              // حساب الوقت
               let timeAgo = "الآن";
               if(post.timestamp) {
                   const diff = new Date() - post.timestamp.toDate();
@@ -384,7 +383,7 @@ function loadGlobalFeed() {
 
               // منطق اللايك ❤️
               const likes = post.likes || [];
-              const isLiked = likes.includes(currentUser.uid);
+              const isLiked = currentUser && likes.includes(currentUser.uid);
               const likeCount = likes.length;
               const likeClass = isLiked ? 'liked' : '';
               const likeIcon = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
@@ -393,7 +392,7 @@ function loadGlobalFeed() {
                 <div class="feed-card">
                     <div class="feed-header">
                         <div class="feed-user">
-                            <div class="feed-avatar">${post.userName.charAt(0)}</div>
+                            <div class="feed-avatar">${(post.userName || "?").charAt(0)}</div>
                             <div>
                                 <div class="feed-name">${post.userName}</div>
                                 <div class="feed-meta">${post.userRegion} • ${timeAgo}</div>
@@ -418,7 +417,8 @@ function loadGlobalFeed() {
       });
 }
 
-// ==================== 2. دالة عمل اللايك (Toggle Like) ====================
+// ==================== دوال التفاعل والإشعارات ====================
+
 async function toggleLike(postId, postOwnerId) {
     if(!currentUser) return;
     
@@ -432,29 +432,20 @@ async function toggleLike(postId, postOwnerId) {
         const likes = doc.data().likes || [];
         
         if (likes.includes(uid)) {
-            // إزالة اللايك (Unlike)
             await postRef.update({
                 likes: firebase.firestore.FieldValue.arrayRemove(uid)
             });
         } else {
-            // إضافة لايك (Like)
             await postRef.update({
                 likes: firebase.firestore.FieldValue.arrayUnion(uid)
             });
-
-            // إرسال إشعار لصاحب البوست (لو مش أنا اللي عامل اللايك لنفسي)
             if(postOwnerId !== uid) {
                 sendNotification(postOwnerId, "قام " + userData.name + " بتشجيعك ❤️");
             }
         }
-    } catch(e) {
-        console.error("Like Error:", e);
-    }
+    } catch(e) { console.error("Like Error:", e); }
 }
 
-// ==================== 3. نظام الإشعارات (Notifications) ====================
-
-// إرسال إشعار
 async function sendNotification(receiverId, message) {
     try {
         await db.collection('users').doc(receiverId).collection('notifications').add({
@@ -465,20 +456,16 @@ async function sendNotification(receiverId, message) {
     } catch(e) { console.error(e); }
 }
 
-// فتح قائمة الإشعارات
 function showNotifications() {
     const modal = document.getElementById('modal-notifications');
     const list = document.getElementById('notifications-list');
     const badge = document.getElementById('notif-dot');
     
     if(modal) modal.style.display = 'flex';
-    if(badge) badge.classList.remove('active'); // إخفاء النقطة الحمراء
+    if(badge) badge.classList.remove('active');
 
-    // تحميل الإشعارات
     db.collection('users').doc(currentUser.uid).collection('notifications')
-      .orderBy('timestamp', 'desc')
-      .limit(10)
-      .get()
+      .orderBy('timestamp', 'desc').limit(10).get()
       .then(snap => {
           if(snap.empty) {
               list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات</div>';
@@ -487,18 +474,12 @@ function showNotifications() {
           let html = '';
           snap.forEach(doc => {
               const n = doc.data();
-              // تحديث الإشعار ليصبح مقروء
               doc.ref.update({ read: true }); 
-              
               const time = n.timestamp ? new Date(n.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
-              
               html += `
                 <div class="notif-item">
                     <div class="notif-icon"><i class="ri-notification-3-fill"></i></div>
-                    <div class="notif-content">
-                        ${n.msg}
-                        <span class="notif-time">${time}</span>
-                    </div>
+                    <div class="notif-content">${n.msg}<span class="notif-time">${time}</span></div>
                 </div>
               `;
           });
@@ -506,20 +487,15 @@ function showNotifications() {
       });
 }
 
-// مراقبة الإشعارات الجديدة (لتنويير الجرس)
 function listenForNotifications() {
     if(!currentUser) return;
     db.collection('users').doc(currentUser.uid).collection('notifications')
       .where('read', '==', false)
       .onSnapshot(snap => {
           const badge = document.getElementById('notif-dot');
-          if(!snap.empty && badge) {
-              badge.classList.add('active');
-              // ممكن تشغيل صوت هنا مستقبلاً
-          }
+          if(!snap.empty && badge) badge.classList.add('active');
       });
 }
-
 // ==================== 1. تحديث دالة عرض السجل (بشكل محترف) ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
