@@ -327,9 +327,21 @@ async function sendNotification(receiverId, message) {
     } catch(e) {}
 }
 
-// Admin & Updates
+/ ==================== إصلاح مشكلة الأدمن (ترتيب العمليات) ====================
 function openAdminAuth() {
-    if(prompt("Code:") === "1234") { switchView('admin'); closeModal('modal-settings'); loadAdminFeed(); }
+    const pin = prompt("أدخل كود المشرف:");
+    if(pin === "1234") { 
+        closeModal('modal-settings'); // نغلق المودال أولاً
+        
+        // تأخير بسيط لضمان اختفاء المودال قبل الانتقال
+        setTimeout(() => {
+            switchView('admin');
+            loadAdminStats();
+            loadAdminFeed();
+        }, 100);
+    } else {
+        alert("كود خاطئ");
+    }
 }
 async function forceUpdateApp() {
     if(confirm("تحديث؟")) {
