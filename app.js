@@ -678,3 +678,66 @@ async function sendComment() {
         alert("فشل إرسال التعليق");
     }
 }
+// ==================== 9. المنطقة الخطرة (حذف الحساب) ====================
+async function deleteFullAccount() {
+    // 1. تأكيد أول
+    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك، جرياتك، تعليقاتك، وأرقامك نهائياً من قاعدة البيانات.\n\nهل أنت متأكد تماماً؟")) return;
+
+    // 2. تأكيد ثاني (لزيادة الأمان)
+    const confirmation = prompt("للتأكيد النهائي، اكتب كلمة (حذف) في المربع أدناه:");
+    if (confirmation !== "حذف") {
+        alert("لم يتم الحذف. الكلمة غير صحيحة.");
+        return;
+    }
+
+    const btn = document.querySelector('.delete-danger');
+    if(btn) {
+        btn.innerHTML = '<span style="color:red;">جاري الحذف والتنظيف...</span>';
+        btn.disabled = true;
+    }
+
+    try {
+        const uid = currentUser.uid;
+
+        // الخطوة 1: حذف الجريات الخاصة بالمستخدم (Sub-collection)
+        const runsSnapshot = await db.collection('users').doc(uid).collection('runs').get();
+        const batch = db.batch();
+        runsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        // حذف الإشعارات أيضاً
+        const notifSnapshot = await db.collection('users').doc(uid).collection('notifications').get();
+        notifSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+
+        // الخطوة 2: حذف بوستات المستخدم من الـ Feed العام
+        const feedSnapshot = await db.collection('activity_feed').where('uid', '==', uid).get();
+        const feedBatch = db.batch();
+        feedSnapshot.forEach(doc => {
+            feedBatch.delete(doc.ref);
+        });
+        await feedBatch.commit();
+
+        // الخطوة 3: حذف وثيقة المستخدم الرئيسية
+        await db.collection('users').doc(uid).delete();
+
+        // الخطوة 4: حذف المستخدم من نظام المصادقة (Auth)
+        await currentUser.delete();
+
+        alert("تم حذف الحساب بنجاح. سنفتقدك! 👋");
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Delete Error:", error);
+        // أحياناً يطلب فايربيس إعادة تسجيل الدخول قبل الحذف الحساس
+        if(error.code === 'auth/requires-recent-login') {
+            alert("لأمانك، يرجى تسجيل الخروج والدخول مرة أخرى ثم المحاولة.");
+            logout();
+        } else {
+            alert("حدث خطأ أثناء الحذف: " + error.message);
+            if(btn) btn.disabled = false;
+        }
+    }
+}
