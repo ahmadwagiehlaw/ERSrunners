@@ -96,17 +96,42 @@ function initApp() {
 }
 
 function updateUI() {
-    document.getElementById('headerName').innerText = userData.name;
-    document.getElementById('headerAvatar').innerText = (userData.name||"U").charAt(0);
-    document.getElementById('monthDist').innerText = (userData.totalDist || 0).toFixed(1);
-    document.getElementById('totalRuns').innerText = userData.totalRuns || 0;
+    // 1. تحديث الاسم في الهيدر
+    const headerName = document.getElementById('headerName');
+    if (headerName) {
+        headerName.innerText = userData.name || "Runner";
+    }
+
+    /* تم إلغاء هذا السطر لأننا استبدلنا الافتار باللوجو
+       document.getElementById('headerAvatar').innerText = ... 
+    */
     
-    document.getElementById('profileName').innerText = userData.name;
-    document.getElementById('profileRegion').innerHTML = `<i class="ri-map-pin-line"></i> ${userData.region}`;
-    document.getElementById('profileAvatar').innerText = (userData.name||"U").charAt(0);
+    // 2. كارت الإحصائيات (الداشبورد)
+    const monthDistEl = document.getElementById('monthDist');
+    const totalRunsEl = document.getElementById('totalRuns');
     
-    // الترتيب المناطقي (Placeholder)
-    document.getElementById('regionRank').innerText = `#${Math.floor(Math.random() * 10) + 1}`; 
+    if (monthDistEl) monthDistEl.innerText = (userData.totalDist || 0).toFixed(1);
+    if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
+    
+    // 3. البروفايل
+    const profileName = document.getElementById('profileName');
+    const profileRegion = document.getElementById('profileRegion');
+    const profileAvatar = document.getElementById('profileAvatar');
+
+    if (profileName) profileName.innerText = userData.name;
+    if (profileRegion) profileRegion.innerHTML = `<i class="ri-map-pin-line"></i> ${userData.region}`;
+    // البروفايل ما زال يحتاج الافتار، لذا نتركه هنا فقط
+    if (profileAvatar) profileAvatar.innerText = (userData.name || "U").charAt(0); 
+    
+    // 4. حساب الرتبة
+    let rank = "مبتدئ";
+    const d = userData.totalDist || 0;
+    if (d > 50) rank = "هاوي";
+    if (d > 100) rank = "محترف";
+    if (d > 500) rank = "نخبة";
+    
+    const rankBadge = document.getElementById('userRankBadge');
+    if (rankBadge) rankBadge.innerText = rank;
 }
 
 function switchView(viewId) {
