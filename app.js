@@ -107,7 +107,7 @@ function initApp() {
     loadActivityLog();
     loadActiveChallenges(); 
 listenForNotifications(); // <--- ضيف السطر ده عشان الجرس ينور لو جالك إشعار
-}
+
 loadGlobalFeed(); // <--- ضيف السطر ده
 }
 // الدالة المؤمنة بالكامل لتحديث الواجهة
