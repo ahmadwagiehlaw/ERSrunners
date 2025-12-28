@@ -280,3 +280,76 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .type-icon { font-size: 14px; }
 .type-run { color: var(--primary); }
 .type-walk { color: var(--accent); }
+
+
+
+
+/* Feed Styles */
+.feed-list { display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px; }
+.feed-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 15px;
+}
+.feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.feed-user { display: flex; align-items: center; gap: 10px; }
+.feed-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #374151; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; font-size: 12px;
+}
+.feed-name { font-weight: bold; font-size: 13px; color: var(--text-main); }
+.feed-meta { font-size: 10px; color: var(--text-muted); }
+.feed-body { font-size: 13px; color: #d1d5db; line-height: 1.5; }
+.highlight { color: var(--primary); font-weight: bold; font-size: 14px; }
+
+
+
+
+/* Feed Actions (Likes) */
+.feed-actions {
+    margin-top: 12px; padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex; gap: 15px; align-items: center;
+}
+.btn-like {
+    background: transparent; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 14px;
+    display: flex; align-items: center; gap: 6px;
+    transition: 0.2s;
+}
+.btn-like:hover { color: #fff; }
+.btn-like.liked { color: #ef4444; animation: pop 0.3s ease; }
+.btn-like i { font-size: 18px; }
+
+@keyframes pop { 0%{transform:scale(1);} 50%{transform:scale(1.2);} 100%{transform:scale(1);} }
+
+/* Notifications List */
+.notif-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.notif-item {
+    background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px;
+    display: flex; align-items: center; gap: 12px; border: 1px solid var(--border);
+}
+.notif-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(16, 185, 129, 0.1); color: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+}
+.notif-content { font-size: 12px; color: #fff; flex: 1; }
+.notif-time { font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; }
+.badge-dot.active { background-color: #ef4444; width: 8px; height: 8px; border-radius: 50%; position: absolute; top: 0; right: 0; }
+
+
+
+
+/* Admin Styles */
+.admin-card {
+    background: rgba(31, 41, 55, 0.5);
+    border: 1px dashed var(--accent);
+    padding: 20px; border-radius: 16px;
+}
+.admin-card h3 { margin: 0; color: var(--accent); font-size: 16px; }
+.admin-card label { color: #fff; margin-top: 10px; display: block; font-size: 12px; }
+.admin-card input { background: rgba(0,0,0,0.2); border-color: rgba(255,255,255,0.1); }
