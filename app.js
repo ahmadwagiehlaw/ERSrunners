@@ -187,15 +187,20 @@ function getNextRankName(current) {
 // ==================== 4. تحديث الواجهة الشامل (Update UI) ====================
 function updateUI() {
     try {
-        // أ) البيانات الأساسية
-        const headerName = document.getElementById('headerName');
-        if (headerName) headerName.innerText = userData.name || "Runner";
+      
+    // 1. البيانات الأساسية
+    const headerName = document.getElementById('headerName');
+    
+    // هنا نقوم بتغيير النص في الـ HTML مباشرة قبل وضع الاسم
+    const helloText = document.querySelector('.hello-text');
+    if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; // التعديل هنا
 
-        const monthDistEl = document.getElementById('monthDist');
-        const totalRunsEl = document.getElementById('totalRuns');
-        if (monthDistEl) monthDistEl.innerText = (userData.monthDist || 0).toFixed(1); // استخدام الشهر الحالي
-        if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
+    if (headerName) {
+        // نعرض الاسم كما هو (UserData.name) الذي يحتوي الاسم الثلاثي المسجل
+        headerName.innerText = userData.name || "Runner";
+    }
 
+// ... باقي الكود ...
         // ب) البروفايل
         const profileName = document.getElementById('profileName');
         const profileRegion = document.getElementById('profileRegion');
