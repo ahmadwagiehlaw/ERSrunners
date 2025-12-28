@@ -222,80 +222,103 @@ window.joinChallenge = async function(challengeId) {
 // -------------------------------- RUN LOGGING & ENGINE --------------------------------
 
 async function submitRun() {
-    const dist = parseFloat(document.getElementById('log-dist').value);
-    const time = parseFloat(document.getElementById('log-time').value);
-    const type = document.getElementById('log-type').value;
+    console.log("بدء عملية الحفظ...");
 
-    if (!dist || !time) return alert("أكمل البيانات");
+    const distInput = document.getElementById('log-dist');
+    const timeInput = document.getElementById('log-time');
+    const typeInput = document.getElementById('log-type');
 
-    const uid = currentUser.uid;
-    const runRef = db.collection('users').doc(uid).collection('runs').doc();
-    
-    // 1. حفظ الجرية
-    await runRef.set({
-        dist, time, type,
-        date: new Date().toISOString(),
-        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    // 2. تحديث إجمالي المستخدم
-    const userRef = db.collection('users').doc(uid);
-    await userRef.update({
-        totalDist: firebase.firestore.FieldValue.increment(dist),
-        totalRuns: firebase.firestore.FieldValue.increment(1)
-    });
-
-    // 3. تحديث التحديات (The Engine Logic) 🔥
-    // نبحث عن كل التحديات التي اشترك فيها المستخدم
-    const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
-    
-    const batch = db.batch();
-    let updatedCount = 0;
-
-    for (const chDoc of activeChCalls.docs) {
-        const participantRef = chDoc.ref.collection('participants').doc(uid);
-        const pDoc = await participantRef.get();
-        
-        if (pDoc.exists) {
-            // اللاعب مشترك في هذا التحدي، فلنحدث تقدمه
-            batch.update(participantRef, {
-                progress: firebase.firestore.FieldValue.increment(dist),
-                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            updatedCount++;
-        }
+    // التأكد من أن العناصر موجودة
+    if (!distInput || !timeInput) {
+        alert("خطأ في النظام: حقول الإدخال غير موجودة");
+        return;
     }
 
-    if (updatedCount > 0) await batch.commit();
+    const dist = parseFloat(distInput.value);
+    const time = parseFloat(timeInput.value);
+    const type = typeInput.value;
 
-    // Finish
-    userData.totalDist += dist;
-    userData.totalRuns += 1;
-    updateUI();
-    closeModal('modal-log');
-    document.getElementById('log-dist').value = '';
-    document.getElementById('log-time').value = '';
-    loadActivityLog();
-    loadActiveChallenges(); // لتحديث شريط التقدم فوراً
-    
-    alert(`تم تسجيل الجرية! وتم تحديث تقدمك في ${updatedCount} تحديات.`);
-}
+    if (!dist || !time) {
+        alert("من فضلك اكتب المسافة والزمن");
+        return;
+    }
 
-function loadActivityLog() {
-    const list = document.getElementById('activity-log');
-    if(!list) return;
-    db.collection('users').doc(currentUser.uid).collection('runs').orderBy('timestamp', 'desc').limit(5).get().then((snap) => {
-        let html = '';
-        snap.forEach(doc => {
-            const r = doc.data();
-            html += `
-            <div style="background:rgba(255,255,255,0.05); padding:10px; margin-bottom:8px; border-radius:10px; display:flex; justify-content:space-between; align-items:center;">
-                <div><span style="font-weight:bold;">${r.dist} كم</span> <span style="font-size:11px; color:#9ca3af;">${r.type}</span></div>
-                <div style="font-size:11px; color:#6b7280;">${new Date(r.timestamp?.toDate()).toLocaleDateString('ar-EG')}</div>
-            </div>`;
+    if (!currentUser) {
+        alert("يجب تسجيل الدخول أولاً!");
+        return;
+    }
+
+    // 1. تغيير شكل الزر ليعرف المستخدم أننا نحمل
+    const btn = document.querySelector('#modal-log .btn-primary');
+    const originalText = btn.innerText;
+    btn.innerText = "جاري الحفظ...";
+    btn.disabled = true;
+    btn.style.opacity = "0.7";
+
+    try {
+        const uid = currentUser.uid;
+
+        // 2. حفظ الجرية في السجل
+        await db.collection('users').doc(uid).collection('runs').add({
+            dist: dist,
+            time: time,
+            type: type,
+            date: new Date().toISOString(),
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-        list.innerHTML = html || '<div style="text-align:center; font-size:12px; padding:10px;">لا يوجد نشاط</div>';
-    });
+
+        // 3. تحديث إجمالي المستخدم
+        await db.collection('users').doc(uid).set({
+            totalDist: firebase.firestore.FieldValue.increment(dist),
+            totalRuns: firebase.firestore.FieldValue.increment(1)
+        }, { merge: true });
+
+        // 4. تحديث التحديات (محمية لتجنب توقف التطبيق لو فشلت)
+        try {
+            const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
+            if (!activeChCalls.empty) {
+                const batch = db.batch();
+                activeChCalls.forEach(doc => {
+                    const pRef = doc.ref.collection('participants').doc(uid);
+                    batch.set(pRef, {
+                        progress: firebase.firestore.FieldValue.increment(dist),
+                        lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+                        // ضمان وجود البيانات الأساسية
+                        name: userData.name || "Runner",
+                        region: userData.region || "General"
+                    }, { merge: true });
+                });
+                await batch.commit();
+            }
+        } catch (chErr) {
+            console.warn("خطأ بسيط في تحديث التحدي:", chErr);
+        }
+
+        // 5. نجاح العملية
+        alert("تم الحفظ يا بطل! 🔥");
+        closeModal('modal-log');
+
+        // تحديث الواجهة فوراً
+        userData.totalDist = (userData.totalDist || 0) + dist;
+        userData.totalRuns = (userData.totalRuns || 0) + 1;
+        updateUI();
+        loadActivityLog();
+        loadActiveChallenges();
+        
+        // تصفير الحقول
+        distInput.value = '';
+        timeInput.value = '';
+
+    } catch (error) {
+        console.error("خطأ في الحفظ:", error);
+        // هذه الرسالة ستخبرنا بالسبب الحقيقي
+        alert("حدث خطأ أثناء الحفظ:\n" + error.message);
+    } finally {
+        // إعادة الزر لوضعه الطبيعي
+        btn.innerText = originalText;
+        btn.disabled = false;
+        btn.style.opacity = "1";
+    }
 }
 
 // -------------------------------- COMPETITION ENGINE 🥇 --------------------------------
