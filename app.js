@@ -844,6 +844,47 @@ async function loadRegionBattle() {
         `;
     });
 }
+
+
+// ==================== دوال الإعدادات والتحديث ====================
+
+function openSettingsModal() {
+    document.getElementById('modal-settings').style.display = 'flex';
+}
+
+// ⚠️ الدالة السحرية للتحديث الإجباري
+async function forceUpdateApp() {
+    const btn = document.querySelector('.setting-item i.ri-refresh-line').parentElement;
+    btn.innerHTML = '<div class="spinner"></div>'; // مؤشر تحميل بسيط
+
+    if(confirm("سيتم تحديث التطبيق الآن للحصول على أحدث الميزات. هل أنت متأكد؟")) {
+        try {
+            // 1. إلغاء تسجيل الـ Service Worker (المسؤول عن الكاش)
+            if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations();
+                for(let registration of registrations) {
+                    await registration.unregister();
+                }
+            }
+            
+            // 2. مسح الكاش المخزن
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+            }
+            
+            alert("تم مسح النسخة القديمة! سيتم إعادة التحميل الآن.");
+            
+            // 3. إعادة تحميل الصفحة بقوة (من السيرفر مباشرة)
+            window.location.reload(true);
+            
+        } catch(e) {
+            console.error("Update Error:", e);
+            alert("حدث خطأ، يرجى مسح بيانات المتصفح يدوياً.");
+            window.location.reload();
+        }
+    }
+}
 // ==================== 5. لوحة تحكم الأدمن (Admin Dashboard) ====================
 
 // 1. التحقق من الصلاحية (دخول بكلمة سر)
@@ -912,3 +953,4 @@ function loadAdminStats() {
         statsDiv.innerHTML = `عدد الأعضاء المسجلين: <strong style="color:#fff">${usersCount}</strong>`;
     });
 }
+
