@@ -133,3 +133,49 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 /* Utilities */
 .error-msg { color: #ef4444; font-size: 12px; margin-top: 10px; text-align: center; }
 .challenges-grid { display: grid; gap: 15px; }
+
+
+
+/* تنسيق الهيدر من الداخل */
+.header-inner { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+
+/* تجميع اللوجو مع الترحيب في جهة اليمين */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* مسافة بين اللوجو والاسم */
+}
+
+/* تنسيق صورة اللوجو */
+.brand-logo {
+    height: 42px; /* ارتفاع مناسب للهيدر */
+    width: auto;  /* العرض يتظبط اوتوماتيك */
+    border-radius: 8px; /* حواف دائرية ناعمة للصورة */
+    /* لو اللوجو بخلفية بيضاء، الظل ده هيديله شكل بارز وجميل */
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* تحسين شكل بوكس الترحيب */
+.user-greeting-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.user-greeting-box h3 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.2;
+    color: var(--text-main);
+}
+
+/* تعديل بسيط لأيقونة الإشعارات عشان تكون في نفس السطر */
+.header-actions {
+    display: flex;
+    align-items: center;
+}
