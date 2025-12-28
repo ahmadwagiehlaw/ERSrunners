@@ -297,3 +297,111 @@ function loadActivityLog() {
         list.innerHTML = html || '<div style="text-align:center; font-size:12px; padding:10px;">لا يوجد نشاط</div>';
     });
 }
+
+// -------------------------------- COMPETITION ENGINE 🥇 --------------------------------
+
+// 1. تحميل لوحة المتصدرين
+let allUsersCache = []; // عشان منعملش تحميل كل شوية
+
+async function loadLeaderboard(filterType = 'all') {
+    const list = document.getElementById('leaderboard-list');
+    if (!list) return;
+
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">جاري تحميل الأبطال...</div>';
+
+    // لو البيانات مش عندنا، نجيبها من قاعدة البيانات
+    if (allUsersCache.length === 0) {
+        const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
+        snap.forEach(doc => allUsersCache.push(doc.data()));
+    }
+
+    // الفلترة (الكل أو منطقتي فقط)
+    let displayUsers = allUsersCache;
+    if (filterType === 'region') {
+        displayUsers = allUsersCache.filter(u => u.region === userData.region);
+    }
+
+    // الرسم (Rendering)
+    list.innerHTML = '';
+    if (displayUsers.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:20px;">لا يوجد منافسين في منطقتك حتى الآن!</div>';
+        return;
+    }
+
+    displayUsers.forEach((u, index) => {
+        // تحديد الميداليات للثلاثة الأوائل
+        let rankBadge = `<span class="rank-num">${index + 1}</span>`;
+        if (index === 0) rankBadge = '🥇';
+        if (index === 1) rankBadge = '🥈';
+        if (index === 2) rankBadge = '🥉';
+
+        // تمييز كارت المستخدم نفسه
+        const isMe = (u.email === userData.email) ? 'border:1px solid #10b981; background:rgba(16,185,129,0.1);' : '';
+
+        list.innerHTML += `
+            <div class="leader-row" style="${isMe}">
+                <div class="rank-col">${rankBadge}</div>
+                <div class="avatar-col">${u.name.charAt(0)}</div>
+                <div class="info-col">
+                    <div class="name">${u.name} ${isMe ? '(أنت)' : ''}</div>
+                    <div class="region">${u.region}</div>
+                </div>
+                <div class="dist-col">${u.totalDist.toFixed(1)} كم</div>
+            </div>
+        `;
+    });
+}
+
+// 2. تفعيل أزرار الفلتر (الكل / منطقتي)
+function filterLeaderboard(type) {
+    // تحديث شكل الأزرار
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // إعادة التحميل بالفلتر الجديد
+    loadLeaderboard(type);
+}
+
+// 3. حرب المناطق (Squads Battle) 🗺️
+async function loadRegionBattle() {
+    const list = document.getElementById('region-battle-list');
+    if (!list) return;
+
+    list.innerHTML = '<div style="text-align:center;">جاري حساب النتائج...</div>';
+
+    // تجميع النقاط (في التطبيق الحقيقي يفضل عمل هذا في الـ Backend، هنا هنعمله Client-side للتجربة)
+    // هنجيب كل المستخدمين ونجمع مسافاتهم حسب المنطقة
+    const snap = await db.collection('users').get();
+    let regionMap = {};
+
+    snap.forEach(doc => {
+        const u = doc.data();
+        if (!regionMap[u.region]) regionMap[u.region] = 0;
+        regionMap[u.region] += (u.totalDist || 0);
+    });
+
+    // تحويل الـ Map لمصفوفة وترتيبها
+    const sortedRegions = Object.keys(regionMap)
+        .map(key => ({ name: key, total: regionMap[key] }))
+        .sort((a, b) => b.total - a.total);
+
+    // العرض
+    list.innerHTML = '';
+    const maxVal = sortedRegions[0]?.total || 1; // عشان نحسب نسبة الشريط
+
+    sortedRegions.forEach((r, idx) => {
+        const percent = (r.total / maxVal) * 100;
+        list.innerHTML += `
+            <div class="squad-card">
+                <div class="squad-header">
+                    <span class="squad-rank">#${idx + 1}</span>
+                    <span class="squad-name">${r.name}</span>
+                    <span class="squad-total">${r.total.toFixed(0)} كم</span>
+                </div>
+                <div class="squad-bar-bg">
+                    <div class="squad-bar-fill" style="width:${percent}%"></div>
+                </div>
+            </div>
+        `;
+    });
+}
