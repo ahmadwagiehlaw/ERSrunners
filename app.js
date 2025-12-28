@@ -1,4 +1,4 @@
-/* ERS Runners - V21 (Mobile Fix + Smart Badges) */
+/* ERS Runners - V22 (Fixed Login & Error Handling) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -20,6 +20,7 @@ let isSignupMode = false;
 // ==================== 1. Auth & Init ====================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
+        // المستخدم مسجل دخول بالفعل
         currentUser = user;
         try {
             const doc = await db.collection('users').doc(user.uid).get();
@@ -27,11 +28,17 @@ auth.onAuthStateChanged(async (user) => {
                 userData = doc.data();
                 initApp();
             } else {
+                // حالة نادرة: الحساب موجود لكن البيانات محذوفة
+                console.warn("User data missing, creating default...");
                 userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0 };
                 initApp();
             }
-        } catch (e) { console.error("Auth Error:", e); }
+        } catch (e) { 
+            console.error("Auth Data Error:", e); 
+            alert("حدث خطأ في تحميل بياناتك. تأكد من الإنترنت.");
+        }
     } else {
+        // المستخدم غير مسجل
         currentUser = null;
         showAuthScreen();
     }
@@ -41,9 +48,8 @@ function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
     
-    // تعيين الوقت الحالي كافتراضي في حقل التسجيل
+    // تعيين الوقت الحالي كافتراضي
     const now = new Date();
-    // ضبط التوقيت المحلي ليكون صحيحاً في الـ Input
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     const defaultDate = now.toISOString().slice(0,16);
     const dateInput = document.getElementById('log-date');
@@ -56,7 +62,86 @@ function initApp() {
     listenForNotifications();
 }
 
-// ==================== 2. UI Updates ====================
+// ==================== 2. دالة الدخول (تم الإصلاح) ✅ ====================
+async function handleAuth() {
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const msgEl = document.getElementById('auth-msg');
+    const btn = document.querySelector('.auth-box .btn-primary'); // زر الدخول
+    
+    const email = emailEl.value;
+    const pass = passEl.value;
+
+    if (!email || !pass) {
+        alert("يرجى كتابة البريد الإلكتروني وكلمة المرور");
+        return;
+    }
+
+    // تغيير الزر ليعرف المستخدم أننا نعمل
+    const originalText = btn.innerText;
+    btn.innerText = "جاري التحميل...";
+    btn.disabled = true;
+    if(msgEl) msgEl.innerText = "";
+
+    try {
+        if (isSignupMode) {
+            // تسجيل جديد
+            const name = document.getElementById('username').value;
+            const region = document.getElementById('region').value;
+            
+            if(!name || !region) throw new Error("يرجى إكمال الاسم والمنطقة");
+
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('users').doc(cred.user.uid).set({
+                name: name, region: region, email: email,
+                totalDist: 0, totalRuns: 0, level: "Mubtadi",
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            // تسجيل دخول
+            await auth.signInWithEmailAndPassword(email, pass);
+        }
+        // لا داعي لعمل شيء هنا، onAuthStateChanged سيعمل تلقائياً وينقلنا للتطبيق
+    } catch (err) {
+        console.error("Auth Error:", err);
+        // إظهار الخطأ للمستخدم
+        let errorMsg = "حدث خطأ في الدخول";
+        if(err.code === 'auth/user-not-found') errorMsg = "هذا الحساب غير موجود";
+        if(err.code === 'auth/wrong-password') errorMsg = "كلمة المرور غير صحيحة";
+        if(err.code === 'auth/email-already-in-use') errorMsg = "البريد الإلكتروني مستخدم بالفعل";
+        
+        alert(errorMsg);
+        if(msgEl) msgEl.innerText = errorMsg;
+        
+        // إعادة الزر لحالته الطبيعية
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
+function toggleAuthMode() {
+    isSignupMode = !isSignupMode;
+    const fields = document.getElementById('signup-fields');
+    const btn = document.getElementById('toggleAuthBtn');
+    const mainBtn = document.querySelector('.auth-box .btn-primary');
+    
+    if (fields) fields.style.display = isSignupMode ? 'block' : 'none';
+    if (btn) btn.innerText = isSignupMode ? "لديك حساب بالفعل؟ تسجيل الدخول" : "ليس لديك حساب؟ سجل الآن";
+    if (mainBtn) mainBtn.innerText = isSignupMode ? "إنشاء حساب جديد" : "دخول";
+}
+
+function logout() {
+    if(confirm("هل تريد تسجيل الخروج؟")) { 
+        auth.signOut().then(() => window.location.reload()); 
+    }
+}
+
+function showAuthScreen() {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-content').style.display = 'none';
+}
+
+// ==================== 3. UI Updates & Logic ====================
 function updateUI() {
     try {
         const headerName = document.getElementById('headerName');
@@ -172,7 +257,7 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-// ==================== 3. Core Features ====================
+// ==================== 4. Core Features ====================
 async function submitRun() {
     const btn = document.getElementById('save-run-btn');
     const dist = parseFloat(document.getElementById('log-dist').value);
@@ -192,7 +277,6 @@ async function submitRun() {
         
         const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
         let newMonthDist = (userData.monthDist || 0) + dist;
-        // إعادة تعيين مسافة الشهر إذا اختلف الشهر
         if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
 
         const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
@@ -244,7 +328,7 @@ async function setPersonalGoal() {
     }
 }
 
-// ==================== 4. Feed & Likes ====================
+// ==================== 5. Feed & Likes ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
@@ -314,7 +398,7 @@ async function toggleLike(pid, uid) {
     }
 }
 
-// ==================== 5. Comments System ====================
+// ==================== 6. Comments System ====================
 let currentPostId = null; 
 let currentPostOwner = null;
 
@@ -356,7 +440,7 @@ async function sendComment() {
     } catch(e) { console.error("Comment Error:", e); }
 }
 
-// ==================== 6. Badges System (Updated Logic) ====================
+// ==================== 7. Badges System ====================
 const BADGES_CONFIG = [
     { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
     { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
@@ -367,7 +451,6 @@ const BADGES_CONFIG = [
     { id: 'club_500', name: 'المحترف', icon: '👑', desc: 'إجمالي مسافة 500 كم' },
 ];
 
-// دالة فحص الجوائز (تستخدم وقت الجرية المختار)
 async function checkNewBadges(currentRunDist, currentRunTime, runDateObj) {
     const myBadges = userData.badges || []; 
     let newBadgesEarned = [];
@@ -402,14 +485,13 @@ function renderBadges() {
     BADGES_CONFIG.forEach(badge => {
         const isUnlocked = myBadges.includes(badge.id);
         const lockClass = isUnlocked ? 'unlocked' : '';
-        // السماح بالضغط على المقفول لرؤية التلميح
         const clickAction = isUnlocked ? `alert('${badge.desc}')` : `alert('🔒 لفتح هذا الوسام: ${badge.desc}')`;
         html += `<div class="badge-item ${lockClass}" onclick="${clickAction}"><span class="badge-icon">${badge.icon}</span><span class="badge-name">${badge.name}</span></div>`;
     });
     grid.innerHTML = html;
 }
 
-// ==================== 7. Navigation & Helpers ====================
+// ==================== 8. Navigation & Helpers ====================
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -429,26 +511,8 @@ function setTab(tabName) {
     if (tabName === 'active-challenges') loadActiveChallenges();
 }
 
-function toggleAuthMode() {
-    isSignupMode = !isSignupMode;
-    document.getElementById('signup-fields').style.display = isSignupMode ? 'block' : 'none';
-    document.getElementById('toggleAuthBtn').innerText = isSignupMode ? "لديك حساب؟" : "سجل الآن";
-}
-async function handleAuth() {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    if(isSignupMode) {
-        const name = document.getElementById('username').value;
-        const region = document.getElementById('region').value;
-        const c = await auth.createUserWithEmailAndPassword(email, pass);
-        await db.collection('users').doc(c.user.uid).set({name, region, email, totalDist:0, totalRuns:0});
-    } else {
-        await auth.signInWithEmailAndPassword(email, pass);
-    }
-}
 function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-function showAuthScreen() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('app-content').style.display='none';}
 function openSettingsModal() { document.getElementById('modal-settings').style.display='flex'; }
 function showNotifications() { document.getElementById('modal-notifications').style.display='flex'; document.getElementById('notif-dot').classList.remove('active'); loadNotifications(); }
 function openEditProfile() { document.getElementById('modal-edit-profile').style.display='flex'; }
@@ -475,7 +539,7 @@ async function sendNotification(receiverId, message) {
     } catch(e) {}
 }
 
-// ==================== 8. Admin & Danger Zone ====================
+// ==================== 9. Admin & Danger Zone ====================
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
     if(pin === "1234") { 
