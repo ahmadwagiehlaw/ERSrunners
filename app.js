@@ -53,7 +53,7 @@ function updateUI() {
         const headerName = document.getElementById('headerName');
         const helloText = document.querySelector('.hello-text');
         
-        if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; 
+        if(helloText) helloText.innerText = "أهلاً كابتن👋"; 
         if (headerName) headerName.innerText = userData.name || "Runner";
 
         // Dashboard Stats
