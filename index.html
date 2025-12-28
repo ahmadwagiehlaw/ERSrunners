@@ -190,7 +190,7 @@
 
     </div>
 
-    <div id="modal-log" class="modal-overlay">
+   <div id="modal-log" class="modal-overlay">
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>
             <div class="input-row">
@@ -209,7 +209,7 @@
                 <option value="Race">سباق (Race)</option>
             </select>
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
-         
+            <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
         </div>
     </div>
 
@@ -218,7 +218,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     
     <script src="app.js"></script>
-<script src="app.js"></script>
+
 
     <script>
       if ('serviceWorker' in navigator) {
@@ -241,11 +241,32 @@
                 <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
                     <option value="Cairo">القاهرة</option>
-                    <option value="Alex">الإسكندرية</option>
-                    <option value="Delta">الدلتا</option>
-                    <option value="Canal">مدن القناة</option>
-                    <option value="UpperEgypt">الصعيد</option>
-                    <option value="Giza">الجيزة</option>
+<option value="Giza">الجيزة</option>
+<option value="Alexandria">الإسكندرية</option>
+<option value="Dakahlia">الدقهلية</option>
+<option value="Red Sea">البحر الأحمر</option>
+<option value="Beheira">البحيرة</option>
+<option value="Fayoum">الفيوم</option>
+<option value="Gharbia">الغربية</option>
+<option value="Ismailia">الإسماعيلية</option>
+<option value="Monufia">المنوفية</option>
+<option value="Minya">المنيا</option>
+<option value="Qalyubia">القليوبية</option>
+<option value="New Valley">الوادي الجديد</option>
+<option value="Suez">السويس</option>
+<option value="Aswan">أسوان</option>
+<option value="Assiut">أسيوط</option>
+<option value="Beni Suef">بني سويف</option>
+<option value="Port Said">بورسعيد</option>
+<option value="Damietta">دمياط</option>
+<option value="Sharkia">الشرقية</option>
+<option value="South Sinai">جنوب سيناء</option>
+<option value="Kafr El Sheikh">كفر الشيخ</option>
+<option value="Matrouh">مطروح</option>
+<option value="Luxor">الأقصر</option>
+<option value="Qena">قنا</option>
+<option value="North Sinai">شمال سيناء</option>
+<option value="Sohag">سوهاج</option>
                     <option value="Other">أخرى</option>
                 </select>
             </div>
