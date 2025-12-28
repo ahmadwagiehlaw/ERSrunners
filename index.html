@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>ERS Runners</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#111827">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png"> <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="auth-screen" class="full-screen-overlay">
+        <div class="auth-box">
+            <div class="logo-area">
+                <h1>ERS <span class="accent-text">RUNNERS</span></h1>
+                <p>منصة العدائين المحترفين</p>
+            </div>
+            
+            <div class="form-group">
+                <input type="email" id="email" placeholder="البريد الإلكتروني">
+                <input type="password" id="password" placeholder="كلمة المرور">
+                
+                <div id="signup-fields" style="display:none;">
+                    <input type="text" id="username" placeholder="الاسم ثلاثي">
+                    <select id="region">
+                        <option value="" disabled selected>اختر منطقتك (للمنافسة)</option>
+                        <option value="Cairo">القاهرة</option>
+                        <option value="Alex">الإسكندرية</option>
+                        <option value="Delta">الدلتا</option>
+                        <option value="Canal">مدن القناة</option>
+                        <option value="UpperEgypt">الصعيد</option>
+                        <option value="Giza">الجيزة</option>
+                        <option value="Other">أخرى</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
+                <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
+                <div id="auth-msg" class="error-msg"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-content" style="display:none;">
+        
+        <header class="glass-header">
+            <div class="header-inner">
+                <div class="user-greeting">
+                    <div class="avatar-circle" id="headerAvatar">?</div>
+                    <div>
+                        <span class="hello-text">أهلاً يا بطل</span>
+                        <h3 id="headerName">...</h3>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="icon-badge" onclick="showNotifications()">
+                        <i class="ri-notification-3-line"></i>
+                        <span class="badge-dot" id="notif-dot"></span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-container">
+            
+            <section id="view-home" class="view active">
+                
+                <div class="status-card">
+                    <div class="status-header">
+                        <span>مستواك الحالي</span>
+                        <span class="rank-badge" id="userRankBadge">مبتدئ</span>
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-val" id="monthDist">0</span>
+                            <span class="stat-lbl">كم (شهر)</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val" id="totalRuns">0</span>
+                            <span class="stat-lbl">جرية</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-val" id="regionRank">-</span>
+                            <span class="stat-lbl">ترتيبك منطقتك</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-giant" onclick="openLogModal()">
+                    <div class="icon-box"><i class="ri-add-line"></i></div>
+                    <div>تسجيل جرية جديدة</div>
+                </button>
+
+                <div class="section-header">
+                    <h4>تحدياتي النشطة</h4>
+                    <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
+                </div>
+                <div id="my-active-challenges" class="horizontal-scroll">
+                    <div class="empty-state-mini">لا توجد تحديات حالياً</div>
+                </div>
+
+            </section>
+
+            <section id="view-challenges" class="view">
+                <div class="tabs-nav">
+                    <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
+                    <div class="tab-item" onclick="setTab('leaderboard')">المتصدرون</div>
+                    <div class="tab-item" onclick="setTab('squads')">المناطق</div>
+                </div>
+
+                <div id="tab-active-challenges" class="tab-content active">
+                    <div id="challenges-list" class="challenges-grid"></div>
+                </div>
+
+                <div id="tab-leaderboard" class="tab-content">
+                    <div class="filter-bar">
+                        <button class="filter-btn active" onclick="filterLeaderboard('all')">الكل</button>
+                        <button class="filter-btn" onclick="filterLeaderboard('region')">منطقتي</button>
+                    </div>
+                    <div id="leaderboard-list" class="rank-list"></div>
+                </div>
+
+                <div id="tab-squads" class="tab-content">
+                    <div id="region-battle-list"></div>
+                </div>
+            </section>
+
+            <section id="view-profile" class="view">
+                <div class="profile-header">
+                    <div class="big-avatar" id="profileAvatar"></div>
+                    <h2 id="profileName">...</h2>
+                    <div class="profile-region" id="profileRegion"><i class="ri-map-pin-line"></i> ...</div>
+                </div>
+                
+                <div class="log-history">
+                    <h3>سجل النشاط</h3>
+                    <div id="activity-log"></div>
+                </div>
+                
+                <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">تسجيل خروج</button>
+            </section>
+
+        </main>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchView('home')">
+                <i class="ri-home-4-line"></i>
+                <span>الرئيسية</span>
+            </div>
+            <div class="nav-item" onclick="switchView('challenges')">
+                <i class="ri-trophy-line"></i>
+                <span>المنافسة</span>
+            </div>
+            <div class="nav-item" onclick="switchView('profile')">
+                <i class="ri-user-smile-line"></i>
+                <span>بروفايل</span>
+            </div>
+        </nav>
+
+    </div>
+
+    <div id="modal-log" class="modal-overlay">
+        <div class="modal-box">
+            <h3>تسجيل نشاط 🏃‍♂️</h3>
+            <div class="input-row">
+                <div class="input-wrap">
+                    <label>المسافة (كم)</label>
+                    <input type="number" id="log-dist" step="0.1" inputmode="decimal">
+                </div>
+                <div class="input-wrap">
+                    <label>الزمن (دقائق)</label>
+                    <input type="number" id="log-time" inputmode="numeric">
+                </div>
+            </div>
+            <select id="log-type" class="full-select">
+                <option value="Run">جري (Run)</option>
+                <option value="Walk">مشي (Walk)</option>
+                <option value="Race">سباق (Race)</option>
+            </select>
+            <button class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
+            <button class="btn btn-text" onclick="closeModal('modal-log')">إلغاء</button>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <script src="app.js"></script>
+</body>
+</html>
