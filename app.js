@@ -1083,3 +1083,32 @@ function loadAdminStats() {
     });
 }
 
+
+
+// ==================== 7. الأهداف الشخصية (Personal Goals) ====================
+
+// تحديد الهدف
+async function setPersonalGoal() {
+    const currentGoal = userData.monthlyGoal || 0;
+    const newGoal = prompt("حددي هدفك لهذا الشهر (كم):", currentGoal);
+    
+    if(newGoal !== null && newGoal > 0) {
+        try {
+            await db.collection('users').doc(currentUser.uid).update({
+                monthlyGoal: parseFloat(newGoal)
+            });
+            userData.monthlyGoal = parseFloat(newGoal);
+            alert("تم تحديد الهدف! 🎯\nلنرى هل يمكنك تحقيقه!");
+            updateUI(); // تحديث فوري
+        } catch(e) { console.error(e); }
+    }
+}
+
+// حساب مسافة الشهر الحالي (مهم جداً للدقة)
+function getCurrentMonthDist() {
+    // هذه الدالة تعتمد على البيانات المحملة. 
+    // للحصول على دقة 100% يفضل تخزين monthDist في الداتابيز وتحديثه مع كل جرية.
+    // للتبسيط الآن، سنفترض أننا نملك القيمة، أو سنقوم بحسابها تقريبياً من السجلات المحملة
+    // (الأفضل: سنقوم بتعديل submitRun لتحديث حقل monthDist في قاعدة البيانات)
+    return userData.monthDist || 0; 
+}
