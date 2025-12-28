@@ -273,42 +273,39 @@ window.joinChallenge = async function(challengeId) {
 // -------------------------------- RUN LOGGING & ENGINE --------------------------------
 
 // ==================== تعديل: إضافة النشاط للـ Feed العام ====================
+// ==================== تحديث: حفظ الرابط مع الجرية ====================
 async function submitRun() {
     const btn = document.getElementById('save-run-btn');
-    const distInput = document.getElementById('log-dist');
-    const timeInput = document.getElementById('log-time');
-    const typeInput = document.getElementById('log-type');
+    const dist = parseFloat(document.getElementById('log-dist').value);
+    const time = parseFloat(document.getElementById('log-time').value);
+    const type = document.getElementById('log-type').value;
+    const link = document.getElementById('log-link').value; // <--- الجديد
 
-    if (!distInput || !timeInput) return;
-
-    const dist = parseFloat(distInput.value);
-    const time = parseFloat(timeInput.value);
-    const type = typeInput.value;
-
-    if (!dist || !time) { alert("اكتب المسافة والزمن"); return; }
+    if (!dist || !time) { alert("المسافة والزمن مطلوبين!"); return; }
     
-    // تأمين الزر
     if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
         const timestamp = firebase.firestore.FieldValue.serverTimestamp();
         
-        // 1. حفظ في بروفايل المستخدم
-        await db.collection('users').doc(uid).collection('runs').add({
-            dist, time, type, date: new Date().toISOString(), timestamp
-        });
+        // تجهيز بيانات الجرية
+        const runData = {
+            dist, time, type, link, // حفظ الرابط
+            date: new Date().toISOString(),
+            timestamp
+        };
 
-        // 2. === الجديد: حفظ في الـ Feed العام === 🌍
-        // بنحفظ الاسم والمنطقة مع الجرية عشان منضطرش نجيبهم تاني
+        // 1. حفظ في البروفايل
+        await db.collection('users').doc(uid).collection('runs').add(runData);
+
+        // 2. حفظ في الـ Feed العام
         await db.collection('activity_feed').add({
             uid: uid,
             userName: userData.name || "Unknown",
             userRegion: userData.region || "General",
-            dist: dist,
-            time: time,
-            type: type,
-            timestamp: timestamp
+            ...runData, // نسخ نفس البيانات (بما فيها الرابط)
+            likes: []
         });
 
         // 3. تحديث الإجمالي
@@ -317,13 +314,12 @@ async function submitRun() {
             totalRuns: firebase.firestore.FieldValue.increment(1)
         }, { merge: true });
 
-        // 4. تحديث التحديات (نفس الكود السابق)
+        // 4. تحديث التحديات
         const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
         if (!activeChCalls.empty) {
             const batch = db.batch();
             activeChCalls.forEach(doc => {
-                const pRef = doc.ref.collection('participants').doc(uid);
-                batch.set(pRef, {
+                batch.set(doc.ref.collection('participants').doc(uid), {
                     progress: firebase.firestore.FieldValue.increment(dist),
                     lastUpdate: timestamp,
                     name: userData.name, region: userData.region
@@ -332,18 +328,18 @@ async function submitRun() {
             await batch.commit();
         }
 
-        alert("عاش يا وحش! 🚀");
+        alert("تم الحفظ بنجاح! 🚀");
         closeModal('modal-log');
-
-        // تحديث الواجهة
-        userData.totalDist = (userData.totalDist || 0) + dist;
-        userData.totalRuns = (userData.totalRuns || 0) + 1;
-        updateUI();
-        loadActivityLog();
-        loadActiveChallenges();
-        loadGlobalFeed(); // <--- تحديث الفيد
         
-        distInput.value = ''; timeInput.value = '';
+        // تنظيف وتحديث
+        document.getElementById('log-dist').value = '';
+        document.getElementById('log-time').value = '';
+        document.getElementById('log-link').value = ''; // مسح الرابط
+        userData.totalDist += dist; 
+        userData.totalRuns += 1;
+        updateUI();
+        loadActivityLog(); 
+        loadGlobalFeed();
 
     } catch (error) {
         console.error(error);
@@ -351,6 +347,106 @@ async function submitRun() {
     } finally {
         if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     }
+}
+
+// ==================== تحديث: عرض الرابط في الـ Feed ====================
+function loadGlobalFeed() {
+    const feedContainer = document.getElementById('global-feed-list');
+    if(!feedContainer) return;
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20)
+      .onSnapshot(snap => {
+          let html = '';
+          if(snap.empty) {
+              feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة</div>';
+              return;
+          }
+
+          snap.forEach(doc => {
+              const post = doc.data();
+              // ... (نفس كود الوقت السابق) ...
+              let timeAgo = "الآن"; // اختصاراً للكود، انسخ منطق الوقت من ملفك السابق
+              
+              // زر الرابط (يظهر فقط لو فيه رابط)
+              let linkBtn = '';
+              if(post.link && post.link.startsWith('http')) {
+                  linkBtn = `<a href="${post.link}" target="_blank" class="btn-link-proof"><i class="ri-link"></i> إثبات</a>`;
+              }
+
+              const isLiked = post.likes && post.likes.includes(currentUser.uid);
+              const likeClass = isLiked ? 'liked' : '';
+              const likeIcon = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
+
+              html += `
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="feed-user">
+                            <div class="feed-avatar">${(post.userName||"?").charAt(0)}</div>
+                            <div>
+                                <div class="feed-name">${post.userName}</div>
+                                <div class="feed-meta">${post.userRegion}</div>
+                            </div>
+                        </div>
+                        ${linkBtn} </div>
+                    <div class="feed-body">
+                        أكمل <strong>${post.type}</strong> لمسافة <span class="highlight">${post.dist} كم</span> في ${post.time} دقيقة
+                    </div>
+                    <div class="feed-actions">
+                        <button class="btn-like ${likeClass}" onclick="toggleLike('${doc.id}', '${post.uid}')">
+                            <i class="${likeIcon}"></i> <span>${(post.likes||[]).length || ''}</span>
+                        </button>
+                    </div>
+                </div>`;
+          });
+          feedContainer.innerHTML = html;
+      });
+}
+
+// ==================== دوال الأدمن والتحديث الإجباري ====================
+
+// 1. زر التحديث الإجباري (Force Update)
+function forceUpdate() {
+    if(confirm("سيتم مسح الذاكرة المؤقتة وتحديث التطبيق. هل توافق؟")) {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        window.location.reload(true);
+    }
+}
+
+// 2. دخول الأدمن
+function openAdminAuth() {
+    const pin = prompt("أدخل كود المشرف:");
+    if(pin === "1234") { // يمكنك تغيير الكود
+        switchView('admin');
+    } else {
+        alert("كود خاطئ");
+    }
+}
+
+// 3. إنشاء تحدي
+async function createChallengeUI() {
+    const title = document.getElementById('admin-ch-title').value;
+    const desc = document.getElementById('admin-ch-desc').value;
+    const target = parseFloat(document.getElementById('admin-ch-target').value);
+    const days = parseInt(document.getElementById('admin-ch-days').value);
+
+    if(!title || !target) return alert("أكمل البيانات");
+
+    try {
+        await db.collection('challenges').add({
+            title, desc, target,
+            active: true, type: "distance",
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + days * 86400000).toISOString()
+        });
+        alert("تم النشر!");
+        switchView('challenges');
+    } catch(e) { alert("خطأ: " + e.message); }
 }
 
 // ==================== تحديث دالة الـ Feed (مع اللايكات) ====================
