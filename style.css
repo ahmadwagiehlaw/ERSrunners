@@ -422,3 +422,35 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 /* تأثير التوهج للأسطورة */
 .rank-legend .xp-fill { animation: glow 1.5s infinite alternate; }
 @keyframes glow { from { box-shadow: 0 0 5px #8b5cf6; } to { box-shadow: 0 0 20px #8b5cf6; } }
+
+/* كارت الهدف الشخصي */
+.goal-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; position: relative; overflow: hidden;
+}
+.goal-card:active { transform: scale(0.98); background: rgba(255,255,255,0.08); }
+
+/* النصوص */
+.goal-title { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+.goal-card h3 { margin: 5px 0; font-size: 18px; color: #fff; }
+.goal-sub { font-size: 11px; color: #a78bfa; font-weight: bold; }
+
+/* الحلقة الدائرية */
+.goal-ring-wrapper { position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+
+.goal-ring {
+    width: 100%; height: 100%; border-radius: 50%;
+    /* الخلفية الرمادية + اللون البنفسجي للتقدم */
+    background: conic-gradient(#8b5cf6 var(--p), rgba(255,255,255,0.1) 0deg);
+    mask: radial-gradient(transparent 55%, black 56%);
+    -webkit-mask: radial-gradient(transparent 55%, black 56%);
+    transition: --p 1s ease; /* انيميشن ناعم */
+}
+
+/* الأيقونة في المنتصف */
+.goal-icon { position: absolute; color: #8b5cf6; font-size: 18px; }
