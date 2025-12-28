@@ -361,7 +361,7 @@ async function sendNotification(receiverId, message) {
 // ==================== 6. Admin & Updates (Fixed) ====================
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
-    if(pin === "1234") { 
+    if(pin === "a4450422") { 
         closeModal('modal-settings'); // نغلق المودال أولاً
         // تأخير بسيط لضمان اختفاء المودال قبل الانتقال
         setTimeout(() => {
