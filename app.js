@@ -106,8 +106,9 @@ function initApp() {
     updateUI();
     loadActivityLog();
     loadActiveChallenges(); 
-}
 
+loadGlobalFeed(); // <--- ضيف السطر ده
+}
 // الدالة المؤمنة بالكامل لتحديث الواجهة
 function updateUI() {
     // 1. تحديث الاسم في الهيدر
