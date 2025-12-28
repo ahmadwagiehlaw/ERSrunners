@@ -106,8 +106,10 @@ function initApp() {
     updateUI();
     loadActivityLog();
     loadActiveChallenges(); 
-}
+listenForNotifications(); // <--- ضيف السطر ده عشان الجرس ينور لو جالك إشعار
 
+loadGlobalFeed(); // <--- ضيف السطر ده
+}
 // الدالة المؤمنة بالكامل لتحديث الواجهة
 function updateUI() {
     // 1. تحديث الاسم في الهيدر
@@ -270,91 +272,326 @@ window.joinChallenge = async function(challengeId) {
 
 // -------------------------------- RUN LOGGING & ENGINE --------------------------------
 
+// ==================== تعديل: إضافة النشاط للـ Feed العام ====================
+// ==================== تحديث: حفظ الرابط مع الجرية ====================
 async function submitRun() {
-    // استخدمنا الـ ID الجديد للزر
     const btn = document.getElementById('save-run-btn');
-    const distInput = document.getElementById('log-dist');
-    const timeInput = document.getElementById('log-time');
-    const typeInput = document.getElementById('log-type');
+    const dist = parseFloat(document.getElementById('log-dist').value);
+    const time = parseFloat(document.getElementById('log-time').value);
+    const type = document.getElementById('log-type').value;
+    const link = document.getElementById('log-link').value; // <--- الجديد
 
-    if (!distInput || !timeInput) { alert("خطأ داخلي: الحقول مفقودة"); return; }
-
-    const dist = parseFloat(distInput.value);
-    const time = parseFloat(timeInput.value);
-    const type = typeInput.value;
-
-    if (!dist || !time) { alert("من فضلك اكتب المسافة والزمن"); return; }
-    if (!currentUser) { alert("يجب تسجيل الدخول أولاً!"); return; }
-
-    let originalText = "حفظ النشاط";
-    if(btn) {
-        originalText = btn.innerText;
-        btn.innerText = "جاري الحفظ...";
-        btn.disabled = true;
-        btn.style.opacity = "0.7";
-    }
+    if (!dist || !time) { alert("المسافة والزمن مطلوبين!"); return; }
+    
+    if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
-
-        // 1. حفظ الجرية
-        await db.collection('users').doc(uid).collection('runs').add({
-            dist: dist, time: time, type: type,
+        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+        
+        // تجهيز بيانات الجرية
+        const runData = {
+            dist, time, type, link, // حفظ الرابط
             date: new Date().toISOString(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            timestamp
+        };
+
+        // 1. حفظ في البروفايل
+        await db.collection('users').doc(uid).collection('runs').add(runData);
+
+        // 2. حفظ في الـ Feed العام
+        await db.collection('activity_feed').add({
+            uid: uid,
+            userName: userData.name || "Unknown",
+            userRegion: userData.region || "General",
+            ...runData, // نسخ نفس البيانات (بما فيها الرابط)
+            likes: []
         });
 
-        // 2. تحديث الإجمالي
+        // 3. تحديث الإجمالي
         await db.collection('users').doc(uid).set({
             totalDist: firebase.firestore.FieldValue.increment(dist),
             totalRuns: firebase.firestore.FieldValue.increment(1)
         }, { merge: true });
 
-        // 3. تحديث التحديات
-        try {
-            const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
-            if (!activeChCalls.empty) {
-                const batch = db.batch();
-                activeChCalls.forEach(doc => {
-                    const pRef = doc.ref.collection('participants').doc(uid);
-                    // استخدام merge لتفادي الأخطاء لو الوثيقة مش موجودة
-                    batch.set(pRef, {
-                        progress: firebase.firestore.FieldValue.increment(dist),
-                        lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-                        name: userData.name || "Runner",
-                        region: userData.region || "General"
-                    }, { merge: true });
-                });
-                await batch.commit();
-            }
-        } catch (chErr) { console.warn("تنبيه تحديث التحدي:", chErr); }
+        // 4. تحديث التحديات
+        const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
+        if (!activeChCalls.empty) {
+            const batch = db.batch();
+            activeChCalls.forEach(doc => {
+                batch.set(doc.ref.collection('participants').doc(uid), {
+                    progress: firebase.firestore.FieldValue.increment(dist),
+                    lastUpdate: timestamp,
+                    name: userData.name, region: userData.region
+                }, { merge: true });
+            });
+            await batch.commit();
+        }
 
-        // نجاح
-        alert("تم الحفظ يا بطل! 🔥");
+        alert("تم الحفظ بنجاح! 🚀");
         closeModal('modal-log');
-
-        // تحديث الواجهة محلياً
-        userData.totalDist = (userData.totalDist || 0) + dist;
-        userData.totalRuns = (userData.totalRuns || 0) + 1;
-        updateUI();
-        loadActivityLog();
-        loadActiveChallenges();
         
-        distInput.value = '';
-        timeInput.value = '';
+        // تنظيف وتحديث
+        document.getElementById('log-dist').value = '';
+        document.getElementById('log-time').value = '';
+        document.getElementById('log-link').value = ''; // مسح الرابط
+        userData.totalDist += dist; 
+        userData.totalRuns += 1;
+        updateUI();
+        loadActivityLog(); 
+        loadGlobalFeed();
 
     } catch (error) {
-        console.error("خطأ في الحفظ:", error);
-        alert("حدث خطأ: " + error.message);
+        console.error(error);
+        alert("خطأ: " + error.message);
     } finally {
-        if(btn) {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            btn.style.opacity = "1";
-        }
+        if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     }
 }
 
+// ==================== تحديث: عرض الرابط في الـ Feed ====================
+function loadGlobalFeed() {
+    const feedContainer = document.getElementById('global-feed-list');
+    if(!feedContainer) return;
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20)
+      .onSnapshot(snap => {
+          let html = '';
+          if(snap.empty) {
+              feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة</div>';
+              return;
+          }
+
+          snap.forEach(doc => {
+              const post = doc.data();
+              // ... (نفس كود الوقت السابق) ...
+              let timeAgo = "الآن"; // اختصاراً للكود، انسخ منطق الوقت من ملفك السابق
+              
+              // زر الرابط (يظهر فقط لو فيه رابط)
+              let linkBtn = '';
+              if(post.link && post.link.startsWith('http')) {
+                  linkBtn = `<a href="${post.link}" target="_blank" class="btn-link-proof"><i class="ri-link"></i> إثبات</a>`;
+              }
+
+              const isLiked = post.likes && post.likes.includes(currentUser.uid);
+              const likeClass = isLiked ? 'liked' : '';
+              const likeIcon = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
+
+              html += `
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="feed-user">
+                            <div class="feed-avatar">${(post.userName||"?").charAt(0)}</div>
+                            <div>
+                                <div class="feed-name">${post.userName}</div>
+                                <div class="feed-meta">${post.userRegion}</div>
+                            </div>
+                        </div>
+                        ${linkBtn} </div>
+                    <div class="feed-body">
+                        أكمل <strong>${post.type}</strong> لمسافة <span class="highlight">${post.dist} كم</span> في ${post.time} دقيقة
+                    </div>
+                    <div class="feed-actions">
+                        <button class="btn-like ${likeClass}" onclick="toggleLike('${doc.id}', '${post.uid}')">
+                            <i class="${likeIcon}"></i> <span>${(post.likes||[]).length || ''}</span>
+                        </button>
+                    </div>
+                </div>`;
+          });
+          feedContainer.innerHTML = html;
+      });
+}
+
+// ==================== دوال الأدمن والتحديث الإجباري ====================
+
+// 1. زر التحديث الإجباري (Force Update)
+function forceUpdate() {
+    if(confirm("سيتم مسح الذاكرة المؤقتة وتحديث التطبيق. هل توافق؟")) {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        window.location.reload(true);
+    }
+}
+
+// 2. دخول الأدمن
+function openAdminAuth() {
+    const pin = prompt("أدخل كود المشرف:");
+    if(pin === "1234") { // يمكنك تغيير الكود
+        switchView('admin');
+    } else {
+        alert("كود خاطئ");
+    }
+}
+
+// 3. إنشاء تحدي
+async function createChallengeUI() {
+    const title = document.getElementById('admin-ch-title').value;
+    const desc = document.getElementById('admin-ch-desc').value;
+    const target = parseFloat(document.getElementById('admin-ch-target').value);
+    const days = parseInt(document.getElementById('admin-ch-days').value);
+
+    if(!title || !target) return alert("أكمل البيانات");
+
+    try {
+        await db.collection('challenges').add({
+            title, desc, target,
+            active: true, type: "distance",
+            startDate: new Date().toISOString(),
+            endDate: new Date(Date.now() + days * 86400000).toISOString()
+        });
+        alert("تم النشر!");
+        switchView('challenges');
+    } catch(e) { alert("خطأ: " + e.message); }
+}
+
+// ==================== تحديث دالة الـ Feed (مع اللايكات) ====================
+function loadGlobalFeed() {
+    const feedContainer = document.getElementById('global-feed-list');
+    if(!feedContainer) return;
+
+    db.collection('activity_feed')
+      .orderBy('timestamp', 'desc')
+      .limit(20)
+      .onSnapshot(snap => {
+          let html = '';
+          if(snap.empty) {
+              feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة حديثة</div>';
+              return;
+          }
+
+          snap.forEach(doc => {
+              const post = doc.data();
+              const postId = doc.id;
+              
+              let timeAgo = "الآن";
+              if(post.timestamp) {
+                  const diff = new Date() - post.timestamp.toDate();
+                  const mins = Math.floor(diff / 60000);
+                  if(mins < 60) timeAgo = `منذ ${mins} د`;
+                  else if(mins < 1440) timeAgo = `منذ ${Math.floor(mins/60)} س`;
+                  else timeAgo = `منذ ${Math.floor(mins/1440)} يوم`;
+              }
+
+              // منطق اللايك ❤️
+              const likes = post.likes || [];
+              const isLiked = currentUser && likes.includes(currentUser.uid);
+              const likeCount = likes.length;
+              const likeClass = isLiked ? 'liked' : '';
+              const likeIcon = isLiked ? 'ri-heart-fill' : 'ri-heart-line';
+
+              html += `
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="feed-user">
+                            <div class="feed-avatar">${(post.userName || "?").charAt(0)}</div>
+                            <div>
+                                <div class="feed-name">${post.userName}</div>
+                                <div class="feed-meta">${post.userRegion} • ${timeAgo}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feed-body">
+                        أكمل <strong>${post.type === 'Run' ? 'جرية' : post.type === 'Walk' ? 'مشية' : 'سباق'}</strong> لمسافة 
+                        <span class="highlight">${post.dist} كم</span> 
+                        في ${post.time} دقيقة 🔥
+                    </div>
+                    <div class="feed-actions">
+                        <button class="btn-like ${likeClass}" onclick="toggleLike('${postId}', '${post.uid}')">
+                            <i class="${likeIcon}"></i>
+                            <span>${likeCount > 0 ? likeCount : 'تشجيع'}</span>
+                        </button>
+                    </div>
+                </div>
+              `;
+          });
+          feedContainer.innerHTML = html;
+      });
+}
+
+// ==================== دوال التفاعل والإشعارات ====================
+
+async function toggleLike(postId, postOwnerId) {
+    if(!currentUser) return;
+    
+    const postRef = db.collection('activity_feed').doc(postId);
+    const uid = currentUser.uid;
+
+    try {
+        const doc = await postRef.get();
+        if(!doc.exists) return;
+
+        const likes = doc.data().likes || [];
+        
+        if (likes.includes(uid)) {
+            await postRef.update({
+                likes: firebase.firestore.FieldValue.arrayRemove(uid)
+            });
+        } else {
+            await postRef.update({
+                likes: firebase.firestore.FieldValue.arrayUnion(uid)
+            });
+            if(postOwnerId !== uid) {
+                sendNotification(postOwnerId, "قام " + userData.name + " بتشجيعك ❤️");
+            }
+        }
+    } catch(e) { console.error("Like Error:", e); }
+}
+
+async function sendNotification(receiverId, message) {
+    try {
+        await db.collection('users').doc(receiverId).collection('notifications').add({
+            msg: message,
+            read: false,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch(e) { console.error(e); }
+}
+
+function showNotifications() {
+    const modal = document.getElementById('modal-notifications');
+    const list = document.getElementById('notifications-list');
+    const badge = document.getElementById('notif-dot');
+    
+    if(modal) modal.style.display = 'flex';
+    if(badge) badge.classList.remove('active');
+
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+      .orderBy('timestamp', 'desc').limit(10).get()
+      .then(snap => {
+          if(snap.empty) {
+              list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات</div>';
+              return;
+          }
+          let html = '';
+          snap.forEach(doc => {
+              const n = doc.data();
+              doc.ref.update({ read: true }); 
+              const time = n.timestamp ? new Date(n.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
+              html += `
+                <div class="notif-item">
+                    <div class="notif-icon"><i class="ri-notification-3-fill"></i></div>
+                    <div class="notif-content">${n.msg}<span class="notif-time">${time}</span></div>
+                </div>
+              `;
+          });
+          list.innerHTML = html;
+      });
+}
+
+function listenForNotifications() {
+    if(!currentUser) return;
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+      .where('read', '==', false)
+      .onSnapshot(snap => {
+          const badge = document.getElementById('notif-dot');
+          if(!snap.empty && badge) badge.classList.add('active');
+      });
+}
 // ==================== 1. تحديث دالة عرض السجل (بشكل محترف) ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
@@ -605,5 +842,73 @@ async function loadRegionBattle() {
                 </div>
             </div>
         `;
+    });
+}
+// ==================== 5. لوحة تحكم الأدمن (Admin Dashboard) ====================
+
+// 1. التحقق من الصلاحية (دخول بكلمة سر)
+function openAdminAuth() {
+    const pin = prompt("أدخل كود المشرف:");
+    // يمكنك تغيير "1234" لأي رقم سري تريده
+    if(pin === "a4450422") {
+        switchView('admin');
+        loadAdminStats();
+    } else {
+        alert("كود خاطئ! 🚫");
+    }
+}
+
+// 2. إنشاء تحدي من الواجهة
+async function createChallengeUI() {
+    const title = document.getElementById('admin-ch-title').value;
+    const desc = document.getElementById('admin-ch-desc').value;
+    const target = parseFloat(document.getElementById('admin-ch-target').value);
+    const days = parseInt(document.getElementById('admin-ch-days').value);
+
+    if(!title || !target) return alert("البيانات ناقصة!");
+
+    const btn = document.querySelector('#view-admin .btn-primary');
+    btn.innerText = "جاري النشر...";
+    btn.disabled = true;
+
+    try {
+        await db.collection('challenges').add({
+            title: title,
+            desc: desc,
+            target: target,
+            active: true,
+            type: "distance",
+            startDate: new Date().toISOString(),
+            // حساب تاريخ النهاية
+            endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString() 
+        });
+
+        alert("تم نشر التحدي بنجاح! 🚀");
+        
+        // تنظيف الحقول
+        document.getElementById('admin-ch-title').value = "";
+        document.getElementById('admin-ch-desc').value = "";
+        document.getElementById('admin-ch-target').value = "";
+        
+        // العودة للرئيسية
+        switchView('home');
+        loadActiveChallenges(); // تحديث القائمة
+
+    } catch(e) {
+        console.error(e);
+        alert("حدث خطأ: " + e.message);
+    } finally {
+        btn.innerText = "نشر التحدي";
+        btn.disabled = false;
+    }
+}
+
+// 3. إحصائيات سريعة
+function loadAdminStats() {
+    const statsDiv = document.getElementById('admin-stats');
+    db.collection('users').get().then(snap => {
+        const usersCount = snap.size;
+        // ممكن نضيف حاجات تانية هنا مستقبلاً
+        statsDiv.innerHTML = `عدد الأعضاء المسجلين: <strong style="color:#fff">${usersCount}</strong>`;
     });
 }
