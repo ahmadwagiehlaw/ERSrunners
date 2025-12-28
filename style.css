@@ -341,7 +341,32 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .notif-time { font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px; }
 .badge-dot.active { background-color: #ef4444; width: 8px; height: 8px; border-radius: 50%; position: absolute; top: 0; right: 0; }
 
+/* Settings Modal Styles */
+.settings-list { display: flex; flex-direction: column; gap: 10px; }
 
+.setting-item {
+    display: flex; align-items: center; gap: 15px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    padding: 15px; border-radius: 12px;
+    width: 100%; text-align: right; cursor: pointer;
+    transition: 0.2s; color: #fff;
+}
+.setting-item:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+
+.setting-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--bg-dark); color: var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+}
+.setting-text { display: flex; flex-direction: column; }
+.setting-text span { font-weight: bold; font-size: 14px; }
+.setting-text small { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.setting-item.delete { border-color: rgba(239, 68, 68, 0.3); }
+.setting-item.delete .setting-icon { color: #ef4444; }
+.setting-item.delete .setting-text { color: #ef4444; }
 
 
 /* Admin Styles */
