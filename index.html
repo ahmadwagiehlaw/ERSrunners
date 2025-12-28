@@ -138,19 +138,37 @@
                 </div>
             </section>
 
-            <section id="view-profile" class="view">
-                <div class="profile-header">
-                    <div class="big-avatar" id="profileAvatar"></div>
+           <section id="view-profile" class="view">
+                <div class="profile-header-card">
+                    <div class="profile-top">
+                        <div class="big-avatar" id="profileAvatar"></div>
+                        <button class="btn-icon-edit" onclick="openEditProfile()">
+                            <i class="ri-pencil-line"></i>
+                        </button>
+                    </div>
                     <h2 id="profileName">...</h2>
-                    <div class="profile-region" id="profileRegion"><i class="ri-map-pin-line"></i> ...</div>
+                    <div class="profile-region-badge" id="profileRegion">...</div>
+                    
+                    <div class="profile-stats-row">
+                        <div class="p-stat">
+                            <span class="p-val" id="profileTotalDist">0</span>
+                            <span class="p-lbl">كم إجمالي</span>
+                        </div>
+                        <div class="p-stat">
+                            <span class="p-val" id="profileTotalRuns">0</span>
+                            <span class="p-lbl">جرية</span>
+                        </div>
+                    </div>
                 </div>
                 
-                <div class="log-history">
-                    <h3>سجل النشاط</h3>
-                    <div id="activity-log"></div>
+                <div class="log-section">
+                    <h3 class="section-title">سجل الأنشطة</h3>
+                    <div id="activity-log" class="log-list"></div>
                 </div>
                 
-                <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">تسجيل خروج</button>
+                <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
+                    <i class="ri-logout-box-r-line"></i> تسجيل خروج
+                </button>
             </section>
 
         </main>
@@ -211,6 +229,30 @@
         });
       }
     </script>
+
+
+    <div id="modal-edit-profile" class="modal-overlay">
+        <div class="modal-box">
+            <h3>تعديل البيانات ✏️</h3>
+            <div class="form-group" style="margin-top:20px;">
+                <label style="color:#9ca3af; font-size:12px;">الاسم</label>
+                <input type="text" id="edit-name">
+                
+                <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
+                <select id="edit-region">
+                    <option value="Cairo">القاهرة</option>
+                    <option value="Alex">الإسكندرية</option>
+                    <option value="Delta">الدلتا</option>
+                    <option value="Canal">مدن القناة</option>
+                    <option value="UpperEgypt">الصعيد</option>
+                    <option value="Giza">الجيزة</option>
+                    <option value="Other">أخرى</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
+            <button class="btn btn-text" onclick="closeModal('modal-edit-profile')">إلغاء</button>
+        </div>
+    </div>
 </body>
 </html>
 </body>
