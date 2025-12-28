@@ -89,6 +89,10 @@
                 <i class="ri-notification-3-line"></i>
                 <span class="badge-dot" id="notif-dot"></span>
             </div>
+            
+            <div class="icon-badge" onclick="openSettingsModal()" style="margin-right:10px;">
+                <i class="ri-settings-4-line"></i>
+            </div>
         </div>
         
     </div>
@@ -143,6 +147,7 @@
 
 
             </section>
+
 
 <section id="view-admin" class="view">
     <div class="section-header">
@@ -305,7 +310,38 @@
         </div>
     </div>
 
+<div id="modal-settings" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-bottom:20px;">الإعدادات ⚙️</h3>
+            
+            <div class="settings-list">
+                <button class="setting-item" onclick="forceUpdateApp()">
+                    <div class="setting-icon"><i class="ri-refresh-line"></i></div>
+                    <div class="setting-text">
+                        <span>تحديث التطبيق</span>
+                        <small>اضغط هنا إذا لم تظهر الميزات الجديدة</small>
+                    </div>
+                </button>
 
+                <button class="setting-item" onclick="openAdminAuth()">
+                    <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
+                    <div class="setting-text">
+                        <span>دخول المشرفين</span>
+                        <small>للأدمن فقط</small>
+                    </div>
+                </button>
+                
+                <button class="setting-item delete" onclick="logout()">
+                    <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
+                    <div class="setting-text">تسجيل الخروج</div>
+                </button>
+            </div>
+
+            <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
+        </div>
+    </div>
+	
+	
 <div id="modal-notifications" class="modal-overlay">
         <div class="modal-box">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
