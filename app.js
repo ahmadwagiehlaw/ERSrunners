@@ -270,89 +270,137 @@ window.joinChallenge = async function(challengeId) {
 
 // -------------------------------- RUN LOGGING & ENGINE --------------------------------
 
+// ==================== تعديل: إضافة النشاط للـ Feed العام ====================
 async function submitRun() {
-    // استخدمنا الـ ID الجديد للزر
     const btn = document.getElementById('save-run-btn');
     const distInput = document.getElementById('log-dist');
     const timeInput = document.getElementById('log-time');
     const typeInput = document.getElementById('log-type');
 
-    if (!distInput || !timeInput) { alert("خطأ داخلي: الحقول مفقودة"); return; }
+    if (!distInput || !timeInput) return;
 
     const dist = parseFloat(distInput.value);
     const time = parseFloat(timeInput.value);
     const type = typeInput.value;
 
-    if (!dist || !time) { alert("من فضلك اكتب المسافة والزمن"); return; }
-    if (!currentUser) { alert("يجب تسجيل الدخول أولاً!"); return; }
-
-    let originalText = "حفظ النشاط";
-    if(btn) {
-        originalText = btn.innerText;
-        btn.innerText = "جاري الحفظ...";
-        btn.disabled = true;
-        btn.style.opacity = "0.7";
-    }
+    if (!dist || !time) { alert("اكتب المسافة والزمن"); return; }
+    
+    // تأمين الزر
+    if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
-
-        // 1. حفظ الجرية
+        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+        
+        // 1. حفظ في بروفايل المستخدم
         await db.collection('users').doc(uid).collection('runs').add({
-            dist: dist, time: time, type: type,
-            date: new Date().toISOString(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            dist, time, type, date: new Date().toISOString(), timestamp
         });
 
-        // 2. تحديث الإجمالي
+        // 2. === الجديد: حفظ في الـ Feed العام === 🌍
+        // بنحفظ الاسم والمنطقة مع الجرية عشان منضطرش نجيبهم تاني
+        await db.collection('activity_feed').add({
+            uid: uid,
+            userName: userData.name || "Unknown",
+            userRegion: userData.region || "General",
+            dist: dist,
+            time: time,
+            type: type,
+            timestamp: timestamp
+        });
+
+        // 3. تحديث الإجمالي
         await db.collection('users').doc(uid).set({
             totalDist: firebase.firestore.FieldValue.increment(dist),
             totalRuns: firebase.firestore.FieldValue.increment(1)
         }, { merge: true });
 
-        // 3. تحديث التحديات
-        try {
-            const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
-            if (!activeChCalls.empty) {
-                const batch = db.batch();
-                activeChCalls.forEach(doc => {
-                    const pRef = doc.ref.collection('participants').doc(uid);
-                    // استخدام merge لتفادي الأخطاء لو الوثيقة مش موجودة
-                    batch.set(pRef, {
-                        progress: firebase.firestore.FieldValue.increment(dist),
-                        lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
-                        name: userData.name || "Runner",
-                        region: userData.region || "General"
-                    }, { merge: true });
-                });
-                await batch.commit();
-            }
-        } catch (chErr) { console.warn("تنبيه تحديث التحدي:", chErr); }
+        // 4. تحديث التحديات (نفس الكود السابق)
+        const activeChCalls = await db.collection('challenges').where('active', '==', true).get();
+        if (!activeChCalls.empty) {
+            const batch = db.batch();
+            activeChCalls.forEach(doc => {
+                const pRef = doc.ref.collection('participants').doc(uid);
+                batch.set(pRef, {
+                    progress: firebase.firestore.FieldValue.increment(dist),
+                    lastUpdate: timestamp,
+                    name: userData.name, region: userData.region
+                }, { merge: true });
+            });
+            await batch.commit();
+        }
 
-        // نجاح
-        alert("تم الحفظ يا بطل! 🔥");
+        alert("عاش يا وحش! 🚀");
         closeModal('modal-log');
 
-        // تحديث الواجهة محلياً
+        // تحديث الواجهة
         userData.totalDist = (userData.totalDist || 0) + dist;
         userData.totalRuns = (userData.totalRuns || 0) + 1;
         updateUI();
         loadActivityLog();
         loadActiveChallenges();
+        loadGlobalFeed(); // <--- تحديث الفيد
         
-        distInput.value = '';
-        timeInput.value = '';
+        distInput.value = ''; timeInput.value = '';
 
     } catch (error) {
-        console.error("خطأ في الحفظ:", error);
-        alert("حدث خطأ: " + error.message);
+        console.error(error);
+        alert("خطأ: " + error.message);
     } finally {
-        if(btn) {
-            btn.innerText = originalText;
-            btn.disabled = false;
-            btn.style.opacity = "1";
-        }
+        if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     }
+}
+
+// ==================== دالة تحميل الـ Feed ====================
+function loadGlobalFeed() {
+    const feedContainer = document.getElementById('global-feed-list');
+    if(!feedContainer) return;
+
+    // عرض آخر 10 أنشطة
+    db.collection('activity_feed')
+      .orderBy('timestamp', 'desc')
+      .limit(10)
+      .get()
+      .then(snap => {
+          let html = '';
+          if(snap.empty) {
+              feedContainer.innerHTML = '<div style="text-align:center; color:#6b7280; padding:10px;">لا توجد أنشطة حديثة</div>';
+              return;
+          }
+
+          snap.forEach(doc => {
+              const post = doc.data();
+              // حساب الوقت المنقضي (مثلاً: منذ 5 دقائق)
+              let timeAgo = "الآن";
+              if(post.timestamp) {
+                  const diff = new Date() - post.timestamp.toDate();
+                  const mins = Math.floor(diff / 60000);
+                  if(mins < 60) timeAgo = `منذ ${mins} د`;
+                  else if(mins < 1440) timeAgo = `منذ ${Math.floor(mins/60)} س`;
+                  else timeAgo = `منذ ${Math.floor(mins/1440)} يوم`;
+              }
+
+              html += `
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="feed-user">
+                            <div class="feed-avatar">${post.userName.charAt(0)}</div>
+                            <div>
+                                <div class="feed-name">${post.userName}</div>
+                                <div class="feed-meta">${post.userRegion} • ${timeAgo}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feed-body">
+                        أكمل <strong>${post.type === 'Run' ? 'جرية' : post.type === 'Walk' ? 'مشية' : 'سباق'}</strong> لمسافة 
+                        <span class="highlight">${post.dist} كم</span> 
+                        في ${post.time} دقيقة 🔥
+                    </div>
+                </div>
+              `;
+          });
+          feedContainer.innerHTML = html;
+      });
 }
 
 // ==================== 1. تحديث دالة عرض السجل (بشكل محترف) ====================
