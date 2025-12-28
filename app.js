@@ -1,4 +1,4 @@
-/* ERS Runners - V1.9 (Final Polish) */
+/* ERS Runners - V21 (Mobile Fix + Smart Badges) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -40,6 +40,15 @@ auth.onAuthStateChanged(async (user) => {
 function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
+    
+    // تعيين الوقت الحالي كافتراضي في حقل التسجيل
+    const now = new Date();
+    // ضبط التوقيت المحلي ليكون صحيحاً في الـ Input
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const defaultDate = now.toISOString().slice(0,16);
+    const dateInput = document.getElementById('log-date');
+    if(dateInput) dateInput.value = defaultDate;
+
     updateUI();
     loadActivityLog();
     loadActiveChallenges(); 
@@ -53,7 +62,7 @@ function updateUI() {
         const headerName = document.getElementById('headerName');
         const helloText = document.querySelector('.hello-text');
         
-        if(helloText) helloText.innerText = "أهلاً كابتن👋"; 
+        if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; 
         if (headerName) headerName.innerText = userData.name || "Runner";
 
         // Dashboard Stats
@@ -133,6 +142,9 @@ function updateUI() {
                 goalRing.style.background = `conic-gradient(#8b5cf6 ${deg}deg, rgba(255,255,255,0.1) 0deg)`;
             }
         }
+        
+        renderBadges(); // رسم البادجات
+
     } catch (error) { console.error("UI Update Error:", error); }
 }
 
@@ -160,106 +172,6 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-renderBadges(); 
-}
-// ==================== 9. نظام الأوسمة (The Trophy Cabinet) ====================
-
-// تعريف الأوسمة وشروطها
-const BADGES_CONFIG = [
-    { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
-    { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
-    { id: 'night_owl', name: 'ساهر الليل', icon: '🌙', desc: 'نشاط بعد 10 مساءً' },
-    { id: 'weekend_warrior', name: 'بطل العطلة', icon: '🎉', desc: 'نشاط يوم الجمعة' },
-    { id: 'half_marathon', name: 'نصف ماراثون', icon: '🔥', desc: 'جرية واحدة +20 كم' },
-    { id: 'club_100', name: 'نادي المئة', icon: '💎', desc: 'إجمالي مسافة 100 كم' },
-    { id: 'club_500', name: 'المحترف', icon: '👑', desc: 'إجمالي مسافة 500 كم' },
-    { id: 'sprinter', name: 'السرعة القصوى', icon: '⚡', desc: 'جرية سريعة (زمن قليل)' } // مثال
-];
-
-// دالة فحص الجوائز (تُستدعى بعد كل جرية)
-async function checkNewBadges(currentRunDist, currentRunTime) {
-    const myBadges = userData.badges || []; // الأوسمة التي أملكها حالياً
-    let newBadgesEarned = [];
-    const now = new Date();
-    const currentHour = now.getHours();
-    const currentDay = now.getDay(); // 5 = الجمعة
-
-    // 1. وسام الانطلاقة (أول مرة يجري)
-    if (!myBadges.includes('first_step')) {
-        newBadgesEarned.push('first_step');
-    }
-
-    // 2. طائر الصباح (بين 5 و 8 صباحاً)
-    if (!myBadges.includes('early_bird') && currentHour >= 5 && currentHour <= 8) {
-        newBadgesEarned.push('early_bird');
-    }
-
-    // 3. ساهر الليل (بعد 10 مساءً)
-    if (!myBadges.includes('night_owl') && (currentHour >= 22 || currentHour <= 3)) {
-        newBadgesEarned.push('night_owl');
-    }
-
-    // 4. بطل العطلة (الجمعة)
-    if (!myBadges.includes('weekend_warrior') && currentDay === 5) {
-        newBadgesEarned.push('weekend_warrior');
-    }
-
-    // 5. نصف ماراثون (20 كم في مرة واحدة)
-    if (!myBadges.includes('half_marathon') && currentRunDist >= 20) {
-        newBadgesEarned.push('half_marathon');
-    }
-
-    // 6. نادي المئة (تراكمي)
-    // ملاحظة: userData.totalDist تم تحديثه بالفعل في submitRun
-    if (!myBadges.includes('club_100') && userData.totalDist >= 100) {
-        newBadgesEarned.push('club_100');
-    }
-    
-    // 7. نادي 500
-    if (!myBadges.includes('club_500') && userData.totalDist >= 500) {
-        newBadgesEarned.push('club_500');
-    }
-
-    // حفظ الجوائز الجديدة
-    if (newBadgesEarned.length > 0) {
-        // تحديث قاعدة البيانات
-        await db.collection('users').doc(currentUser.uid).update({
-            badges: firebase.firestore.FieldValue.arrayUnion(...newBadgesEarned)
-        });
-
-        // تحديث اللوكل
-        if(!userData.badges) userData.badges = [];
-        userData.badges.push(...newBadgesEarned);
-
-        // إظهار احتفال للمستخدم 🎉
-        const badgeNames = newBadgesEarned.map(b => BADGES_CONFIG.find(x => x.id === b).name).join(" و ");
-        alert(`🎉 مبروووك! لقد فتحت إنجازاً جديداً:\n\n✨ ${badgeNames} ✨\n\nاستمر يا بطل!`);
-    }
-}
-
-// دالة عرض الأوسمة في البروفايل (تحديث لـ updateUI)
-function renderBadges() {
-    const grid = document.getElementById('badges-grid');
-    if(!grid) return;
-
-    const myBadges = userData.badges || [];
-    let html = '';
-
-    BADGES_CONFIG.forEach(badge => {
-        const isUnlocked = myBadges.includes(badge.id);
-        const lockClass = isUnlocked ? 'unlocked' : '';
-        const title = isUnlocked ? badge.desc : 'مغلق'; // تلميح يظهر عند اللمس
-
-        html += `
-            <div class="badge-item ${lockClass}" title="${title}" onclick="if(this.classList.contains('unlocked')) alert('${badge.desc}')">
-                <span class="badge-icon">${badge.icon}</span>
-                <span class="badge-name">${badge.name}</span>
-            </div>
-        `;
-    });
-
-    grid.innerHTML = html;
-}
 // ==================== 3. Core Features ====================
 async function submitRun() {
     const btn = document.getElementById('save-run-btn');
@@ -267,18 +179,23 @@ async function submitRun() {
     const time = parseFloat(document.getElementById('log-time').value);
     const type = document.getElementById('log-type').value;
     const link = document.getElementById('log-link').value;
+    const dateInput = document.getElementById('log-date').value;
 
-    if (!dist || !time) return alert("البيانات ناقصة");
+    if (!dist || !time || !dateInput) return alert("البيانات ناقصة (تأكد من الوقت)");
     if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
-        const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-        const currentMonthKey = new Date().toISOString().slice(0, 7); 
+        // تحويل الوقت المختار لـ Date Object
+        const selectedDate = new Date(dateInput);
+        const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+        
+        const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
         let newMonthDist = (userData.monthDist || 0) + dist;
+        // إعادة تعيين مسافة الشهر إذا اختلف الشهر
         if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
 
-        const runData = { dist, time, type, link, date: new Date().toISOString(), timestamp };
+        const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
 
         await db.collection('users').doc(uid).collection('runs').add(runData);
         await db.collection('activity_feed').add({
@@ -291,7 +208,6 @@ async function submitRun() {
             monthDist: newMonthDist, lastMonthKey: currentMonthKey
         }, { merge: true });
 
-        // Update Challenges
         const activeCh = await db.collection('challenges').where('active', '==', true).get();
         const batch = db.batch();
         activeCh.forEach(doc => {
@@ -304,7 +220,10 @@ async function submitRun() {
 
         userData.totalDist += dist; userData.totalRuns += 1;
         userData.monthDist = newMonthDist; userData.lastMonthKey = currentMonthKey;
-        await checkNewBadges(dist, time);
+        
+        // فحص الأوسمة بالوقت المختار 
+        await checkNewBadges(dist, time, selectedDate);
+        
         alert("تم الحفظ!");
         closeModal('modal-log');
         document.getElementById('log-dist').value = '';
@@ -325,7 +244,7 @@ async function setPersonalGoal() {
     }
 }
 
-// ==================== 4. Feed (New Compact Design) ====================
+// ==================== 4. Feed & Likes ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
@@ -337,6 +256,7 @@ function loadGlobalFeed() {
         snap.forEach(doc => {
             const p = doc.data();
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
+            const commentsCount = p.commentsCount || 0;
             
             let timeAgo = "الآن";
             if(p.timestamp) {
@@ -367,6 +287,10 @@ function loadGlobalFeed() {
                         <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
                         <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
                     </button>
+                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
+                        <i class="ri-chat-3-line"></i>
+                        <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
+                    </button>
                     <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
                 </div>
             </div>`;
@@ -390,12 +314,106 @@ async function toggleLike(pid, uid) {
     }
 }
 
-// ==================== 5. Navigation & Helper Functions ====================
+// ==================== 5. Comments System ====================
+let currentPostId = null; 
+let currentPostOwner = null;
+
+function openComments(postId, postOwnerId) {
+    currentPostId = postId;
+    currentPostOwner = postOwnerId;
+    document.getElementById('modal-comments').style.display = 'flex';
+    document.getElementById('comment-text').value = ''; 
+    loadComments(postId);
+}
+
+function loadComments(postId) {
+    const list = document.getElementById('comments-list');
+    list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:20px;">جاري تحميل المحادثة...</div>';
+    db.collection('activity_feed').doc(postId).collection('comments').orderBy('timestamp', 'asc').onSnapshot(snap => {
+          let html = '';
+          if(snap.empty) { list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:50px; opacity:0.7;"><i class="ri-chat-1-line" style="font-size:30px;"></i><br>كن أول من يشجع الكابتن!</div>'; return; }
+          snap.forEach(doc => {
+              const c = doc.data();
+              const time = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
+              html += `<div class="comment-item"><div class="comment-avatar">${c.userName.charAt(0)}</div><div class="comment-bubble"><span class="comment-user">${c.userName}</span><span class="comment-msg">${c.text}</span><span class="comment-time">${time}</span></div></div>`;
+          });
+          list.innerHTML = html;
+          list.scrollTop = list.scrollHeight;
+      });
+}
+
+async function sendComment() {
+    const input = document.getElementById('comment-text');
+    const text = input.value.trim();
+    if(!text || !currentPostId) return;
+    input.value = ''; 
+    try {
+        await db.collection('activity_feed').doc(currentPostId).collection('comments').add({
+            text: text, userId: currentUser.uid, userName: userData.name, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('activity_feed').doc(currentPostId).update({ commentsCount: firebase.firestore.FieldValue.increment(1) });
+        if(currentPostOwner !== currentUser.uid) { sendNotification(currentPostOwner, `علق ${userData.name} على نشاطك: "${text.substring(0, 20)}..."`); }
+    } catch(e) { console.error("Comment Error:", e); }
+}
+
+// ==================== 6. Badges System (Updated Logic) ====================
+const BADGES_CONFIG = [
+    { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
+    { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
+    { id: 'night_owl', name: 'ساهر الليل', icon: '🌙', desc: 'نشاط بعد 10 مساءً' },
+    { id: 'weekend_warrior', name: 'بطل العطلة', icon: '🎉', desc: 'نشاط يوم الجمعة' },
+    { id: 'half_marathon', name: 'نصف ماراثون', icon: '🔥', desc: 'جرية واحدة +20 كم' },
+    { id: 'club_100', name: 'نادي المئة', icon: '💎', desc: 'إجمالي مسافة 100 كم' },
+    { id: 'club_500', name: 'المحترف', icon: '👑', desc: 'إجمالي مسافة 500 كم' },
+];
+
+// دالة فحص الجوائز (تستخدم وقت الجرية المختار)
+async function checkNewBadges(currentRunDist, currentRunTime, runDateObj) {
+    const myBadges = userData.badges || []; 
+    let newBadgesEarned = [];
+    
+    // نستخدم التاريخ الذي اختاره المستخدم
+    const runDate = runDateObj || new Date();
+    const currentHour = runDate.getHours();
+    const currentDay = runDate.getDay(); // 5 = الجمعة
+
+    if (!myBadges.includes('first_step')) newBadgesEarned.push('first_step');
+    if (!myBadges.includes('early_bird') && currentHour >= 5 && currentHour <= 8) newBadgesEarned.push('early_bird');
+    if (!myBadges.includes('night_owl') && (currentHour >= 22 || currentHour <= 3)) newBadgesEarned.push('night_owl');
+    if (!myBadges.includes('weekend_warrior') && currentDay === 5) newBadgesEarned.push('weekend_warrior');
+    if (!myBadges.includes('half_marathon') && currentRunDist >= 20) newBadgesEarned.push('half_marathon');
+    if (!myBadges.includes('club_100') && userData.totalDist >= 100) newBadgesEarned.push('club_100');
+    if (!myBadges.includes('club_500') && userData.totalDist >= 500) newBadgesEarned.push('club_500');
+
+    if (newBadgesEarned.length > 0) {
+        await db.collection('users').doc(currentUser.uid).update({ badges: firebase.firestore.FieldValue.arrayUnion(...newBadgesEarned) });
+        if(!userData.badges) userData.badges = [];
+        userData.badges.push(...newBadgesEarned);
+        const badgeNames = newBadgesEarned.map(b => BADGES_CONFIG.find(x => x.id === b).name).join(" و ");
+        alert(`🎉 مبروووك! لقد فتحت إنجازاً جديداً:\n\n✨ ${badgeNames} ✨`);
+    }
+}
+
+function renderBadges() {
+    const grid = document.getElementById('badges-grid');
+    if(!grid) return;
+    const myBadges = userData.badges || [];
+    let html = '';
+    BADGES_CONFIG.forEach(badge => {
+        const isUnlocked = myBadges.includes(badge.id);
+        const lockClass = isUnlocked ? 'unlocked' : '';
+        // السماح بالضغط على المقفول لرؤية التلميح
+        const clickAction = isUnlocked ? `alert('${badge.desc}')` : `alert('🔒 لفتح هذا الوسام: ${badge.desc}')`;
+        html += `<div class="badge-item ${lockClass}" onclick="${clickAction}"><span class="badge-icon">${badge.icon}</span><span class="badge-name">${badge.name}</span></div>`;
+    });
+    grid.innerHTML = html;
+}
+
+// ==================== 7. Navigation & Helpers ====================
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
-    
     const navMap = {'home': 0, 'challenges': 1, 'profile': 2};
     const navItems = document.querySelectorAll('.nav-item');
     if(navItems[navMap[viewId]]) navItems[navMap[viewId]].classList.add('active');
@@ -406,7 +424,6 @@ function setTab(tabName) {
     document.getElementById('tab-' + tabName).classList.add('active');
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     if(event && event.target) event.target.classList.add('active');
-
     if (tabName === 'leaderboard') loadLeaderboard('all');
     if (tabName === 'squads') loadRegionBattle();
     if (tabName === 'active-challenges') loadActiveChallenges();
@@ -458,12 +475,11 @@ async function sendNotification(receiverId, message) {
     } catch(e) {}
 }
 
-// ==================== 6. Admin & Updates (Fixed) ====================
+// ==================== 8. Admin & Danger Zone ====================
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
-    if(pin === "a4450422") { 
+    if(pin === "1234") { 
         closeModal('modal-settings'); // نغلق المودال أولاً
-        // تأخير بسيط لضمان اختفاء المودال قبل الانتقال
         setTimeout(() => {
             switchView('admin');
             loadAdminStats();
@@ -481,53 +497,30 @@ async function forceUpdateApp() {
     }
 }
 
-// 7. Challenges (New Mini Design)
-function loadActiveChallenges() {
-    const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges');
-    if(!list) return;
+async function deleteFullAccount() {
+    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك نهائياً.\nهل أنت متأكد؟")) return;
+    if (prompt("اكتب (حذف) للتأكيد:") !== "حذف") return alert("لم يتم الحذف");
     
-    db.collection('challenges').where('active', '==', true).get().then(async snap => {
-        let html = '';
-        let miniHtml = '';
-        if(snap.empty) { 
-            list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد تحديات</div>';
-            mini.innerHTML = '<div class="empty-state-mini">لا توجد تحديات حالياً</div>';
-            return; 
-        }
+    try {
+        const uid = currentUser.uid;
+        // حذف الجريات
+        const runs = await db.collection('users').doc(uid).collection('runs').get();
+        const batch = db.batch();
+        runs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
         
-        for (const doc of snap.docs) {
-            const ch = doc.data();
-            let isJoined = false; 
-            let progress = 0;
-            if(currentUser) {
-                const part = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(part.exists) { isJoined = true; progress = part.data().progress || 0; }
-            }
-            const perc = Math.min((progress/ch.target)*100, 100);
-            
-            // الكارت الكبير (للصفحة الكاملة)
-            html += `<div class="challenge-card">
-                <h3>${ch.title} <small>${ch.target} كم</small></h3>
-                ${isJoined ? `<div class="xp-track"><div class="xp-fill" style="width:${perc}%"></div></div>` : `<button onclick="joinChallenge('${doc.id}')">انضمام</button>`}
-            </div>`;
-            
-            // الكارت المصغر (للصفحة الرئيسية)
-            if(isJoined) {
-                miniHtml += `
-                <div class="mini-challenge-card">
-                    <div class="mini-ch-title">${ch.title}</div>
-                    <div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div>
-                    <div class="mini-ch-stats"><span>${progress.toFixed(1)} كم</span><span>${Math.floor(perc)}%</span></div>
-                </div>`;
-            }
-        }
-        list.innerHTML = html;
-        mini.innerHTML = miniHtml || '<div class="empty-state-mini" style="font-size:11px; color:#6b7280; padding:5px;">لم تنضم لتحديات</div>';
-    });
+        // حذف البوستات
+        const posts = await db.collection('activity_feed').where('uid', '==', uid).get();
+        const batch2 = db.batch();
+        posts.forEach(doc => batch2.delete(doc.ref));
+        await batch2.commit();
+
+        await db.collection('users').doc(uid).delete();
+        await currentUser.delete();
+        alert("تم الحذف 😔"); window.location.reload();
+    } catch (e) { alert("خطأ: " + e.message); }
 }
 
-// Admin Functions
 async function createChallengeUI() {
     const t = document.getElementById('admin-ch-title').value;
     const target = document.getElementById('admin-ch-target').value;
@@ -550,7 +543,6 @@ function loadAdminStats() {
     });
 }
 
-// Activity Log & Leaderboard
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
@@ -638,206 +630,12 @@ async function saveProfileChanges() {
         alert("تم الحفظ");
     }
 }
-
-
-// ==================== تحديث: إضافة زر التعليق في الـ Feed ====================
-// استبدل دالة loadGlobalFeed الحالية بهذه النسخة المحدثة
-function loadGlobalFeed() {
-    const list = document.getElementById('global-feed-list');
-    if(!list) return;
-
-    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-        let html = '';
-        if(snap.empty) { list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة</div>'; return; }
-        
-        snap.forEach(doc => {
-            const p = doc.data();
-            const isLiked = p.likes && p.likes.includes(currentUser.uid);
-            const commentsCount = p.commentsCount || 0; // سنحتاج لإضافة هذا العداد لاحقاً
-            
-            // ... (نفس كود حساب الوقت السابق) ...
-            let timeAgo = "الآن";
-            if(p.timestamp) {
-                const diff = (new Date() - p.timestamp.toDate()) / 60000;
-                if(diff < 60) timeAgo = `${Math.floor(diff)} د`;
-                else if(diff < 1440) timeAgo = `${Math.floor(diff/60)} س`;
-                else timeAgo = `${Math.floor(diff/1440)} يوم`;
-            }
-
-            html += `
-            <div class="feed-card-compact">
-                <div class="feed-compact-content">
-                    <div class="feed-compact-avatar">${(p.userName||"?").charAt(0)}</div>
-                    <div>
-                        <div class="feed-compact-text">
-                            <strong>${p.userName}</strong> <span style="opacity:0.7">(${p.userRegion})</span>
-                        </div>
-                        <div class="feed-compact-text" style="margin-top:2px;">
-                            ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${p.dist} كم</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="feed-compact-action">
-                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
-                    
-                    <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
-                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
-                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
-                    </button>
-
-                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
-                        <i class="ri-chat-3-line"></i>
-                        <span class="feed-compact-count" id="count-${doc.id}">${commentsCount > 0 ? commentsCount : ''}</span>
-                    </button>
-
-                    <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
-                </div>
-            </div>`;
+window.joinChallenge = async function(id) {
+    if(confirm("انضمام؟")) {
+        await db.collection('challenges').doc(id).collection('participants').doc(currentUser.uid).set({
+            progress: 0, name: userData.name, region: userData.region
         });
-        list.innerHTML = html;
-    });
-}
-
-// ==================== جديد: نظام التعليقات (Logic) ====================
-let currentPostId = null; // لنعرف نحن نعلق على أي بوست
-let currentPostOwner = null;
-
-function openComments(postId, postOwnerId) {
-    currentPostId = postId;
-    currentPostOwner = postOwnerId;
-    
-    document.getElementById('modal-comments').style.display = 'flex';
-    document.getElementById('comment-text').value = ''; // مسح الخانة
-    loadComments(postId);
-}
-
-function loadComments(postId) {
-    const list = document.getElementById('comments-list');
-    list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:20px;">جاري تحميل المحادثة...</div>';
-
-    // الاستماع للتعليقات في الوقت الفعلي
-    db.collection('activity_feed').doc(postId).collection('comments')
-      .orderBy('timestamp', 'asc')
-      .onSnapshot(snap => {
-          let html = '';
-          if(snap.empty) {
-              list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:50px; opacity:0.7;"><i class="ri-chat-1-line" style="font-size:30px;"></i><br>كن أول من يشجع الكابتن!</div>';
-              return;
-          }
-
-          snap.forEach(doc => {
-              const c = doc.data();
-              const time = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
-              
-              html += `
-                <div class="comment-item">
-                    <div class="comment-avatar">${c.userName.charAt(0)}</div>
-                    <div class="comment-bubble">
-                        <span class="comment-user">${c.userName}</span>
-                        <span class="comment-msg">${c.text}</span>
-                        <span class="comment-time">${time}</span>
-                    </div>
-                </div>`;
-          });
-          list.innerHTML = html;
-          // التمرير للأسفل تلقائياً لرؤية آخر تعليق
-          list.scrollTop = list.scrollHeight;
-      });
-}
-
-async function sendComment() {
-    const input = document.getElementById('comment-text');
-    const text = input.value.trim();
-    
-    if(!text || !currentPostId) return;
-    
-    input.value = ''; // مسح فوري لتحسين التجربة
-    
-    try {
-        // 1. إضافة التعليق في Sub-collection
-        await db.collection('activity_feed').doc(currentPostId).collection('comments').add({
-            text: text,
-            userId: currentUser.uid,
-            userName: userData.name,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        // 2. تحديث عداد التعليقات في البوست الأصلي (اختياري لكن جيد للأداء)
-        await db.collection('activity_feed').doc(currentPostId).update({
-            commentsCount: firebase.firestore.FieldValue.increment(1)
-        });
-
-        // 3. إرسال إشعار لصاحب البوست (لو مش أنا اللي بعلق لنفسي)
-        if(currentPostOwner !== currentUser.uid) {
-            sendNotification(currentPostOwner, `علق ${userData.name} على نشاطك: "${text.substring(0, 20)}..."`);
-        }
-
-    } catch(e) {
-        console.error("Comment Error:", e);
-        alert("فشل إرسال التعليق");
-    }
-}
-// ==================== 9. المنطقة الخطرة (حذف الحساب) ====================
-async function deleteFullAccount() {
-    // 1. تأكيد أول
-    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك، جرياتك، تعليقاتك، وأرقامك نهائياً من قاعدة البيانات.\n\nهل أنت متأكد تماماً؟")) return;
-
-    // 2. تأكيد ثاني (لزيادة الأمان)
-    const confirmation = prompt("للتأكيد النهائي، اكتب كلمة (حذف) في المربع أدناه:");
-    if (confirmation !== "حذف") {
-        alert("لم يتم الحذف. الكلمة غير صحيحة.");
-        return;
-    }
-
-    const btn = document.querySelector('.delete-danger');
-    if(btn) {
-        btn.innerHTML = '<span style="color:red;">جاري الحذف والتنظيف...</span>';
-        btn.disabled = true;
-    }
-
-    try {
-        const uid = currentUser.uid;
-
-        // الخطوة 1: حذف الجريات الخاصة بالمستخدم (Sub-collection)
-        const runsSnapshot = await db.collection('users').doc(uid).collection('runs').get();
-        const batch = db.batch();
-        runsSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        // حذف الإشعارات أيضاً
-        const notifSnapshot = await db.collection('users').doc(uid).collection('notifications').get();
-        notifSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
-
-        // الخطوة 2: حذف بوستات المستخدم من الـ Feed العام
-        const feedSnapshot = await db.collection('activity_feed').where('uid', '==', uid).get();
-        const feedBatch = db.batch();
-        feedSnapshot.forEach(doc => {
-            feedBatch.delete(doc.ref);
-        });
-        await feedBatch.commit();
-
-        // الخطوة 3: حذف وثيقة المستخدم الرئيسية
-        await db.collection('users').doc(uid).delete();
-
-        // الخطوة 4: حذف المستخدم من نظام المصادقة (Auth)
-        await currentUser.delete();
-
-        alert("تم حذف الحساب بنجاح. سنفتقدك! 👋");
-        window.location.reload();
-
-    } catch (error) {
-        console.error("Delete Error:", error);
-        // أحياناً يطلب فايربيس إعادة تسجيل الدخول قبل الحذف الحساس
-        if(error.code === 'auth/requires-recent-login') {
-            alert("لأمانك، يرجى تسجيل الخروج والدخول مرة أخرى ثم المحاولة.");
-            logout();
-        } else {
-            alert("حدث خطأ أثناء الحذف: " + error.message);
-            if(btn) btn.disabled = false;
-        }
+        alert("تم الانضمام");
+        loadActiveChallenges();
     }
 }
