@@ -237,10 +237,20 @@
                     <div id="activity-log" class="log-list"></div>
                 </div>
                 
-                <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
+               
+<button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
                     <i class="ri-logout-box-r-line"></i> تسجيل خروج
                 </button>
-
+                
+                <div style="margin-top: 20px; display:flex; gap:10px; justify-content:center;">
+                    <button class="btn-text" onclick="openAdminAuth()" style="opacity:0.5; font-size:11px;">
+                        <i class="ri-shield-keyhole-line"></i> مشرف
+                    </button>
+                    <button class="btn-text" onclick="forceUpdate()" style="opacity:0.5; font-size:11px; color:var(--accent);">
+                        <i class="ri-refresh-line"></i> تحديث إجباري
+                    </button>
+                </div>
+            </section>
 <button class="btn btn-text" onclick="openAdminAuth()" style="margin-top:10px; opacity:0.3;">
     <i class="ri-shield-keyhole-line"></i> دخول الأدمن
 </button>
@@ -284,6 +294,12 @@
                 <option value="Walk">مشي (Walk)</option>
                 <option value="Race">سباق (Race)</option>
             </select>
+			<div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
+                <label>رابط إثبات الجرية (Strava/Nike) - اختياري</label>
+                <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
+            </div>
+
+            <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
         </div>
