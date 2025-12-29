@@ -192,19 +192,21 @@ function calculateRank(totalDist) {
         distInLevel: distInLevel, 
         distRequired: distRequired 
     };
-}
-
-function getNextRankName(current) {
-    if(current === "مبتدئ") return "هاوي"; if(current === "هاوي") return "عداء";
-    if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
-}
-// ... داخل updateUI ...
+  // ... داخل updateUI ...
     
     // تشغيل الكوتش الذكي
     updateCoachAdvice(); // <--- أضف هذا السطر
 
 // نهاية الدالة
 }
+}
+
+
+function getNextRankName(current) {
+    if(current === "مبتدئ") return "هاوي"; if(current === "هاوي") return "عداء";
+    if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
+}
+
 // ==================== 3. Core Features (Edit & Add Logic) ====================
 
 function openNewRun() {
