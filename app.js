@@ -102,13 +102,7 @@ function updateUI() {
         if (profileAvatar) {
             profileAvatar.innerText = rankData.avatar; // وضع الإيموجي (🐣)
             // تحسين المظهر للإيموجي
-            // تحسين المظهر للإيموجي
-            if(profileAvatar.classList.contains('bib-avatar')) {
-                // profileAvatar.style.background = "rgba(0,0,0,0.1)";  <-- احذف هذا السطر أو حوله لتعليق
-                profileAvatar.style.background = "#111827"; // <-- اجعله هكذا (لون داكن)
-                profileAvatar.style.border = "2px solid var(--primary)";
-                profileAvatar.style.fontSize = "28px";
-            }
+            
         }
 
         if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
