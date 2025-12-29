@@ -812,3 +812,59 @@ function loadRegionBattle() {
         });
     });
 }
+
+// ==================== 4. Feed (نسخة كشف الأخطاء) ====================
+function loadGlobalFeed() {
+    const list = document.getElementById('global-feed-list');
+    if(!list) return;
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+        let html = '';
+        if(snap.empty) { 
+            list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>'; 
+            return; 
+        }
+        
+        snap.forEach(doc => {
+            const p = doc.data();
+            const isLiked = p.likes && p.likes.includes(currentUser.uid);
+            
+            let timeAgo = "الآن";
+            if(p.timestamp) {
+                const diff = (new Date() - p.timestamp.toDate()) / 60000;
+                if(diff < 60) timeAgo = `${Math.floor(diff)} د`;
+                else if(diff < 1440) timeAgo = `${Math.floor(diff/60)} س`;
+                else timeAgo = `${Math.floor(diff/1440)} يوم`;
+            }
+
+            html += `
+            <div class="feed-card-compact">
+                <div class="feed-compact-content">
+                    <div class="feed-compact-avatar">${(p.userName||"?").charAt(0)}</div>
+                    <div>
+                        <div class="feed-compact-text">
+                            <strong>${p.userName}</strong> <span style="opacity:0.7">(${p.userRegion})</span>
+                        </div>
+                        <div class="feed-compact-text" style="margin-top:2px;">
+                            ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${p.dist} كم</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feed-compact-action">
+                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
+                    <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
+                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
+                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
+                    </button>
+                    <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html;
+    }, (error) => {
+        // 🔥 هذا هو الجزء المهم: سيطبع سبب الخطأ على الشاشة
+        console.error("Feed Error:", error);
+        list.innerHTML = `<div style="text-align:center; color:red; font-size:12px;">حدث خطأ: ${error.message}<br>تأكد من قواعد Firebase</div>`;
+    });
+}
