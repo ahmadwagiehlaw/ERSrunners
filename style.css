@@ -854,3 +854,231 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     font-size: 13px; color: #fff; 
     line-height: 1.4; font-weight: 500; margin: 0;
 }
+
+
+
+
+/* ==================== 14. تصميم منصة التتويج (Leaderboard 2.0) ==================== */
+
+/* كارت إجمالي الفريق (الأعلى) */
+.team-goal-card {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border: 1px solid rgba(245, 158, 11, 0.3); /* إطار ذهبي خفيف */
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    position: relative; overflow: hidden;
+}
+/* خلفية زخرفية للكأس */
+.team-goal-card::before {
+    content: '🏆'; position: absolute; top: -10px; right: -10px;
+    font-size: 80px; opacity: 0.05; transform: rotate(20deg);
+}
+
+.team-title { font-size: 12px; color: #f59e0b; font-weight: bold; margin-bottom: 5px; }
+.team-val { font-size: 42px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+
+.team-goal-labels { display: flex; justify-content: space-between; font-size: 10px; color: #6b7280; margin-top: 8px; }
+
+/* منصة التتويج (الدوائر الثلاثة) */
+.podium-section {
+    margin-bottom: 30px;
+    text-align: center;
+}
+.podium-title { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+.podium-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* لمحاذاة الدوائر من الأسفل */
+    gap: 15px;
+}
+
+.podium-item {
+    display: flex; flex-direction: column; align-items: center;
+    position: relative; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.podium-item:active { transform: scale(0.95); }
+
+/* الدائرة العامة */
+.podium-avatar {
+    border-radius: 50%;
+    background: #374151;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; color: #fff;
+    border: 3px solid #4b5563;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* المركز الأول 🥇 */
+.podium-item.rank-1 { order: 2; margin-bottom: 20px; } /* نرفعه للأعلى قليلاً */
+.podium-item.rank-1 .podium-avatar {
+    width: 80px; height: 80px; font-size: 32px;
+    border-color: #f59e0b; /* ذهبي */
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, #111827, #f59e0b);
+}
+.crown-icon {
+    position: absolute; top: -25px; font-size: 28px;
+    animation: bounce 2s infinite; filter: drop-shadow(0 0 5px #f59e0b);
+}
+
+/* المركز الثاني 🥈 */
+.podium-item.rank-2 { order: 1; }
+.podium-item.rank-2 .podium-avatar {
+    width: 60px; height: 60px; font-size: 24px;
+    border-color: #9ca3af; /* فضي */
+}
+
+/* المركز الثالث 🥉 */
+.podium-item.rank-3 { order: 3; }
+.podium-item.rank-3 .podium-avatar {
+    width: 60px; height: 60px; font-size: 24px;
+    border-color: #b45309; /* برونزي */
+}
+
+.podium-name { font-size: 11px; font-weight: bold; color: #fff; margin-top: 8px; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podium-dist { font-size: 12px; font-weight: 900; color: var(--primary); }
+
+@keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-5px);} }
+
+/* ==================== 14. تصميم منصة التتويج (Leaderboard 2.0) ==================== */
+
+/* كارت إجمالي الفريق (الأعلى) */
+.team-goal-card {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border: 1px solid rgba(245, 158, 11, 0.3); /* إطار ذهبي خفيف */
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    position: relative; overflow: hidden;
+}
+/* خلفية زخرفية للكأس */
+.team-goal-card::before {
+    content: '🏆'; position: absolute; top: -10px; right: -10px;
+    font-size: 80px; opacity: 0.05; transform: rotate(20deg);
+}
+
+.team-title { font-size: 12px; color: #f59e0b; font-weight: bold; margin-bottom: 5px; }
+.team-val { font-size: 42px; font-weight: 900; color: #fff; line-height: 1; text-shadow: 0 0 20px rgba(245, 158, 11, 0.4); }
+
+.team-goal-labels { display: flex; justify-content: space-between; font-size: 10px; color: #6b7280; margin-top: 8px; }
+
+/* منصة التتويج (الدوائر الثلاثة) */
+.podium-section {
+    margin-bottom: 30px;
+    text-align: center;
+}
+.podium-title { font-size: 14px; font-weight: bold; color: #fff; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+.podium-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* لمحاذاة الدوائر من الأسفل */
+    gap: 15px;
+}
+
+.podium-item {
+    display: flex; flex-direction: column; align-items: center;
+    position: relative; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.podium-item:active { transform: scale(0.95); }
+
+/* الدائرة العامة */
+.podium-avatar {
+    border-radius: 50%;
+    background: #374151;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; color: #fff;
+    border: 3px solid #4b5563;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* المركز الأول 🥇 */
+.podium-item.rank-1 { order: 2; margin-bottom: 20px; } /* نرفعه للأعلى قليلاً */
+.podium-item.rank-1 .podium-avatar {
+    width: 80px; height: 80px; font-size: 32px;
+    border-color: #f59e0b; /* ذهبي */
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, #111827, #f59e0b);
+}
+.crown-icon {
+    position: absolute; top: -25px; font-size: 28px;
+    animation: bounce 2s infinite; filter: drop-shadow(0 0 5px #f59e0b);
+}
+
+/* المركز الثاني 🥈 */
+.podium-item.rank-2 { order: 1; }
+.podium-item.rank-2 .podium-avatar {
+    width: 60px; height: 60px; font-size: 24px;
+    border-color: #9ca3af; /* فضي */
+}
+
+/* المركز الثالث 🥉 */
+.podium-item.rank-3 { order: 3; }
+.podium-item.rank-3 .podium-avatar {
+    width: 60px; height: 60px; font-size: 24px;
+    border-color: #b45309; /* برونزي */
+}
+
+.podium-name { font-size: 11px; font-weight: bold; color: #fff; margin-top: 8px; max-width: 70px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.podium-dist { font-size: 12px; font-weight: 900; color: var(--primary); }
+
+@keyframes bounce { 0%, 100% {transform: translateY(0);} 50% {transform: translateY(-5px);} }
+
+/* ==================== تحسين فلتر المتصدرين (Big Toggle) ==================== */
+.leaderboard-controls {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px dashed rgba(255,255,255,0.1); /* خط فاصل منقط */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.leaderboard-controls h4 {
+    font-size: 16px; 
+    color: #fff; 
+    margin: 0;
+    display: flex; align-items: center; gap: 8px;
+}
+
+/* تصميم شريط التبديل الكبير */
+.filter-large-toggle {
+    display: flex;
+    background: #111827; /* خلفية داكنة */
+    padding: 5px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.filter-large-toggle .filter-btn {
+    flex: 1;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #9ca3af;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+/* الحالة النشطة للزر */
+.filter-large-toggle .filter-btn.active {
+    background: var(--primary); /* اللون الأخضر المميز */
+    color: #000;
+    font-weight: 800;
+    box-shadow: 0 2px 10px var(--primary-glow);
+}
+
+.filter-large-toggle .filter-btn:active {
+    transform: scale(0.97);
+}
