@@ -836,6 +836,7 @@ function loadRegionBattle() {
 }
 
 // ==================== 4. Feed (نسخة كشف الأخطاء) ====================
+// ==================== 4. Feed (النسخة الكاملة مع التعليقات) ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
@@ -850,6 +851,7 @@ function loadGlobalFeed() {
         snap.forEach(doc => {
             const p = doc.data();
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
+            const commentsCount = p.commentsCount || 0; // عداد التعليقات
             
             let timeAgo = "الآن";
             if(p.timestamp) {
@@ -875,18 +877,24 @@ function loadGlobalFeed() {
                 
                 <div class="feed-compact-action">
                     ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
+                    
                     <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
                         <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
                         <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
                     </button>
+
+                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
+                        <i class="ri-chat-3-line"></i>
+                        <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
+                    </button>
+
                     <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
                 </div>
             </div>`;
         });
         list.innerHTML = html;
     }, (error) => {
-        // 🔥 هذا هو الجزء المهم: سيطبع سبب الخطأ على الشاشة
         console.error("Feed Error:", error);
-        list.innerHTML = `<div style="text-align:center; color:red; font-size:12px;">حدث خطأ: ${error.message}<br>تأكد من قواعد Firebase</div>`;
+        list.innerHTML = `<div style="text-align:center; color:red; font-size:12px;">تأكد من قواعد البيانات (Rules)</div>`;
     });
 }
