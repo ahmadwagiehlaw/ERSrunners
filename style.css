@@ -1,3 +1,4 @@
+<link rel="stylesheet" href="style.css?v=35">
 :root {
     --bg-dark: #111827;       /* خلفية داكنة جداً */
     --bg-card: #1f2937;       /* لون الكروت */
@@ -62,7 +63,7 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     
-    /* 🔥 iPhone Safe Area Solution 🔥 */
+    /* 🔥 iPhone Safe Area Solution 🔥 */ 
     padding-top: calc(15px + env(safe-area-inset-top)); 
     padding-bottom: 15px;
     padding-left: 20px;
