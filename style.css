@@ -1158,16 +1158,77 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     cursor: pointer; position: relative; z-index: 2;
 }
 
-/* --- 2. تصميم المناطق (Squad Battle) --- */
-.squad-list { display: flex; flex-direction: column; gap: 12px; }
+/* ==================== تصميم معركة المحافظات (Territory War) ⚔️ ==================== */
 
-.squad-row {
-    display: flex; align-items: center; justify-content: space-between;
-    background: #1f2937; padding: 15px; border-radius: 12px;
-    position: relative; overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.05);
+.squad-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 20px;
 }
 
+/* الكارت الأساسي */
+.squad-row {
+    position: relative;
+    background: linear-gradient(145deg, #1f2937, #111827);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+    transition: transform 0.2s;
+}
+
+/* الخلفية الشريطية (نسبة السيطرة) */
+.squad-bg-bar {
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    background: rgba(255,255,255,0.03);
+    z-index: 0;
+    transition: width 1.5s ease-out; /* حركة ناعمة عند الفتح */
+}
+
+/* المحتوى فوق الخلفية */
+.squad-content {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; gap: 15px; width: 100%;
+}
+
+/* شارة الترتيب */
+.squad-rank {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 900; font-size: 14px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    color: #9ca3af;
+}
+
+/* النصوص */
+.squad-info h4 { margin: 0; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 6px; }
+.squad-info span { font-size: 11px; color: #9ca3af; font-weight: normal; }
+.squad-total { margin-left: auto; font-weight: 800; font-size: 16px; color: var(--primary); }
+
+/* --- 🥇 تصميم المركز الأول (الملك) --- */
+.squad-row.rank-1 {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(0,0,0,0)); /* ذهبي خفيف */
+    border: 1px solid #f59e0b;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); /* وهج */
+    transform: scale(1.02); /* أكبر قليلاً */
+}
+.squad-row.rank-1 .squad-bg-bar { background: linear-gradient(90deg, rgba(245, 158, 11, 0.2), transparent); }
+.squad-row.rank-1 .squad-rank { background: #f59e0b; color: #000; box-shadow: 0 0 10px #f59e0b; }
+.squad-row.rank-1 .squad-total { color: #f59e0b; }
+
+/* --- 🥈 المركز الثاني --- */
+.squad-row.rank-2 { border-right: 4px solid #9ca3af; }
+.squad-row.rank-2 .squad-rank { background: #d1d5db; color: #000; }
+
+/* --- 🥉 المركز الثالث --- */
+.squad-row.rank-3 { border-right: 4px solid #cd7f32; }
+.squad-row.rank-3 .squad-rank { background: #cd7f32; color: #000; }
 /* التمييز للمراكز الثلاثة الأولى */
 .squad-row.rank-1 { border: 1px solid #f59e0b; background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent); }
 .squad-row.rank-2 { border: 1px solid #9ca3af; }
