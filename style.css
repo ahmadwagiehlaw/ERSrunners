@@ -1094,3 +1094,102 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     margin-left: 8px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+
+/* ==================== 16. تحسينات التحديات والمناطق (Revolutionary UI) 🎨 ==================== */
+
+/* --- 1. تصميم التحديات (Mission Cards) --- */
+.challenges-grid {
+    display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px;
+}
+
+.mission-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(31, 41, 55, 0.9), rgba(17, 24, 39, 0.95));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+}
+.mission-card:active { transform: scale(0.98); }
+
+/* خلفية أيقونة مائية */
+.mission-bg-icon {
+    position: absolute; left: -20px; bottom: -20px;
+    font-size: 100px; opacity: 0.05; color: #fff;
+    transform: rotate(15deg); pointer-events: none;
+}
+
+.mission-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 15px; position: relative; z-index: 2;
+}
+.mission-title { font-size: 18px; font-weight: 800; color: #fff; margin: 0; }
+.mission-meta { font-size: 12px; color: var(--accent); display: flex; gap: 10px; margin-top: 5px; }
+
+.mission-target-badge {
+    background: rgba(59, 130, 246, 0.1); color: #3b82f6;
+    padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* شريط التقدم المشع */
+.mission-progress-container {
+    height: 8px; background: rgba(255,255,255,0.05); border-radius: 10px;
+    margin: 15px 0 10px; overflow: hidden; position: relative;
+}
+.mission-progress-bar {
+    height: 100%; background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    border-radius: 10px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+    transition: width 1s ease;
+}
+.mission-stats {
+    display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af;
+}
+
+/* زر الانضمام */
+.btn-join-mission {
+    width: 100%; padding: 12px; border-radius: 12px;
+    background: linear-gradient(90deg, #10b981, #059669);
+    color: #fff; border: none; font-weight: bold; margin-top: 10px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    cursor: pointer; position: relative; z-index: 2;
+}
+
+/* --- 2. تصميم المناطق (Squad Battle) --- */
+.squad-list { display: flex; flex-direction: column; gap: 12px; }
+
+.squad-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #1f2937; padding: 15px; border-radius: 12px;
+    position: relative; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* التمييز للمراكز الثلاثة الأولى */
+.squad-row.rank-1 { border: 1px solid #f59e0b; background: linear-gradient(90deg, rgba(245, 158, 11, 0.1), transparent); }
+.squad-row.rank-2 { border: 1px solid #9ca3af; }
+.squad-row.rank-3 { border: 1px solid #cd7f32; }
+
+.squad-rank-badge {
+    width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; border-radius: 8px; font-size: 14px;
+    margin-left: 12px; z-index: 2;
+}
+.rank-1 .squad-rank-badge { background: #f59e0b; color: #000; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); }
+.rank-2 .squad-rank-badge { background: #e5e7eb; color: #000; }
+.rank-3 .squad-rank-badge { background: #cd7f32; color: #000; }
+.rank-other .squad-rank-badge { background: rgba(255,255,255,0.1); color: #9ca3af; }
+
+.squad-info { z-index: 2; flex: 1; }
+.squad-name { display: block; font-weight: bold; font-size: 15px; color: #fff; }
+.squad-dist { font-size: 12px; color: var(--primary); font-weight: bold; }
+
+/* الشريط الخلفي */
+.squad-bg-bar {
+    position: absolute; top: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,0.03); z-index: 1;
+    transition: width 1s ease;
+}
