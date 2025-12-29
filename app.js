@@ -459,6 +459,11 @@ window.editRun = function(id, dist, time, type, link) {
 }
 
 async function submitRun() {
+  // 🛡️ فحص الحظر أولاً
+    if (userData.isBanned) {
+        alert("⛔ حسابك محظور مؤقتاً من قبل الإدارة.\nلا يمكنك إضافة أنشطة جديدة.");
+        return;
+    }
     const btn = document.getElementById('save-run-btn');
     const dist = parseFloat(document.getElementById('log-dist').value);
     const time = parseFloat(document.getElementById('log-time').value);
@@ -1082,4 +1087,158 @@ document.addEventListener('click', async (e) => {
 function closeInstallModal() {
     document.getElementById('modal-install').style.display = 'none';
     localStorage.setItem('install_dismissed', 'true');
+}
+
+
+
+
+// ==================== 10. نظام "برج المراقبة" (Admin Security) 👮‍♂️ ====================
+
+let selectedUserId = null; // لتخزين هوية العضو الذي نتحكم فيه حالياً
+
+// 1. عرض قائمة الأعضاء (مع البحث)
+async function loadAllMembers() {
+    const list = document.getElementById('admin-members-list');
+    const search = document.getElementById('admin-search-mem').value.toLowerCase();
+    list.innerHTML = '<div style="text-align:center;">جاري البحث...</div>';
+
+    // نستخدم الكاش لسرعة العرض، أو نجلب من السيرفر لو فارغ
+    if (allUsersCache.length === 0) {
+        const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
+        allUsersCache = [];
+        snap.forEach(doc => { let d = doc.data(); d.id = doc.id; allUsersCache.push(d); });
+    }
+
+    let html = '';
+    const filtered = allUsersCache.filter(u => u.name.toLowerCase().includes(search));
+
+    if(filtered.length === 0) { list.innerHTML = '<div style="text-align:center; opacity:0.5;">لا يوجد نتائج</div>'; return; }
+
+    filtered.forEach(u => {
+        const isBanned = u.isBanned ? 'banned-user' : '';
+        const badge = u.isBanned ? '<span class="banned-badge">محظور</span>' : '';
+        html += `
+        <div class="member-row ${isBanned}" onclick="openUserControl('${u.id}')">
+            <div class="mem-info">
+                <div class="mem-avatar">${u.name.charAt(0)}</div>
+                <div class="mem-details">
+                    <h5>${u.name} ${badge}</h5>
+                    <span>${u.region} • ${u.totalDist.toFixed(0)} كم</span>
+                </div>
+            </div>
+            <button class="btn-control btn-view">فحص</button>
+        </div>`;
+    });
+    list.innerHTML = html;
+}
+
+// 2. فتح ملف "المشتبه به"
+async function openUserControl(uid) {
+    selectedUserId = uid;
+    document.getElementById('modal-user-control').style.display = 'flex';
+    
+    // جلب بيانات محدثة
+    const doc = await db.collection('users').doc(uid).get();
+    const u = doc.data();
+    
+    document.getElementById('adm-u-name').innerText = u.name;
+    document.getElementById('adm-u-avatar').innerText = u.name.charAt(0);
+    document.getElementById('adm-u-region').innerText = u.region;
+    
+    // حالة الحظر
+    const statusDiv = document.getElementById('adm-u-status');
+    statusDiv.innerHTML = u.isBanned ? '<span class="banned-badge" style="font-size:14px;">⛔ هذا الحساب محظور</span>' : '<span style="color:#10b981; font-size:12px;">✅ حساب نشط</span>';
+
+    // جلب سجل جرياته للمراجعة
+    loadTargetUserLogs(uid);
+}
+
+// 3. عرض سجل عضو آخر (للحذف)
+function loadTargetUserLogs(uid) {
+    const list = document.getElementById('adm-user-logs');
+    list.innerHTML = 'جاري التحميل...';
+    
+    db.collection('users').doc(uid).collection('runs').orderBy('timestamp', 'desc').limit(5).get().then(snap => {
+        if(snap.empty) { list.innerHTML = '<div style="padding:10px; text-align:center; font-size:11px;">سجل نظيف (أو فارغ)</div>'; return; }
+        
+        let html = '';
+        snap.forEach(d => {
+            const r = d.data();
+            const date = r.timestamp ? r.timestamp.toDate().toLocaleDateString() : '';
+            // زر الحذف هنا يستخدم (id, dist, uid)
+            html += `
+            <div class="log-row-compact" style="background:rgba(255,255,255,0.05);">
+                <div class="log-col-main" style="font-size:11px;">${r.dist} كم (${r.time}د) <br> <span style="opacity:0.5">${date}</span></div>
+                <button class="btn-admin-del" onclick="forceDeleteRun('${d.id}', ${r.dist}, '${uid}')">حذف 🗑️</button>
+            </div>`;
+        });
+        list.innerHTML = html;
+    });
+}
+
+// 4. الحذف القسري (Admin Delete)
+async function forceDeleteRun(runId, dist, targetUid) {
+    if(!confirm("⚠️ هل أنت متأكد من حذف هذه الجرية للعضو؟\nسيتم خصم المسافة من رصيده فوراً.")) return;
+    
+    try {
+        await db.collection('users').doc(targetUid).collection('runs').doc(runId).delete();
+        await db.collection('users').doc(targetUid).update({
+            totalDist: firebase.firestore.FieldValue.increment(-dist),
+            totalRuns: firebase.firestore.FieldValue.increment(-1),
+            monthDist: firebase.firestore.FieldValue.increment(-dist)
+        });
+        
+        alert("تم الحذف والخصم بنجاح 👮‍♂️");
+        loadTargetUserLogs(targetUid); // تحديث القائمة
+        allUsersCache = []; // تدمير الكاش لتحديث المتصدرين
+    } catch(e) { alert("خطأ: " + e.message); }
+}
+
+// 5. الحظر / فك الحظر (Ban Hammer 🔨)
+async function toggleUserBan() {
+    if(!selectedUserId) return;
+    const docRef = db.collection('users').doc(selectedUserId);
+    const doc = await docRef.get();
+    const isCurrentlyBanned = doc.data().isBanned || false;
+    
+    const action = isCurrentlyBanned ? "فك الحظر" : "حظر الحساب";
+    if(confirm(`هل تريد ${action} لهذا العضو؟`)) {
+        await docRef.update({ isBanned: !isCurrentlyBanned });
+        alert(`تم ${action} بنجاح.`);
+        openUserControl(selectedUserId); // تحديث الواجهة
+        loadAllMembers(); // تحديث القائمة الخلفية
+    }
+}
+
+// 6. إرسال تحذير خاص (Pop-up Warning)
+async function sendWarningPopup() {
+    if(!selectedUserId) return;
+    const msg = prompt("اكتب رسالة التحذير (ستظهر له فوراً):", "تم رصد نشاط غير طبيعي في حسابك. يرجى الالتزام بالقواعد.");
+    if(msg) {
+        await db.collection('users').doc(selectedUserId).collection('private_messages').add({
+            text: msg,
+            read: false,
+            type: 'warning',
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        alert("تم إرسال التحذير ⚠️");
+    }
+}
+
+// ==================== تعديلات الحماية (Security Hooks) ====================
+
+// دالة فحص الرسائل الخاصة (توضع في initApp)
+function checkPrivateMessages() {
+    db.collection('users').doc(currentUser.uid).collection('private_messages')
+      .where('read', '==', false).limit(1).onSnapshot(snap => {
+          if(!snap.empty) {
+              const msg = snap.docs[0].data();
+              // استخدام نفس مودال التنويهات للعرض
+              document.getElementById('announcement-content').innerHTML = `<strong style="color:red">تنبيه إداري:</strong><br>${msg.text}`;
+              document.getElementById('modal-announcement').style.display = 'flex';
+              
+              // تعليمها كمقروءة
+              snap.docs[0].ref.update({ read: true });
+          }
+      });
 }
