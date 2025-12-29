@@ -1121,3 +1121,41 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* ==================== 15. أدوات الأدمن المتقدمة (Watchtower) ==================== */
+
+/* قائمة الأعضاء */
+.member-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,0.05);
+    padding: 12px; border-radius: 10px; margin-bottom: 8px;
+    border: 1px solid transparent;
+}
+.member-row:hover { border-color: var(--primary); background: rgba(255,255,255,0.1); }
+
+.mem-info { display: flex; align-items: center; gap: 10px; }
+.mem-avatar { 
+    width: 35px; height: 35px; background: #374151; border-radius: 50%; 
+    display: flex; align-items: center; justify-content: center; font-weight: bold; 
+}
+.mem-details h5 { margin: 0; color: #fff; font-size: 13px; }
+.mem-details span { font-size: 10px; color: #9ca3af; }
+
+/* أزرار التحكم */
+.btn-control {
+    padding: 5px 10px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer;
+}
+.btn-warn { background: #f59e0b; color: #000; }
+.btn-ban { background: #ef4444; color: #fff; }
+.btn-view { background: #3b82f6; color: #fff; }
+
+/* حالة المحظور */
+.banned-user { border: 1px solid #ef4444; background: rgba(239, 68, 68, 0.1); }
+.banned-badge { color: #ef4444; font-weight: bold; font-size: 10px; border: 1px solid #ef4444; padding: 2px 6px; border-radius: 4px; }
+
+/* مودال تحكم العضو */
+.admin-user-header { text-align: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.admin-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+
+
+v
