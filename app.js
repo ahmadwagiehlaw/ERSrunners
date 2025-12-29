@@ -26,6 +26,8 @@ let deferredPrompt;
 let latestServerVersion = null;
 const CURRENT_VERSION = "1.0"; // غير هذا الرقم يدوياً عند كل تحديث
 
+// متغير لحفظ حدث التثبيت
+let deferredPrompt;
 
 // ==================== 1. Authentication (Global Functions) ====================
 // هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
@@ -297,22 +299,13 @@ function updateUI() {
         document.getElementById('xpText').innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
         document.getElementById('xpPerc').innerText = `${Math.floor(rankData.percentage)}%`;
 
-        const avatar = document.getElementById('profileAvatar');
-        if(avatar) {
-            avatar.innerText = rankData.avatar;
-            avatar.style.background = "#111827"; 
-            avatar.style.color = "#fff";
-            avatar.style.border = "2px solid var(--primary)";
-        }
-
-        // 4. تشغيل الإضافات (بدون تكرار)
         updateGoalRing();
         renderBadges();
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
-        if(typeof updateAddictionUI === 'function') updateAddictionUI(); // 🔥 الشعلة والأرقام
 
-    } catch (e) { console.error("UI Error:", e); }
+    } catch (error) { console.error("UI Error:", error); }
 }
+
 // دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
     const levels = [
@@ -466,11 +459,6 @@ window.editRun = function(id, dist, time, type, link) {
 }
 
 async function submitRun() {
-  // 🛡️ فحص الحظر أولاً
-    if (userData.isBanned) {
-        alert("⛔ حسابك محظور مؤقتاً من قبل الإدارة.\nلا يمكنك إضافة أنشطة جديدة.");
-        return;
-    }
     const btn = document.getElementById('save-run-btn');
     const dist = parseFloat(document.getElementById('log-dist').value);
     const time = parseFloat(document.getElementById('log-time').value);
@@ -492,63 +480,38 @@ async function submitRun() {
             }, { merge: true });
             alert("تم تعديل الجرية بنجاح ✅");
             editingRunId = null;
-       } else {
-            // === إضافة جرية جديدة ===
-            
-            // 1. منطق الستريك 🔥
-            const lastDate = userData.lastRunDate; // تاريخ آخر جرية المسجل
-            let newStreak = calculateStreak(lastDate); // هل الستريك مازال حياً؟
-            
-            const today = new Date();
-            today.setHours(0,0,0,0);
-            const lastD = lastDate ? new Date(lastDate) : new Date(0);
-            lastD.setHours(0,0,0,0);
-            
-            // لو تاريخ اليوم مختلف عن آخر تاريخ، زود الستريك
-            if (today > lastD) {
-                newStreak += 1;
-            }
+        } else {
+            const selectedDate = new Date(dateInput);
+            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
+            let newMonthDist = (userData.monthDist || 0) + dist;
+            if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
 
-            // 2. منطق الأرقام القياسية 🏅
-            const pbUpdates = checkPersonalBests(dist, time);
-
-            // 3. تجهيز التحديثات
-            let updateData = {
+            const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
+            await db.collection('users').doc(uid).collection('runs').add(runData);
+            await db.collection('activity_feed').add({
+                uid: uid, userName: userData.name, userRegion: userData.region,
+                ...runData, likes: []
+            });
+            await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(dist),
                 totalRuns: firebase.firestore.FieldValue.increment(1),
-                monthDist: firebase.firestore.FieldValue.increment(dist),
-                lastRunDate: date.toISOString(), // حفظ تاريخ اليوم
-                streak: newStreak // حفظ الستريك الجديد
-            };
+                monthDist: newMonthDist, lastMonthKey: currentMonthKey
+            }, { merge: true });
 
-            // دمج تحديثات الأرقام القياسية لو وجدت
-            if (pbUpdates) {
-                updateData = { ...updateData, ...pbUpdates };
-                // تحديث المحلي فوراً
-                if(pbUpdates.bestDist) userData.bestDist = pbUpdates.bestDist;
-                if(pbUpdates.bestPace) userData.bestPace = pbUpdates.bestPace;
-            }
+            const activeCh = await db.collection('challenges').where('active', '==', true).get();
+            const batch = db.batch();
+            activeCh.forEach(doc => {
+                batch.set(doc.ref.collection('participants').doc(uid), {
+                    progress: firebase.firestore.FieldValue.increment(dist),
+                    lastUpdate: timestamp, name: userData.name, region: userData.region
+                }, { merge: true });
+            });
+            await batch.commit();
 
-            // الحفظ في قاعدة البيانات
-            await db.collection('users').doc(currentUser.uid).collection('runs').add({dist, time, type, link, date: date.toISOString(), timestamp: ts});
-            await db.collection('activity_feed').add({uid: currentUser.uid, userName: userData.name, userRegion: userData.region, dist, time, type, link, timestamp: ts, likes: [], commentsCount: 0});
-            await db.collection('users').doc(currentUser.uid).update(updateData);
-
-            // تحديث البيانات المحلية
-            userData.totalDist += dist; 
-            userData.totalRuns += 1; 
-            userData.monthDist += dist;
-            userData.lastRunDate = date.toISOString();
-            userData.streak = newStreak;
-
-            await checkNewBadges(dist, time, date);
-            
-            // رسالة تشجيع خاصة للستريك
-            if (newStreak > 1 && today > lastD) {
-                alert(`🔥 مولعه! الستريك وصل ${newStreak} أيام!`);
-            } else {
-                alert("تم الحفظ");
-            }
+            userData.totalDist += dist; userData.totalRuns += 1; userData.monthDist = newMonthDist;
+            await checkNewBadges(dist, time, selectedDate);
+            alert("تم الحفظ!");
         }
         
         closeModal('modal-log');
@@ -849,78 +812,42 @@ function loadWeeklyChart() {
           chartDiv.innerHTML = html;
       });
 }
-// ==================== تحديث عرض التحديات (Mission Style) ====================
 function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges'); // في الرئيسية
+    const mini = document.getElementById('my-active-challenges');
     if(!list) return;
     
-    list.innerHTML = '<div style="text-align:center; margin-top:20px;">جاري تحميل المهمات...</div>';
-
-    db.collection('challenges').where('active','==',true).get().then(async snap => {
+    db.collection('challenges').where('active', '==', true).get().then(async snap => {
         if(snap.empty) { 
-            list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'><i class='ri-flag-line' style='font-size:40px'></i><br>لا توجد مهمات نشطة حالياً</div>"; 
-            if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
+            list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد تحديات</div>';
+            mini.innerHTML = '<div class="empty-state-mini">لا توجد تحديات حالياً</div>';
             return; 
         }
-
-        let fullHtml = '<div class="challenges-grid">';
-        let miniHtml = '';
-
-        for(const doc of snap.docs) {
+        let html = ''; let miniHtml = '';
+        for (const doc of snap.docs) {
             const ch = doc.data();
-            let isJoined = false; 
-            let progress = 0;
-            
-            // التحقق من الانضمام
+            let isJoined = false; let progress = 0;
             if(currentUser) {
-                const p = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(p.exists) { isJoined = true; progress = p.data().progress || 0; }
+                const part = await doc.ref.collection('participants').doc(currentUser.uid).get();
+                if(part.exists) { isJoined = true; progress = part.data().progress || 0; }
             }
-
             const perc = Math.min((progress/ch.target)*100, 100);
-            
-            // تصميم الكارت الجديد
-            fullHtml += `
-            <div class="mission-card">
-                <div class="mission-bg-icon"><i class="ri-trophy-line"></i></div>
-                
-                <div class="mission-header">
-                    <div>
-                        <h3 class="mission-title">${ch.title}</h3>
-                        <div class="mission-meta">
-                            <span><i class="ri-calendar-line"></i> نشط الآن</span>
-                            <span><i class="ri-group-line"></i> تحدي عام</span>
-                        </div>
-                    </div>
-                    <div class="mission-target-badge">${ch.target} كم</div>
-                </div>
-
-                ${isJoined ? `
-                    <div class="mission-progress-container">
-                        <div class="mission-progress-bar" style="width:${perc}%"></div>
-                    </div>
-                    <div class="mission-stats">
-                        <span>أنجزت: <strong style="color:#fff">${progress.toFixed(1)}</strong></span>
-                        <span>${Math.floor(perc)}%</span>
-                    </div>
-                ` : `
-                    <button class="btn-join-mission" onclick="joinChallenge('${doc.id}')">
-                        <i class="ri-add-circle-line"></i> قبول التحدي
-                    </button>
-                `}
-            </div>`;
-
-            // الكارت المصغر للصفحة الرئيسية
-            if(isJoined && mini) {
-                miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div></div>`;
+            html += `<div class="challenge-card"><h3>${ch.title} <small>${ch.target} كم</small></h3>${isJoined ? `<div class="xp-track"><div class="xp-fill" style="width:${perc}%"></div></div>` : `<button onclick="joinChallenge('${doc.id}')">انضمام</button>`}</div>`;
+            if(isJoined) {
+                miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div><div class="mini-ch-stats"><span>${progress.toFixed(1)} كم</span><span>${Math.floor(perc)}%</span></div></div>`;
             }
         }
-        
-        fullHtml += '</div>';
-        list.innerHTML = fullHtml;
-        if(mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
+        list.innerHTML = html;
+        mini.innerHTML = miniHtml || '<div class="empty-state-mini" style="font-size:11px; color:#6b7280; padding:5px;">لم تنضم لتحديات</div>';
     });
+}
+window.joinChallenge = async function(id) {
+    if(confirm("انضمام؟")) {
+        await db.collection('challenges').doc(id).collection('participants').doc(currentUser.uid).set({
+            progress: 0, name: userData.name, region: userData.region
+        });
+        alert("تم الانضمام"); loadActiveChallenges();
+    }
 }
 async function setPersonalGoal() {
     const newGoal = prompt("حددي هدفك لهذا الشهر (كم):", userData.monthlyGoal || 0);
@@ -930,65 +857,23 @@ async function setPersonalGoal() {
         updateUI();
     }
 }
-// ==================== تحديث معركة المناطق (War Room Style) ====================
 function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
-    
-    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري تحليل البيانات...</div>';
-    
+    list.innerHTML = '<div style="text-align:center;">جاري الحساب...</div>';
     db.collection('users').get().then(snap => {
         let regionMap = {};
-        
-        // تجميع النقاط
         snap.forEach(doc => {
             const u = doc.data();
-            if(u.region) { 
-                if (!regionMap[u.region]) regionMap[u.region] = 0; 
-                regionMap[u.region] += (u.totalDist || 0); 
-            }
+            if(u.region) { if (!regionMap[u.region]) regionMap[u.region] = 0; regionMap[u.region] += (u.totalDist || 0); }
         });
-
-        // الترتيب
-        const sorted = Object.keys(regionMap)
-            .map(k => ({ name: k, total: regionMap[k] }))
-            .sort((a, b) => b.total - a.total);
-
-        list.innerHTML = '<div class="squad-list">';
-        
-        if (sorted.length === 0) {
-            list.innerHTML = '<div style="text-align:center;">لا توجد بيانات مناطق</div>';
-            return;
-        }
-
-        const maxVal = sorted[0].total || 1; 
-
-        sorted.forEach((r, i) => {
-            const rank = i + 1;
+        const sortedRegions = Object.keys(regionMap).map(key => ({ name: key, total: regionMap[key] })).sort((a, b) => b.total - a.total);
+        list.innerHTML = '';
+        const maxVal = sortedRegions[0]?.total || 1; 
+        sortedRegions.forEach((r, idx) => {
             const percent = (r.total / maxVal) * 100;
-            
-            // تحديد الستايل بناء على المركز
-            let rankClass = 'rank-other';
-            if(rank === 1) rankClass = 'rank-1';
-            if(rank === 2) rankClass = 'rank-2';
-            if(rank === 3) rankClass = 'rank-3';
-
-            list.innerHTML += `
-            <div class="squad-row ${rankClass}">
-                <div class="squad-bg-bar" style="width:${percent}%"></div>
-                
-                <div class="squad-rank-badge">${rank}</div>
-                
-                <div class="squad-info">
-                    <span class="squad-name">${r.name}</span>
-                    <span class="squad-dist">إجمالي المسافة: ${r.total.toFixed(0)} كم</span>
-                </div>
-                
-                ${rank === 1 ? '<div style="font-size:20px;">🏆</div>' : ''}
-            </div>`;
+            list.innerHTML += `<div class="squad-card"><div class="squad-header"><span class="squad-rank">#${idx + 1}</span><span class="squad-name">${r.name}</span><span class="squad-total">${r.total.toFixed(0)} كم</span></div><div class="squad-bar-bg"><div class="squad-bar-fill" style="width:${percent}%"></div></div></div>`;
         });
-        
-        list.innerHTML += '</div>';
     });
 }
 
@@ -1197,244 +1082,4 @@ document.addEventListener('click', async (e) => {
 function closeInstallModal() {
     document.getElementById('modal-install').style.display = 'none';
     localStorage.setItem('install_dismissed', 'true');
-}
-
-
-
-
-// ==================== 10. نظام "برج المراقبة" (Admin Security) 👮‍♂️ ====================
-
-let selectedUserId = null; // لتخزين هوية العضو الذي نتحكم فيه حالياً
-
-// 1. عرض قائمة الأعضاء (مع البحث)
-async function loadAllMembers() {
-    const list = document.getElementById('admin-members-list');
-    const search = document.getElementById('admin-search-mem').value.toLowerCase();
-    list.innerHTML = '<div style="text-align:center;">جاري البحث...</div>';
-
-    // نستخدم الكاش لسرعة العرض، أو نجلب من السيرفر لو فارغ
-    if (allUsersCache.length === 0) {
-        const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
-        allUsersCache = [];
-        snap.forEach(doc => { let d = doc.data(); d.id = doc.id; allUsersCache.push(d); });
-    }
-
-    let html = '';
-    const filtered = allUsersCache.filter(u => u.name.toLowerCase().includes(search));
-
-    if(filtered.length === 0) { list.innerHTML = '<div style="text-align:center; opacity:0.5;">لا يوجد نتائج</div>'; return; }
-
-    filtered.forEach(u => {
-        const isBanned = u.isBanned ? 'banned-user' : '';
-        const badge = u.isBanned ? '<span class="banned-badge">محظور</span>' : '';
-        html += `
-        <div class="member-row ${isBanned}" onclick="openUserControl('${u.id}')">
-            <div class="mem-info">
-                <div class="mem-avatar">${u.name.charAt(0)}</div>
-                <div class="mem-details">
-                    <h5>${u.name} ${badge}</h5>
-                    <span>${u.region} • ${u.totalDist.toFixed(0)} كم</span>
-                </div>
-            </div>
-            <button class="btn-control btn-view">فحص</button>
-        </div>`;
-    });
-    list.innerHTML = html;
-}
-
-// 2. فتح ملف "المشتبه به"
-async function openUserControl(uid) {
-    selectedUserId = uid;
-    document.getElementById('modal-user-control').style.display = 'flex';
-    
-    // جلب بيانات محدثة
-    const doc = await db.collection('users').doc(uid).get();
-    const u = doc.data();
-    
-    document.getElementById('adm-u-name').innerText = u.name;
-    document.getElementById('adm-u-avatar').innerText = u.name.charAt(0);
-    document.getElementById('adm-u-region').innerText = u.region;
-    
-    // حالة الحظر
-    const statusDiv = document.getElementById('adm-u-status');
-    statusDiv.innerHTML = u.isBanned ? '<span class="banned-badge" style="font-size:14px;">⛔ هذا الحساب محظور</span>' : '<span style="color:#10b981; font-size:12px;">✅ حساب نشط</span>';
-
-    // جلب سجل جرياته للمراجعة
-    loadTargetUserLogs(uid);
-}
-
-// 3. عرض سجل عضو آخر (للحذف)
-function loadTargetUserLogs(uid) {
-    const list = document.getElementById('adm-user-logs');
-    list.innerHTML = 'جاري التحميل...';
-    
-    db.collection('users').doc(uid).collection('runs').orderBy('timestamp', 'desc').limit(5).get().then(snap => {
-        if(snap.empty) { list.innerHTML = '<div style="padding:10px; text-align:center; font-size:11px;">سجل نظيف (أو فارغ)</div>'; return; }
-        
-        let html = '';
-        snap.forEach(d => {
-            const r = d.data();
-            const date = r.timestamp ? r.timestamp.toDate().toLocaleDateString() : '';
-            // زر الحذف هنا يستخدم (id, dist, uid)
-            html += `
-            <div class="log-row-compact" style="background:rgba(255,255,255,0.05);">
-                <div class="log-col-main" style="font-size:11px;">${r.dist} كم (${r.time}د) <br> <span style="opacity:0.5">${date}</span></div>
-                <button class="btn-admin-del" onclick="forceDeleteRun('${d.id}', ${r.dist}, '${uid}')">حذف 🗑️</button>
-            </div>`;
-        });
-        list.innerHTML = html;
-    });
-}
-
-// 4. الحذف القسري (Admin Delete)
-async function forceDeleteRun(runId, dist, targetUid) {
-    if(!confirm("⚠️ هل أنت متأكد من حذف هذه الجرية للعضو؟\nسيتم خصم المسافة من رصيده فوراً.")) return;
-    
-    try {
-        await db.collection('users').doc(targetUid).collection('runs').doc(runId).delete();
-        await db.collection('users').doc(targetUid).update({
-            totalDist: firebase.firestore.FieldValue.increment(-dist),
-            totalRuns: firebase.firestore.FieldValue.increment(-1),
-            monthDist: firebase.firestore.FieldValue.increment(-dist)
-        });
-        
-        alert("تم الحذف والخصم بنجاح 👮‍♂️");
-        loadTargetUserLogs(targetUid); // تحديث القائمة
-        allUsersCache = []; // تدمير الكاش لتحديث المتصدرين
-    } catch(e) { alert("خطأ: " + e.message); }
-}
-
-// 5. الحظر / فك الحظر (Ban Hammer 🔨)
-async function toggleUserBan() {
-    if(!selectedUserId) return;
-    const docRef = db.collection('users').doc(selectedUserId);
-    const doc = await docRef.get();
-    const isCurrentlyBanned = doc.data().isBanned || false;
-    
-    const action = isCurrentlyBanned ? "فك الحظر" : "حظر الحساب";
-    if(confirm(`هل تريد ${action} لهذا العضو؟`)) {
-        await docRef.update({ isBanned: !isCurrentlyBanned });
-        alert(`تم ${action} بنجاح.`);
-        openUserControl(selectedUserId); // تحديث الواجهة
-        loadAllMembers(); // تحديث القائمة الخلفية
-    }
-}
-
-// 6. إرسال تحذير خاص (Pop-up Warning)
-async function sendWarningPopup() {
-    if(!selectedUserId) return;
-    const msg = prompt("اكتب رسالة التحذير (ستظهر له فوراً):", "تم رصد نشاط غير طبيعي في حسابك. يرجى الالتزام بالقواعد.");
-    if(msg) {
-        await db.collection('users').doc(selectedUserId).collection('private_messages').add({
-            text: msg,
-            read: false,
-            type: 'warning',
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        alert("تم إرسال التحذير ⚠️");
-    }
-}
-
-// ==================== تعديلات الحماية (Security Hooks) ====================
-
-// دالة فحص الرسائل الخاصة (توضع في initApp)
-function checkPrivateMessages() {
-    db.collection('users').doc(currentUser.uid).collection('private_messages')
-      .where('read', '==', false).limit(1).onSnapshot(snap => {
-          if(!snap.empty) {
-              const msg = snap.docs[0].data();
-              // استخدام نفس مودال التنويهات للعرض
-              document.getElementById('announcement-content').innerHTML = `<strong style="color:red">تنبيه إداري:</strong><br>${msg.text}`;
-              document.getElementById('modal-announcement').style.display = 'flex';
-              
-              // تعليمها كمقروءة
-              snap.docs[0].ref.update({ read: true });
-          }
-      });
-}
-
-// ==================== 11. تحديث الإدمان (Streaks & PB Logic) 🔥 ====================
-
-// 1. حساب وتحديث الستريك (يستدعى عند فتح التطبيق وعند إضافة جرية)
-function calculateStreak(lastRunDateStr) {
-    // 1. إذا لم يكن هناك تاريخ سابق
-    if (!lastRunDateStr) return 0;
-
-    const today = new Date();
-    today.setHours(0,0,0,0); // تصفير الوقت للمقارنة باليوم فقط
-    
-    const lastRun = new Date(lastRunDateStr);
-    lastRun.setHours(0,0,0,0);
-
-    const diffTime = Math.abs(today - lastRun);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    let currentStreak = userData.streak || 0;
-
-    if (diffDays === 0) {
-        // جرى اليوم بالفعل: الستريك كما هو (لا يزيد ولا ينقص)
-        return currentStreak;
-    } else if (diffDays === 1) {
-        // جرى بالأمس: الستريك مستمر (لكن الزيادة تحدث عند submitRun)
-        return currentStreak;
-    } else {
-        // فاته يوم أو أكثر: الستريك انطفأ 😢
-        return 0;
-    }
-}
-
-// 2. تحديث واجهة الستريك والأرقام
-function updateAddictionUI() {
-    // A. الستريك
-    const streak = calculateStreak(userData.lastRunDate); // حساب لحظي للعرض
-    const streakEl = document.getElementById('streak-display');
-    const streakCount = document.getElementById('streak-count');
-    
-    if (streak > 0) {
-        if(streakEl) streakEl.style.display = 'flex';
-        if(streakCount) streakCount.innerText = streak;
-    } else {
-        if(streakEl) streakEl.style.display = 'none'; // إخفاء الشعلة لو 0
-    }
-
-    // B. الأرقام القياسية
-    const pbLongest = document.getElementById('pb-longest');
-    const pbPace = document.getElementById('pb-pace');
-    
-    if(pbLongest) pbLongest.innerHTML = `${(userData.bestDist || 0).toFixed(1)} <small>كم</small>`;
-    if(pbPace) pbPace.innerText = userData.bestPace ? userData.bestPace.toFixed(2) : '--';
-}
-
-// 3. فحص الأرقام الجديدة (يستدعى داخل submitRun)
-function checkPersonalBests(newDist, newTime) {
-    let updates = {};
-    let isNewRecord = false;
-    let msg = "";
-
-    // 1. أطول مسافة
-    const currentBestDist = userData.bestDist || 0;
-    if (newDist > currentBestDist) {
-        updates.bestDist = newDist;
-        isNewRecord = true;
-        msg += `🗺️ أطول جرية جديدة: ${newDist} كم!\n`;
-    }
-
-    // 2. أسرع وتيرة (Pace) - (الوقت / المسافة)
-    // شرط: المسافة يجب أن تكون أكبر من 1 كم لحساب الوتيرة بدقة
-    if (newDist >= 1 && newTime > 0) {
-        const currentPace = newTime / newDist; // دقيقة لكل كم
-        const bestPace = userData.bestPace || 999; // رقم كبير افتراضي
-        
-        if (currentPace < bestPace) {
-            updates.bestPace = currentPace;
-            isNewRecord = true;
-            msg += `⚡ أسرع وتيرة جديدة: ${currentPace.toFixed(2)} د/كم!\n`;
-        }
-    }
-
-    if (isNewRecord) {
-        alert("🎉 مبروووك! حطمت أرقامك القياسية:\n\n" + msg);
-        return updates;
-    }
-    return null;
 }
