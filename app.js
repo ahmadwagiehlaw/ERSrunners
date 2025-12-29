@@ -557,15 +557,34 @@ function loadActivityLog() {
 }
 
 async function deleteRun(id, dist) {
-    if(confirm("حذف؟")) {
-        await db.collection('users').doc(currentUser.uid).collection('runs').doc(id).delete();
-        await db.collection('users').doc(currentUser.uid).update({
-            totalDist: firebase.firestore.FieldValue.increment(-dist),
-            totalRuns: firebase.firestore.FieldValue.increment(-1),
-            monthDist: firebase.firestore.FieldValue.increment(-dist)
-        });
-        userData.totalDist -= dist; userData.totalRuns -= 1; userData.monthDist -= dist;
-        updateUI();
+    if(confirm("حذف الجرية؟")) {
+        try {
+            await db.collection('users').doc(currentUser.uid).collection('runs').doc(id).delete();
+            
+            // التحديث الذكي: استخدام increment بالسالب
+            await db.collection('users').doc(currentUser.uid).update({
+                totalDist: firebase.firestore.FieldValue.increment(-dist),
+                totalRuns: firebase.firestore.FieldValue.increment(-1),
+                monthDist: firebase.firestore.FieldValue.increment(-dist)
+            });
+
+            // تحديث البيانات المحلية مع منع السالب
+            userData.totalDist = Math.max(0, (userData.totalDist || 0) - dist);
+            userData.totalRuns = Math.max(0, (userData.totalRuns || 0) - 1);
+            userData.monthDist = Math.max(0, (userData.monthDist || 0) - dist);
+
+            // 🔥 تدمير كاش المتصدرين ليتم تحديث القائمة فوراً
+            allUsersCache = []; 
+
+            updateUI();
+            
+            // إعادة تحميل السجل للتأكد من اختفاء الجرية
+            loadActivityLog(); 
+
+        } catch (error) {
+            console.error(error);
+            alert("حدث خطأ أثناء الحذف");
+        }
     }
 }
 
