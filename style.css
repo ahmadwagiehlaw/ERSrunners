@@ -744,3 +744,67 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     border: 2px solid var(--primary) !important; /* إطار ملون */
     box-shadow: 0 4px 10px rgba(0,0,0,0.2) !important;
 }
+/* ==================== 12. نظام المشاركة (Share Card) ==================== */
+
+/* القالب المخفي (مهم جداً) */
+.share-card-template {
+    position: fixed; top: -9999px; left: -9999px; /* إخفاء خارج الشاشة */
+    width: 320px; height: 500px; /* أبعاد ستوري انستجرام مصغرة */
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    border-radius: 20px;
+    padding: 25px;
+    display: flex; flex-direction: column; justify-content: space-between;
+    font-family: 'Tajawal', sans-serif;
+    color: #fff;
+    overflow: hidden;
+    z-index: 9999;
+}
+
+/* تأثير التوهج الخلفي */
+.share-bg-glow {
+    position: absolute; top: -50px; right: -50px;
+    width: 200px; height: 200px;
+    background: var(--primary);
+    filter: blur(80px); opacity: 0.2;
+    border-radius: 50%;
+}
+
+.share-logo-area {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 900; font-size: 14px; letter-spacing: 2px;
+    color: var(--primary);
+}
+.share-logo { height: 30px; width: auto; }
+
+.share-user {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 30px;
+}
+.share-avatar {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 2px solid var(--primary);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+}
+.share-user-info h3 { margin: 0; font-size: 18px; }
+.share-user-info span { font-size: 12px; color: #9ca3af; text-transform: uppercase; }
+
+.share-stat-box { text-align: center; margin: 20px 0; }
+.share-label { font-size: 14px; color: #9ca3af; text-transform: uppercase; letter-spacing: 2px; }
+.share-value-row { display: flex; align-items: baseline; justify-content: center; gap: 5px; }
+.share-num { font-size: 80px; font-weight: 900; line-height: 1; color: #fff; text-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+.share-unit { font-size: 20px; font-weight: bold; color: var(--primary); }
+
+.share-details {
+    display: flex; justify-content: space-around;
+    background: rgba(255,255,255,0.05);
+    padding: 15px; border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.s-det-item { display: flex; flex-direction: column; align-items: center; font-size: 12px; color: #d1d5db; }
+.s-det-item i { font-size: 18px; color: var(--primary); margin-bottom: 5px; }
+
+.share-footer {
+    text-align: center; font-size: 10px; color: #64748b; letter-spacing: 3px; text-transform: uppercase; margin-top: auto;
+}
+
+/* زر المشاركة الجديد في السجل */
+.btn-share { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
