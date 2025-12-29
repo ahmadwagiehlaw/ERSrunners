@@ -1,5 +1,5 @@
 // ERS Runners - Service Worker
-const CACHE_NAME = 'ers-runners-v22-fix'; // رقم جديد
+const CACHE_NAME = 'ers-runners-v2.1'; // رقم جديد
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
