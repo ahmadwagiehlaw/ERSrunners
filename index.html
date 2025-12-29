@@ -79,6 +79,23 @@
     <div style="display:flex; align-items:center; gap:8px;">
         <span>مستواك الحالي</span>
         <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
+
+<div class="status-header">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span>مستواك الحالي</span>
+        <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
+        
+        <button onclick="fixMyStats()" class="btn-sync-stats"><i class="ri-restart-line"></i></button>
+    </div>
+    
+    <div style="display:flex; align-items:center; gap:8px;">
+        <div class="streak-container" id="streak-display" style="display:none;">
+            <span class="fire-icon">🔥</span> <span id="streak-count">0</span> يوم
+        </div>
+        
+        <span class="rank-badge" id="userRankBadge">...</span>
+    </div>
+</div>
         
         <button onclick="fixMyStats()" class="btn-sync-stats" title="تحديث وإصلاح البيانات">
             <i class="ri-restart-line"></i>
@@ -251,6 +268,23 @@
                         <div id="weekly-chart" class="bar-chart"></div>
                     </div>
                 </div>
+
+<div class="stats-grid">...</div>
+
+            <h3 style="margin:20px 0 10px 0; font-size:16px; border-right:3px solid #f59e0b; padding-right:10px;">🏆 أرقامي القياسية</h3>
+            <div class="pb-grid">
+                <div class="pb-card">
+                    <span class="pb-icon">🗺️</span>
+                    <span class="pb-value" id="pb-longest">0 <small>كم</small></span>
+                    <span class="pb-label">أطول جرية</span>
+                </div>
+                <div class="pb-card">
+                    <span class="pb-icon">⚡</span>
+                    <span class="pb-value" id="pb-pace">--:--</span>
+                    <span class="pb-label">أسرع وتيرة (د/كم)</span>
+                </div>
+            </div>
+
                 
                 <div class="badges-section" style="margin-top: 20px;">
                     <h3 class="section-title">إنجازاتي 🎖️</h3>
