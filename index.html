@@ -76,11 +76,17 @@
 
                 <div class="status-card">
                     <div class="status-header">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span>مستواك الحالي</span><i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
-                        </div>
-                        <span class="rank-badge" id="userRankBadge">مبتدئ</span>
-                    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span>مستواك الحالي</span>
+        <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
+        
+        <button onclick="fixMyStats()" class="btn-sync-stats" title="تحديث وإصلاح البيانات">
+            <i class="ri-restart-line"></i>
+        </button>
+    </div>
+    
+    <span class="rank-badge" id="userRankBadge">مبتدئ</span>
+</div>
                     <div class="stats-grid">
                         <div class="stat-item"><span class="stat-val" id="monthDist">0</span><span class="stat-lbl">كم (شهر)</span></div>
                         <div class="stat-item"><span class="stat-val" id="totalRuns">0</span><span class="stat-lbl">جرية</span></div>
