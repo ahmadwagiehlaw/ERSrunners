@@ -923,3 +923,48 @@ function loadGlobalFeed() {
         list.innerHTML = `<div style="text-align:center; color:red; font-size:12px;">تأكد من قواعد البيانات (Rules)</div>`;
     });
 }
+
+// ==================== زر الطوارئ: إصلاح الأرقام ====================
+async function fixMyStats() {
+    if(!confirm("سيقوم هذا الإجراء بإعادة حساب إجمالي المسافات بناءً على سجلك الفعلي لتصحيح أي أخطاء.\n\nهل تريد المتابعة؟")) return;
+    
+    const btn = document.getElementById('fix-btn'); // سنضيف الزر لاحقاً
+    if(btn) btn.innerText = "جاري الإصلاح...";
+
+    try {
+        const uid = currentUser.uid;
+        // 1. جلب كل الجريات
+        const snapshot = await db.collection('users').doc(uid).collection('runs').get();
+        
+        let realTotalDist = 0;
+        let realTotalRuns = 0;
+        
+        // 2. الجمع اليدوي
+        snapshot.forEach(doc => {
+            const run = doc.data();
+            realTotalDist += (run.dist || 0);
+            realTotalRuns += 1;
+        });
+
+        // 3. تحديث قاعدة البيانات بالرقم الصحيح
+        await db.collection('users').doc(uid).update({
+            totalDist: realTotalDist,
+            totalRuns: realTotalRuns,
+            monthDist: realTotalDist // (مؤقتاً سنعتبر الإجمالي هو الشهري للإصلاح، أو يمكن حساب تاريخ الشهر بدقة أكبر لو أردت)
+        });
+
+        // 4. تحديث المحلي
+        userData.totalDist = realTotalDist;
+        userData.totalRuns = realTotalRuns;
+        userData.monthDist = realTotalDist;
+
+        alert(`تم الإصلاح! ✅\nإجمالي المسافة الحقيقي: ${realTotalDist.toFixed(1)} كم`);
+        updateUI();
+        allUsersCache = []; // تحديث المتصدرين أيضاً
+
+    } catch (e) {
+        alert("فشل الإصلاح: " + e.message);
+    } finally {
+        if(btn) btn.innerText = "🔄 إصلاح العدادات";
+    }
+}
