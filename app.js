@@ -303,7 +303,13 @@ function updateUI() {
 
     } catch (error) { console.error("UI Error:", error); }
 }
+updateGoalRing();
+    renderBadges();
+    if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
 
+    // 🔥 تشغيل واجهة الإدمان
+    updateAddictionUI(); 
+}
 // دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
     const levels = [
@@ -483,38 +489,63 @@ async function submitRun() {
             }, { merge: true });
             alert("تم تعديل الجرية بنجاح ✅");
             editingRunId = null;
-        } else {
-            const selectedDate = new Date(dateInput);
-            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
-            let newMonthDist = (userData.monthDist || 0) + dist;
-            if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
+       } else {
+            // === إضافة جرية جديدة ===
+            
+            // 1. منطق الستريك 🔥
+            const lastDate = userData.lastRunDate; // تاريخ آخر جرية المسجل
+            let newStreak = calculateStreak(lastDate); // هل الستريك مازال حياً؟
+            
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const lastD = lastDate ? new Date(lastDate) : new Date(0);
+            lastD.setHours(0,0,0,0);
+            
+            // لو تاريخ اليوم مختلف عن آخر تاريخ، زود الستريك
+            if (today > lastD) {
+                newStreak += 1;
+            }
 
-            const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
-            await db.collection('users').doc(uid).collection('runs').add(runData);
-            await db.collection('activity_feed').add({
-                uid: uid, userName: userData.name, userRegion: userData.region,
-                ...runData, likes: []
-            });
-            await db.collection('users').doc(uid).set({
+            // 2. منطق الأرقام القياسية 🏅
+            const pbUpdates = checkPersonalBests(dist, time);
+
+            // 3. تجهيز التحديثات
+            let updateData = {
                 totalDist: firebase.firestore.FieldValue.increment(dist),
                 totalRuns: firebase.firestore.FieldValue.increment(1),
-                monthDist: newMonthDist, lastMonthKey: currentMonthKey
-            }, { merge: true });
+                monthDist: firebase.firestore.FieldValue.increment(dist),
+                lastRunDate: date.toISOString(), // حفظ تاريخ اليوم
+                streak: newStreak // حفظ الستريك الجديد
+            };
 
-            const activeCh = await db.collection('challenges').where('active', '==', true).get();
-            const batch = db.batch();
-            activeCh.forEach(doc => {
-                batch.set(doc.ref.collection('participants').doc(uid), {
-                    progress: firebase.firestore.FieldValue.increment(dist),
-                    lastUpdate: timestamp, name: userData.name, region: userData.region
-                }, { merge: true });
-            });
-            await batch.commit();
+            // دمج تحديثات الأرقام القياسية لو وجدت
+            if (pbUpdates) {
+                updateData = { ...updateData, ...pbUpdates };
+                // تحديث المحلي فوراً
+                if(pbUpdates.bestDist) userData.bestDist = pbUpdates.bestDist;
+                if(pbUpdates.bestPace) userData.bestPace = pbUpdates.bestPace;
+            }
 
-            userData.totalDist += dist; userData.totalRuns += 1; userData.monthDist = newMonthDist;
-            await checkNewBadges(dist, time, selectedDate);
-            alert("تم الحفظ!");
+            // الحفظ في قاعدة البيانات
+            await db.collection('users').doc(currentUser.uid).collection('runs').add({dist, time, type, link, date: date.toISOString(), timestamp: ts});
+            await db.collection('activity_feed').add({uid: currentUser.uid, userName: userData.name, userRegion: userData.region, dist, time, type, link, timestamp: ts, likes: [], commentsCount: 0});
+            await db.collection('users').doc(currentUser.uid).update(updateData);
+
+            // تحديث البيانات المحلية
+            userData.totalDist += dist; 
+            userData.totalRuns += 1; 
+            userData.monthDist += dist;
+            userData.lastRunDate = date.toISOString();
+            userData.streak = newStreak;
+
+            await checkNewBadges(dist, time, date);
+            
+            // رسالة تشجيع خاصة للستريك
+            if (newStreak > 1 && today > lastD) {
+                alert(`🔥 مولعه! الستريك وصل ${newStreak} أيام!`);
+            } else {
+                alert("تم الحفظ");
+            }
         }
         
         closeModal('modal-log');
@@ -1317,4 +1348,90 @@ function checkPrivateMessages() {
               snap.docs[0].ref.update({ read: true });
           }
       });
+}
+
+// ==================== 11. تحديث الإدمان (Streaks & PB Logic) 🔥 ====================
+
+// 1. حساب وتحديث الستريك (يستدعى عند فتح التطبيق وعند إضافة جرية)
+function calculateStreak(lastRunDateStr) {
+    // 1. إذا لم يكن هناك تاريخ سابق
+    if (!lastRunDateStr) return 0;
+
+    const today = new Date();
+    today.setHours(0,0,0,0); // تصفير الوقت للمقارنة باليوم فقط
+    
+    const lastRun = new Date(lastRunDateStr);
+    lastRun.setHours(0,0,0,0);
+
+    const diffTime = Math.abs(today - lastRun);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    let currentStreak = userData.streak || 0;
+
+    if (diffDays === 0) {
+        // جرى اليوم بالفعل: الستريك كما هو (لا يزيد ولا ينقص)
+        return currentStreak;
+    } else if (diffDays === 1) {
+        // جرى بالأمس: الستريك مستمر (لكن الزيادة تحدث عند submitRun)
+        return currentStreak;
+    } else {
+        // فاته يوم أو أكثر: الستريك انطفأ 😢
+        return 0;
+    }
+}
+
+// 2. تحديث واجهة الستريك والأرقام
+function updateAddictionUI() {
+    // A. الستريك
+    const streak = calculateStreak(userData.lastRunDate); // حساب لحظي للعرض
+    const streakEl = document.getElementById('streak-display');
+    const streakCount = document.getElementById('streak-count');
+    
+    if (streak > 0) {
+        if(streakEl) streakEl.style.display = 'flex';
+        if(streakCount) streakCount.innerText = streak;
+    } else {
+        if(streakEl) streakEl.style.display = 'none'; // إخفاء الشعلة لو 0
+    }
+
+    // B. الأرقام القياسية
+    const pbLongest = document.getElementById('pb-longest');
+    const pbPace = document.getElementById('pb-pace');
+    
+    if(pbLongest) pbLongest.innerHTML = `${(userData.bestDist || 0).toFixed(1)} <small>كم</small>`;
+    if(pbPace) pbPace.innerText = userData.bestPace ? userData.bestPace.toFixed(2) : '--';
+}
+
+// 3. فحص الأرقام الجديدة (يستدعى داخل submitRun)
+function checkPersonalBests(newDist, newTime) {
+    let updates = {};
+    let isNewRecord = false;
+    let msg = "";
+
+    // 1. أطول مسافة
+    const currentBestDist = userData.bestDist || 0;
+    if (newDist > currentBestDist) {
+        updates.bestDist = newDist;
+        isNewRecord = true;
+        msg += `🗺️ أطول جرية جديدة: ${newDist} كم!\n`;
+    }
+
+    // 2. أسرع وتيرة (Pace) - (الوقت / المسافة)
+    // شرط: المسافة يجب أن تكون أكبر من 1 كم لحساب الوتيرة بدقة
+    if (newDist >= 1 && newTime > 0) {
+        const currentPace = newTime / newDist; // دقيقة لكل كم
+        const bestPace = userData.bestPace || 999; // رقم كبير افتراضي
+        
+        if (currentPace < bestPace) {
+            updates.bestPace = currentPace;
+            isNewRecord = true;
+            msg += `⚡ أسرع وتيرة جديدة: ${currentPace.toFixed(2)} د/كم!\n`;
+        }
+    }
+
+    if (isNewRecord) {
+        alert("🎉 مبروووك! حطمت أرقامك القياسية:\n\n" + msg);
+        return updates;
+    }
+    return null;
 }
