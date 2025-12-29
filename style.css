@@ -808,3 +808,40 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 
 /* زر المشاركة الجديد في السجل */
 .btn-share { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+
+/* ==================== 13. Smart Coach Styles ==================== */
+.coach-card {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8); /* أزرق ملكي */
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: slideDown 0.5s ease;
+}
+
+.coach-icon {
+    width: 45px; height: 45px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; color: #fff;
+    flex-shrink: 0;
+}
+
+.coach-content { flex: 1; }
+
+.coach-label {
+    font-size: 10px; color: #bfdbfe; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;
+    display: block; margin-bottom: 4px;
+}
+
+.coach-message {
+    font-size: 13px; color: #fff; line-height: 1.4; font-weight: 500; margin: 0;
+}
+
+@keyframes slideDown { from {opacity:0; transform:translateY(-10px);} to {opacity:1; transform:translateY(0);} }
