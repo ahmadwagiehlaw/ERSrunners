@@ -815,42 +815,78 @@ function loadWeeklyChart() {
           chartDiv.innerHTML = html;
       });
 }
+// ==================== تحديث عرض التحديات (Mission Style) ====================
 function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges');
+    const mini = document.getElementById('my-active-challenges'); // في الرئيسية
     if(!list) return;
     
-    db.collection('challenges').where('active', '==', true).get().then(async snap => {
+    list.innerHTML = '<div style="text-align:center; margin-top:20px;">جاري تحميل المهمات...</div>';
+
+    db.collection('challenges').where('active','==',true).get().then(async snap => {
         if(snap.empty) { 
-            list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد تحديات</div>';
-            mini.innerHTML = '<div class="empty-state-mini">لا توجد تحديات حالياً</div>';
+            list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'><i class='ri-flag-line' style='font-size:40px'></i><br>لا توجد مهمات نشطة حالياً</div>"; 
+            if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
             return; 
         }
-        let html = ''; let miniHtml = '';
-        for (const doc of snap.docs) {
+
+        let fullHtml = '<div class="challenges-grid">';
+        let miniHtml = '';
+
+        for(const doc of snap.docs) {
             const ch = doc.data();
-            let isJoined = false; let progress = 0;
+            let isJoined = false; 
+            let progress = 0;
+            
+            // التحقق من الانضمام
             if(currentUser) {
-                const part = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(part.exists) { isJoined = true; progress = part.data().progress || 0; }
+                const p = await doc.ref.collection('participants').doc(currentUser.uid).get();
+                if(p.exists) { isJoined = true; progress = p.data().progress || 0; }
             }
+
             const perc = Math.min((progress/ch.target)*100, 100);
-            html += `<div class="challenge-card"><h3>${ch.title} <small>${ch.target} كم</small></h3>${isJoined ? `<div class="xp-track"><div class="xp-fill" style="width:${perc}%"></div></div>` : `<button onclick="joinChallenge('${doc.id}')">انضمام</button>`}</div>`;
-            if(isJoined) {
-                miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div><div class="mini-ch-stats"><span>${progress.toFixed(1)} كم</span><span>${Math.floor(perc)}%</span></div></div>`;
+            
+            // تصميم الكارت الجديد
+            fullHtml += `
+            <div class="mission-card">
+                <div class="mission-bg-icon"><i class="ri-trophy-line"></i></div>
+                
+                <div class="mission-header">
+                    <div>
+                        <h3 class="mission-title">${ch.title}</h3>
+                        <div class="mission-meta">
+                            <span><i class="ri-calendar-line"></i> نشط الآن</span>
+                            <span><i class="ri-group-line"></i> تحدي عام</span>
+                        </div>
+                    </div>
+                    <div class="mission-target-badge">${ch.target} كم</div>
+                </div>
+
+                ${isJoined ? `
+                    <div class="mission-progress-container">
+                        <div class="mission-progress-bar" style="width:${perc}%"></div>
+                    </div>
+                    <div class="mission-stats">
+                        <span>أنجزت: <strong style="color:#fff">${progress.toFixed(1)}</strong></span>
+                        <span>${Math.floor(perc)}%</span>
+                    </div>
+                ` : `
+                    <button class="btn-join-mission" onclick="joinChallenge('${doc.id}')">
+                        <i class="ri-add-circle-line"></i> قبول التحدي
+                    </button>
+                `}
+            </div>`;
+
+            // الكارت المصغر للصفحة الرئيسية
+            if(isJoined && mini) {
+                miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div></div>`;
             }
         }
-        list.innerHTML = html;
-        mini.innerHTML = miniHtml || '<div class="empty-state-mini" style="font-size:11px; color:#6b7280; padding:5px;">لم تنضم لتحديات</div>';
+        
+        fullHtml += '</div>';
+        list.innerHTML = fullHtml;
+        if(mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
     });
-}
-window.joinChallenge = async function(id) {
-    if(confirm("انضمام؟")) {
-        await db.collection('challenges').doc(id).collection('participants').doc(currentUser.uid).set({
-            progress: 0, name: userData.name, region: userData.region
-        });
-        alert("تم الانضمام"); loadActiveChallenges();
-    }
 }
 async function setPersonalGoal() {
     const newGoal = prompt("حددي هدفك لهذا الشهر (كم):", userData.monthlyGoal || 0);
@@ -860,23 +896,65 @@ async function setPersonalGoal() {
         updateUI();
     }
 }
+// ==================== تحديث معركة المناطق (War Room Style) ====================
 function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
-    list.innerHTML = '<div style="text-align:center;">جاري الحساب...</div>';
+    
+    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري تحليل البيانات...</div>';
+    
     db.collection('users').get().then(snap => {
         let regionMap = {};
+        
+        // تجميع النقاط
         snap.forEach(doc => {
             const u = doc.data();
-            if(u.region) { if (!regionMap[u.region]) regionMap[u.region] = 0; regionMap[u.region] += (u.totalDist || 0); }
+            if(u.region) { 
+                if (!regionMap[u.region]) regionMap[u.region] = 0; 
+                regionMap[u.region] += (u.totalDist || 0); 
+            }
         });
-        const sortedRegions = Object.keys(regionMap).map(key => ({ name: key, total: regionMap[key] })).sort((a, b) => b.total - a.total);
-        list.innerHTML = '';
-        const maxVal = sortedRegions[0]?.total || 1; 
-        sortedRegions.forEach((r, idx) => {
+
+        // الترتيب
+        const sorted = Object.keys(regionMap)
+            .map(k => ({ name: k, total: regionMap[k] }))
+            .sort((a, b) => b.total - a.total);
+
+        list.innerHTML = '<div class="squad-list">';
+        
+        if (sorted.length === 0) {
+            list.innerHTML = '<div style="text-align:center;">لا توجد بيانات مناطق</div>';
+            return;
+        }
+
+        const maxVal = sorted[0].total || 1; 
+
+        sorted.forEach((r, i) => {
+            const rank = i + 1;
             const percent = (r.total / maxVal) * 100;
-            list.innerHTML += `<div class="squad-card"><div class="squad-header"><span class="squad-rank">#${idx + 1}</span><span class="squad-name">${r.name}</span><span class="squad-total">${r.total.toFixed(0)} كم</span></div><div class="squad-bar-bg"><div class="squad-bar-fill" style="width:${percent}%"></div></div></div>`;
+            
+            // تحديد الستايل بناء على المركز
+            let rankClass = 'rank-other';
+            if(rank === 1) rankClass = 'rank-1';
+            if(rank === 2) rankClass = 'rank-2';
+            if(rank === 3) rankClass = 'rank-3';
+
+            list.innerHTML += `
+            <div class="squad-row ${rankClass}">
+                <div class="squad-bg-bar" style="width:${percent}%"></div>
+                
+                <div class="squad-rank-badge">${rank}</div>
+                
+                <div class="squad-info">
+                    <span class="squad-name">${r.name}</span>
+                    <span class="squad-dist">إجمالي المسافة: ${r.total.toFixed(0)} كم</span>
+                </div>
+                
+                ${rank === 1 ? '<div style="font-size:20px;">🏆</div>' : ''}
+            </div>`;
         });
+        
+        list.innerHTML += '</div>';
     });
 }
 
