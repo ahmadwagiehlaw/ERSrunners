@@ -1,4 +1,4 @@
-/* ERS Runners - V24 (Fixed Avatar & Smart Log) */
+/* ERS Runners - V25 (Social Share + Avatar Fix) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -37,7 +37,6 @@ auth.onAuthStateChanged(async (user) => {
             }
         } catch (e) { 
             console.error("Auth Error:", e);
-            // محاولة الدخول حتى لو فشل جلب البيانات لمرة واحدة
             userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0, badges: [] };
             initApp();
         }
@@ -58,12 +57,11 @@ function initApp() {
     if(dateInput) dateInput.value = now.toISOString().slice(0,16);
 
     updateUI();
-    loadActivityLog(); // تحميل السجل المطور
+    loadActivityLog(); 
     loadActiveChallenges(); 
     loadGlobalFeed();
     listenForNotifications();
     
-    // استدعاء الرسم البياني إذا كانت الدالة موجودة
     if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
 }
 
@@ -76,17 +74,14 @@ function updateUI() {
         if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; 
         if (headerName) headerName.innerText = userData.name || "Runner";
 
-        // إحصائيات الصفحة الرئيسية
         const monthDistEl = document.getElementById('monthDist');
         const totalRunsEl = document.getElementById('totalRuns');
         if (monthDistEl) monthDistEl.innerText = (userData.monthDist || 0).toFixed(1);
         if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
 
-        // حساب الرتبة أولاً لنستخدمها في الأفاتار
         const totalDist = userData.totalDist || 0;
         const rankData = calculateRank(totalDist);
 
-        // تحديث البروفايل (البيب كارد)
         const profileName = document.getElementById('profileName');
         const profileRegion = document.getElementById('profileRegion');
         const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
@@ -98,28 +93,29 @@ function updateUI() {
         if (profileName) profileName.innerText = userData.name;
         if (profileRegion) profileRegion.innerText = userData.region;
         
-        // 🔥 التعديل هنا: استخدام الإيموجي بدلاً من الحرف
+        // 🔥 تحديث الأفاتار (مع إصلاح الخلفية الداكنة)
         if (profileAvatar) {
-            profileAvatar.innerText = rankData.avatar; // وضع الإيموجي (🐣)
-            // تحسين المظهر للإيموجي
-            
+            profileAvatar.innerText = rankData.avatar; 
+            if(profileAvatar.classList.contains('bib-avatar')) {
+                // جعل الخلفية داكنة لتوضيح الإيموجي
+                profileAvatar.style.background = "#111827"; 
+                profileAvatar.style.color = "#fff";
+                profileAvatar.style.border = "2px solid var(--primary)";
+                profileAvatar.style.fontSize = "28px";
+            }
         }
 
         if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
         if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
-        
-        // حساب متوسط السرعة التقريبي
         if (pPace) pPace.innerText = userData.totalRuns > 0 ? ((userData.totalDist/userData.totalRuns)*5).toFixed(1) : "-"; 
         if (pRankText) pRankText.innerText = rankData.name;
 
-        // تحديث بادج الرتبة في الرئيسية
         const rankBadge = document.getElementById('userRankBadge');
         if(rankBadge) {
             rankBadge.innerText = rankData.name;
             rankBadge.className = `rank-badge ${rankData.class}`;
         }
         
-        // شريط الخبرة XP
         const nextLevelDist = document.getElementById('nextLevelDist');
         if(nextLevelDist) nextLevelDist.innerText = rankData.remaining.toFixed(1);
         
@@ -137,14 +133,12 @@ function updateUI() {
         if(xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
         if(xpMessage) xpMessage.innerText = rankData.name === "أسطورة" ? "أنت الملك! 👑" : `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
 
-        // تحديث العناصر الأخرى
         updateGoalRing();
         renderBadges();
 
     } catch (error) { console.error("UI Update Error:", error); }
 }
 
-// دالة مساعدة لتحديث حلقة الهدف
 function updateGoalRing() {
     const goalRing = document.getElementById('goalRing');
     const goalText = document.getElementById('goalText');
@@ -171,7 +165,6 @@ function updateGoalRing() {
     }
 }
 
-// === نظام الرتب المطور (مع الإيموجي) ===
 function calculateRank(totalDist) {
     const levels = [
         { name: "مبتدئ", min: 0, class: "rank-mubtadi", next: 50, avatar: "🥚" },
@@ -192,7 +185,7 @@ function calculateRank(totalDist) {
     return { 
         name: currentLevel.name, 
         class: currentLevel.class, 
-        avatar: currentLevel.avatar, // الإيموجي
+        avatar: currentLevel.avatar, 
         nextTarget: currentLevel.next, 
         remaining: currentLevel.next - totalDist, 
         percentage: percentage, 
@@ -208,11 +201,9 @@ function getNextRankName(current) {
 
 // ==================== 3. Core Features (Edit & Add Logic) ====================
 
-// فتح نافذة جديدة (إضافة)
 function openNewRun() {
     editingRunId = null;
     editingOldDist = 0;
-    
     document.getElementById('log-dist').value = '';
     document.getElementById('log-time').value = '';
     document.getElementById('log-type').value = 'Run';
@@ -229,11 +220,9 @@ function openNewRun() {
     openLogModal();
 }
 
-// فتح نافذة التعديل (تعبئة البيانات)
 window.editRun = function(id, dist, time, type, link) {
     editingRunId = id;
     editingOldDist = dist;
-    
     document.getElementById('log-dist').value = dist;
     document.getElementById('log-time').value = time;
     document.getElementById('log-type').value = type;
@@ -258,26 +247,16 @@ async function submitRun() {
     try {
         const uid = currentUser.uid;
 
-        // === حالة التعديل ===
         if (editingRunId) {
             const distDiff = dist - editingOldDist; 
-            
-            // 1. تحديث الوثيقة
-            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({
-                dist, time, type, link
-            });
-
-            // 2. تحديث الإحصائيات
+            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({ dist, time, type, link });
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(distDiff),
                 monthDist: firebase.firestore.FieldValue.increment(distDiff)
             }, { merge: true });
-
             alert("تم تعديل الجرية بنجاح ✅");
             editingRunId = null;
-
         } else {
-            // === حالة الإضافة الجديدة ===
             const selectedDate = new Date(dateInput);
             const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
             const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
@@ -286,21 +265,17 @@ async function submitRun() {
 
             const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
 
-            // إضافة للبروفايل
             await db.collection('users').doc(uid).collection('runs').add(runData);
-            // إضافة للـ Feed
             await db.collection('activity_feed').add({
                 uid: uid, userName: userData.name, userRegion: userData.region,
                 ...runData, likes: []
             });
-            // تحديث الإجمالي
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(dist),
                 totalRuns: firebase.firestore.FieldValue.increment(1),
                 monthDist: newMonthDist, lastMonthKey: currentMonthKey
             }, { merge: true });
 
-            // تحديث التحديات
             const activeCh = await db.collection('challenges').where('active', '==', true).get();
             const batch = db.batch();
             activeCh.forEach(doc => {
@@ -311,28 +286,20 @@ async function submitRun() {
             });
             await batch.commit();
 
-            // تحديث محلي
-            userData.totalDist += dist; 
-            userData.totalRuns += 1;
-            userData.monthDist = newMonthDist;
-            
-            // فحص البادجات
+            userData.totalDist += dist; userData.totalRuns += 1; userData.monthDist = newMonthDist;
             await checkNewBadges(dist, time, selectedDate);
             alert("تم الحفظ!");
         }
         
         closeModal('modal-log');
         document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-        
         updateUI(); loadGlobalFeed(); loadActivityLog();
 
     } catch (error) { alert("خطأ: " + error.message); } 
-    finally { 
-        if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } 
-    }
+    finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
 }
 
-// ==================== 4. Smart Log (السجل المطور) ====================
+// ==================== 4. Smart Log & Share ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
@@ -356,7 +323,6 @@ function loadActivityLog() {
               runs.push(r);
           });
 
-          // تجميع الجريات حسب الشهر
           const groups = {};
           runs.forEach(r => {
               const date = r.timestamp ? r.timestamp.toDate() : new Date();
@@ -373,7 +339,6 @@ function loadActivityLog() {
                   const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
                   const dayStr = dateObj.toLocaleDateString('ar-EG', { day: 'numeric', weekday: 'short' });
                   
-                  // شارة أطول جرية
                   const badge = (r.dist === maxDist && maxDist > 5) ? `<span class="badge-record">🏆 الأطول</span>` : '';
                   const pace = r.time > 0 ? (r.time / r.dist).toFixed(1) : '-';
 
@@ -381,19 +346,17 @@ function loadActivityLog() {
                   <div class="log-row-compact">
                       ${badge}
                       <div class="log-col-main">
-                          <div class="log-type-icon">
-                              <i class="${r.type === 'Walk' ? 'ri-walk-line' : 'ri-run-line'}"></i>
-                          </div>
-                          <div>
-                              <span class="log-dist-val">${r.dist}</span>
-                              <span class="log-dist-unit">كم</span>
-                          </div>
+                          <div class="log-type-icon"><i class="${r.type === 'Walk' ? 'ri-walk-line' : 'ri-run-line'}"></i></div>
+                          <div><span class="log-dist-val">${r.dist}</span> <span class="log-dist-unit">كم</span></div>
                       </div>
                       <div class="log-col-meta">
                           <span class="log-date-text">${dayStr}</span>
-                          <span class="log-pace-text">${r.time}دقيقة • ${pace} د/كم</span>
+                          <span class="log-pace-text">${r.time}د • ${pace} د/كم</span>
                       </div>
                       <div class="log-col-actions">
+                          <button class="btn-mini-action btn-share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayStr}')">
+                              <i class="ri-share-forward-line"></i>
+                          </button>
                           <button class="btn-mini-action btn-edit" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}')">
                               <i class="ri-pencil-line"></i>
                           </button>
@@ -422,7 +385,51 @@ async function deleteRun(id, dist) {
     }
 }
 
-// ==================== 5. Other Features ====================
+// ==================== 5. Share Engine (New) ====================
+function generateShareCard(dist, time, dateStr) {
+    // 1. ملء البيانات في القالب المخفي
+    document.getElementById('share-name').innerText = userData.name || "Champion";
+    
+    // حساب الرتبة الحالية للأفاتار
+    const rankData = calculateRank(userData.totalDist || 0);
+    document.getElementById('share-rank').innerText = rankData.name;
+    document.getElementById('share-avatar').innerText = rankData.avatar;
+    
+    document.getElementById('share-dist').innerText = dist;
+    document.getElementById('share-time').innerText = time + "m";
+    
+    // حساب الـ Pace
+    const pace = (time / dist).toFixed(1);
+    document.getElementById('share-pace').innerText = pace + "/km";
+
+    // 2. إظهار المودال (التحميل)
+    const modal = document.getElementById('modal-share');
+    modal.style.display = 'flex';
+    document.getElementById('final-share-img').style.display = 'none'; // إخفاء القديم
+    
+    // 3. التقاط الصورة باستخدام html2canvas
+    const element = document.getElementById('capture-area');
+    
+    // الانتظار قليلاً للتأكد من تحميل الخطوط
+    setTimeout(() => {
+        html2canvas(element, {
+            backgroundColor: null, // خلفية شفافة للحواف المدورة
+            scale: 2, // جودة عالية (Retina)
+            useCORS: true // للسماح بالصور الخارجية
+        }).then(canvas => {
+            // تحويل الكانفاس لصورة
+            const imgData = canvas.toDataURL("image/png");
+            const imgTag = document.getElementById('final-share-img');
+            imgTag.src = imgData;
+            imgTag.style.display = 'block';
+        }).catch(err => {
+            console.error(err);
+            alert("حدث خطأ أثناء إنشاء الصورة");
+        });
+    }, 100);
+}
+
+// ==================== 6. Other Features ====================
 
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
