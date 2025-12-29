@@ -924,47 +924,73 @@ function loadGlobalFeed() {
     });
 }
 
-// ==================== زر الطوارئ: إصلاح الأرقام ====================
+// ==================== زر الطوارئ: إصلاح العدادات (V31 Improved) ====================
 async function fixMyStats() {
-    if(!confirm("سيقوم هذا الإجراء بإعادة حساب إجمالي المسافات بناءً على سجلك الفعلي لتصحيح أي أخطاء.\n\nهل تريد المتابعة؟")) return;
+    // 1. التأكيد
+    if(!confirm("⚠️ تنبيه:\nسيقوم هذا الزر بمراجعة كل الجريات المسجلة في حسابك وإعادة جمعها من الصفر لتصحيح الرقم الإجمالي.\n\nهل تريد المتابعة؟")) return;
     
-    const btn = document.getElementById('fix-btn'); // سنضيف الزر لاحقاً
-    if(btn) btn.innerText = "جاري الإصلاح...";
+    const btn = document.getElementById('fix-btn');
+    const originalText = btn ? btn.innerText : "إصلاح";
+    if(btn) { btn.innerText = "جاري الفحص..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
-        // 1. جلب كل الجريات
+        console.log("Starting Fix for user:", uid);
+
+        // 2. جلب كل الجريات
         const snapshot = await db.collection('users').doc(uid).collection('runs').get();
         
         let realTotalDist = 0;
         let realTotalRuns = 0;
-        
-        // 2. الجمع اليدوي
+        let runsFound = 0;
+
+        // 3. الجمع الدقيق (مع تحويل النصوص لأرقام إجبارياً)
         snapshot.forEach(doc => {
             const run = doc.data();
-            realTotalDist += (run.dist || 0);
+            // تحويل القيمة لرقم عشري (Float) لتجنب جمع النصوص
+            const dist = parseFloat(run.dist);
+            
+            // التأكد أن الرقم صالح (ليس NaN)
+            if (!isNaN(dist)) {
+                realTotalDist += dist;
+            }
             realTotalRuns += 1;
+            runsFound++;
         });
 
-        // 3. تحديث قاعدة البيانات بالرقم الصحيح
+        // تصحيح الكسور العشرية (رقمين فقط)
+        realTotalDist = Math.round(realTotalDist * 100) / 100;
+
+        console.log(`Fix Result: Found ${runsFound} runs, Total Dist: ${realTotalDist}`);
+
+        if (runsFound === 0) {
+            alert("تنبيه: لم يتم العثور على أي جريات مسجلة في سجلك!\nسيتم تصفير العدادات.");
+        }
+
+        // 4. تحديث قاعدة البيانات
         await db.collection('users').doc(uid).update({
             totalDist: realTotalDist,
             totalRuns: realTotalRuns,
-            monthDist: realTotalDist // (مؤقتاً سنعتبر الإجمالي هو الشهري للإصلاح، أو يمكن حساب تاريخ الشهر بدقة أكبر لو أردت)
+            // تحديث شهر "الحالي" فقط (حل مؤقت ذكي)
+            monthDist: realTotalDist 
         });
 
-        // 4. تحديث المحلي
+        // 5. تحديث الواجهة فوراً
         userData.totalDist = realTotalDist;
         userData.totalRuns = realTotalRuns;
         userData.monthDist = realTotalDist;
 
-        alert(`تم الإصلاح! ✅\nإجمالي المسافة الحقيقي: ${realTotalDist.toFixed(1)} كم`);
-        updateUI();
-        allUsersCache = []; // تحديث المتصدرين أيضاً
+        // تدمير الكاش لإظهار النتيجة في المتصدرين
+        if (typeof allUsersCache !== 'undefined') allUsersCache = [];
+
+        updateUI(); // تحديث الشاشة
+
+        alert(`✅ تمت عملية الإصلاح بنجاح!\n\nعدد الجريات الفعلي: ${realTotalRuns}\nالمسافة الإجمالية الصحيحة: ${realTotalDist} كم`);
 
     } catch (e) {
-        alert("فشل الإصلاح: " + e.message);
+        console.error("Fix Error:", e);
+        alert("حدث خطأ أثناء الإصلاح:\n" + e.message);
     } finally {
-        if(btn) btn.innerText = "🔄 إصلاح العدادات";
+        if(btn) { btn.innerText = originalText; btn.disabled = false; }
     }
 }
