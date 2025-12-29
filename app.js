@@ -1,4 +1,4 @@
-/* ERS Runners - V27 (Clean & Fully Functional) */
+/* ERS Runners - V28 (Auth FIXED + All Features) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -19,7 +19,7 @@ let isSignupMode = false;
 let editingRunId = null;
 let editingOldDist = 0;
 
-// Auth
+// ==================== 1. Authentication System (FIXED) ====================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
@@ -34,7 +34,7 @@ auth.onAuthStateChanged(async (user) => {
                 initApp();
             }
         } catch (e) { 
-            console.error(e);
+            console.error("Auth Error:", e);
             userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0, badges: [] };
             initApp();
         }
@@ -44,10 +44,75 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
+// ✅ الدالة التي كانت مفقودة (تبديل الوضع)
+function toggleAuthMode() {
+    isSignupMode = !isSignupMode;
+    const fields = document.getElementById('signup-fields');
+    const btn = document.getElementById('toggleAuthBtn');
+    const mainBtn = document.querySelector('.auth-box .btn-primary');
+    
+    if (fields && btn && mainBtn) {
+        if (isSignupMode) {
+            fields.style.display = 'block';
+            btn.innerText = "لديك حساب بالفعل؟ تسجيل الدخول";
+            mainBtn.innerText = "إنشاء حساب جديد";
+        } else {
+            fields.style.display = 'none';
+            btn.innerText = "ليس لديك حساب؟ سجل الآن";
+            mainBtn.innerText = "دخول";
+        }
+    }
+}
+
+// ✅ الدالة التي كانت مفقودة (تسجيل الدخول/الخروج)
+async function handleAuth() {
+    const emailEl = document.getElementById('email');
+    const passEl = document.getElementById('password');
+    const msgEl = document.getElementById('auth-msg');
+    
+    if (!emailEl || !passEl) return;
+    const email = emailEl.value;
+    const pass = passEl.value;
+    if (msgEl) msgEl.innerText = "";
+
+    try {
+        if (!email || !pass) throw new Error("يرجى ملء البيانات");
+
+        if (isSignupMode) {
+            const name = document.getElementById('username').value;
+            const region = document.getElementById('region').value;
+            if (!name || !region) throw new Error("أكمل البيانات المطلوبة");
+
+            const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            await db.collection('users').doc(cred.user.uid).set({
+                name: name, region: region, email: email,
+                totalDist: 0, totalRuns: 0, badges: [],
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } else {
+            await auth.signInWithEmailAndPassword(email, pass);
+        }
+    } catch (err) {
+        if (msgEl) msgEl.innerText = err.message;
+        console.error("Auth Error:", err);
+    }
+}
+
+// ✅ دالة الخروج
+function logout() {
+    if(confirm("خروج؟")) { auth.signOut(); window.location.reload(); }
+}
+
+function showAuthScreen() {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('app-content').style.display = 'none';
+}
+
 function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
     
+    // ضبط الوقت الافتراضي
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     const dateInput = document.getElementById('log-date');
@@ -58,10 +123,10 @@ function initApp() {
     loadActiveChallenges(); 
     loadGlobalFeed();
     listenForNotifications();
-    loadWeeklyChart();
+    if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
 }
 
-// UI
+// ==================== 2. UI Updates & Logic ====================
 function updateUI() {
     try {
         const headerName = document.getElementById('headerName');
@@ -70,18 +135,25 @@ function updateUI() {
         if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; 
         if (headerName) headerName.innerText = userData.name || "Runner";
 
-        document.getElementById('monthDist').innerText = (userData.monthDist || 0).toFixed(1);
-        document.getElementById('totalRuns').innerText = userData.totalRuns || 0;
+        const monthDistEl = document.getElementById('monthDist');
+        const totalRunsEl = document.getElementById('totalRuns');
+        if (monthDistEl) monthDistEl.innerText = (userData.monthDist || 0).toFixed(1);
+        if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
 
         const totalDist = userData.totalDist || 0;
         const rankData = calculateRank(totalDist);
 
-        document.getElementById('profileName').innerText = userData.name;
-        document.getElementById('profileRegion').innerText = userData.region;
-        document.getElementById('profileTotalDist').innerText = (userData.totalDist || 0).toFixed(1);
-        document.getElementById('profileTotalRuns').innerText = userData.totalRuns || 0;
-        
+        const profileName = document.getElementById('profileName');
+        const profileRegion = document.getElementById('profileRegion');
         const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
+        const pTotalDist = document.getElementById('profileTotalDist');
+        const pTotalRuns = document.getElementById('profileTotalRuns');
+        const pRankText = document.getElementById('profileRankText');
+        const pPace = document.getElementById('profilePace');
+
+        if (profileName) profileName.innerText = userData.name;
+        if (profileRegion) profileRegion.innerText = userData.region;
+        
         if (profileAvatar) {
             profileAvatar.innerText = rankData.avatar; 
             if(profileAvatar.classList.contains('bib-avatar')) {
@@ -92,9 +164,10 @@ function updateUI() {
             }
         }
 
-        const pPace = document.getElementById('profilePace');
+        if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
+        if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
         if (pPace) pPace.innerText = userData.totalRuns > 0 ? ((userData.totalDist/userData.totalRuns)*5).toFixed(1) : "-"; 
-        document.getElementById('profileRankText').innerText = rankData.name;
+        if (pRankText) pRankText.innerText = rankData.name;
 
         const rankBadge = document.getElementById('userRankBadge');
         if(rankBadge) {
@@ -102,7 +175,8 @@ function updateUI() {
             rankBadge.className = `rank-badge ${rankData.class}`;
         }
         
-        document.getElementById('nextLevelDist').innerText = rankData.remaining.toFixed(1);
+        const nextLevelDist = document.getElementById('nextLevelDist');
+        if(nextLevelDist) nextLevelDist.innerText = rankData.remaining.toFixed(1);
         
         const xpBar = document.getElementById('xpBar');
         if(xpBar) {
@@ -110,15 +184,19 @@ function updateUI() {
             xpBar.style.backgroundColor = `var(--rank-color)`;
             xpBar.parentElement.className = `xp-track ${rankData.class}`;
         }
-        document.getElementById('xpText').innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
-        document.getElementById('xpPerc').innerText = `${Math.floor(rankData.percentage)}%`;
-        document.getElementById('xpMessage').innerText = rankData.name === "أسطورة" ? "أنت الملك! 👑" : `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
+        const xpText = document.getElementById('xpText');
+        const xpPerc = document.getElementById('xpPerc');
+        const xpMessage = document.getElementById('xpMessage');
+
+        if(xpText) xpText.innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
+        if(xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
+        if(xpMessage) xpMessage.innerText = rankData.name === "أسطورة" ? "أنت الملك! 👑" : `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
 
         updateGoalRing();
         renderBadges();
         updateCoachAdvice();
 
-    } catch (error) { console.error(error); }
+    } catch (error) { console.error("UI Update Error:", error); }
 }
 
 function updateCoachAdvice() {
@@ -186,7 +264,8 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-// Activity
+// ==================== 3. Core Features (Edit & Add Logic) ====================
+
 function openNewRun() {
     editingRunId = null;
     editingOldDist = 0;
@@ -277,6 +356,7 @@ async function submitRun() {
     finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
 }
 
+// ==================== 4. Smart Log & Share ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
@@ -367,7 +447,7 @@ function generateShareCard(dist, time, dateStr) {
     }, 100);
 }
 
-// Feed
+// ==================== 6. Other Features ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
@@ -406,7 +486,6 @@ function loadGlobalFeed() {
     });
 }
 
-// Badges
 const BADGES_CONFIG = [
     { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
     { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
@@ -541,23 +620,6 @@ async function saveProfileChanges() {
         await db.collection('users').doc(currentUser.uid).update({ name, region });
         userData.name = name; userData.region = region;
         updateUI(); closeModal('modal-edit-profile'); alert("تم الحفظ");
-    }
-}
-function toggleAuthMode() {
-    isSignupMode = !isSignupMode;
-    document.getElementById('signup-fields').style.display = isSignupMode ? 'block' : 'none';
-    document.getElementById('toggleAuthBtn').innerText = isSignupMode ? "لديك حساب؟" : "سجل الآن";
-}
-async function handleAuth() {
-    const email = document.getElementById('email').value;
-    const pass = document.getElementById('password').value;
-    if(isSignupMode) {
-        const name = document.getElementById('username').value;
-        const region = document.getElementById('region').value;
-        const c = await auth.createUserWithEmailAndPassword(email, pass);
-        await db.collection('users').doc(c.user.uid).set({name, region, email, totalDist:0, totalRuns:0, badges:[]});
-    } else {
-        await auth.signInWithEmailAndPassword(email, pass);
     }
 }
 function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
