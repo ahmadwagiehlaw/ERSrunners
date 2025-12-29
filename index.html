@@ -297,13 +297,20 @@
                     <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
                     <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
                 </button>
-                <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
-                    <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
-                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
+               
+
+                <button id="fix-btn" class="setting-item" onclick="fixMyStats()">
+                    <div class="setting-icon"><i class="ri-tools-line"></i></div>
+                    <div class="setting-text"><span>إصلاح العدادات</span><small>اضغط هنا لو الأرقام خاطئة</small></div>
                 </button>
+                
                 <button class="setting-item delete" onclick="logout()" style="margin-top:5px;">
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
                     <div class="setting-text">تسجيل الخروج</div>
+                </button>
+                 <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
+                    <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
+                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
                 </button>
             </div>
             <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
