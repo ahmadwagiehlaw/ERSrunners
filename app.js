@@ -876,84 +876,118 @@ async function setPersonalGoal() {
         updateUI();
     }
 }
-// ==================== تحديث معركة المناطق (War Room Style) ====================
-// ==================== معركة المحافظات (Territory War Style) ⚔️ ====================
+// ==================== تحديث معركة المناطق (War Room Style) ⚔️====================
+// ==================== معركة المحافظات (V36: Data Rich & Arabic) ====================
+
+// قاموس التعريب (يمكنك إضافة المزيد)
+const REGION_AR = {
+    "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية",
+    "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر",
+    "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء",
+    "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية"
+};
+
 function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
     
-    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري تحليل ساحة المعركة... 📡</div>';
+    list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">جاري تحليل جيوش المحافظات... 📡</div>';
     
-    db.collection('users').get().then(snap => {
-        let regionMap = {};
-        
-        // 1. تجميع البيانات
-        snap.forEach(doc => {
-            const u = doc.data();
-            if(u.region) { 
-                if (!regionMap[u.region]) regionMap[u.region] = 0; 
-                regionMap[u.region] += (u.totalDist || 0); 
-            }
+    // استخدام الكاش الموجود أصلاً لسرعة العرض
+    let sourceData = allUsersCache;
+    
+    // إذا الكاش فارغ (أول فتحة)، نجلب البيانات
+    if (sourceData.length === 0) {
+        db.collection('users').get().then(snap => {
+            let freshData = [];
+            snap.forEach(doc => freshData.push(doc.data()));
+            processRegionData(freshData, list);
         });
-
-        // 2. الترتيب من الأكبر للأصغر
-        const sorted = Object.keys(regionMap)
-            .map(k => ({ name: k, total: regionMap[k] }))
-            .sort((a, b) => b.total - a.total);
-
-        list.innerHTML = '<div class="squad-list">';
-        
-        if (sorted.length === 0) {
-            list.innerHTML = '<div style="text-align:center;">لا توجد بيانات مناطق</div>';
-            return;
-        }
-
-        const maxVal = sorted[0].total || 1; 
-
-        // 3. بناء القائمة
-        sorted.forEach((r, i) => {
-            const rank = i + 1;
-            const percent = (r.total / maxVal) * 100;
-            
-            // تحديد الستايل (الذهبي، الفضي، البرونزي)
-            let rankClass = '';
-            let icon = '<i class="ri-map-pin-2-line"></i>'; // أيقونة عادية
-            
-            if(rank === 1) { 
-                rankClass = 'rank-1'; 
-                icon = '👑'; // الملك
-            } else if(rank === 2) { 
-                rankClass = 'rank-2'; 
-                icon = '⚔️'; // المنافس
-            } else if(rank === 3) { 
-                rankClass = 'rank-3'; 
-                icon = '🛡️'; // المدافع
-            }
-
-            // HTML الكارت الجديد
-            list.innerHTML += `
-            <div class="squad-row ${rankClass}">
-                <div class="squad-bg-bar" style="width:${percent}%"></div>
-                
-                <div class="squad-content">
-                    <div class="squad-rank">${rank}</div>
-                    
-                    <div class="squad-info">
-                        <h4>${icon} ${r.name}</h4>
-                        <span>مساهمة الفريق</span>
-                    </div>
-                    
-                    <div class="squad-total">
-                        ${r.total.toFixed(0)} <small>كم</small>
-                    </div>
-                </div>
-            </div>`;
-        });
-        
-        list.innerHTML += '</div>';
-    });
+    } else {
+        processRegionData(sourceData, list);
+    }
 }
 
+function processRegionData(users, listElement) {
+    let stats = {};
+
+    // 1. تجميع البيانات
+    users.forEach(u => {
+        if(u.region) {
+            // توحيد الاسم (أول حرف كبير للباقي صغير لتجنب التكرار مثل Cairo/cairo)
+            let regKey = u.region.charAt(0).toUpperCase() + u.region.slice(1).toLowerCase();
+            
+            if (!stats[regKey]) {
+                stats[regKey] = { totalDist: 0, players: 0 };
+            }
+            stats[regKey].totalDist += (u.totalDist || 0);
+            stats[regKey].players += 1;
+        }
+    });
+
+    // 2. الترتيب
+    const sorted = Object.keys(stats)
+        .map(key => ({ 
+            originalName: key, 
+            ...stats[key],
+            avg: stats[key].totalDist / stats[key].players // حساب متوسط قوة الفرد
+        }))
+        .sort((a, b) => b.totalDist - a.totalDist);
+
+    listElement.innerHTML = '<div class="squad-list">';
+    
+    if (sorted.length === 0) {
+        listElement.innerHTML = '<div style="text-align:center;">لا توجد بيانات مناطق</div>';
+        return;
+    }
+
+    const maxVal = sorted[0].totalDist || 1; 
+
+    // 3. الرسم
+    let html = '<div class="squad-list">';
+    
+    sorted.forEach((r, i) => {
+        const rank = i + 1;
+        const percent = (r.totalDist / maxVal) * 100;
+        
+        // التعريب (إذا وجد في القاموس وإلا يظهر الإنجليزي)
+        const arabicName = REGION_AR[r.originalName] || r.originalName;
+        
+        // الستايل
+        let rankClass = 'rank-other';
+        let icon = '';
+        if(rank === 1) { rankClass = 'rank-1'; icon = '👑'; }
+        else if(rank === 2) { rankClass = 'rank-2'; }
+        else if(rank === 3) { rankClass = 'rank-3'; }
+
+        html += `
+        <div class="squad-row ${rankClass}">
+            <div class="squad-bg-bar" style="width:${percent}%"></div>
+            
+            <div class="squad-header">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="squad-rank">${rank}</div>
+                    <div class="squad-name-box">
+                        <h4>${icon} ${arabicName}</h4>
+                    </div>
+                </div>
+                <div class="squad-total-badge">${r.totalDist.toFixed(0)} كم</div>
+            </div>
+
+            <div class="squad-stats-row">
+                <div class="stat-item" title="عدد اللاعبين">
+                    <i class="ri-user-3-line"></i> ${r.players} لاعب
+                </div>
+                <div style="width:1px; height:10px; background:#4b5563;"></div>
+                <div class="stat-item" title="متوسط مساهمة الفرد">
+                    <i class="ri-speed-line"></i> القوة: ${r.avg.toFixed(1)} كم/لاعب
+                </div>
+            </div>
+        </div>`;
+    });
+    
+    listElement.innerHTML = html + '</div>';
+}
 // ==================== 4. Feed (نسخة كشف الأخطاء) ====================
 // ==================== 4. Feed (النسخة الكاملة مع التعليقات) ====================
 function loadGlobalFeed() {
