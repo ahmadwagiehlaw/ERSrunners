@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=22">
+    <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
 
@@ -28,6 +28,7 @@
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
                 <input type="password" id="password" placeholder="كلمة المرور">
+                
                 <div id="signup-fields" style="display:none;">
                     <input type="text" id="username" placeholder="الاسم ثلاثي">
                     <select id="region">
@@ -35,6 +36,7 @@
                         <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                     </select>
                 </div>
+
                 <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
                 <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
                 <div id="auth-msg" class="error-msg"></div>
@@ -64,7 +66,6 @@
 
         <main class="main-container">
             <section id="view-home" class="view active">
-                
                 <div class="coach-card">
                     <div class="coach-icon"><i class="ri-robot-2-line"></i></div>
                     <div class="coach-content">
@@ -230,7 +231,7 @@
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>
             <div class="input-wrap" style="margin-bottom:15px;">
-                <label>توقيت الجري (لحساب الأوسمة 🌅🌙)</label>
+                <label>توقيت الجري</label>
                 <input type="datetime-local" id="log-date" style="font-size:14px; direction:ltr;">
             </div>
             <div class="input-row">
@@ -282,22 +283,6 @@
             </div>
             <div id="notifications-list" class="notif-list">
                 <div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات جديدة</div>
-            </div>
-        </div>
-    </div>
-
-    <div id="modal-comments" class="modal-overlay">
-        <div class="modal-box" style="height: 70vh; display:flex; flex-direction:column;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
-                <h3 style="margin:0; font-size:16px;">التعليقات 💬</h3>
-                <button onclick="closeModal('modal-comments')" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
-            </div>
-            <div id="comments-list" class="comments-scroll-area">
-                <div style="text-align:center; padding:20px; color:#9ca3af;">جاري التحميل...</div>
-            </div>
-            <div class="comment-input-area">
-                <input type="text" id="comment-text" placeholder="اكتب تعليقاً مشجعاً..." autocomplete="off">
-                <button class="btn-send" onclick="sendComment()"><i class="ri-send-plane-fill"></i></button>
             </div>
         </div>
     </div>
@@ -355,12 +340,28 @@
         </div>
     </div>
 
+    <div id="modal-comments" class="modal-overlay">
+        <div class="modal-box" style="height: 70vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
+                <h3 style="margin:0; font-size:16px;">التعليقات 💬</h3>
+                <button onclick="closeModal('modal-comments')" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
+            </div>
+            <div id="comments-list" class="comments-scroll-area">
+                <div style="text-align:center; padding:20px; color:#9ca3af;">جاري التحميل...</div>
+            </div>
+            <div class="comment-input-area">
+                <input type="text" id="comment-text" placeholder="اكتب تعليقاً مشجعاً..." autocomplete="off">
+                <button class="btn-send" onclick="sendComment()"><i class="ri-send-plane-fill"></i></button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <script src="app.js?v=22"></script> 
+    <script src="app.js?v=28"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
