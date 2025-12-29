@@ -572,7 +572,7 @@ async function deleteRun(id, dist) {
 // ==================== 7. Admin, Share & Helpers ====================
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
-    if(pin === "1234") { 
+    if(pin === "a4450422") { 
         closeModal('modal-settings'); 
         setTimeout(() => { switchView('admin'); loadAdminStats(); loadAdminFeed(); }, 100);
     } else { alert("كود خاطئ"); }
