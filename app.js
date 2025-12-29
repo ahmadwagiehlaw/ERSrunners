@@ -1,4 +1,4 @@
-/* ERS Runners - V25 (Social Share + Avatar Fix) */
+/* ERS Runners - V26 (Smart Coach + Share + All Features) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -16,8 +16,6 @@ const db = firebase.firestore();
 let currentUser = null;
 let userData = {};
 let isSignupMode = false;
-
-// متغيرات لوضع التعديل
 let editingRunId = null;
 let editingOldDist = 0;
 
@@ -50,7 +48,6 @@ function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
     
-    // ضبط الوقت الافتراضي
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     const dateInput = document.getElementById('log-date');
@@ -65,7 +62,7 @@ function initApp() {
     if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
 }
 
-// ==================== 2. UI Updates & Avatar ====================
+// ==================== 2. UI Updates & Logic ====================
 function updateUI() {
     try {
         const headerName = document.getElementById('headerName');
@@ -93,11 +90,9 @@ function updateUI() {
         if (profileName) profileName.innerText = userData.name;
         if (profileRegion) profileRegion.innerText = userData.region;
         
-        // 🔥 تحديث الأفاتار (مع إصلاح الخلفية الداكنة)
         if (profileAvatar) {
             profileAvatar.innerText = rankData.avatar; 
             if(profileAvatar.classList.contains('bib-avatar')) {
-                // جعل الخلفية داكنة لتوضيح الإيموجي
                 profileAvatar.style.background = "#111827"; 
                 profileAvatar.style.color = "#fff";
                 profileAvatar.style.border = "2px solid var(--primary)";
@@ -135,19 +130,63 @@ function updateUI() {
 
         updateGoalRing();
         renderBadges();
+        
+        // 🔥 تشغيل الكوتش الذكي هنا 🔥
+        updateCoachAdvice(); 
 
     } catch (error) { console.error("UI Update Error:", error); }
 }
 
+// 🤖 === Smart Coach Logic === 🤖
+function updateCoachAdvice() {
+    const msgEl = document.getElementById('coach-message');
+    if(!msgEl) return;
+
+    const totalDist = userData.totalDist || 0;
+    const totalRuns = userData.totalRuns || 0;
+    const userName = (userData.name || "يا بطل").split(' ')[0];
+    const timeNow = new Date().getHours();
+    
+    let msg = "";
+
+    if (totalRuns === 0) {
+        msg = `أهلاً بك يا ${userName}! رحلة الألف ميل تبدأ بخطوة. جرب تسجيل أول مشي لك اليوم.`;
+    } 
+    else if (totalDist < 10) {
+        msg = `بداية ممتازة! حاول الوصول لأول 10 كم هذا الأسبوع. أنت قادر على فعلها! 💪`;
+    }
+    else if (timeNow >= 5 && timeNow <= 9) {
+        msg = `صباح النشاط يا ${userName}! ☀️ الجو مثالي الآن لجرية سريعة قبل بدء اليوم.`;
+    }
+    else if (timeNow >= 20) {
+        msg = `يوم طويل؟ 🌙 جرية خفيفة الآن ستساعدك على النوم بشكل أفضل وتصفية ذهنك.`;
+    }
+    else {
+        const rankData = calculateRank(totalDist);
+        if (rankData.remaining < 5) {
+            msg = `🔥 انتبه! باقي لك ${rankData.remaining.toFixed(1)} كم فقط لتصل لمستوى ${getNextRankName(rankData.name)}. هيا قم بإنهائها الآن!`;
+        } else {
+            const tips = [
+                "💡 هل تعلم؟ الجري البطيء لمسافة طويلة يحرق دهوناً أكثر من الجري السريع القصير.",
+                "شرب الماء قبل الجري بـ 20 دقيقة يحسن أدائك بنسبة 10%. 💧",
+                `يا ${userName}، ما رأيك في تحدي نفسك بجرية 5 كم اليوم؟`,
+                "الاستمرارية أهم من السرعة. حافظ على وتيرتك ولا تتوقف.",
+                "لا تنسَ تمارين الإطالة (Stretch) بعد الجري لتجنب الإصابات! 🧘‍♂️"
+            ];
+            msg = tips[Math.floor(Math.random() * tips.length)];
+        }
+    }
+    msgEl.innerText = msg;
+}
+
+// ==================== 3. Helper Functions ====================
 function updateGoalRing() {
     const goalRing = document.getElementById('goalRing');
     const goalText = document.getElementById('goalText');
     const goalSub = document.getElementById('goalSub');
-    
     if(goalRing && goalText) {
         const myGoal = userData.monthlyGoal || 0;
         const currentMonthDist = userData.monthDist || 0;
-        
         if(myGoal === 0) {
             goalText.innerText = "اضغط لتحديد هدف";
             goalSub.innerText = "تحدى نفسك هذا الشهر";
@@ -156,7 +195,6 @@ function updateGoalRing() {
             const perc = Math.min((currentMonthDist / myGoal) * 100, 100);
             const deg = (perc / 100) * 360;
             const remaining = Math.max(myGoal - currentMonthDist, 0).toFixed(1);
-            
             goalText.innerText = `${currentMonthDist.toFixed(1)} / ${myGoal} كم`;
             goalSub.innerText = remaining == 0 ? "أنت أسطورة! 🎉" : `باقي ${remaining} كم`;
             goalSub.style.color = remaining == 0 ? "#10b981" : "#a78bfa";
@@ -192,23 +230,14 @@ function calculateRank(totalDist) {
         distInLevel: distInLevel, 
         distRequired: distRequired 
     };
-  // ... داخل updateUI ...
-    
-    // تشغيل الكوتش الذكي
-    updateCoachAdvice(); // <--- أضف هذا السطر
-
-// نهاية الدالة
 }
-}
-
 
 function getNextRankName(current) {
     if(current === "مبتدئ") return "هاوي"; if(current === "هاوي") return "عداء";
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-// ==================== 3. Core Features (Edit & Add Logic) ====================
-
+// ==================== 4. Activity Logic ====================
 function openNewRun() {
     editingRunId = null;
     editingOldDist = 0;
@@ -216,15 +245,11 @@ function openNewRun() {
     document.getElementById('log-time').value = '';
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
-    
-    const btn = document.getElementById('save-run-btn');
-    if(btn) btn.innerText = "حفظ النشاط";
-    
+    document.getElementById('save-run-btn').innerText = "حفظ النشاط";
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     const dateInput = document.getElementById('log-date');
     if(dateInput) dateInput.value = now.toISOString().slice(0,16);
-
     openLogModal();
 }
 
@@ -235,9 +260,7 @@ window.editRun = function(id, dist, time, type, link) {
     document.getElementById('log-time').value = time;
     document.getElementById('log-type').value = type;
     document.getElementById('log-link').value = link || '';
-    
-    const btn = document.getElementById('save-run-btn');
-    if(btn) btn.innerText = "تعديل النشاط";
+    document.getElementById('save-run-btn').innerText = "تعديل النشاط";
     openLogModal();
 }
 
@@ -254,7 +277,6 @@ async function submitRun() {
 
     try {
         const uid = currentUser.uid;
-
         if (editingRunId) {
             const distDiff = dist - editingOldDist; 
             await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({ dist, time, type, link });
@@ -272,7 +294,6 @@ async function submitRun() {
             if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
 
             const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
-
             await db.collection('users').doc(uid).collection('runs').add(runData);
             await db.collection('activity_feed').add({
                 uid: uid, userName: userData.name, userRegion: userData.region,
@@ -298,39 +319,24 @@ async function submitRun() {
             await checkNewBadges(dist, time, selectedDate);
             alert("تم الحفظ!");
         }
-        
         closeModal('modal-log');
-        document.getElementById('save-run-btn').innerText = "حفظ النشاط";
         updateUI(); loadGlobalFeed(); loadActivityLog();
-
     } catch (error) { alert("خطأ: " + error.message); } 
     finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
 }
 
-// ==================== 4. Smart Log & Share ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
-    
     db.collection('users').doc(currentUser.uid).collection('runs')
-      .orderBy('timestamp', 'desc')
-      .limit(50)
-      .onSnapshot(snap => {
-          if(snap.empty) {
-              list.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">ابدأ الجري وسجل تاريخك!</div>';
-              return;
-          }
-
-          const runs = [];
-          let maxDist = 0;
-
+      .orderBy('timestamp', 'desc').limit(50).onSnapshot(snap => {
+          if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">ابدأ الجري وسجل تاريخك!</div>'; return; }
+          const runs = []; let maxDist = 0;
           snap.forEach(doc => {
-              const r = doc.data();
-              r.id = doc.id;
+              const r = doc.data(); r.id = doc.id;
               if(r.dist > maxDist) maxDist = r.dist;
               runs.push(r);
           });
-
           const groups = {};
           runs.forEach(r => {
               const date = r.timestamp ? r.timestamp.toDate() : new Date();
@@ -338,18 +344,14 @@ function loadActivityLog() {
               if(!groups[monthKey]) groups[monthKey] = [];
               groups[monthKey].push(r);
           });
-
           let html = '';
           for (const [month, monthRuns] of Object.entries(groups)) {
               html += `<div class="log-group"><div class="log-month-header">${month}</div>`;
-              
               monthRuns.forEach(r => {
                   const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
                   const dayStr = dateObj.toLocaleDateString('ar-EG', { day: 'numeric', weekday: 'short' });
-                  
                   const badge = (r.dist === maxDist && maxDist > 5) ? `<span class="badge-record">🏆 الأطول</span>` : '';
                   const pace = r.time > 0 ? (r.time / r.dist).toFixed(1) : '-';
-
                   html += `
                   <div class="log-row-compact">
                       ${badge}
@@ -362,15 +364,9 @@ function loadActivityLog() {
                           <span class="log-pace-text">${r.time}د • ${pace} د/كم</span>
                       </div>
                       <div class="log-col-actions">
-                          <button class="btn-mini-action btn-share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayStr}')">
-                              <i class="ri-share-forward-line"></i>
-                          </button>
-                          <button class="btn-mini-action btn-edit" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}')">
-                              <i class="ri-pencil-line"></i>
-                          </button>
-                          <button class="btn-mini-action btn-del" onclick="deleteRun('${r.id}', ${r.dist})">
-                              <i class="ri-delete-bin-line"></i>
-                          </button>
+                          <button class="btn-mini-action btn-share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayStr}')"><i class="ri-share-forward-line"></i></button>
+                          <button class="btn-mini-action btn-edit" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}')"><i class="ri-pencil-line"></i></button>
+                          <button class="btn-mini-action btn-del" onclick="deleteRun('${r.id}', ${r.dist})"><i class="ri-delete-bin-line"></i></button>
                       </div>
                   </div>`;
               });
@@ -393,52 +389,33 @@ async function deleteRun(id, dist) {
     }
 }
 
-// ==================== 5. Share Engine (New) ====================
+// ==================== 5. Share Engine ====================
 function generateShareCard(dist, time, dateStr) {
-    // 1. ملء البيانات في القالب المخفي
     document.getElementById('share-name').innerText = userData.name || "Champion";
-    
-    // حساب الرتبة الحالية للأفاتار
     const rankData = calculateRank(userData.totalDist || 0);
     document.getElementById('share-rank').innerText = rankData.name;
     document.getElementById('share-avatar').innerText = rankData.avatar;
-    
     document.getElementById('share-dist').innerText = dist;
     document.getElementById('share-time').innerText = time + "m";
-    
-    // حساب الـ Pace
     const pace = (time / dist).toFixed(1);
     document.getElementById('share-pace').innerText = pace + "/km";
 
-    // 2. إظهار المودال (التحميل)
     const modal = document.getElementById('modal-share');
     modal.style.display = 'flex';
-    document.getElementById('final-share-img').style.display = 'none'; // إخفاء القديم
+    document.getElementById('final-share-img').style.display = 'none'; 
     
-    // 3. التقاط الصورة باستخدام html2canvas
     const element = document.getElementById('capture-area');
-    
-    // الانتظار قليلاً للتأكد من تحميل الخطوط
     setTimeout(() => {
-        html2canvas(element, {
-            backgroundColor: null, // خلفية شفافة للحواف المدورة
-            scale: 2, // جودة عالية (Retina)
-            useCORS: true // للسماح بالصور الخارجية
-        }).then(canvas => {
-            // تحويل الكانفاس لصورة
+        html2canvas(element, { backgroundColor: null, scale: 2, useCORS: true }).then(canvas => {
             const imgData = canvas.toDataURL("image/png");
             const imgTag = document.getElementById('final-share-img');
             imgTag.src = imgData;
             imgTag.style.display = 'block';
-        }).catch(err => {
-            console.error(err);
-            alert("حدث خطأ أثناء إنشاء الصورة");
-        });
+        }).catch(err => { console.error(err); alert("حدث خطأ"); });
     }, 100);
 }
 
 // ==================== 6. Other Features ====================
-
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
@@ -477,7 +454,6 @@ function loadGlobalFeed() {
     });
 }
 
-// Badges Configuration
 const BADGES_CONFIG = [
     { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
     { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
@@ -526,7 +502,6 @@ function renderBadges() {
     grid.innerHTML = html;
 }
 
-// Charts
 function loadWeeklyChart() {
     const chartDiv = document.getElementById('weekly-chart');
     if(!chartDiv) return;
@@ -559,7 +534,6 @@ function loadWeeklyChart() {
       });
 }
 
-// Admin & Helpers
 function openAdminAuth() {
     const pin = prompt("أدخل كود المشرف:");
     if(pin === "1234") { 
@@ -574,7 +548,7 @@ async function forceUpdateApp() {
     }
 }
 async function deleteFullAccount() {
-    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك نهائياً.\nهل أنت متأكد؟")) return;
+    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك.\nهل أنت متأكد؟")) return;
     if (prompt("اكتب (حذف) للتأكيد:") !== "حذف") return alert("لم يتم الحذف");
     try {
         const uid = currentUser.uid;
@@ -806,56 +780,4 @@ window.joinChallenge = async function(id) {
         });
         alert("تم الانضمام"); loadActiveChallenges();
     }
-}
-
-
-
-
-// ==================== 13. Smart Coach Logic (العقل المدبر) ====================
-function updateCoachAdvice() {
-    const msgEl = document.getElementById('coach-message');
-    if(!msgEl) return;
-
-    const totalDist = userData.totalDist || 0;
-    const totalRuns = userData.totalRuns || 0;
-    const userName = (userData.name || "يا بطل").split(' ')[0]; // الاسم الأول فقط
-    const timeNow = new Date().getHours();
-    
-    let msg = "";
-
-    // 1. منطق المبتدئين (الترحيب)
-    if (totalRuns === 0) {
-        msg = `أهلاً بك يا ${userName}! رحلة الألف ميل تبدأ بخطوة. جرب تسجيل أول مشي لك اليوم لمسافة 1 كم فقط.`;
-    } 
-    // 2. منطق التشجيع المبكر
-    else if (totalDist < 10) {
-        msg = `بداية ممتازة! حاول الوصول لأول 10 كم هذا الأسبوع. أنت قادر على فعلها! 💪`;
-    }
-    // 3. منطق الوقت (صباح/مساء)
-    else if (timeNow >= 5 && timeNow <= 9) {
-        msg = `صباح النشاط يا ${userName}! ☀️ الجو مثالي الآن لجرية سريعة قبل بدء اليوم.`;
-    }
-    else if (timeNow >= 20) {
-        msg = `يوم طويل؟ 🌙 جرية خفيفة الآن ستساعدك على النوم بشكل أفضل وتصفية ذهنك.`;
-    }
-    // 4. منطق الرتب والأهداف
-    else {
-        // حساب الباقي للمستوى التالي
-        const rankData = calculateRank(totalDist);
-        if (rankData.remaining < 5) {
-            msg = `🔥 انتبه! باقي لك ${rankData.remaining.toFixed(1)} كم فقط لتصل لمستوى ${getNextRankName(rankData.name)}. هيا قم بإنهائها الآن!`;
-        } else {
-            // رسائل عشوائية للتحفيز
-            const tips = [
-                "💡 هل تعلم؟ الجري البطيء لمسافة طويلة يحرق دهوناً أكثر من الجري السريع القصير.",
-                "شرب الماء قبل الجري بـ 20 دقيقة يحسن أدائك بنسبة 10%. 💧",
-                `يا ${userName}، ما رأيك في تحدي نفسك بجرية 5 كم اليوم؟`,
-                "الاستمرارية أهم من السرعة. حافظ على وتيرتك ولا تتوقف.",
-                "لا تنسَ تمارين الإطالة (Stretch) بعد الجري لتجنب الإصابات! 🧘‍♂️"
-            ];
-            msg = tips[Math.floor(Math.random() * tips.length)];
-        }
-    }
-
-    msgEl.innerText = msg;
 }
