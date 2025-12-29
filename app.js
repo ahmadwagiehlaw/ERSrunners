@@ -499,7 +499,13 @@ async function submitRun() {
         
         closeModal('modal-log');
         document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-        updateUI(); loadGlobalFeed(); loadActivityLog();
+        
+        // 🔥 مسح الكاش لتظهر نتيجتك الجديدة في المتصدرين فوراً
+        allUsersCache = []; 
+
+        updateUI(); 
+        loadGlobalFeed(); 
+        loadActivityLog();
 
     } catch (error) { alert("خطأ: " + error.message); } 
     finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
