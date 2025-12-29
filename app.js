@@ -38,11 +38,19 @@ async function handleAuth() {
     const emailEl = document.getElementById('email');
     const passEl = document.getElementById('password');
     const msgEl = document.getElementById('auth-msg');
+    // الزرين المحتملين (الدخول أو التسجيل)
+    const activeBtn = document.querySelector('.auth-box .btn-primary');
     
     if (!emailEl || !passEl) return;
     const email = emailEl.value;
     const pass = passEl.value;
     if (msgEl) msgEl.innerText = "";
+
+    // 1. تفعيل وضع التحميل
+    const originalText = activeBtn.innerText;
+    activeBtn.innerHTML = 'جاري الاتصال <span class="loader-btn"></span>';
+    activeBtn.disabled = true;
+    activeBtn.style.opacity = "0.7";
 
     try {
         if (!email || !pass) throw new Error("يرجى ملء البيانات");
@@ -53,6 +61,7 @@ async function handleAuth() {
             if (!name || !region) throw new Error("البيانات ناقصة");
 
             const cred = await auth.createUserWithEmailAndPassword(email, pass);
+            // ... (باقي كود الحفظ كما هو) ...
             await db.collection('users').doc(cred.user.uid).set({
                 name: name, region: region, email: email,
                 totalDist: 0, totalRuns: 0, badges: [],
@@ -61,9 +70,22 @@ async function handleAuth() {
         } else {
             await auth.signInWithEmailAndPassword(email, pass);
         }
+        // لا نحتاج لإعادة الزر هنا لأن الصفحة ستتغير أو يتم عمل Reload
     } catch (err) {
-        if (msgEl) msgEl.innerText = "خطأ: " + err.message;
+        if (msgEl) {
+            // ترجمة بعض أخطاء فايربيس الشائعة
+            if(err.code === 'auth/email-already-in-use') msgEl.innerText = "هذا البريد مسجل بالفعل، حاول الدخول.";
+            else if(err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة.";
+            else if(err.code === 'auth/user-not-found') msgEl.innerText = "مستخدم غير موجود، سجل حساب جديد.";
+            else if(err.code === 'auth/network-request-failed') msgEl.innerText = "فشل الاتصال بالإنترنت ⚠️";
+            else msgEl.innerText = "خطأ: " + err.message;
+        }
         console.error(err);
+        
+        // إعادة الزر لحالته الطبيعية عند الخطأ
+        activeBtn.innerHTML = originalText;
+        activeBtn.disabled = false;
+        activeBtn.style.opacity = "1";
     }
 }
 
