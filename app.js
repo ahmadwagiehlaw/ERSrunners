@@ -303,13 +303,13 @@ function updateUI() {
 
     } catch (error) { console.error("UI Error:", error); }
 }
-updateGoalRing();
+
     renderBadges();
     if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
 
     // 🔥 تشغيل واجهة الإدمان
     updateAddictionUI(); 
-}
+
 // دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
     const levels = [
