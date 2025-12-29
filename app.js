@@ -20,6 +20,12 @@ let editingRunId = null;
 let editingOldDist = 0;
 let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
 
+// 🔥 رقم النسخة الحالية (أنت تغير هذا الرقم يدوياً كلما طورت الكود)
+const CURRENT_VERSION = "1.0"; 
+
+// متغير لحفظ حدث التثبيت
+let deferredPrompt;
+
 // ==================== 1. Authentication (Global Functions) ====================
 // هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
 
@@ -133,6 +139,13 @@ function initApp() {
     loadGlobalFeed();
     listenForNotifications();
     if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
+
+
+  listenForNotifications();
+    if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
+    if(typeof checkAnnouncements === 'function') checkAnnouncements();
+  // 🔥 تشغيل فحص التحديثات
+    checkAppVersion();
 }
 
 // ==================== 3. Leaderboard 2.0 (The Podium Logic) 🏆 ====================
@@ -993,4 +1006,77 @@ async function fixMyStats() {
     } finally {
         if(btn) { btn.innerText = originalText; btn.disabled = false; }
     }
+}
+
+// ==================== 15. نظام التثبيت والتحديث الذكي ====================
+
+// 1. منطق تثبيت التطبيق (PWA Install)
+window.addEventListener('beforeinstallprompt', (e) => {
+    // منع ظهور النافذة الافتراضية للمتصفح فوراً
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // التحقق: هل رآه المستخدم من قبل وأغلقه؟ (عشان منصدعوش)
+    if (!localStorage.getItem('install_dismissed')) {
+        // إظهار المودال الخاص بنا بعد 3 ثواني من الفتح
+        setTimeout(() => {
+            document.getElementById('modal-install').style.display = 'flex';
+        }, 3000);
+    }
+});
+
+document.getElementById('btn-install-app').addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            console.log('User accepted the install prompt');
+        }
+        deferredPrompt = null;
+    }
+    document.getElementById('modal-install').style.display = 'none';
+});
+
+function closeInstallModal() {
+    document.getElementById('modal-install').style.display = 'none';
+    // حفظ في الذاكرة أنه رفض التثبيت (عشان مظهرش تاني)
+    localStorage.setItem('install_dismissed', 'true');
+}
+
+
+// 2. منطق التحديث الذكي (Genius Updater) 🧠
+async function checkAppVersion() {
+    try {
+        // قراءة رقم النسخة الأحدث من فايربيس
+        // سنفترض وجود Collection اسمه "system" ووثيقة "config"
+        const doc = await db.collection('system').doc('config').get();
+        
+        if (doc.exists) {
+            const serverVersion = doc.data().version; // مثلاً "1.1"
+            
+            // مقارنة النسخة الحالية بنسخة السيرفر
+            if (serverVersion && serverVersion !== CURRENT_VERSION) {
+                console.log(`Update found: ${serverVersion} > ${CURRENT_VERSION}`);
+                document.getElementById('modal-update').style.display = 'flex';
+            }
+        } else {
+            // لو الملف مش موجود، ننشئه أول مرة بالنسخة الحالية
+            await db.collection('system').doc('config').set({ version: CURRENT_VERSION });
+        }
+    } catch (e) {
+        console.error("Version Check Error:", e);
+    }
+}
+
+function performUpdate() {
+    // 1. مسح الكاش (Service Worker) لإجبار المتصفح على جلب الملفات الجديدة
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for(let registration of registrations) {
+                registration.unregister();
+            }
+        });
+    }
+    // 2. إعادة تحميل الصفحة بقوة (Hard Reload)
+    window.location.reload(true);
 }
