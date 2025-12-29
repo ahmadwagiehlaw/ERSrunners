@@ -1,4 +1,4 @@
-/* ERS Runners - V23 (Smart Log & Live Avatar) */
+/* ERS Runners - V24 (Fixed Avatar & Smart Log) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -17,7 +17,7 @@ let currentUser = null;
 let userData = {};
 let isSignupMode = false;
 
-// متغيرات التعديل الجديدة
+// متغيرات لوضع التعديل
 let editingRunId = null;
 let editingOldDist = 0;
 
@@ -37,6 +37,7 @@ auth.onAuthStateChanged(async (user) => {
             }
         } catch (e) { 
             console.error("Auth Error:", e);
+            // محاولة الدخول حتى لو فشل جلب البيانات لمرة واحدة
             userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0, badges: [] };
             initApp();
         }
@@ -57,10 +58,13 @@ function initApp() {
     if(dateInput) dateInput.value = now.toISOString().slice(0,16);
 
     updateUI();
-    loadActivityLog(); // السجل المطور
+    loadActivityLog(); // تحميل السجل المطور
     loadActiveChallenges(); 
     loadGlobalFeed();
     listenForNotifications();
+    
+    // استدعاء الرسم البياني إذا كانت الدالة موجودة
+    if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
 }
 
 // ==================== 2. UI Updates & Avatar ====================
@@ -72,17 +76,17 @@ function updateUI() {
         if(helloText) helloText.innerText = "أهلاً يا كابتن 👋"; 
         if (headerName) headerName.innerText = userData.name || "Runner";
 
-        // Dashboard Stats
+        // إحصائيات الصفحة الرئيسية
         const monthDistEl = document.getElementById('monthDist');
         const totalRunsEl = document.getElementById('totalRuns');
         if (monthDistEl) monthDistEl.innerText = (userData.monthDist || 0).toFixed(1);
         if (totalRunsEl) totalRunsEl.innerText = userData.totalRuns || 0;
 
-        // Rank & Avatar Calculation
+        // حساب الرتبة أولاً لنستخدمها في الأفاتار
         const totalDist = userData.totalDist || 0;
         const rankData = calculateRank(totalDist);
 
-        // Profile (Bib Card Update)
+        // تحديث البروفايل (البيب كارد)
         const profileName = document.getElementById('profileName');
         const profileRegion = document.getElementById('profileRegion');
         const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
@@ -94,31 +98,32 @@ function updateUI() {
         if (profileName) profileName.innerText = userData.name;
         if (profileRegion) profileRegion.innerText = userData.region;
         
-        // 🔥 تحديث الأفاتار بالإيموجي
+        // 🔥 التعديل هنا: استخدام الإيموجي بدلاً من الحرف
         if (profileAvatar) {
-            profileAvatar.innerText = rankData.avatar; 
-            // إزالة الخلفية السوداء لكي يظهر الإيموجي بوضوح إذا كان في البيب
+            profileAvatar.innerText = rankData.avatar; // وضع الإيموجي (🐣)
+            // تحسين المظهر للإيموجي
             if(profileAvatar.classList.contains('bib-avatar')) {
                 profileAvatar.style.background = "rgba(0,0,0,0.1)"; 
-                profileAvatar.style.border = "2px solid rgba(255,255,255,0.2)";
+                profileAvatar.style.border = "none";
+                profileAvatar.style.fontSize = "28px";
             }
         }
 
         if (pTotalDist) pTotalDist.innerText = (userData.totalDist || 0).toFixed(1);
         if (pTotalRuns) pTotalRuns.innerText = userData.totalRuns || 0;
         
-        // Pace calculation
+        // حساب متوسط السرعة التقريبي
         if (pPace) pPace.innerText = userData.totalRuns > 0 ? ((userData.totalDist/userData.totalRuns)*5).toFixed(1) : "-"; 
         if (pRankText) pRankText.innerText = rankData.name;
 
-        // Rank Badge in Home
+        // تحديث بادج الرتبة في الرئيسية
         const rankBadge = document.getElementById('userRankBadge');
         if(rankBadge) {
             rankBadge.innerText = rankData.name;
             rankBadge.className = `rank-badge ${rankData.class}`;
         }
         
-        // XP Bar
+        // شريط الخبرة XP
         const nextLevelDist = document.getElementById('nextLevelDist');
         if(nextLevelDist) nextLevelDist.innerText = rankData.remaining.toFixed(1);
         
@@ -136,14 +141,14 @@ function updateUI() {
         if(xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
         if(xpMessage) xpMessage.innerText = rankData.name === "أسطورة" ? "أنت الملك! 👑" : `باقي ${rankData.remaining.toFixed(1)} كم للوصول لمستوى ${getNextRankName(rankData.name)}`;
 
-        // Charts & Badges
+        // تحديث العناصر الأخرى
         updateGoalRing();
         renderBadges();
-        if(typeof loadWeeklyChart === "function") loadWeeklyChart();
 
     } catch (error) { console.error("UI Update Error:", error); }
 }
 
+// دالة مساعدة لتحديث حلقة الهدف
 function updateGoalRing() {
     const goalRing = document.getElementById('goalRing');
     const goalText = document.getElementById('goalText');
@@ -191,7 +196,7 @@ function calculateRank(totalDist) {
     return { 
         name: currentLevel.name, 
         class: currentLevel.class, 
-        avatar: currentLevel.avatar,
+        avatar: currentLevel.avatar, // الإيموجي
         nextTarget: currentLevel.next, 
         remaining: currentLevel.next - totalDist, 
         percentage: percentage, 
@@ -205,9 +210,9 @@ function getNextRankName(current) {
     if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
 }
 
-// ==================== 3. Core Features (Edit & Add) ====================
+// ==================== 3. Core Features (Edit & Add Logic) ====================
 
-// دالة فتح نافذة الإضافة الجديدة (تصفير البيانات)
+// فتح نافذة جديدة (إضافة)
 function openNewRun() {
     editingRunId = null;
     editingOldDist = 0;
@@ -216,9 +221,10 @@ function openNewRun() {
     document.getElementById('log-time').value = '';
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
-    document.getElementById('save-run-btn').innerText = "حفظ النشاط";
     
-    // إعادة تعيين الوقت للآن
+    const btn = document.getElementById('save-run-btn');
+    if(btn) btn.innerText = "حفظ النشاط";
+    
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     const dateInput = document.getElementById('log-date');
@@ -227,7 +233,7 @@ function openNewRun() {
     openLogModal();
 }
 
-// دالة فتح نافذة التعديل (ملء البيانات)
+// فتح نافذة التعديل (تعبئة البيانات)
 window.editRun = function(id, dist, time, type, link) {
     editingRunId = id;
     editingOldDist = dist;
@@ -237,7 +243,8 @@ window.editRun = function(id, dist, time, type, link) {
     document.getElementById('log-type').value = type;
     document.getElementById('log-link').value = link || '';
     
-    document.getElementById('save-run-btn').innerText = "تعديل النشاط";
+    const btn = document.getElementById('save-run-btn');
+    if(btn) btn.innerText = "تعديل النشاط";
     openLogModal();
 }
 
@@ -255,17 +262,16 @@ async function submitRun() {
     try {
         const uid = currentUser.uid;
 
-        // === حالة التعديل (Edit Mode) ===
+        // === حالة التعديل ===
         if (editingRunId) {
-            const distDiff = dist - editingOldDist; // فرق المسافة
+            const distDiff = dist - editingOldDist; 
             
             // 1. تحديث الوثيقة
             await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({
                 dist, time, type, link
-                // لا نعدل التاريخ للحفاظ على الترتيب
             });
 
-            // 2. تعديل الإحصائيات بالفرق
+            // 2. تحديث الإحصائيات
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(distDiff),
                 monthDist: firebase.firestore.FieldValue.increment(distDiff)
@@ -275,7 +281,7 @@ async function submitRun() {
             editingRunId = null;
 
         } else {
-            // === حالة الإضافة الجديدة (New Mode) ===
+            // === حالة الإضافة الجديدة ===
             const selectedDate = new Date(dateInput);
             const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
             const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
@@ -284,18 +290,21 @@ async function submitRun() {
 
             const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
 
+            // إضافة للبروفايل
             await db.collection('users').doc(uid).collection('runs').add(runData);
+            // إضافة للـ Feed
             await db.collection('activity_feed').add({
                 uid: uid, userName: userData.name, userRegion: userData.region,
                 ...runData, likes: []
             });
+            // تحديث الإجمالي
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(dist),
                 totalRuns: firebase.firestore.FieldValue.increment(1),
                 monthDist: newMonthDist, lastMonthKey: currentMonthKey
             }, { merge: true });
 
-            // Challenges
+            // تحديث التحديات
             const activeCh = await db.collection('challenges').where('active', '==', true).get();
             const batch = db.batch();
             activeCh.forEach(doc => {
@@ -306,8 +315,10 @@ async function submitRun() {
             });
             await batch.commit();
 
-            userData.totalDist += dist; userData.totalRuns += 1;
-            userData.monthDist = newMonthDist; userData.lastMonthKey = currentMonthKey;
+            // تحديث محلي
+            userData.totalDist += dist; 
+            userData.totalRuns += 1;
+            userData.monthDist = newMonthDist;
             
             // فحص البادجات
             await checkNewBadges(dist, time, selectedDate);
@@ -315,18 +326,17 @@ async function submitRun() {
         }
         
         closeModal('modal-log');
+        document.getElementById('save-run-btn').innerText = "حفظ النشاط";
+        
         updateUI(); loadGlobalFeed(); loadActivityLog();
 
     } catch (error) { alert("خطأ: " + error.message); } 
     finally { 
-        if(btn) { 
-            btn.innerText = "حفظ النشاط"; 
-            btn.disabled = false; 
-        } 
+        if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } 
     }
 }
 
-// ==================== 4. Smart Log (Grouping) ====================
+// ==================== 4. Smart Log (السجل المطور) ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
@@ -350,7 +360,7 @@ function loadActivityLog() {
               runs.push(r);
           });
 
-          // تجميع حسب الشهر
+          // تجميع الجريات حسب الشهر
           const groups = {};
           runs.forEach(r => {
               const date = r.timestamp ? r.timestamp.toDate() : new Date();
@@ -416,8 +426,7 @@ async function deleteRun(id, dist) {
     }
 }
 
-// ==================== 5. Other Features (Feed, Admin, Badges) ====================
-// ... (باقي الدوال كما هي في V22، تم نقلها هنا لضمان عمل كل شيء) ...
+// ==================== 5. Other Features ====================
 
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
@@ -457,7 +466,7 @@ function loadGlobalFeed() {
     });
 }
 
-// Badges
+// Badges Configuration
 const BADGES_CONFIG = [
     { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك في التطبيق' },
     { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5 و 8 صباحاً' },
@@ -554,7 +563,7 @@ async function forceUpdateApp() {
     }
 }
 async function deleteFullAccount() {
-    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك.\nهل أنت متأكد؟")) return;
+    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك نهائياً.\nهل أنت متأكد؟")) return;
     if (prompt("اكتب (حذف) للتأكيد:") !== "حذف") return alert("لم يتم الحذف");
     try {
         const uid = currentUser.uid;
@@ -605,8 +614,9 @@ async function handleAuth() {
     if(isSignupMode) {
         const name = document.getElementById('username').value;
         const region = document.getElementById('region').value;
-        const c = await auth.createUserWithEmailAndPassword(email, pass);
-        await db.collection('users').doc(c.user.uid).set({name, region, email, totalDist:0, totalRuns:0, badges:[]});
+        await auth.createUserWithEmailAndPassword(email, pass).then(c => {
+            db.collection('users').doc(c.user.uid).set({name, region, email, totalDist:0, totalRuns:0, badges:[]});
+        });
     } else {
         await auth.signInWithEmailAndPassword(email, pass);
     }
@@ -748,4 +758,41 @@ function listenForNotifications() {
     db.collection('users').doc(currentUser.uid).collection('notifications').where('read','==',false).onSnapshot(s => {
         if(!s.empty) document.getElementById('notif-dot').classList.add('active');
     });
+}
+function loadActiveChallenges() {
+    const list = document.getElementById('challenges-list');
+    const mini = document.getElementById('my-active-challenges');
+    if(!list) return;
+    
+    db.collection('challenges').where('active', '==', true).get().then(async snap => {
+        if(snap.empty) { 
+            list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد تحديات</div>';
+            mini.innerHTML = '<div class="empty-state-mini">لا توجد تحديات حالياً</div>';
+            return; 
+        }
+        let html = ''; let miniHtml = '';
+        for (const doc of snap.docs) {
+            const ch = doc.data();
+            let isJoined = false; let progress = 0;
+            if(currentUser) {
+                const part = await doc.ref.collection('participants').doc(currentUser.uid).get();
+                if(part.exists) { isJoined = true; progress = part.data().progress || 0; }
+            }
+            const perc = Math.min((progress/ch.target)*100, 100);
+            html += `<div class="challenge-card"><h3>${ch.title} <small>${ch.target} كم</small></h3>${isJoined ? `<div class="xp-track"><div class="xp-fill" style="width:${perc}%"></div></div>` : `<button onclick="joinChallenge('${doc.id}')">انضمام</button>`}</div>`;
+            if(isJoined) {
+                miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div><div class="mini-ch-stats"><span>${progress.toFixed(1)} كم</span><span>${Math.floor(perc)}%</span></div></div>`;
+            }
+        }
+        list.innerHTML = html;
+        mini.innerHTML = miniHtml || '<div class="empty-state-mini" style="font-size:11px; color:#6b7280; padding:5px;">لم تنضم لتحديات</div>';
+    });
+}
+window.joinChallenge = async function(id) {
+    if(confirm("انضمام؟")) {
+        await db.collection('challenges').doc(id).collection('participants').doc(currentUser.uid).set({
+            progress: 0, name: userData.name, region: userData.region
+        });
+        alert("تم الانضمام"); loadActiveChallenges();
+    }
 }
