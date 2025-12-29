@@ -152,6 +152,14 @@
                     <h3>إحصائيات 📊</h3>
                     <div id="admin-stats" style="color:#9ca3af; font-size:12px;">...</div>
                 </div>
+                <div class="admin-card" style="margin-top:15px; border-color: #3b82f6;">
+                    <h3 style="color:#3b82f6;">إدارة اللاعبين 👮‍♂️</h3>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <input type="text" id="admin-search-mem" placeholder="بحث بالاسم..." style="flex:1; padding:8px; border-radius:6px; border:none;">
+                        <button class="btn btn-primary" onclick="loadAllMembers()" style="background:#3b82f6;">بحث</button>
+                    </div>
+                    <div id="admin-members-list" style="margin-top:15px; max-height:300px; overflow-y:auto;"></div>
+                </div>
             </section>
 
             <section id="view-challenges" class="view">
@@ -387,7 +395,28 @@
             </div>
         </div>
     </div>
+    
+<div id="modal-user-control" class="modal-overlay" style="z-index: 7000;">
+        <div class="modal-box">
+            <div class="admin-user-header">
+                <div class="bib-avatar" id="adm-u-avatar" style="margin:0 auto 10px; width:60px; height:60px; font-size:24px;">?</div>
+                <h3 id="adm-u-name">...</h3>
+                <span id="adm-u-region" style="color:#9ca3af; font-size:12px;">...</span>
+                <div id="adm-u-status" style="margin-top:5px;"></div>
+            </div>
 
+            <div class="admin-actions-grid">
+                <button class="btn btn-outline-danger" onclick="toggleUserBan()">⛔ حظر / فك</button>
+                <button class="btn btn-primary" onclick="sendWarningPopup()" style="background:#f59e0b; border:none;">⚠️ إرسال تحذير</button>
+            </div>
+
+            <h4 style="font-size:12px; margin-bottom:10px;">آخر 5 نشاطات (للمراجعة والحذف)</h4>
+            <div id="adm-user-logs" class="log-list" style="max-height:150px; overflow-y:auto; background:rgba(0,0,0,0.2); padding:5px; border-radius:8px;"></div>
+
+            <button class="btn btn-text" onclick="closeModal('modal-user-control')" style="margin-top:15px;">إغلاق</button>
+        </div>
+    </div>
+    
     <div id="modal-comments" class="modal-overlay">
         <div class="modal-box" style="height: 70vh; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
