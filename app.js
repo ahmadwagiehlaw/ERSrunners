@@ -877,16 +877,17 @@ async function setPersonalGoal() {
     }
 }
 // ==================== تحديث معركة المناطق (War Room Style) ====================
+// ==================== معركة المحافظات (Territory War Style) ⚔️ ====================
 function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
     
-    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري تحليل البيانات...</div>';
+    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري تحليل ساحة المعركة... 📡</div>';
     
     db.collection('users').get().then(snap => {
         let regionMap = {};
         
-        // تجميع النقاط
+        // 1. تجميع البيانات
         snap.forEach(doc => {
             const u = doc.data();
             if(u.region) { 
@@ -895,7 +896,7 @@ function loadRegionBattle() {
             }
         });
 
-        // الترتيب
+        // 2. الترتيب من الأكبر للأصغر
         const sorted = Object.keys(regionMap)
             .map(k => ({ name: k, total: regionMap[k] }))
             .sort((a, b) => b.total - a.total);
@@ -909,28 +910,43 @@ function loadRegionBattle() {
 
         const maxVal = sorted[0].total || 1; 
 
+        // 3. بناء القائمة
         sorted.forEach((r, i) => {
             const rank = i + 1;
             const percent = (r.total / maxVal) * 100;
             
-            // تحديد الستايل بناء على المركز
-            let rankClass = 'rank-other';
-            if(rank === 1) rankClass = 'rank-1';
-            if(rank === 2) rankClass = 'rank-2';
-            if(rank === 3) rankClass = 'rank-3';
+            // تحديد الستايل (الذهبي، الفضي، البرونزي)
+            let rankClass = '';
+            let icon = '<i class="ri-map-pin-2-line"></i>'; // أيقونة عادية
+            
+            if(rank === 1) { 
+                rankClass = 'rank-1'; 
+                icon = '👑'; // الملك
+            } else if(rank === 2) { 
+                rankClass = 'rank-2'; 
+                icon = '⚔️'; // المنافس
+            } else if(rank === 3) { 
+                rankClass = 'rank-3'; 
+                icon = '🛡️'; // المدافع
+            }
 
+            // HTML الكارت الجديد
             list.innerHTML += `
             <div class="squad-row ${rankClass}">
                 <div class="squad-bg-bar" style="width:${percent}%"></div>
                 
-                <div class="squad-rank-badge">${rank}</div>
-                
-                <div class="squad-info">
-                    <span class="squad-name">${r.name}</span>
-                    <span class="squad-dist">إجمالي المسافة: ${r.total.toFixed(0)} كم</span>
+                <div class="squad-content">
+                    <div class="squad-rank">${rank}</div>
+                    
+                    <div class="squad-info">
+                        <h4>${icon} ${r.name}</h4>
+                        <span>مساهمة الفريق</span>
+                    </div>
+                    
+                    <div class="squad-total">
+                        ${r.total.toFixed(0)} <small>كم</small>
+                    </div>
                 </div>
-                
-                ${rank === 1 ? '<div style="font-size:20px;">🏆</div>' : ''}
             </div>`;
         });
         
