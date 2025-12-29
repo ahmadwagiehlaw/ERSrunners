@@ -75,38 +75,18 @@
                 </div>
 
                 <div class="status-card">
-                <div class="status-header">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span>مستواك الحالي</span>
-                        <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
-                        
-                        <button onclick="fixMyStats()" class="btn-sync-stats" title="إصلاح العدادات">
-                            <i class="ri-restart-line"></i>
-                        </button>
-                    </div>
-                    
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <div class="streak-container" id="streak-display" style="display:none;">
-                            <span class="fire-icon">🔥</span> <span id="streak-count">0</span> يوم
-                        </div>
-                        
-                        <span class="rank-badge" id="userRankBadge">...</span>
-                    </div>
-                </div>
-
-                <div class="xp-container">
-                    <div class="xp-info">
-                        <span id="xpText">0 / 50 كم</span>
-                        <span id="xpPerc">0%</span>
-                    </div>
-                    <div class="progress-bg">
-                        <div class="progress-fill" id="xpBar" style="width: 0%"></div>
-                    </div>
-                    <div class="xp-next">
-                        باقي <span id="nextLevelDist">50</span> كم للمستوى التالي
-                    </div>
-                </div>
-            </div>
+                    <div class="status-header">
+    <div style="display:flex; align-items:center; gap:8px;">
+        <span>مستواك الحالي</span>
+        <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
+        
+        <button onclick="fixMyStats()" class="btn-sync-stats" title="تحديث وإصلاح البيانات">
+            <i class="ri-restart-line"></i>
+        </button>
+    </div>
+    
+    <span class="rank-badge" id="userRankBadge">مبتدئ</span>
+</div>
                     <div class="stats-grid">
                         <div class="stat-item"><span class="stat-val" id="monthDist">0</span><span class="stat-lbl">كم (شهر)</span></div>
                         <div class="stat-item"><span class="stat-val" id="totalRuns">0</span><span class="stat-lbl">جرية</span></div>
