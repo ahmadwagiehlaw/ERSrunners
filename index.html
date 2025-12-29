@@ -14,7 +14,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=21">
+    <link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 
@@ -28,7 +28,6 @@
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
                 <input type="password" id="password" placeholder="كلمة المرور">
-                
                 <div id="signup-fields" style="display:none;">
                     <input type="text" id="username" placeholder="الاسم ثلاثي">
                     <select id="region">
@@ -36,7 +35,6 @@
                         <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                     </select>
                 </div>
-
                 <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
                 <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
                 <div id="auth-msg" class="error-msg"></div>
@@ -45,7 +43,6 @@
     </div>
 
     <div id="app-content" style="display:none;">
-        
         <header class="glass-header">
             <div class="header-inner">
                 <div class="header-right">
@@ -55,9 +52,8 @@
                         <h3 id="headerName">...</h3>
                     </div>
                 </div>
-
                 <div class="header-actions">
-                    <div class="icon-badge add-btn" onclick="openLogModal()"><i class="ri-add-line"></i></div>
+                    <div class="icon-badge add-btn" onclick="openNewRun()"><i class="ri-add-line"></i></div>
                     <div class="icon-badge" onclick="showNotifications()">
                         <i class="ri-notification-3-line"></i><span class="badge-dot" id="notif-dot"></span>
                     </div>
@@ -68,15 +64,15 @@
 
         <main class="main-container">
             <section id="view-home" class="view active">
+                
                 <div class="coach-card">
-                    <div class="coach-icon">
-                        <i class="ri-robot-2-line"></i>
-                    </div>
+                    <div class="coach-icon"><i class="ri-robot-2-line"></i></div>
                     <div class="coach-content">
                         <span class="coach-label">نصيحة الكوتش اليوم</span>
                         <p id="coach-message">جاري تحليل أدائك...</p>
                     </div>
                 </div>
+
                 <div class="status-card">
                     <div class="status-header">
                         <div style="display:flex; align-items:center; gap:8px;">
@@ -173,11 +169,9 @@
             </section>
 
             <section id="view-profile" class="view">
-                
                 <div class="bib-card">
                     <div class="bib-hole top-left"></div>
                     <div class="bib-hole top-right"></div>
-                    
                     <div class="bib-content">
                         <div class="bib-main">
                             <div class="bib-avatar" id="profileAvatar">A</div>
@@ -189,26 +183,15 @@
                                 <span class="bib-region" id="profileRegion">...</span>
                             </div>
                         </div>
-                        
                         <div class="bib-rank-box">
                             <span class="bib-label">RANK</span>
                             <span class="bib-number" id="profileRankText">مبتدئ</span>
                         </div>
                     </div>
-
                     <div class="bib-footer">
-                        <div class="bib-stat">
-                            <span class="val" id="profileTotalDist">0</span>
-                            <span class="lbl">كم إجمالي</span>
-                        </div>
-                        <div class="bib-stat">
-                            <span class="val" id="profileTotalRuns">0</span>
-                            <span class="lbl">جرية</span>
-                        </div>
-                        <div class="bib-stat">
-                            <span class="val" id="profilePace">--</span>
-                            <span class="lbl">متوسط السرعة</span>
-                        </div>
+                        <div class="bib-stat"><span class="val" id="profileTotalDist">0</span><span class="lbl">كم إجمالي</span></div>
+                        <div class="bib-stat"><span class="val" id="profileTotalRuns">0</span><span class="lbl">جرية</span></div>
+                        <div class="bib-stat"><span class="val" id="profilePace">--</span><span class="lbl">متوسط السرعة</span></div>
                     </div>
                 </div>
 
@@ -230,13 +213,10 @@
                     <h3 class="section-title">سجل الأنشطة</h3>
                     <div id="activity-log" class="log-list"></div>
                 </div>
-
                 <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
                     <i class="ri-logout-box-r-line"></i> تسجيل خروج
                 </button>
             </section>
-
-            
         </main>
 
         <nav class="bottom-nav">
@@ -249,12 +229,10 @@
     <div id="modal-log" class="modal-overlay">
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>
-            
             <div class="input-wrap" style="margin-bottom:15px;">
                 <label>توقيت الجري (لحساب الأوسمة 🌅🌙)</label>
                 <input type="datetime-local" id="log-date" style="font-size:14px; direction:ltr;">
             </div>
-
             <div class="input-row">
                 <div class="input-wrap"><label>المسافة (كم)</label><input type="number" id="log-dist" step="0.1" inputmode="decimal"></div>
                 <div class="input-wrap"><label>الزمن (دقائق)</label><input type="number" id="log-time" inputmode="numeric"></div>
@@ -332,7 +310,7 @@
                 <input type="text" id="edit-name">
                 <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
-                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
+                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Other">أخرى</option>
                 </select>
             </div>
             <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
@@ -340,11 +318,49 @@
         </div>
     </div>
 
+    <div id="modal-share" class="modal-overlay">
+        <div class="modal-box" style="background: transparent; box-shadow: none; border: none; max-width: 100%;">
+            <h3 style="color:#fff; text-align:center; margin-bottom:15px; text-shadow:0 2px 5px #000;">إنجازك جاهز للمشاركة 📸</h3>
+            <div id="share-result-container" style="text-align:center; margin-bottom:20px;">
+                <img id="final-share-img" style="max-width:100%; border-radius:15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+            </div>
+            <div style="text-align:center;">
+                <p style="font-size:12px; color:#d1d5db; margin-bottom:10px;">اضغط مطولاً على الصورة لحفظها 👆</p>
+                <button class="btn btn-text" onclick="closeModal('modal-share')" style="background: rgba(255,255,255,0.1); color:#fff;">إغلاق</button>
+            </div>
+            
+            <div id="capture-area" class="share-card-template">
+                <div class="share-bg-glow"></div>
+                <div class="share-logo-area">
+                    <img src="ers-logo.png" class="share-logo">
+                    <span>ERS RUNNERS</span>
+                </div>
+                <div class="share-content">
+                    <div class="share-user">
+                        <div class="share-avatar" id="share-avatar">🐣</div>
+                        <div class="share-user-info"><h3 id="share-name">Name</h3><span id="share-rank">Rank</span></div>
+                    </div>
+                    <div class="share-stat-box">
+                        <span class="share-label">المسافة</span>
+                        <div class="share-value-row"><span class="share-num" id="share-dist">0.0</span><span class="share-unit">KM</span></div>
+                    </div>
+                    <div class="share-details">
+                        <div class="s-det-item"><i class="ri-time-line"></i><span id="share-time">0m</span></div>
+                        <div class="s-det-item"><i class="ri-speed-line"></i><span id="share-pace">0.0</span></div>
+                        <div class="s-det-item"><i class="ri-fire-line"></i><span>Great Job!</span></div>
+                    </div>
+                </div>
+                <div class="share-footer">join the elite team</div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <script src="app.js?v=21"></script> 
+    <script src="app.js?v=22"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
@@ -355,68 +371,5 @@
         });
       }
     </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <div id="modal-share" class="modal-overlay">
-        <div class="modal-box" style="background: transparent; box-shadow: none; border: none; max-width: 100%;">
-            
-            <h3 style="color:#fff; text-align:center; margin-bottom:15px; text-shadow:0 2px 5px #000;">إنجازك جاهز للمشاركة 📸</h3>
-            
-            <div id="share-result-container" style="text-align:center; margin-bottom:20px;">
-                <img id="final-share-img" style="max-width:100%; border-radius:15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
-            </div>
-
-            <div style="text-align:center;">
-                <p style="font-size:12px; color:#d1d5db; margin-bottom:10px;">اضغط مطولاً على الصورة لحفظها 👆</p>
-                <button class="btn btn-text" onclick="closeModal('modal-share')" style="background: rgba(255,255,255,0.1); color:#fff;">إغلاق</button>
-            </div>
-
-            <div id="capture-area" class="share-card-template">
-                <div class="share-bg-glow"></div>
-                <div class="share-logo-area">
-                    <img src="ers-logo.png" class="share-logo">
-                    <span>ERS RUNNERS</span>
-                </div>
-
-                <div class="share-content">
-                    <div class="share-user">
-                        <div class="share-avatar" id="share-avatar">🐣</div>
-                        <div class="share-user-info">
-                            <h3 id="share-name">Ahmed</h3>
-                            <span id="share-rank">مبتدئ</span>
-                        </div>
-                    </div>
-
-                    <div class="share-stat-box">
-                        <span class="share-label">المسافة</span>
-                        <div class="share-value-row">
-                            <span class="share-num" id="share-dist">5.0</span>
-                            <span class="share-unit">KM</span>
-                        </div>
-                    </div>
-
-                    <div class="share-details">
-                        <div class="s-det-item">
-                            <i class="ri-time-line"></i>
-                            <span id="share-time">25m</span>
-                        </div>
-                        <div class="s-det-item">
-                            <i class="ri-speed-line"></i>
-                            <span id="share-pace">5.0</span>
-                        </div>
-                        <div class="s-det-item">
-                            <i class="ri-fire-line"></i>
-                            <span>Great Job!</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="share-footer">
-                    join the elite team
-                </div>
-            </div>
-
-        </div>
-    </div>
 </body>
 </html>
