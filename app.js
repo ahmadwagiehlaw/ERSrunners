@@ -1,4 +1,4 @@
-/* ERS Runners - V29 (Podium & Auth Fixed) */
+/* ERS Runners - V1.9 (Podium & Auth Fixed) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
