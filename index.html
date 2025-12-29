@@ -347,5 +347,68 @@
         });
       }
     </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <div id="modal-share" class="modal-overlay">
+        <div class="modal-box" style="background: transparent; box-shadow: none; border: none; max-width: 100%;">
+            
+            <h3 style="color:#fff; text-align:center; margin-bottom:15px; text-shadow:0 2px 5px #000;">إنجازك جاهز للمشاركة 📸</h3>
+            
+            <div id="share-result-container" style="text-align:center; margin-bottom:20px;">
+                <img id="final-share-img" style="max-width:100%; border-radius:15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
+            </div>
+
+            <div style="text-align:center;">
+                <p style="font-size:12px; color:#d1d5db; margin-bottom:10px;">اضغط مطولاً على الصورة لحفظها 👆</p>
+                <button class="btn btn-text" onclick="closeModal('modal-share')" style="background: rgba(255,255,255,0.1); color:#fff;">إغلاق</button>
+            </div>
+
+            <div id="capture-area" class="share-card-template">
+                <div class="share-bg-glow"></div>
+                <div class="share-logo-area">
+                    <img src="ers-logo.png" class="share-logo">
+                    <span>ERS RUNNERS</span>
+                </div>
+
+                <div class="share-content">
+                    <div class="share-user">
+                        <div class="share-avatar" id="share-avatar">🐣</div>
+                        <div class="share-user-info">
+                            <h3 id="share-name">Ahmed</h3>
+                            <span id="share-rank">مبتدئ</span>
+                        </div>
+                    </div>
+
+                    <div class="share-stat-box">
+                        <span class="share-label">المسافة</span>
+                        <div class="share-value-row">
+                            <span class="share-num" id="share-dist">5.0</span>
+                            <span class="share-unit">KM</span>
+                        </div>
+                    </div>
+
+                    <div class="share-details">
+                        <div class="s-det-item">
+                            <i class="ri-time-line"></i>
+                            <span id="share-time">25m</span>
+                        </div>
+                        <div class="s-det-item">
+                            <i class="ri-speed-line"></i>
+                            <span id="share-pace">5.0</span>
+                        </div>
+                        <div class="s-det-item">
+                            <i class="ri-fire-line"></i>
+                            <span>Great Job!</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="share-footer">
+                    join the elite team
+                </div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
