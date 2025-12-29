@@ -76,17 +76,11 @@
 
                 <div class="status-card">
                     <div class="status-header">
-    <div style="display:flex; align-items:center; gap:8px;">
-        <span>مستواك الحالي</span>
-        <i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
-        
-        <button onclick="fixMyStats()" class="btn-sync-stats" title="تحديث وإصلاح البيانات">
-            <i class="ri-restart-line"></i>
-        </button>
-    </div>
-    
-    <span class="rank-badge" id="userRankBadge">مبتدئ</span>
-</div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span>مستواك الحالي</span><i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
+                        </div>
+                        <span class="rank-badge" id="userRankBadge">مبتدئ</span>
+                    </div>
                     <div class="stats-grid">
                         <div class="stat-item"><span class="stat-val" id="monthDist">0</span><span class="stat-lbl">كم (شهر)</span></div>
                         <div class="stat-item"><span class="stat-val" id="totalRuns">0</span><span class="stat-lbl">جرية</span></div>
@@ -163,46 +157,11 @@
                 <div id="tab-active-challenges" class="tab-content active">
                     <div id="challenges-list" class="challenges-grid"></div>
                 </div>
-               <div id="tab-leaderboard" class="tab-content">
-                    
-                    <div class="team-goal-card">
-                        <div class="team-title">إجمالي جري الفريق (الشهر)</div>
-                        <div class="team-val" id="teamTotalDisplay">0</div>
-                        <div class="xp-track" style="margin-top:10px; height:8px; background:rgba(255,255,255,0.1);">
-                            <div class="xp-fill" id="teamGoalBar" style="width:0%; background:#f59e0b;"></div>
-                        </div>
-                        <div class="team-goal-labels">
-                            <span>البداية</span>
-                            <span>الهدف: 1000 كم</span>
-                        </div>
+                <div id="tab-leaderboard" class="tab-content">
+                    <div class="filter-bar">
+                        <button class="filter-btn active" onclick="filterLeaderboard('all')">الكل</button>
+                        <button class="filter-btn" onclick="filterLeaderboard('region')">منطقتي</button>
                     </div>
-
-                    <div class="podium-section">
-                        <div class="podium-title">أبطال الشهر 👑</div>
-                        <div id="podium-container" class="podium-container">
-                            <div style="color:#6b7280; font-size:12px;">جاري تحميل الأبطال...</div>
-                        </div>
-                    </div>
-
-                    <div class="leaderboard-controls">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
-                            <span style="font-size:10px; color:#6b7280;">اضغط للفلترة 👇</span>
-                        </div>
-                        
-                        <div class="filter-large-toggle">
-                            <button class="filter-btn active" onclick="filterLeaderboard('all')">
-                                <i class="ri-earth-line"></i> الكل
-                            </button>
-                            <button class="filter-btn" onclick="filterLeaderboard('region')">
-                                <i class="ri-map-pin-user-line"></i> منطقتي
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="leaderboard-list" class="rank-list"></div>
-                    </div>
-                    
                     <div id="leaderboard-list" class="rank-list"></div>
                 </div>
                 <div id="tab-squads" class="tab-content">
@@ -303,20 +262,13 @@
                     <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
                     <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
                 </button>
-               
-
-                <button id="fix-btn" class="setting-item" onclick="fixMyStats()">
-    <div class="setting-icon"><i class="ri-tools-line"></i></div>
-    <div class="setting-text"><span>إصلاح العدادات</span><small>اضغط هنا لو الأرقام خاطئة</small></div>
-</button>
-                
+                <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
+                    <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
+                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
+                </button>
                 <button class="setting-item delete" onclick="logout()" style="margin-top:5px;">
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
                     <div class="setting-text">تسجيل الخروج</div>
-                </button>
-                 <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
-                    <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
-                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
                 </button>
             </div>
             <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
@@ -409,7 +361,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <script src="app.js?v=1.9"></script> 
+    <script src="app.js?v=28"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
