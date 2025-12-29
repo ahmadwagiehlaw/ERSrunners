@@ -74,8 +74,7 @@
                     </div>
                 </div>
 
-          
-<div class="status-card">
+                <div class="status-card">
                 <div class="status-header">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span>مستواك الحالي</span>
@@ -108,6 +107,17 @@
                     </div>
                 </div>
             </div>
+                    <div class="stats-grid">
+                        <div class="stat-item"><span class="stat-val" id="monthDist">0</span><span class="stat-lbl">كم (شهر)</span></div>
+                        <div class="stat-item"><span class="stat-val" id="totalRuns">0</span><span class="stat-lbl">جرية</span></div>
+                        <div class="stat-item"><span class="stat-val" id="nextLevelDist">50</span><span class="stat-lbl">باقي للترقية</span></div>
+                    </div>
+                    <div class="xp-container" style="margin-top:15px;">
+                        <div class="xp-header"><span class="xp-text" id="xpText">0 / 50 كم</span><span class="xp-perc" id="xpPerc">0%</span></div>
+                        <div class="xp-track"><div class="xp-fill" id="xpBar"></div></div>
+                        <div class="xp-message" id="xpMessage">واصل الجري!</div>
+                    </div>
+                </div>
 
                 <div class="goal-card" onclick="setPersonalGoal()">
                     <div class="goal-info">
@@ -261,23 +271,6 @@
                         <div id="weekly-chart" class="bar-chart"></div>
                     </div>
                 </div>
-
-<div class="stats-grid">...</div>
-
-            <h3 style="margin:20px 0 10px 0; font-size:16px; border-right:3px solid #f59e0b; padding-right:10px;">🏆 أرقامي القياسية</h3>
-            <div class="pb-grid">
-                <div class="pb-card">
-                    <span class="pb-icon">🗺️</span>
-                    <span class="pb-value" id="pb-longest">0 <small>كم</small></span>
-                    <span class="pb-label">أطول جرية</span>
-                </div>
-                <div class="pb-card">
-                    <span class="pb-icon">⚡</span>
-                    <span class="pb-value" id="pb-pace">--:--</span>
-                    <span class="pb-label">أسرع وتيرة (د/كم)</span>
-                </div>
-            </div>
-
                 
                 <div class="badges-section" style="margin-top: 20px;">
                     <h3 class="section-title">إنجازاتي 🎖️</h3>
