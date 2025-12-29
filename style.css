@@ -1118,3 +1118,6 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .btn-sync-stats:active {
     transform: scale(0.9);
 }
+
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
