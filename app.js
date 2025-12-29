@@ -26,8 +26,6 @@ let deferredPrompt;
 let latestServerVersion = null;
 const CURRENT_VERSION = "1.0"; // غير هذا الرقم يدوياً عند كل تحديث
 
-// متغير لحفظ حدث التثبيت
-let deferredPrompt;
 
 // ==================== 1. Authentication (Global Functions) ====================
 // هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
