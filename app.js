@@ -76,17 +76,23 @@ async function handleAuth() {
     const emailEl = document.getElementById('email');
     const passEl = document.getElementById('password');
     const msgEl = document.getElementById('auth-msg');
-    const activeBtn = document.querySelector('.auth-box .btn-primary');
+    
+    // إصلاح: تحديد الزر بشكل أدق لمنع الخطأ
+    const activeBtn = document.getElementById('login-btn') || document.querySelector('.auth-box .btn-primary');
     
     if (!emailEl || !passEl) return;
     const email = emailEl.value;
     const pass = passEl.value;
     if (msgEl) msgEl.innerText = "";
 
-    const originalText = activeBtn.innerText;
-    activeBtn.innerHTML = 'جاري الاتصال <span class="loader-btn"></span>';
-    activeBtn.disabled = true;
-    activeBtn.style.opacity = "0.7";
+    // حفظ النص الأصلي
+    const originalText = activeBtn ? activeBtn.innerText : "دخول";
+    
+    if(activeBtn) {
+        activeBtn.innerHTML = 'جاري الاتصال...';
+        activeBtn.disabled = true;
+        activeBtn.style.opacity = "0.7";
+    }
 
     try {
         if (!email || !pass) throw new Error("يرجى ملء البيانات");
@@ -105,21 +111,25 @@ async function handleAuth() {
         } else {
             await auth.signInWithEmailAndPassword(email, pass);
         }
+        // عند النجاح، onAuthStateChanged سيتولى الأمر
     } catch (err) {
         if (msgEl) {
-            if(err.code === 'auth/email-already-in-use') msgEl.innerText = "هذا البريد مسجل بالفعل، حاول الدخول.";
-            else if(err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة.";
-            else if(err.code === 'auth/user-not-found') msgEl.innerText = "مستخدم غير موجود، سجل حساب جديد.";
-            else if(err.code === 'auth/network-request-failed') msgEl.innerText = "فشل الاتصال بالإنترنت ⚠️";
+            if(err.code === 'auth/email-already-in-use') msgEl.innerText = "البريد مسجل مسبقاً";
+            else if(err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة";
+            else if(err.code === 'auth/user-not-found') msgEl.innerText = "المستخدم غير موجود";
+            else if(err.code === 'auth/network-request-failed') msgEl.innerText = "تأكد من الإنترنت ⚠️";
             else msgEl.innerText = "خطأ: " + err.message;
         }
         console.error(err);
-        activeBtn.innerHTML = originalText;
-        activeBtn.disabled = false;
-        activeBtn.style.opacity = "1";
+        
+        // أهم جزء: إعادة الزر للحياة
+        if(activeBtn) {
+            activeBtn.innerHTML = originalText;
+            activeBtn.disabled = false;
+            activeBtn.style.opacity = "1";
+        }
     }
 }
-
 function logout() {
     if(confirm("تسجيل خروج؟")) { auth.signOut(); window.location.reload(); }
 }
@@ -1085,311 +1095,150 @@ async function uploadImageToImgBB() {
     }
 }
 
-// ==================== Weekly Chart (Timezone Fixed V2.1) ====================
+// ==================== Weekly Chart (Fixed V2.2) ====================
 function loadWeeklyChart() {
     const chartDiv = document.getElementById('weekly-chart');
     if(!chartDiv) return;
-
-    // 1. تحضير الأيام الـ 7 الماضية (بتوقيتك المحلي)
+    
     const daysAr = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
     let last7Days = [];
-
     for(let i=6; i>=0; i--) {
-        const d = new Date();
-        d.setDate(d.getDate() - i);
-        // تكوين مفتاح التاريخ يدوياً (YYYY-MM-DD)
-        const localKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-        
-        last7Days.push({
-            dayName: daysAr[d.getDay()],
-            dateKey: localKey,
-            dist: 0
-        });
+        const d = new Date(); d.setDate(d.getDate() - i);
+        const k = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        last7Days.push({ day: daysAr[d.getDay()], key: k, dist: 0 });
     }
 
-    // 2. تحديد وقت البداية (منذ 7 أيام)
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 7);
-    startDate.setHours(0, 0, 0, 0); 
-
+    const start = new Date(); start.setDate(start.getDate()-7); start.setHours(0,0,0,0);
+    
     db.collection('users').doc(currentUser.uid).collection('runs')
-      .where('timestamp', '>=', startDate)
-      .get().then(snap => {
-          snap.forEach(doc => {
-              const run = doc.data();
-              if(run.timestamp) {
-                  const rDate = run.timestamp.toDate();
-                  // تحويل تاريخ الجرية لنفس الصيغة المحلية للمقارنة
-                  const rKey = rDate.getFullYear() + '-' + String(rDate.getMonth() + 1).padStart(2, '0') + '-' + String(rDate.getDate()).padStart(2, '0');
-
-                  const targetDay = last7Days.find(d => d.dateKey === rKey);
-                  if(targetDay) {
-                      targetDay.dist += (parseFloat(run.dist) || 0);
-                  }
+      .where('timestamp', '>=', start).get().then(snap => {
+          snap.forEach(d => {
+              const r = d.data();
+              if(r.timestamp) {
+                  const rd = r.timestamp.toDate();
+                  const k = rd.getFullYear()+'-'+String(rd.getMonth()+1).padStart(2,'0')+'-'+String(rd.getDate()).padStart(2,'0');
+                  const t = last7Days.find(x => x.key === k);
+                  if(t) t.dist += (parseFloat(r.dist)||0);
               }
           });
-
-          // 3. رسم الشارت
+          
+          const max = Math.max(...last7Days.map(d=>d.dist), 5);
           let html = '';
-          const maxDist = Math.max(...last7Days.map(d => d.dist), 5); 
-
-          last7Days.forEach(day => {
-              const heightPerc = (day.dist / maxDist) * 100;
-              let barClass = 'low';
-              if(day.dist > 10) barClass = 'high';
-              else if(day.dist > 5) barClass = 'med';
-
-              const visualHeight = day.dist === 0 ? 5 : Math.max(heightPerc, 10);
-              const opacity = day.dist === 0 ? '0.2' : '1';
-              
-              html += `
-              <div class="chart-column">
-                  <span class="bar-tooltip" style="opacity:${day.dist > 0 ? 1 : 0}">${day.dist.toFixed(1)}</span>
-                  <div class="bar-bg">
-                      <div class="bar-fill ${barClass}" style="height: ${visualHeight}%; opacity: ${opacity}"></div>
-                  </div>
-                  <span class="bar-label">${day.dayName}</span>
-              </div>`;
+          last7Days.forEach(d => {
+              const h = (d.dist/max)*100;
+              const cls = d.dist>10?'high':(d.dist>5?'med':'low');
+              html += `<div class="chart-column"><span class="bar-tooltip" style="opacity:${d.dist>0?1:0}">${d.dist.toFixed(1)}</span><div class="bar-bg"><div class="bar-fill ${cls}" style="height:${d.dist==0?5:Math.max(h,10)}%;opacity:${d.dist==0?0.2:1}"></div></div><span class="bar-label">${d.day}</span></div>`;
           });
           chartDiv.innerHTML = html;
       });
 }
-
-
-// ==================== V2.0 Admin Dashboard Logic ====================
-
-// 1. الدخول والتحكم في التابات
-function openAdminAuth() {
-    if (currentUser && userData && userData.isAdmin === true) {
-        closeModal('modal-settings'); 
-        switchView('admin'); 
-        loadAdminOverview(); // تحميل الافتراضي
-    } else { 
-        alert("⛔ عذراً، هذه المنطقة مخصصة للمشرفين فقط."); 
-    }
-}
-
+// ==================== V2.0 Admin Logic (Recovered) ====================
 function switchAdminTab(tabId) {
     document.querySelectorAll('.admin-section').forEach(el => el.style.display = 'none');
-    document.getElementById('admin-tab-' + tabId).style.display = 'block';
+    const target = document.getElementById('admin-tab-' + tabId);
+    if(target) target.style.display = 'block';
     
     document.querySelectorAll('.admin-tab-btn').forEach(el => el.classList.remove('active'));
-    event.target.classList.add('active');
+    if(event && event.target) event.target.classList.add('active');
 
     if(tabId === 'anticheat') loadAntiCheatRadar();
     if(tabId === 'users') loadUserManager();
+    if(tabId === 'overview') loadAdminOverview();
 }
 
-// 2. النظرة العامة والتحليلات
 async function loadAdminOverview() {
     const grid = document.getElementById('admin-stats-grid');
     const regionChart = document.getElementById('admin-regions-chart');
-    
-    // استخدام الكاش الموجود لتسريع العرض
+    if(!grid) return;
+
     let users = allUsersCache;
     if(users.length === 0) users = await fetchTopRunners();
 
-    // حساب الإحصائيات
     const totalUsers = users.length;
     const totalDist = users.reduce((acc, u) => acc + (u.totalDist || 0), 0);
     const activeThisMonth = users.filter(u => (u.monthDist || 0) > 0).length;
     
-    // تحليل المناطق
-    const regions = {};
-    let maleCount = 0;
-    users.forEach(u => {
-        const r = u.region || 'غير محدد';
-        regions[r] = (regions[r] || 0) + 1;
-        if(u.gender !== 'female') maleCount++;
-    });
-
-    // رسم الكروت
     grid.innerHTML = `
-        <div class="admin-stat-card"><span class="admin-stat-num">${totalUsers}</span><span class="admin-stat-label">عضو مسجل</span></div>
-        <div class="admin-stat-card"><span class="admin-stat-num">${formatNumber(totalDist)}</span><span class="admin-stat-label">كم إجمالي</span></div>
-        <div class="admin-stat-card"><span class="admin-stat-num">${activeThisMonth}</span><span class="admin-stat-label">نشط هذا الشهر</span></div>
-        <div class="admin-stat-card"><span class="admin-stat-num">${Math.round((maleCount/totalUsers)*100)}%</span><span class="admin-stat-label">نسبة الذكور</span></div>
+        <div class="admin-stat-card"><span class="admin-stat-num">${totalUsers}</span><span class="admin-stat-label">عضو</span></div>
+        <div class="admin-stat-card"><span class="admin-stat-num">${formatNumber(totalDist)}</span><span class="admin-stat-label">كم</span></div>
+        <div class="admin-stat-card"><span class="admin-stat-num">${activeThisMonth}</span><span class="admin-stat-label">نشط</span></div>
     `;
-
-    // رسم شارت بسيط للمناطق (Text Based Bar Chart)
+    
+    // شارت المناطق البسيط
+    const regions = {};
+    users.forEach(u => { const r = u.region||'غير محدد'; regions[r] = (regions[r]||0)+1; });
     let regionHtml = '';
-    Object.entries(regions)
-        .sort((a,b) => b[1] - a[1]) // ترتيب تنازلي
-        .slice(0, 5) // أهم 5 مناطق
-        .forEach(([reg, count]) => {
-            const perc = (count / totalUsers) * 100;
-            regionHtml += `
-            <div style="margin-bottom:8px;">
-                <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:2px;">
-                    <span>${reg}</span><span>${count}</span>
-                </div>
-                <div style="background:rgba(255,255,255,0.1); height:6px; border-radius:3px;">
-                    <div style="background:var(--accent); width:${perc}%; height:100%; border-radius:3px;"></div>
-                </div>
-            </div>`;
-        });
-    regionChart.innerHTML = regionHtml;
+    Object.entries(regions).sort((a,b)=>b[1]-a[1]).slice(0,5).forEach(([reg, count]) => {
+        const perc = (count/totalUsers)*100;
+        regionHtml += `<div style="margin-bottom:5px; font-size:12px;"><div style="display:flex;justify-content:space-between;"><span>${reg}</span><span>${count}</span></div><div style="background:#374151;height:4px;border-radius:2px;"><div style="background:#3b82f6;width:${perc}%;height:100%"></div></div></div>`;
+    });
+    if(regionChart) regionChart.innerHTML = regionHtml;
 }
 
-// 3. 🚨 رادار النزاهة (Anti-Cheat Algorithm)
 function loadAntiCheatRadar() {
     const list = document.getElementById('anticheat-list');
-    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري فحص قاعدة البيانات بحثاً عن مخالفات... 📡</div>';
-
-    // فحص آخر 50 جرية في الـ Feed
+    if(!list) return;
+    list.innerHTML = 'جاري الفحص...';
     db.collection('activity_feed').orderBy('timestamp', 'desc').limit(50).get().then(snap => {
-        let suspiciousHtml = '';
+        let html = '';
         let count = 0;
-
         snap.forEach(doc => {
-            const run = doc.data();
-            const dist = parseFloat(run.dist);
-            const time = parseFloat(run.time);
-            
-            // الخوارزمية:
-            // 1. السرعة الخارقة: Pace < 2.5 دقيقة/كم (أرقام أوليمبية)
-            // 2. المسافة الوهمية: أكثر من 40 كم في جرية واحدة
-            
-            const pace = time / dist;
-            let flags = [];
-            
-            if (dist > 0 && pace < 2.5) flags.push(`سرعة خيالية (${pace.toFixed(1)} د/كم)`);
-            if (dist > 40) flags.push(`مسافة ضخمة (${dist} كم)`);
-
-            if (flags.length > 0) {
+            const r = doc.data();
+            const pace = r.time / r.dist;
+            if (r.dist > 0 && (pace < 2.5 || r.dist > 45)) {
                 count++;
-                suspiciousHtml += `
-                <div class="suspicious-row">
-                    <div>
-                        <div style="font-weight:bold; color:#fff;">${run.userName}</div>
-                        <div style="font-size:11px; color:#ef4444;">${flags.join(' + ')}</div>
-                    </div>
-                    <div>
-                        <button class="btn-ban" onclick="adminDeleteActivity('${doc.id}', '${run.uid}', ${run.dist})">حذف النشاط 🗑️</button>
-                    </div>
-                </div>`;
+                html += `<div class="suspicious-row"><div><b>${r.userName}</b><br><span style="font-size:10px;color:#ef4444">${r.dist}km @ ${pace.toFixed(1)}/km</span></div><button class="btn-ban" onclick="adminDeleteActivity('${doc.id}')">حذف</button></div>`;
             }
         });
-
-        list.innerHTML = count > 0 ? suspiciousHtml : '<div style="text-align:center; padding:20px; color:#10b981;">✅ السجل نظيف! لم يتم كشف حالات غش.</div>';
+        list.innerHTML = count > 0 ? html : '<div style="text-align:center; padding:10px; color:#10b981">سجل نظيف ✅</div>';
     });
 }
 
-async function adminDeleteActivity(feedId, uid, dist) {
-    if(!confirm("هل أنت متأكد من حذف هذا النشاط المشبوه؟\nسيتم خصم المسافة من المستخدم.")) return;
-    
-    // حذف من الـ Feed
-    await db.collection('activity_feed').doc(feedId).delete();
-    
-    // خصم من المستخدم (تقريبي لأننا لا نملك ID الجرية الأصلي هنا بسهولة، لكن الحذف من الفيد يكفي للردع العام)
-    // لتطبيق عقوبة كاملة نحتاج لتعقيد أكثر، لكن الحذف من الفيد يزيلها من أمام الناس.
-    alert("تم حذف النشاط من الـ Feed.");
-    loadAntiCheatRadar(); // إعادة تحميل
+async function adminDeleteActivity(id) {
+    if(confirm("حذف هذا النشاط؟")) {
+        await db.collection('activity_feed').doc(id).delete();
+        alert("تم الحذف");
+        loadAntiCheatRadar();
+    }
 }
 
-// 4. 👥 إدارة الأعضاء (User Manager)
-let adminUsersCache = [];
 async function loadUserManager() {
     const list = document.getElementById('admin-users-list');
-    list.innerHTML = 'جاري التحميل...';
-    
-    // جلب كل المستخدمين (نعتمد على الكاش لو موجود)
-    if(adminUsersCache.length === 0) {
-        const snap = await db.collection('users').limit(100).get(); // 100 كحد أقصى للأداء
-        snap.forEach(doc => adminUsersCache.push({id: doc.id, ...doc.data()}));
-    }
-    
-    renderUserTable(adminUsersCache);
-}
-
-function renderUserTable(users) {
-    const list = document.getElementById('admin-users-list');
+    if(!list) return;
+    list.innerHTML = 'تحميل...';
+    const snap = await db.collection('users').limit(50).get();
     let html = '';
-    
-    users.forEach(u => {
-        html += `
-        <div class="admin-user-row">
-            <div class="admin-user-info">
-                <h4>${u.name} ${u.isAdmin ? '⭐' : ''}</h4>
-                <span>${u.region} • ${formatNumber(u.totalDist)} كم</span>
-            </div>
-            <div class="admin-actions">
-                <button class="btn-verify" onclick="alert('قريباً: ميزة التوثيق')">توثيق</button>
-                <button class="btn-ban" onclick="adminBanUser('${u.id}', '${u.name}')">حظر</button>
-            </div>
-        </div>`;
+    snap.forEach(doc => {
+        const u = doc.data();
+        html += `<div class="admin-user-row"><div class="admin-user-info"><h4>${u.name}</h4><span>${u.region}</span></div><button class="btn-ban" onclick="alert('قريباً')">إدارة</button></div>`;
     });
     list.innerHTML = html;
 }
 
-function adminSearchUser(query) {
-    const lowerQ = query.toLowerCase();
-    const filtered = adminUsersCache.filter(u => 
-        (u.name && u.name.toLowerCase().includes(lowerQ)) || 
-        (u.region && u.region.toLowerCase().includes(lowerQ))
-    );
-    renderUserTable(filtered);
-}
-
-async function adminBanUser(uid, name) {
-    const reason = prompt(`أنت على وشك حظر ${name}.\nاكتب سبب الحظر:`);
-    if(reason) {
-        // إضافة حقل isBanned للمستخدم
-        await db.collection('users').doc(uid).update({
-            isBanned: true,
-            banReason: reason
-        });
-        alert(`تم حظر ${name} بنجاح 🚫`);
-    }
-}
-
-// 5. 📢 إرسال إشعار جماعي
 async function sendGlobalNotification() {
     const msg = document.getElementById('global-msg').value;
-    if(!msg) return alert("اكتب رسالة أولاً");
-    
-    if(!confirm("هل سترسل هذه الرسالة لجميع المستخدمين (Broadcast)؟")) return;
-
-    // بدلاً من اللوب الخطر، سننشئ كوليكشن للإشعارات العامة
-    // ملاحظة: يجب تعديل كود استقبال الإشعارات في التطبيق ليقرأ من هنا أيضاً، 
-    // ولكن للتبسيط الآن سنرسل لآخر 20 مستخدم نشط فقط لتفادي الحظر من فايربيس
-    
-    const btn = event.target;
-    btn.innerText = "جاري الإرسال...";
-    
-    try {
-        const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(20).get();
+    if(!msg) return;
+    if(confirm("إرسال للجميع؟")) {
+        const snap = await db.collection('users').orderBy('totalDist','desc').limit(20).get();
         const batch = db.batch();
-        
-        snap.forEach(doc => {
-            const ref = db.collection('users').doc(doc.id).collection('notifications').doc();
-            batch.set(ref, {
-                msg: `📢 إداري: ${msg}`,
-                read: false,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        snap.forEach(d => {
+            batch.set(db.collection('users').doc(d.id).collection('notifications').doc(), {
+                msg: `📢 إداري: ${msg}`, read: false, timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
         });
-        
         await batch.commit();
-        alert("تم الإرسال لأهم 20 عضو نشط (لتوفير الموارد) ✅");
-        document.getElementById('global-msg').value = '';
-    } catch(e) {
-        console.error(e);
-        alert("حدث خطأ في الإرسال");
+        alert("تم الإرسال");
     }
-    btn.innerText = "إرسال للجميع 🚀";
 }
 
 async function createChallengeUI() {
     const t = prompt("عنوان التحدي:");
-    const target = prompt("الهدف (كم):");
-    if(t && target) {
-        await db.collection('challenges').add({
-            title: t, 
-            target: parseFloat(target), 
-            active: true, 
-            startDate: new Date().toISOString()
-        });
-        alert("تم إنشاء التحدي ✅");
+    const k = prompt("الهدف (كم):");
+    if(t && k) {
+        await db.collection('challenges').add({ title: t, target: parseFloat(k), active: true, startDate: new Date().toISOString() });
+        alert("تم");
     }
 }
+
+
+ 
