@@ -814,7 +814,36 @@ function loadAdminStats() {
     if(!statsDiv) return;
     db.collection('users').get().then(snap => { statsDiv.innerHTML = `عدد الأعضاء: <strong style="color:#fff">${snap.size}</strong>`; });
 }
-async function saveProfileChanges
+async function saveProfileChanges() {
+    const name = document.getElementById('edit-name').value;
+    const region = document.getElementById('edit-region').value;
+    const gender = document.getElementById('edit-gender').value;
+    const birthYear = document.getElementById('edit-birthyear').value;
+
+    if(name) {
+        const btn = event.target;
+        btn.innerText = "جاري الحفظ...";
+        
+        await db.collection('users').doc(currentUser.uid).update({ 
+            name, 
+            region,
+            gender: gender || 'male', 
+            birthYear: birthYear || ''
+        });
+        
+        // تحديث البيانات محلياً
+        userData.name = name; 
+        userData.region = region;
+        userData.gender = gender;
+        userData.birthYear = birthYear;
+        
+        allUsersCache = []; // تدمير الكاش لتحديث البيانات
+        updateUI(); 
+        closeModal('modal-edit-profile'); 
+        alert("تم تحديث ملفك الشخصي بنجاح ✅");
+        btn.innerText = "حفظ التغييرات";
+    }
+}
 
 
   
