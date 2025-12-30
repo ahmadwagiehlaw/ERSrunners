@@ -1,4 +1,4 @@
-/* ERS Runners - V1.10 (Podium & Auth Fixed) */
+/* ERS Runners - V1.13 (Podium & Auth Fixed) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -19,7 +19,7 @@ let isSignupMode = false;
 let editingRunId = null;
 let editingOldDist = 0;
 let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
-let deferredPrompt; // (V1.4) لتخزين حدث التثبيت
+let deferredPrompt; // (V1.13) لتخزين حدث التثبيت
 // --- دالة مركزية لجلب البيانات بأمان (V1.3) -----------------------------
 async function fetchTopRunners() {
     // إذا كانت البيانات موجودة في الكاش، لا نحملها مرة أخرى
