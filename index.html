@@ -3,64 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <title>ERS Runners</title>
-    
     <link rel="manifest" href="manifest.json">
-    
     <meta name="theme-color" content="#111827">
-    <meta name="background-color" content="#111827">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ERS Runners">
-    
     <link rel="icon" type="image/png" href="icon.png">
-    <link rel="apple-touch-icon" href="icon.png"> 
-    
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-    
-   <link rel="stylesheet" href="style.css?v=2.0">
-
+    <link rel="stylesheet" href="style.css?v=3.0">
 </head>
 <body>
-    <div id="offline-banner" class="offline-banner">⚠️ لا يوجد اتصال بالإنترنت - وضع التصفح</div>
+    <div id="offline-banner">⚠️ لا يوجد اتصال بالإنترنت</div>
 
     <div id="auth-screen" class="full-screen-overlay">
         <div class="auth-box">
-            <div class="logo-area">
-                <h1>ERS <span class="accent-text">RUNNERS</span></h1>
-                <p>منصة العدائين المحترفين</p>
-            </div>
+            <h1 style="font-size:32px; margin-bottom:10px;">ERS Runners 🦅</h1>
+            <p style="color:#9ca3af; margin-bottom:30px;">مجتمع العدائين الأقوياء</p>
             
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
+            </div>
+            <div class="form-group">
                 <input type="password" id="password" placeholder="كلمة المرور">
-                
-                <div id="signup-fields" style="display:none;">
-                    <input type="text" id="username" placeholder="الاسم ثلاثي">
+            </div>
+
+            <div id="signup-fields" style="display: none;">
+                <div class="form-group">
+                    <input type="text" id="username" placeholder="الاسم (ثنائي)">
+                </div>
+                <div class="form-group">
                     <select id="region">
                         <option value="" disabled selected>اختر منطقتك</option>
                         <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                     </select>
                 </div>
-
-                <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
-                <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
-                <div id="auth-msg" class="error-msg"></div>
             </div>
+
+            <div id="auth-msg" class="error-msg"></div>
+            <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
+            <button class="btn btn-text" id="toggleAuthBtn" onclick="toggleAuthMode()">ليس لديك حساب؟ سجل الآن</button>
         </div>
     </div>
 
     <div id="app-content" style="display:none;">
-        <header class="glass-header">
-            <div class="header-inner">
-                <div class="header-right">
-                    <img src="ers-logo.png" class="brand-logo" alt="Logo"> 
-                    <div class="user-greeting-box">
-                        <span class="hello-text">أهلاً يا كابتن 👋</span>
-                        <h3 id="headerName">...</h3>
+        <header>
+            <div class="header-content">
+                <div class="user-welcome">
+                    <div class="bib-avatar" id="profileAvatar">🏃</div>
+                    <div>
+                        <div class="greeting">أهلاً يا بطل 👋</div>
+                        <h2 id="headerName">...</h2>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -69,7 +62,6 @@
                         <i class="ri-notification-3-line"></i><span class="badge-dot" id="notif-dot"></span>
                     </div>
                     <div class="icon-badge" onclick="openSettingsModal()"><i class="ri-settings-4-line"></i></div>
-                    
                     <div id="header-install-btn" class="icon-badge install-pulse" onclick="installApp()" style="display: none; background: #fff; color: #000;">
                         <i class="ri-download-cloud-2-fill"></i>
                     </div>
@@ -77,239 +69,170 @@
             </div>
         </header>
 
-        <main class="main-container">
-            <section id="view-home" class="view active">
-                <div class="coach-card">
-                    <div class="coach-icon"><i class="ri-robot-2-line"></i></div>
-                    <div class="coach-content">
-                        <span class="coach-label">نصيحة الكوتش اليوم</span>
-                        <p id="coach-message">جاري تحليل أدائك...</p>
-                    </div>
-                </div>
-
+        <div id="view-home" class="view active">
+            <div class="content-container">
                 <div id="user-stats-card" class="stats-card" style="padding: 0; overflow: hidden; margin-bottom: 20px;"></div>
 
-                <div class="goal-card" onclick="setPersonalGoal()">
-                    <div class="goal-info">
-                        <span class="goal-title">هدفي الشهري 🎯</span>
-                        <h3 id="goalText">اضغط لتحديد هدف</h3>
-                        <span class="goal-sub" id="goalSub">0 كم متبقي</span>
-                    </div>
-                    <div class="goal-ring-wrapper">
-                        <div class="goal-ring" id="goalRing" style="--p:0"></div>
-                        <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
+                <div class="coach-card">
+                    <div class="coach-icon">🤖</div>
+                    <div class="coach-content">
+                        <h4>نصيحة الكوتش</h4>
+                        <p id="coach-message">جاري تحميل النصيحة...</p>
                     </div>
                 </div>
 
-                <div class="section-title-row">
-                    <h4>تحدياتي النشطة 🔥</h4>
-                    <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
-                </div>
-                <div id="my-active-challenges" class="mini-challenges-scroll">
-                    <div class="empty-state-mini">لا توجد تحديات حالياً</div>
-                </div>
-
-                <div class="section-title-row" style="margin-top:25px;">
-                    <h4>نشاط الفريق ⚡</h4>
-                </div>
-                <div id="global-feed-list" class="feed-list-compact">
-                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
-                </div>
-            </section>
-
-          <div id="view-admin" class="view">
-        <div class="content-container">
-            <h2 class="page-title">🕹️ مركز القيادة</h2>
-            
-            <div class="admin-tabs">
-                <button class="admin-tab-btn active" onclick="switchAdminTab('overview')">نظرة عامة</button>
-                <button class="admin-tab-btn" onclick="switchAdminTab('anticheat')">🚨 الرادار</button>
-                <button class="admin-tab-btn" onclick="switchAdminTab('users')">الأعضاء</button>
-                <button class="admin-tab-btn" onclick="switchAdminTab('settings')">الإعدادات</button>
-            </div>
-
-            <div id="admin-tab-overview" class="admin-section">
-                <div class="admin-grid" id="admin-stats-grid">
+                <div class="tabs-container">
+                    <div class="tabs-header">
+                        <div class="tab-item active" onclick="setTab('feed')">نشاط الفريق</div>
+                        <div class="tab-item" onclick="setTab('leaderboard')">المتصدرين</div>
+                        <div class="tab-item" onclick="setTab('squads')">المحافظات</div>
                     </div>
-                <h3>توزيع المناطق 🗺️</h3>
-                <div id="admin-regions-chart" style="margin-top:10px;"></div>
-            </div>
 
-            <div id="admin-tab-anticheat" class="admin-section" style="display:none;">
-                <div style="background:#374151; padding:10px; border-radius:8px; margin-bottom:15px; font-size:12px;">
-                    💡 <strong>كيف يعمل الرادار؟</strong> يكشف الجريات التي تكون سرعتها أسرع من 2.5 دقيقة/كم (سرعة أوليمبية) أو مسافات تزيد عن 40 كم دفعة واحدة.
+                    <div id="tab-feed" class="tab-content active">
+                        <div id="my-active-challenges" style="margin-bottom:15px;"></div>
+                        <div id="global-feed-list"></div>
+                    </div>
+
+                    <div id="tab-leaderboard" class="tab-content">
+                        <div class="filter-bar">
+                            <button class="filter-btn active" onclick="filterLeaderboard('all')">الكل</button>
+                            <button class="filter-btn" onclick="filterLeaderboard('region')">منطقتي</button>
+                        </div>
+                        <div id="podium-container" class="podium-container"></div>
+                        <div class="leaderboard-list" id="leaderboard-list"></div>
+                        <div class="team-goal-card" style="margin-top:20px;">
+                            <div class="team-goal-header"><span>هدف الفريق (1000 كم)</span><span id="teamTotalDisplay">0</span></div>
+                            <div class="team-goal-track"><div class="team-goal-fill" id="teamGoalBar"></div></div>
+                        </div>
+                    </div>
+
+                    <div id="tab-squads" class="tab-content">
+                        <div id="region-battle-list"></div>
+                    </div>
                 </div>
-                <div id="anticheat-list">جاري المسح... 📡</div>
-            </div>
-
-            <div id="admin-tab-users" class="admin-section" style="display:none;">
-                <input type="text" class="user-search-box" placeholder="بحث بالاسم أو المنطقة..." onkeyup="adminSearchUser(this.value)">
-                <div id="admin-users-list">جاري تحميل الأعضاء...</div>
-            </div>
-
-            <div id="admin-tab-settings" class="admin-section" style="display:none;">
-                <h3 style="font-size:16px;">📢 إرسال إشعار عام</h3>
-                <div class="input-wrap">
-                    <textarea id="global-msg" placeholder="اكتب رسالة ستصل لكل المستخدمين..." style="height:80px;"></textarea>
-                </div>
-                <button class="btn btn-primary" onclick="sendGlobalNotification()">إرسال للجميع 🚀</button>
-                
-                <hr style="border-color:var(--border); margin:20px 0;">
-                
-                <h3 style="font-size:16px;">🔧 أدوات الصيانة</h3>
-                <button class="btn btn-text" onclick="createChallengeUI()" style="width:100%; border:1px solid var(--border);">➕ إنشاء تحدي جديد</button>
             </div>
         </div>
-        <div style="height:80px;"></div>
-    </div>
 
-            <section id="view-challenges" class="view">
-                <div class="tabs-nav">
-                    <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
-                    <div class="tab-item" onclick="setTab('leaderboard')">المتصدرون</div>
-                    <div class="tab-item" onclick="setTab('squads')">المناطق</div>
-                </div>
-                <div id="tab-active-challenges" class="tab-content active">
-                    <div id="challenges-list" class="challenges-grid"></div>
-                </div>
-               <div id="tab-leaderboard" class="tab-content">
-                    
-                    <div class="team-goal-card">
-                        <div class="team-title">إجمالي جري الفريق (الشهر)</div>
-                        <div class="team-val" id="teamTotalDisplay">0</div>
-                        <div class="xp-track" style="margin-top:10px; height:8px; background:rgba(255,255,255,0.1);">
-                            <div class="xp-fill" id="teamGoalBar" style="width:0%; background:#f59e0b;"></div>
-                        </div>
-                        <div class="team-goal-labels">
-                            <span>البداية</span>
-                            <span>الهدف: 1000 كم</span>
-                        </div>
-                    </div>
+        <div id="view-challenges" class="view">
+            <div class="content-container">
+                <h2 class="page-title">التحديات النشطة 🔥</h2>
+                <div id="challenges-list"></div>
+            </div>
+        </div>
 
-                    <div class="podium-section">
-                        <div class="podium-title">أبطال الشهر 👑</div>
-                        <div id="podium-container" class="podium-container">
-                            <div style="color:#6b7280; font-size:12px;">جاري تحميل الأبطال...</div>
+        <div id="view-profile" class="view">
+            <div class="content-container">
+                <div class="profile-header-card">
+                    <div class="profile-main-info">
+                        <div class="profile-big-avatar" onclick="openEditProfile()">
+                            <span id="profileAvatarBig">🏃</span>
+                            <div class="edit-badge"><i class="ri-pencil-fill"></i></div>
                         </div>
-                    </div>
-
-                    <div class="leaderboard-controls">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
-                            <span style="font-size:10px; color:#6b7280;">اضغط للفلترة 👇</span>
-                        </div>
-                        
-                        <div class="filter-large-toggle">
-                            <button class="filter-btn active" onclick="filterLeaderboard('all')">
-                                <i class="ri-earth-line"></i> الكل
-                            </button>
-                            <button class="filter-btn" onclick="filterLeaderboard('region')">
-                                <i class="ri-map-pin-user-line"></i> منطقتي
-                            </button>
-                        </div>
+                        <h2 id="profileName">...</h2>
+                        <span class="profile-location" id="profileRegion">...</span>
+                        <span class="rank-badge mt-2" id="profileRankText">...</span>
                     </div>
                     
-                    <div id="leaderboard-list" class="rank-list"></div>
-                    </div>
-                    
-                    <div id="leaderboard-list" class="rank-list"></div>
-                </div>
-                <div id="tab-squads" class="tab-content">
-                    <div id="region-battle-list"></div>
-                </div>
-            </section>
-
-            <section id="view-profile" class="view">
-                <div class="bib-card">
-                    <div class="bib-hole top-left"></div>
-                    <div class="bib-hole top-right"></div>
-                    <div class="bib-content">
-                        <div class="bib-main">
-                            <div class="bib-avatar" id="profileAvatar">A</div>
-                            <div class="bib-info">
-                                <div style="display:flex; align-items:center; gap:5px;">
-                                    <h2 id="profileName">...</h2>
-                                    <button class="btn-tiny-edit" onclick="openEditProfile()"><i class="ri-pencil-line"></i></button>
-                                </div>
-                                <span class="bib-region" id="profileRegion">...</span>
-                            </div>
-                        </div>
-                        <div class="bib-rank-box">
-                            <span class="bib-label">RANK</span>
-                            <span class="bib-number" id="profileRankText">مبتدئ</span>
-                        </div>
-                    </div>
-                    <div class="bib-footer">
-                        <div class="bib-stat"><span class="val" id="profileTotalDist">0</span><span class="lbl">كم إجمالي</span></div>
-                        <div class="bib-stat"><span class="val" id="profileTotalRuns">0</span><span class="lbl">جرية</span></div>
-                        <div class="bib-stat"><span class="val" id="profilePace">--</span><span class="lbl">متوسط السرعة</span></div>
+                    <div class="profile-stats-row">
+                        <div class="p-stat"><strong>كم كلي</strong><span id="profileTotalDist">0</span></div>
+                        <div class="p-stat"><strong>نشاط</strong><span id="profileTotalRuns">0</span></div>
                     </div>
                 </div>
 
-                <div class="chart-section" style="margin-top: 15px;">
-                    <h3 class="section-title" style="font-size:13px; margin-bottom:10px;">أداء آخر 7 أيام 📈</h3>
-                    <div class="chart-container">
-                        <div id="weekly-chart" class="bar-chart"></div>
-                    </div>
+                <div class="chart-card">
+                    <h3>أداء آخر 7 أيام 📊</h3>
+                    <div id="weekly-chart" class="weekly-chart-container"></div>
                 </div>
+
+                <div class="section-title">الأوسمة والإنجازات 🏆</div>
+                <div class="badges-grid" id="badges-grid"></div>
+
+                <div class="section-title">سجل الأنشطة 📜</div>
+                <div id="activity-log"></div>
                 
-                <div class="badges-section" style="margin-top: 20px;">
-                    <h3 class="section-title">إنجازاتي 🎖️</h3>
-                    <div id="badges-grid" class="badges-grid">
-                        <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...</div>
-                    </div>
+                <button class="btn btn-danger" onclick="logout()" style="margin-top:30px;">تسجيل الخروج</button>
+                <div style="height:50px;"></div>
+            </div>
+        </div>
+
+        <div id="view-admin" class="view">
+            <div class="content-container">
+                <h2 class="page-title">🕹️ مركز القيادة</h2>
+                
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" onclick="switchAdminTab('overview')">نظرة عامة</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('anticheat')">🚨 الرادار</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('users')">الأعضاء</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('settings')">الإعدادات</button>
                 </div>
 
-                <div class="log-section">
-                    <h3 class="section-title">سجل الأنشطة</h3>
-                    <div id="activity-log" class="log-list"></div>
+                <div id="admin-tab-overview" class="admin-section">
+                    <div class="admin-grid" id="admin-stats-grid"></div>
+                    <h3>توزيع المناطق 🗺️</h3>
+                    <div id="admin-regions-chart" style="margin-top:10px;"></div>
                 </div>
-                <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
-                    <i class="ri-logout-box-r-line"></i> تسجيل خروج
-                </button>
-            </section>
-        </main>
+
+                <div id="admin-tab-anticheat" class="admin-section" style="display:none;">
+                    <div style="background:#374151; padding:10px; border-radius:8px; margin-bottom:15px; font-size:12px;">
+                        💡 <strong>الرادار:</strong> يكشف السرعات الخيالية (> 2.5 د/كم) والمسافات الوهمية.
+                    </div>
+                    <div id="anticheat-list">جاري المسح... 📡</div>
+                </div>
+
+                <div id="admin-tab-users" class="admin-section" style="display:none;">
+                    <input type="text" class="user-search-box" placeholder="بحث بالاسم..." onkeyup="adminSearchUser(this.value)">
+                    <div id="admin-users-list">جاري التحميل...</div>
+                </div>
+
+                <div id="admin-tab-settings" class="admin-section" style="display:none;">
+                    <h3>📢 إشعار عام</h3>
+                    <div class="input-wrap"><textarea id="global-msg" placeholder="الرسالة..." style="height:80px;"></textarea></div>
+                    <button class="btn btn-primary" onclick="sendGlobalNotification()">إرسال 🚀</button>
+                    <hr style="border-color:var(--border); margin:20px 0;">
+                    <h3>🔧 الصيانة</h3>
+                    <button class="btn btn-text" onclick="createChallengeUI()" style="width:100%; border:1px solid var(--border);">➕ إنشاء تحدي</button>
+                </div>
+            </div>
+            <div style="height:80px;"></div>
+        </div>
 
         <nav class="bottom-nav">
-            <div class="nav-item active" onclick="switchView('home')"><i class="ri-home-4-line"></i><span>الرئيسية</span></div>
-            <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>المنافسة</span></div>
-            <div class="nav-item" onclick="switchView('profile')"><i class="ri-user-smile-line"></i><span>بروفايل</span></div>
+            <div class="nav-item active" onclick="switchView('home')"><i class="ri-home-5-line"></i><span>الرئيسية</span></div>
+            <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>التحديات</span></div>
+            <div class="nav-item" onclick="switchView('profile')"><i class="ri-user-3-line"></i><span>بروفايلي</span></div>
         </nav>
     </div>
 
     <div id="modal-log" class="modal-overlay">
         <div class="modal-box">
-            <h3>تسجيل نشاط 🏃‍♂️</h3>
-            <div class="input-wrap" style="margin-bottom:15px;">
-                <label>توقيت الجري</label>
-                <input type="datetime-local" id="log-date" style="font-size:14px; direction:ltr;">
+            <h3>تسجيل نشاط جديد 🏃‍♂️</h3>
+            <div class="form-group">
+                <label>نوع النشاط</label>
+                <select id="log-type"><option value="Run">جري 🏃</option><option value="Walk">مشي 🚶</option></select>
             </div>
             <div class="input-row">
-                <div class="input-wrap"><label>المسافة (كم)</label><input type="number" id="log-dist" step="0.1" inputmode="decimal"></div>
-                <div class="input-wrap"><label>الزمن (دقائق)</label><input type="number" id="log-time" inputmode="numeric"></div>
+                <div class="input-wrap"><label>المسافة (كم)</label><input type="number" id="log-dist" step="0.01"></div>
+                <div class="input-wrap"><label>الزمن (دقيقة)</label><input type="number" id="log-time" step="1"></div>
             </div>
-            <select id="log-type" class="full-select">
-                <option value="Run">جري (Run)</option><option value="Walk">مشي (Walk)</option><option value="Race">سباق (Race)</option>
-            </select>
+            <div class="input-wrap" style="margin-top:10px;">
+                <label>تاريخ النشاط</label>
+                <input type="datetime-local" id="log-date" style="direction:ltr;">
+            </div>
+            <div class="input-wrap" style="margin-top:10px;">
+                <label>رابط إثبات (Strava) - اختياري</label>
+                <input type="url" id="log-link" placeholder="الرابط هنا...">
+            </div>
             <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
-                <label>رابط إثبات (Strava/Nike) - اختياري</label>
-                <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
-                </div>
-            
-            <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
-                <label>إثبات الجرية (صورة / سكرين شوت)</label>
+                <label>أو ارفع صورة (إثبات)</label>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <label for="log-img-file" class="btn btn-text" style="border:1px dashed var(--border); width:100%; cursor:pointer; color:#9ca3af;">
-                        <i class="ri-camera-line"></i> اضغط لرفع صورة
+                    <label for="log-img-file" class="btn btn-text" style="border:1px dashed var(--border); width:100%; cursor:pointer;">
+                        <i class="ri-camera-line"></i> اختر صورة
                     </label>
                     <input type="file" id="log-img-file" accept="image/*" style="display:none;" onchange="uploadImageToImgBB()">
-                    
-                    <img id="img-preview" style="width:40px; height:40px; border-radius:8px; display:none; object-fit:cover; border:1px solid var(--primary);">
+                    <img id="img-preview" style="width:40px; height:40px; border-radius:8px; display:none; object-fit:cover;">
                 </div>
-                
                 <input type="hidden" id="uploaded-img-url">
-                
-                <small id="upload-status" style="display:block; margin-top:5px; font-size:10px; color:var(--text-muted);"></small>
+                <small id="upload-status" style="color:var(--text-muted); font-size:10px;"></small>
             </div>
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
@@ -318,55 +241,35 @@
 
     <div id="modal-settings" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="margin-bottom:20px;">الإعدادات ⚙️</h3>
+            <h3>الإعدادات ⚙️</h3>
             <div class="settings-list">
-                <button class="setting-item" onclick="forceUpdateApp()">
-                    <div class="setting-icon"><i class="ri-refresh-line"></i></div>
-                    <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
+                <button class="setting-item" onclick="openEditProfile()">
+                    <div class="setting-icon"><i class="ri-user-settings-line"></i></div>
+                    <div class="setting-text"><span>تعديل البيانات</span><small>الاسم، المنطقة</small></div>
                 </button>
-                <button id="btn-admin-entry" class="setting-item" onclick="openAdminAuth()" style="display: none;">
-                    <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
-                    <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
+                <button class="setting-item" onclick="fixMyStats()">
+                    <div class="setting-icon"><i class="ri-tools-line"></i></div>
+                    <div class="setting-text"><span>إصلاح العدادات</span><small>إعادة حساب المسافات</small></div>
                 </button>
-               
-
-                <button id="fix-btn" class="setting-item" onclick="fixMyStats()">
-    <div class="setting-icon"><i class="ri-tools-line"></i></div>
-    <div class="setting-text"><span>إصلاح العدادات</span><small>اضغط هنا لو الأرقام خاطئة</small></div>
-</button>
-                
-                <button class="setting-item delete" onclick="logout()" style="margin-top:5px;">
-                    <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
-                    <div class="setting-text">تسجيل الخروج</div>
+                <button id="btn-admin-entry" class="setting-item" onclick="openAdminAuth()" style="display:none; background:rgba(16, 185, 129, 0.1);">
+                    <div class="setting-icon" style="color:#10b981;"><i class="ri-shield-user-line"></i></div>
+                    <div class="setting-text"><span>لوحة المشرفين</span><small>Admin Dashboard</small></div>
                 </button>
-                 <button class="setting-item delete-danger" onclick="deleteFullAccount()" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1); margin-top: 15px;">
+                <button class="setting-item delete-danger" onclick="deleteFullAccount()">
                     <div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div>
-                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>
+                    <div class="setting-text" style="color:#ef4444;"><span>حذف الحساب</span><small>لا يمكن التراجع</small></div>
                 </button>
             </div>
-            <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:15px;">إغلاق</button>
-        </div>
-    </div>
-    
-    <div id="modal-notifications" class="modal-overlay">
-        <div class="modal-box">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h3 style="margin:0;">الإشعارات 🔔</h3>
-                <button onclick="closeModal('modal-notifications')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
-            </div>
-            <div id="notifications-list" class="notif-list">
-                <div style="text-align:center; padding:20px; color:#9ca3af;">لا توجد إشعارات جديدة</div>
-            </div>
+            <button class="btn btn-text" onclick="closeModal('modal-settings')" style="margin-top:20px;">إغلاق</button>
         </div>
     </div>
 
-   <div id="modal-edit-profile" class="modal-overlay">
+    <div id="modal-edit-profile" class="modal-overlay">
         <div class="modal-box">
             <h3>تعديل البيانات ✏️</h3>
             <div class="form-group" style="margin-top:20px;">
-                <label style="color:#9ca3af; font-size:12px;">الاسم</label>
+                <label>الاسم</label>
                 <input type="text" id="edit-name">
-                
                 <div class="input-row">
                     <div class="input-wrap">
                         <label>النوع</label>
@@ -377,61 +280,30 @@
                     </div>
                     <div class="input-wrap">
                         <label>سنة الميلاد</label>
-                        <input type="number" id="edit-birthyear" placeholder="مثال: 1995">
+                        <input type="number" id="edit-birthyear" placeholder="1995">
                     </div>
                 </div>
-
-                <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
+                <label style="margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
                     <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                 </select>
             </div>
-
             <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
             <button class="btn btn-text" onclick="closeModal('modal-edit-profile')" style="margin-top:10px;">إلغاء</button>
         </div>
     </div>
 
-    <div id="modal-share" class="modal-overlay">
-        <div class="modal-box" style="background: transparent; box-shadow: none; border: none; max-width: 100%;">
-            <h3 style="color:#fff; text-align:center; margin-bottom:15px; text-shadow:0 2px 5px #000;">إنجازك جاهز للمشاركة 📸</h3>
-            <div id="share-result-container" style="text-align:center; margin-bottom:20px;">
-                <img id="final-share-img" style="max-width:100%; border-radius:15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);" />
-            </div>
-            <div style="text-align:center;">
-                <p style="font-size:12px; color:#d1d5db; margin-bottom:10px;">اضغط مطولاً على الصورة لحفظها 👆</p>
-                <button class="btn btn-text" onclick="closeModal('modal-share')" style="background: rgba(255,255,255,0.1); color:#fff;">إغلاق</button>
-            </div>
-            
-            <div id="capture-area" class="share-card-template">
-                <div class="share-bg-glow"></div>
-                <div class="share-logo-area">
-                    <img src="ers-logo.png" class="share-logo">
-                    <span>ERS RUNNERS</span>
-                </div>
-                <div class="share-content">
-                    <div class="share-user">
-                        <div class="share-avatar" id="share-avatar">🐣</div>
-                        <div class="share-user-info"><h3 id="share-name">Name</h3><span id="share-rank">Rank</span></div>
-                    </div>
-                    <div class="share-stat-box">
-                        <span class="share-label">المسافة</span>
-                        <div class="share-value-row"><span class="share-num" id="share-dist">0.0</span><span class="share-unit">KM</span></div>
-                    </div>
-                    <div class="share-details">
-                        <div class="s-det-item"><i class="ri-time-line"></i><span id="share-time">0m</span></div>
-                        <div class="s-det-item"><i class="ri-speed-line"></i><span id="share-pace">0.0</span></div>
-                        <div class="s-det-item"><i class="ri-fire-line"></i><span>Great Job!</span></div>
-                    </div>
-                </div>
-                <div class="share-footer">join the elite team</div>
-            </div>
+    <div id="modal-notifications" class="modal-overlay">
+        <div class="modal-box">
+            <h3>الإشعارات 🔔</h3>
+            <div id="notifications-list" style="max-height:300px; overflow-y:auto; margin-bottom:15px;"></div>
+            <button class="btn btn-text" onclick="closeModal('modal-notifications')">إغلاق</button>
         </div>
     </div>
 
-    <div id="modal-comments" class="modal-overlay">
-        <div class="modal-box" style="height: 70vh; display:flex; flex-direction:column;">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px; margin-bottom:10px;">
+    <div id="modal-comments" class="modal-overlay" style="z-index: 1500;">
+        <div class="comments-sheet">
+            <div class="comments-header">
                 <h3 style="margin:0; font-size:16px;">التعليقات 💬</h3>
                 <button onclick="closeModal('modal-comments')" style="background:none; border:none; color:#fff; font-size:18px;">✕</button>
             </div>
@@ -445,22 +317,21 @@
         </div>
     </div>
 
+    <div id="toast-container" class="toast-container"></div>
+
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <script src="app.js?v=1.16"></script> 
+    <script src="app.js?v=1.18"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .then((reg) => console.log('Service Worker Registered 🟢', reg.scope))
-            .catch((err) => console.log('Service Worker Error 🔴', err));
+          navigator.serviceWorker.register('./service-worker.js').then(r=>console.log('SW Registered')).catch(e=>console.log('SW Fail',e));
         });
       }
     </script>
-    <div id="toast-container" class="toast-container"></div>
 </body>
 </html>
