@@ -228,20 +228,39 @@ function updateUI() {
         const rankData = calculateRank(userData.totalDist || 0);
         document.getElementById('profileName').innerText = userData.name;
         document.getElementById('profileRegion').innerText = userData.region;
+        const nextRankNameEl = document.getElementById('nextRankName');
+        // دالة بسيطة لمعرفة الاسم القادم
+        const ranksList = ["مبتدئ", "هاوي", "عداء", "محترف", "أسطورة"];
+        const currentIdx = ranksList.indexOf(rankData.name);
+        const nextName = ranksList[currentIdx + 1] || "القمة"; 
+        if(nextRankNameEl) nextRankNameEl.innerText = nextName;
+
+        // 2. تحديث الكالوري (تقديري: المسافة * 60)
+        const calEl = document.getElementById('caloriesEst');
+        if(calEl) {
+            const cal = (userData.monthDist || 0) * 60; // متوسط تقريبي
+            // عرض الرقم بتنسيق مختصر (مثلاً 1.2k)
+            calEl.innerText = cal > 999 ? (cal/1000).toFixed(1) + 'k' : cal.toFixed(0);
+        }
+
+// ... باقي الكود كما هو ...
+       // ... داخل updateUI ...
+        const profileAvatar = document.getElementById('profileAvatar');
         
-        // Avatar Logic
-        const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
         if (profileAvatar) {
-            let avatarIcon = getUserAvatar(userData);
-            if(rankData.name === 'أسطورة') avatarIcon = '👑';
-            else if(rankData.name === 'محترف') avatarIcon = '🦅';
-            profileAvatar.innerText = avatarIcon; 
-            
-            if(profileAvatar.classList.contains('bib-avatar')) {
-                profileAvatar.style.background = "#111827"; 
-                profileAvatar.style.color = "#fff";
+            // التحقق: هل توجد صورة مخصصة؟
+            if (userData.photoUrl) {
+                profileAvatar.innerText = "";
+                profileAvatar.style.backgroundImage = `url('${userData.photoUrl}')`;
+                profileAvatar.style.border = "2px solid #fff";
+            } else {
+                // العودة للأيقونات
+                profileAvatar.style.backgroundImage = "none";
+                let avatarIcon = userData.avatarIcon || getUserAvatar(userData);
+                // منطق الرتب الخاصة
+                if(rankData.name === 'أسطورة' && !userData.avatarIcon) avatarIcon = '👑';
+                profileAvatar.innerText = avatarIcon;
                 profileAvatar.style.border = "2px solid var(--primary)";
-                profileAvatar.style.fontSize = "28px";
             }
         }
 
@@ -767,7 +786,8 @@ function loadGlobalFeed() {
     if(!list) return;
     if(!list.hasChildNodes()) list.innerHTML = getSkeletonHTML('feed');
 
-    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+    // تم التخفيض إلى 10 فقط لتسريع التحميل وتوفير الكوتا
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
         if(snap.empty) { list.innerHTML = '<div style="text-align:center; color:#6b7280;">لا توجد أنشطة</div>'; return; }
         let html = '';
         snap.forEach(doc => {
@@ -1242,3 +1262,89 @@ window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); defe
 async function installApp() {
     if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; document.getElementById('header-install-btn').style.display = 'none'; }
 }
+
+// ==================== V3.2 Avatar System ====================
+
+let selectedAvatarIcon = "🏃"; // الافتراضي
+
+function openAvatarSelector() {
+    const grid = document.getElementById('avatar-grid');
+    const icons = ["🏃", "🏃‍♀️", "⚡", "🔥", "🦁", "🦅", "🚀", "👑", "💀", "🤖"];
+    
+    let html = '';
+    icons.forEach(icon => {
+        html += `<div class="avatar-option" onclick="selectAvatarIcon(this, '${icon}')">${icon}</div>`;
+    });
+    grid.innerHTML = html;
+    
+    // إعادة تعيين الحقول
+    document.getElementById('custom-avatar-url').value = userData.photoUrl || '';
+    if(userData.photoUrl) {
+        previewCustomAvatar(userData.photoUrl);
+    } else {
+        selectedAvatarIcon = userData.avatarIcon || "🏃";
+        updatePreview(selectedAvatarIcon);
+    }
+    
+    document.getElementById('modal-avatar').style.display = 'flex';
+}
+
+function selectAvatarIcon(el, icon) {
+    // إزالة التحديد من الكل
+    document.querySelectorAll('.avatar-option').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+    
+    selectedAvatarIcon = icon;
+    // مسح الرابط المخصص إذا اختار أيقونة
+    document.getElementById('custom-avatar-url').value = '';
+    updatePreview(icon);
+}
+
+function previewCustomAvatar(url) {
+    const preview = document.getElementById('avatar-preview');
+    if(url.length > 5) {
+        preview.innerText = '';
+        preview.style.backgroundImage = `url('${url}')`;
+    } else {
+        preview.style.backgroundImage = 'none';
+        preview.innerText = selectedAvatarIcon;
+    }
+}
+
+function updatePreview(icon) {
+    const preview = document.getElementById('avatar-preview');
+    preview.style.backgroundImage = 'none';
+    preview.innerText = icon;
+}
+
+async function saveAvatarSelection() {
+    const customUrl = document.getElementById('custom-avatar-url').value.trim();
+    const btn = event.target;
+    btn.innerText = "جاري الحفظ...";
+    
+    const updateData = {};
+    
+    if(customUrl) {
+        updateData.photoUrl = customUrl;
+        updateData.avatarIcon = null; // نلغي الأيقونة لو فيه صورة
+        userData.photoUrl = customUrl;
+    } else {
+        updateData.avatarIcon = selectedAvatarIcon;
+        updateData.photoUrl = null;
+        userData.avatarIcon = selectedAvatarIcon;
+    }
+
+    try {
+        await db.collection('users').doc(currentUser.uid).update(updateData);
+        allUsersCache = []; // تحديث الكاش ليظهر الجديد في القوائم
+        updateUI();
+        closeModal('modal-avatar');
+        showToast("تم تحديث الصورة الشخصية 📸", "success");
+    } catch(e) {
+        showToast("فشل الحفظ", "error");
+    } finally {
+        btn.innerText = "حفظ الصورة";
+    }
+}
+
+
