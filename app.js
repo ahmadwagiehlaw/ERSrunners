@@ -153,7 +153,7 @@ auth.onAuthStateChanged(async (user) => {
                 if (!userData.badges) userData.badges = [];
                 initApp();
             } else {
-                // حالة مستخدم جديد جداً أو خطأ في الداتا
+                // حالة مستخدم جديد
                 userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0, badges: [] };
                 initApp();
             }
@@ -1249,6 +1249,5 @@ async function createChallengeUI() {
         await db.collection('challenges').add({ title: t, target: parseFloat(k), active: true, startDate: new Date().toISOString() });
         alert("تم");
     }
-
-
+}
  
