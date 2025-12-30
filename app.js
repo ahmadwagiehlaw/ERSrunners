@@ -1,4 +1,4 @@
-/* ERS Runners - V3.0 (Cleaned & Pro Admin) */
+/* ERS Runners - V3.1 (Cleaned & Pro Admin) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -504,14 +504,51 @@ async function submitRun() {
                 monthDist: newMonthDist, lastMonthKey: currentMonthKey
             }, { merge: true });
 
-            // تحديث التحديات
+            
+            // تحديث التحديات الذكية
             const activeCh = await db.collection('challenges').where('active', '==', true).get();
             const batch = db.batch();
+            
+            // حساب البيس للجرية الحالية
+            const currentPace = dist > 0 ? time / dist : 0; 
+
             activeCh.forEach(doc => {
-                batch.set(doc.ref.collection('participants').doc(uid), {
-                    progress: firebase.firestore.FieldValue.increment(dist),
-                    lastUpdate: timestamp, name: userData.name, region: userData.region
-                }, { merge: true });
+                const ch = doc.data();
+                const participantRef = doc.ref.collection('participants').doc(uid);
+                
+                // منطق حسب نوع التحدي
+                let incrementValue = 0;
+                let isSpeedSuccess = false;
+
+                if (!ch.type || ch.type === 'distance') {
+                    // النوع القديم أو مسافة: نزيد المسافة
+                    incrementValue = dist;
+                } else if (ch.type === 'frequency') {
+                    // تكرار: نزيد 1 (جرية واحدة)
+                    incrementValue = 1;
+                } else if (ch.type === 'speed') {
+                    // سرعة: هل الجرية دي أسرع من الهدف؟ (الرقم الأقل هو الأسرع في البيس)
+                    // وتكون مسافتها مقبولة (مثلا أكبر من 1 كم عشان الغش)
+                    if (currentPace <= ch.target && dist >= 1) {
+                        isSpeedSuccess = true; 
+                    }
+                }
+
+                if (ch.type === 'speed') {
+                    // في تحدي السرعة، لو نجح مرة واحدة يعتبر خلص التحدي
+                    if (isSpeedSuccess) {
+                        batch.set(participantRef, {
+                            progress: ch.target, // وصل للهدف
+                            lastUpdate: timestamp, name: userData.name, completed: true
+                        }, { merge: true });
+                    }
+                } else {
+                    // في المسافة والتكرار، نجمع
+                    batch.set(participantRef, {
+                        progress: firebase.firestore.FieldValue.increment(incrementValue),
+                        lastUpdate: timestamp, name: userData.name
+                    }, { merge: true });
+                }
             });
             await batch.commit();
 
@@ -902,13 +939,14 @@ async function detectSuspiciousActivity() {
         if (isTooFast || isTooFar) {
             suspiciousCount++;
             const reason = isTooFast ? `🚀 سرعة (${pace.toFixed(1)} د/كم)` : `🗺️ مسافة (${dist} كم)`;
+          
             html += `
             <div class="alert-card">
                 <div class="alert-info">
                     <strong>${run.userName}</strong>
                     <span>${reason} • ${getArabicTimeAgo(run.timestamp)}</span>
                 </div>
-                <button class="action-btn btn-ban" onclick="adminDelete('${doc.id}', ${dist})">حذف</button>
+                <button class="action-btn btn-ban" onclick="adminForceDelete('${doc.id}', '${run.uid}', ${dist})">حذف</button>
             </div>`;
         }
     });
@@ -925,25 +963,89 @@ async function adminDelete(id, dist) {
     setTimeout(detectSuspiciousActivity, 2000); // تحديث القائمة
 }
 
-async function createAdvancedChallenge() {
+// دالة الحذف القسري للمشرفين (V3.1 Admin Fix)
+async function adminForceDelete(feedId, userId, runDist) {
+    if(!confirm("هل أنت متأكد من حذف هذا النشاط للمستخدم؟")) return;
+    
+    // تغيير نص الزر ليعرف الأدمن أن العملية جارية
+    const btn = event.target;
+    btn.innerText = "...";
+
+    try {
+        // 1. جلب بيانات المنشور من الـ Feed لمعرفة توقيته
+        const feedDoc = await db.collection('activity_feed').doc(feedId).get();
+        if (!feedDoc.exists) {
+            // ربما حذفت بالفعل، نحذفها من الشاشة فقط
+            btn.closest('.alert-card').remove();
+            return;
+        }
+        const feedData = feedDoc.data();
+
+        // 2. حذف الجرية من سجل المستخدم الأصلي (إذا وجدنا الرابط)
+        // ملاحظة: الـ feed لا يحتوي دائماً على runId المربوط، لكننا سنحاول البحث بالتوقيت
+        const runsQuery = await db.collection('users').doc(userId).collection('runs')
+            .where('timestamp', '==', feedData.timestamp).get();
+            
+        if (!runsQuery.empty) {
+            // وجدنا الجرية الأصلية عند المستخدم! نحذفها ونخصم المسافة
+            runsQuery.forEach(async (doc) => {
+                await doc.ref.delete();
+            });
+            
+            // خصم المسافة من إجمالي المستخدم
+            await db.collection('users').doc(userId).update({
+                totalDist: firebase.firestore.FieldValue.increment(-runDist),
+                totalRuns: firebase.firestore.FieldValue.increment(-1),
+                monthDist: firebase.firestore.FieldValue.increment(-runDist)
+            });
+        }
+
+        // 3. حذف المنشور من الـ Feed
+        await db.collection('activity_feed').doc(feedId).delete();
+
+        // 4. تحديث الرادار فوراً
+        btn.closest('.alert-card').remove();
+        showToast("تم تنظيف السجل بنجاح 🧹", "success");
+        
+        // تحديث العداد
+        const countEl = document.getElementById('flagged-runs-count');
+        if(countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
+
+    } catch (e) {
+        console.error(e);
+        showToast("خطأ في الحذف: " + e.message, "error");
+        btn.innerText = "حذف";
+    }
+}
+
+async function createGeniusChallenge() {
     const title = document.getElementById('adv-ch-title').value;
+    const type = document.getElementById('adv-ch-type').value;
     const target = parseFloat(document.getElementById('adv-ch-target').value);
     const days = parseInt(document.getElementById('adv-ch-days').value);
     const startDateVal = document.getElementById('adv-ch-start').value;
 
     if(!title || !target || !days) return showToast("البيانات ناقصة", "error");
+
     const startDate = startDateVal ? new Date(startDateVal).toISOString() : new Date().toISOString();
 
     try {
         await db.collection('challenges').add({
-            title: title, target: target, durationDays: days,
-            startDate: startDate, active: true, participantsCount: 0
+            title: title,
+            type: type, // distance, frequency, speed
+            target: target,
+            durationDays: days,
+            startDate: startDate,
+            active: true,
+            participantsCount: 0,
+            createdStr: new Date().toLocaleDateString('ar-EG')
         });
-        showToast("تم إطلاق التحدي 🎯", "success");
+        showToast("تم إطلاق التحدي الذكي 🧠", "success");
         document.getElementById('adv-ch-title').value = '';
-    } catch(e) { showToast("خطأ", "error"); }
+    } catch(e) {
+        showToast("خطأ", "error");
+    }
 }
-
 // ==================== 9. Charts & Graphs (V2.0) ====================
 let currentChartMode = 'week'; 
 
@@ -1348,3 +1450,41 @@ async function saveAvatarSelection() {
 }
 
 
+
+function toggleChallengeInputs() {
+    const type = document.getElementById('adv-ch-type').value;
+    const lbl = document.getElementById('lbl-target');
+    const input = document.getElementById('adv-ch-target');
+    
+    if(type === 'distance') {
+        lbl.innerText = "المسافة المطلوبة (كم)";
+        input.placeholder = "100";
+    } else if (type === 'frequency') {
+        lbl.innerText = "عدد الجريات المطلوبة";
+        input.placeholder = "15";
+    } else if (type === 'speed') {
+        lbl.innerText = "السرعة المطلوبة (دقيقة/كم)";
+        input.placeholder = "4.5"; // يعني 4 دقائق و30 ثانية
+    }
+}
+
+// ==================== Custom Toast Notification ====================
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // أيقونة حسب النوع
+    let icon = type === 'error' ? '<i class="ri-error-warning-line"></i>' : '<i class="ri-checkbox-circle-line"></i>';
+    
+    toast.innerHTML = `${icon}<span>${message}</span>`;
+    container.appendChild(toast);
+
+    // إخفاء تلقائي بعد 3 ثواني
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.4s forwards';
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
+}
