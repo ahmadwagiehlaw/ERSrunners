@@ -497,10 +497,14 @@ function openNewRun() {
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
     document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-    // (V1.3 Updated)
+    / (V1.3 Updated)
     const dateInput = document.getElementById('log-date');
     if(dateInput) dateInput.value = getLocalInputDate();
+    
     openLogModal();
+    
+    // تفعيل اللصق الذكي (V1.6)
+    enableSmartPaste(); 
 }
 
 window.editRun = function(id, dist, time, type, link) {
@@ -1525,4 +1529,47 @@ function checkSharedData() {
             }
         }, 1500); // ننتظر قليلاً حتى يحمل التطبيق والبيانات
     }
+}
+
+
+// ==================== 12. Smart Paste Logic (V1.6) ====================
+function enableSmartPaste() {
+    const linkInput = document.getElementById('log-link');
+    const distInput = document.getElementById('log-dist');
+    const noteInput = document.getElementById('comment-text'); // أو أي حقل ملاحظات لو وجد
+
+    if(!linkInput || !distInput) return;
+
+    linkInput.addEventListener('paste', (event) => {
+        // ننتظر قليلاً حتى يتم اللصق فعلياً
+        setTimeout(() => {
+            const text = linkInput.value;
+            
+            // 1. محاولة استخراج المسافة (رقم يليه كلمة km أو كم)
+            // Regex يبحث عن: رقم (صحيح أو عشري) + مسافة اختيارية + (km أو كم)
+            const distMatch = text.match(/(\d+(\.\d+)?)\s*(km|k|كم)/i);
+            
+            if (distMatch && distMatch[1]) {
+                const extractedDist = parseFloat(distMatch[1]);
+                
+                // تنبيه المستخدم وتعبئة الحقل
+                if(confirm(`🤖 اكتشفت مسافة ${extractedDist} كم في النص المنسوخ.\nهل تريد كتابتها تلقائياً؟`)) {
+                    distInput.value = extractedDist;
+                    
+                    // ومضة خضراء للحقل لتأكيد العملية
+                    distInput.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
+                    setTimeout(() => distInput.style.backgroundColor = "", 500);
+                    
+                    showToast("تم استخراج المسافة بنجاح ⚡", "success");
+                }
+            }
+            
+            // 2. محاولة تنظيف الرابط (إبقاء الرابط فقط وحذف النص الزائد)
+            const urlMatch = text.match(/https?:\/\/[^\s]+/);
+            if (urlMatch && urlMatch[0] !== text) {
+                linkInput.value = urlMatch[0]; // استبدال النص الطويل بالرابط فقط
+            }
+
+        }, 100);
+    });
 }
