@@ -19,11 +19,7 @@ let isSignupMode = false;
 let editingRunId = null;
 let editingOldDist = 0;
 let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
-
-let editingOldDist = 0;
-let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
 let deferredPrompt; // (V1.4) لتخزين حدث التثبيت
-
 // --- دالة مركزية لجلب البيانات بأمان (V1.3) -----------------------------
 async function fetchTopRunners() {
     // إذا كانت البيانات موجودة في الكاش، لا نحملها مرة أخرى
@@ -1024,8 +1020,7 @@ async function setPersonalGoal() {
         userData.monthlyGoal = parseFloat(newGoal);
         updateUI();
     }
-}
-// ==================== تحديث معركة المناطق (War Room Style) ⚔️====================
+} 
 // ==================== معركة المحافظات (V36: Data Rich & Arabic) ====================
 
 // قاموس التعريب (يمكنك إضافة المزيد)
