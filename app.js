@@ -609,34 +609,57 @@ function loadActivityLog() {
 }
 
 async function deleteRun(id, dist) {
-    if(confirm("حذف الجرية؟")) {
-        try {
-            await db.collection('users').doc(currentUser.uid).collection('runs').doc(id).delete();
-            
-            // التحديث الذكي: استخدام increment بالسالب
-            await db.collection('users').doc(currentUser.uid).update({
-                totalDist: firebase.firestore.FieldValue.increment(-dist),
-                totalRuns: firebase.firestore.FieldValue.increment(-1),
-                monthDist: firebase.firestore.FieldValue.increment(-dist)
+    if(!confirm("هل أنت متأكد من حذف هذا النشاط؟\nسيتم خصم المسافة من رصيدك.")) return;
+    
+    try {
+        const uid = currentUser.uid;
+        
+        // 1. جلب بيانات الجرية قبل الحذف لنعرف توقيتها
+        const runDoc = await db.collection('users').doc(uid).collection('runs').doc(id).get();
+        if (!runDoc.exists) return;
+        const runData = runDoc.data();
+
+        // 2. حذف الجرية
+        await db.collection('users').doc(uid).collection('runs').doc(id).delete();
+        
+        // 3. تحديث العدادات (خصم المسافة)
+        await db.collection('users').doc(uid).update({
+            totalDist: firebase.firestore.FieldValue.increment(-dist),
+            totalRuns: firebase.firestore.FieldValue.increment(-1),
+            monthDist: firebase.firestore.FieldValue.increment(-dist)
+        });
+
+        // 4. (جديد V1.3) محاولة حذف المنشور من الـ Feed
+        // سنبحث عن المنشور الذي يملكه المستخدم وله نفس تاريخ الجرية بالضبط
+        if (runData.timestamp) {
+            const feedQuery = await db.collection('activity_feed')
+                .where('uid', '==', uid)
+                .where('timestamp', '==', runData.timestamp)
+                .get();
+                
+            const batch = db.batch();
+            feedQuery.forEach(doc => {
+                batch.delete(doc.ref); // تجهيز أمر الحذف
             });
-
-            // تحديث البيانات المحلية مع منع السالب
-            userData.totalDist = Math.max(0, (userData.totalDist || 0) - dist);
-            userData.totalRuns = Math.max(0, (userData.totalRuns || 0) - 1);
-            userData.monthDist = Math.max(0, (userData.monthDist || 0) - dist);
-
-            // 🔥 تدمير كاش المتصدرين ليتم تحديث القائمة فوراً
-            allUsersCache = []; 
-
-            updateUI();
-            
-            // إعادة تحميل السجل للتأكد من اختفاء الجرية
-            loadActivityLog(); 
-
-        } catch (error) {
-            console.error(error);
-            alert("حدث خطأ أثناء الحذف");
+            await batch.commit(); // تنفيذ الحذف
         }
+
+        // 5. تحديث الواجهة
+        // خصم القيم محلياً للعرض الفوري
+        userData.totalDist = Math.max(0, (userData.totalDist || 0) - dist);
+        userData.totalRuns = Math.max(0, (userData.totalRuns || 0) - 1);
+        userData.monthDist = Math.max(0, (userData.monthDist || 0) - dist);
+
+        allUsersCache = []; // تدمير الكاش لتحديث الترتيب
+        updateUI();
+        loadActivityLog(); 
+        loadGlobalFeed(); // إعادة تحميل الـ Feed لإخفاء البوست المحذوف
+        
+        alert("تم حذف النشاط وتحديث السجلات.");
+
+    } catch (error) {
+        console.error(error);
+        alert("حدث خطأ أثناء الحذف: " + error.message);
     }
 }
 
@@ -659,23 +682,87 @@ function openAdminAuth() {
 
 
 async function forceUpdateApp() {
-    if(confirm("تحديث؟")) {
-        if('serviceWorker' in navigator) { (await navigator.serviceWorker.getRegistrations()).forEach(r => r.unregister()); }
-        window.location.reload(true);
+    if(!confirm("سيتم تحديث التطبيق الآن لجلب آخر التحسينات.\nهل أنت جاهز؟")) return;
+    
+    const btn = event.target.closest('button');
+    if(btn) btn.innerText = "جاري التحديث...";
+
+    // 1. إلغاء تسجيل الـ Service Worker
+    if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (let registration of registrations) {
+            await registration.unregister();
+        }
     }
+
+    // 2. مسح كاش التخزين
+    if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+    }
+
+    // 3. إعادة تحميل قوية من السيرفر (تجاهل الكاش)
+    window.location.reload(true);
 }
+// ==================== 7. زر حذف الحساب بالكامل delete account =========
+
 async function deleteFullAccount() {
-    if(!confirm("⚠️ تحذير خطير!\nسيتم حذف حسابك وجميع بياناتك.\nهل أنت متأكد؟")) return;
-    if (prompt("اكتب (حذف) للتأكيد:") !== "حذف") return alert("لم يتم الحذف");
+    // 1. التأكيد الصارم (Double Confirmation)
+    if(!confirm("⚠️ تحذير نهائي!\nسيتم حذف حسابك، وسجلك الرياضي، وجميع بياناتك بلا رجعة.\n\nهل أنت متأكد تماماً؟")) return;
+    
+    // التحقق بالنص العربي لزيادة الأمان
+    const checkWord = prompt("للتأكيد النهائي، اكتب كلمة (حذف) أدناه:");
+    if (checkWord !== "حذف") return alert("تم إلغاء العملية. لم يتم حذف أي شيء.");
+
+    const btn = document.querySelector('.delete-danger'); // زر الحذف الأحمر
+    if(btn) { btn.innerText = "جاري الحذف..."; btn.disabled = true; }
+
     try {
         const uid = currentUser.uid;
-        const runs = await db.collection('users').doc(uid).collection('runs').get();
-        const batch = db.batch(); runs.forEach(doc => batch.delete(doc.ref)); await batch.commit();
-        const posts = await db.collection('activity_feed').where('uid', '==', uid).get();
-        const batch2 = db.batch(); posts.forEach(doc => batch2.delete(doc.ref)); await batch2.commit();
-        await db.collection('users').doc(uid).delete(); await currentUser.delete();
-        alert("تم الحذف"); window.location.reload();
-    } catch (e) { alert("خطأ: " + e.message); }
+
+        // 2. حذف البيانات من Firestore (على مراحل لتجنب الأخطاء)
+        
+        // أ) حذف الجريات (Runs)
+        const runsSnapshot = await db.collection('users').doc(uid).collection('runs').get();
+        // الحذف باستخدام Promise.all لتخطي عقبة الـ 500 مستند (أكثر أماناً من الـ Batch في حالتنا البسيطة)
+        const deleteRunsPromises = runsSnapshot.docs.map(doc => doc.ref.delete());
+        await Promise.all(deleteRunsPromises);
+
+        // ب) حذف المنشورات (Activity Feed)
+        const feedSnapshot = await db.collection('activity_feed').where('uid', '==', uid).get();
+        const deleteFeedPromises = feedSnapshot.docs.map(doc => doc.ref.delete());
+        await Promise.all(deleteFeedPromises);
+
+        // ج) حذف الإشعارات (Notifications) - (جديد V1.3)
+        const notifSnapshot = await db.collection('users').doc(uid).collection('notifications').get();
+        const deleteNotifPromises = notifSnapshot.docs.map(doc => doc.ref.delete());
+        await Promise.all(deleteNotifPromises);
+
+        // د) حذف وثيقة المستخدم الرئيسية (User Profile)
+        await db.collection('users').doc(uid).delete();
+
+        // 3. حذف الحساب من المصادقة (Authentication)
+        await currentUser.delete();
+
+        alert("تم حذف الحساب بنجاح. سنفتقدك! 👋");
+        window.location.reload();
+
+    } catch (error) {
+        console.error("Delete Error:", error);
+        
+        // معالجة خطأ "يتطلب إعادة تسجيل الدخول"
+        if (error.code === 'auth/requires-recent-login') {
+            alert("⚠️ لأمانك: مر وقت طويل منذ آخر تسجيل دخول.\nيرجى تسجيل الخروج ثم الدخول مرة أخرى لمحاولة حذف الحساب.");
+        } else {
+            alert("حدث خطأ أثناء الحذف: " + error.message);
+        }
+        
+        // إعادة الزر لحالته
+        if(btn) { 
+            btn.innerHTML = '<div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div><div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>';
+            btn.disabled = false; 
+        }
+    }
 }
 async function createChallengeUI() {
     const t = document.getElementById('admin-ch-title').value;
