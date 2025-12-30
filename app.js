@@ -490,7 +490,7 @@ function renderBadges() {
 
 // ==================== 6. Activity Log & Submission ====================
 // ==================== 5. Open Modal Helper (Updated V1.6) ====================
-ffunction openNewRun() {
+function openNewRun() {
     const btn = document.getElementById('save-run-btn');
     if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     
