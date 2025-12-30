@@ -286,9 +286,15 @@ function updateUI() {
         renderBadges();
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
 
+        // --- إضافة جديدة: إظهار زر المشرفين للأدمن فقط ---
+        const adminBtn = document.getElementById('btn-admin-entry');
+        if (adminBtn) {
+            // إذا كان المستخدم أدمن، اجعل الزر يظهر (flex)، وإلا اتركه مخفياً
+            adminBtn.style.display = (userData.isAdmin === true) ? 'flex' : 'none';
+        }
+
     } catch (error) { console.error("UI Error:", error); }
 }
-
 // دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
     const levels = [
