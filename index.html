@@ -20,7 +20,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=3.2">
 </head>
 <body>
     <div id="offline-banner" class="offline-banner">⚠️ لا يوجد اتصال بالإنترنت - وضع التصفح</div>
@@ -76,6 +76,7 @@
         </header>
 
         <main class="main-container">
+            
             <section id="view-home" class="view active">
                 <div class="coach-card">
                     <div class="coach-icon"><i class="ri-robot-2-line"></i></div>
@@ -86,57 +87,48 @@
                 </div>
 
                 <div class="hero-rank-card">
-    <div class="hero-bg-glow"></div>
-    
-    <div class="hero-header">
-        <div class="rank-info-box">
-            <span class="rank-label">المستوى الحالي</span>
-            <div class="rank-title-row">
-                <h2 id="profileRankText">مبتدئ</h2>
-                <div class="rank-icon-glow" id="homeRankIcon">🥚</div>
-            </div>
-        </div>
-        <div class="next-rank-box">
-            <span class="next-label">التالي: <span id="nextRankName" style="color:var(--primary);">هاوي</span></span>
-            <span class="next-val">باقي <span id="nextLevelDist">0</span> كم</span>
-        </div>
-    </div>
+                    <div class="hero-bg-glow"></div>
+                    <div class="hero-header">
+                        <div class="rank-info-box">
+                            <span class="rank-label">المستوى الحالي</span>
+                            <div class="rank-title-row">
+                                <h2 id="profileRankText">مبتدئ</h2>
+                                <div class="rank-icon-glow" id="homeRankIcon">🥚</div>
+                            </div>
+                        </div>
+                        <div class="next-rank-box">
+                            <span class="next-label">التالي: <span id="nextRankName" style="color:var(--primary);">هاوي</span></span>
+                            <span class="next-val">باقي <span id="nextLevelDist">0</span> كم</span>
+                        </div>
+                    </div>
 
-    <div class="pro-progress-container">
-        <div class="pro-progress-bar" id="xpBar" style="width: 0%;">
-            <div class="pro-progress-glow"></div>
-        </div>
-    </div>
-    <div class="progress-text-row">
-        <span id="xpPerc">0%</span>
-        <span id="xpText">0 / 50 كم</span>
-    </div>
+                    <div class="pro-progress-container">
+                        <div class="pro-progress-bar" id="xpBar" style="width: 0%;">
+                            <div class="pro-progress-glow"></div>
+                        </div>
+                    </div>
+                    <div class="progress-text-row">
+                        <span id="xpPerc">0%</span>
+                        <span id="xpText">0 / 50 كم</span>
+                    </div>
 
-    <div class="hero-stats-row">
-        <div class="hero-stat">
-            <div class="hero-icon"><i class="ri-road-map-line"></i></div>
-            <div class="hero-data">
-                <span class="h-val" id="monthDist">0.0</span>
-                <span class="h-lbl">كم (شهر)</span>
-            </div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-            <div class="hero-icon"><i class="ri-run-line"></i></div>
-            <div class="hero-data">
-                <span class="h-val" id="totalRuns">0</span>
-                <span class="h-lbl">جرية</span>
-            </div>
-        </div>
-        <div class="hero-divider"></div>
-        <div class="hero-stat">
-            <div class="hero-icon"><i class="ri-fire-line"></i></div>
-            <div class="hero-data">
-                <span class="h-val" id="caloriesEst">-</span> <span class="h-lbl">كالوري</span>
-            </div>
-        </div>
-    </div>
-</div>
+                    <div class="hero-stats-row">
+                        <div class="hero-stat">
+                            <div class="hero-icon"><i class="ri-road-map-line"></i></div>
+                            <div class="hero-data"><span class="h-val" id="monthDist">0.0</span><span class="h-lbl">كم (شهر)</span></div>
+                        </div>
+                        <div class="hero-divider"></div>
+                        <div class="hero-stat">
+                            <div class="hero-icon"><i class="ri-run-line"></i></div>
+                            <div class="hero-data"><span class="h-val" id="totalRuns">0</span><span class="h-lbl">جرية</span></div>
+                        </div>
+                        <div class="hero-divider"></div>
+                        <div class="hero-stat">
+                            <div class="hero-icon"><i class="ri-fire-line"></i></div>
+                            <div class="hero-data"><span class="h-val" id="caloriesEst">-</span><span class="h-lbl">كالوري</span></div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="goal-card" onclick="setPersonalGoal()">
                     <div class="goal-info">
@@ -206,23 +198,32 @@
                                 <th>تحكم</th>
                             </tr>
                         </thead>
-                        <tbody id="users-table-body">
-                            </tbody>
+                        <tbody id="users-table-body"></tbody>
                     </table>
                 </div>
 
                 <div class="admin-card" style="margin-top:20px;">
-                    <h4 style="margin-top:0; color:var(--primary);">🎯 إطلاق تحدي جديد</h4>
+                    <h4 style="margin-top:0; color:var(--primary);">🎯 مهندس التحديات</h4>
                     <div class="form-group" style="margin-top:10px; gap:8px;">
-                        <input type="text" id="adv-ch-title" placeholder="عنوان التحدي (مثال: ماراثون الجمعة)">
+                        <input type="text" id="adv-ch-title" placeholder="عنوان التحدي (مثال: وحش السرعة)">
+                        
+                        <label style="font-size:11px; color:#9ca3af;">نوع التحدي</label>
+                        <select id="adv-ch-type" onchange="toggleChallengeInputs()">
+                            <option value="distance">🛣️ مسافة تراكمية (مثال: 100 كم في شهر)</option>
+                            <option value="frequency">🗓️ التزام وتكرار (مثال: 15 جرية في شهر)</option>
+                            <option value="speed">⚡ سرعة قصوى (مثال: 5 كم بسرعة 4:00)</option>
+                        </select>
+
                         <div class="input-row">
-                            <div class="input-wrap"><label>الهدف (كم)</label><input type="number" id="adv-ch-target"></div>
+                            <div class="input-wrap"><label id="lbl-target">الهدف (كم)</label><input type="number" id="adv-ch-target" step="0.1"></div>
                             <div class="input-wrap"><label>المدة (أيام)</label><input type="number" id="adv-ch-days"></div>
                         </div>
+                        
                         <div class="input-row">
                             <div class="input-wrap"><label>تاريخ البدء</label><input type="date" id="adv-ch-start"></div>
                         </div>
-                        <button class="btn btn-primary" onclick="createAdvancedChallenge()">نشر التحدي 🚀</button>
+                        
+                        <button class="btn btn-primary" onclick="createGeniusChallenge()">إطلاق التحدي 🚀</button>
                     </div>
                 </div>
             </div>
@@ -263,7 +264,6 @@
                             <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
                             <span style="font-size:10px; color:#6b7280;">اضغط للفلترة 👇</span>
                         </div>
-                        
                         <div class="filter-large-toggle">
                             <button class="filter-btn active" onclick="filterLeaderboard('all')">
                                 <i class="ri-earth-line"></i> الكل
@@ -282,46 +282,46 @@
             </section>
 
             <section id="view-profile" class="view">
-                <<div class="pro-hero-card compact">
-    <div class="pro-card-header">
-        <div class="pro-avatar-box" onclick="openAvatarSelector()">
-            <div class="pro-avatar" id="profileAvatar">🏃</div>
-            <div class="edit-badge"><i class="ri-camera-line"></i></div>
-        </div>
-        
-        <div class="pro-info-box">
-            <div class="pro-name-row">
-                <h2 id="profileName">...</h2>
-                <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
-            </div>
-            <div class="pro-meta-row">
-                <span id="profileRegion"><i class="ri-map-pin-line"></i> ...</span>
-                <span class="dot-sep">•</span>
-                <span id="nextLevelDist">0</span> كم للترقية
-            </div>
-            <div class="mini-xp-track">
-                <div class="mini-xp-fill" id="xpBar"></div>
-            </div>
-        </div>
-    </div>
+                <div class="pro-hero-card compact">
+                    <div class="pro-card-header">
+                        <div class="pro-avatar-box" onclick="openAvatarSelector()">
+                            <div class="pro-avatar" id="userMainAvatar">🏃</div>
+                            <div class="edit-badge"><i class="ri-camera-line"></i></div>
+                        </div>
+                        
+                        <div class="pro-info-box">
+                            <div class="pro-name-row">
+                                <h2 id="profileName">...</h2>
+                                <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
+                            </div>
+                            <div class="pro-meta-row">
+                                <span id="profileRegion"><i class="ri-map-pin-line"></i> ...</span>
+                                <span class="dot-sep">•</span>
+                                <span id="nextLevelDist">0</span> كم للترقية
+                            </div>
+                            <div class="mini-xp-track">
+                                <div class="mini-xp-fill" id="xpBar"></div>
+                            </div>
+                        </div>
+                    </div>
 
-    <div class="pro-stats-strip">
-        <div class="p-strip-item">
-            <span class="p-strip-val" id="profileTotalDist">0</span>
-            <span class="p-strip-lbl">كم</span>
-        </div>
-        <div class="v-divider"></div>
-        <div class="p-strip-item">
-            <span class="p-strip-val" id="profileTotalRuns">0</span>
-            <span class="p-strip-lbl">جرية</span>
-        </div>
-        <div class="v-divider"></div>
-        <div class="p-strip-item">
-            <span class="p-strip-val" id="profilePace">-</span>
-            <span class="p-strip-lbl">السرعة</span>
-        </div>
-    </div>
-</div>
+                    <div class="pro-stats-strip">
+                        <div class="p-strip-item">
+                            <span class="p-strip-val" id="profileTotalDist">0</span>
+                            <span class="p-strip-lbl">كم</span>
+                        </div>
+                        <div class="v-divider"></div>
+                        <div class="p-strip-item">
+                            <span class="p-strip-val" id="profileTotalRuns">0</span>
+                            <span class="p-strip-lbl">جرية</span>
+                        </div>
+                        <div class="v-divider"></div>
+                        <div class="p-strip-item">
+                            <span class="p-strip-val" id="profilePace">-</span>
+                            <span class="p-strip-lbl">السرعة</span>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="section-title-row">
                     <h4>تحليل النشاط</h4>
@@ -337,27 +337,22 @@
                 </div>
                 
                 <div class="records-container">
-    <div class="records-header">
-        <i class="ri-trophy-line"></i> أرقامي القياسية
-    </div>
-    <div class="records-grid">
-        <div class="record-box">
-            <div class="record-icon"><i class="ri-route-line"></i></div>
-            <span class="record-val" id="best-dist">0</span>
-            <span class="record-lbl">أطول مسافة</span>
-        </div>
-        <div class="record-box">
-            <div class="record-icon"><i class="ri-timer-flash-line"></i></div>
-            <span class="record-val" id="best-pace">-</span>
-            <span class="record-lbl">أفضل بيس</span>
-        </div>
-        <div class="record-box">
-            <div class="record-icon"><i class="ri-history-line"></i></div>
-            <span class="record-val" id="total-time-hours">0</span>
-            <span class="record-lbl">ساعات</span>
-        </div>
-    </div>
-</div>
+                    <div class="records-header"><i class="ri-trophy-line"></i> أرقامي القياسية</div>
+                    <div class="records-grid">
+                        <div class="record-box">
+                            <div class="record-icon"><i class="ri-route-line"></i></div>
+                            <span class="record-val" id="best-dist">0</span><span class="record-lbl">أطول مسافة</span>
+                        </div>
+                        <div class="record-box">
+                            <div class="record-icon"><i class="ri-timer-flash-line"></i></div>
+                            <span class="record-val" id="best-pace">-</span><span class="record-lbl">أفضل بيس</span>
+                        </div>
+                        <div class="record-box">
+                            <div class="record-icon"><i class="ri-history-line"></i></div>
+                            <span class="record-val" id="total-time-hours">0</span><span class="record-lbl">ساعات</span>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="badges-section" style="margin-top: 20px;">
                     <h3 class="section-title">إنجازاتي 🎖️</h3>
@@ -407,28 +402,21 @@
     </div>
 
     <div id="modal-avatar" class="modal-overlay">
-    <div class="modal-box">
-        <h3>اختر هويتك 🥸</h3>
-        
-        <label style="font-size:12px; color:#9ca3af;">اختر أفاتار أو ارفع صورة لتظهر في الصفحة الرئيسية</label>
-        <div class="avatar-grid" id="avatar-grid">
+        <div class="modal-box">
+            <h3>اختر هويتك 🥸</h3>
+            <label style="font-size:12px; color:#9ca3af;">اختر أفاتار أو ارفع صورة لتظهر في الصفحة الرئيسية</label>
+            <div class="avatar-grid" id="avatar-grid"></div>
+            <div style="margin: 20px 0; text-align: center; font-size: 12px; color: #6b7280;">—— أو ——</div>
+            <label style="font-size:12px; color:#9ca3af;">رابط صورة خارجية (ImgBB etc)</label>
+            <input type="url" id="custom-avatar-url" placeholder="https://i.ibb.co/..." oninput="previewCustomAvatar(this.value)">
+            <div style="text-align:center; margin-top:10px;">
+                <div class="pro-avatar" id="avatar-preview" style="width:50px; height:50px; margin:auto;">🏃</div>
+                <span style="font-size:10px; color:#9ca3af;">معاينة</span>
             </div>
-
-        <div style="margin: 20px 0; text-align: center; font-size: 12px; color: #6b7280;">—— أو ——</div>
-
-        <label style="font-size:12px; color:#9ca3af;">رابط صورة خارجية (ImgBB etc)</label>
-        <input type="url" id="custom-avatar-url" placeholder="https://i.ibb.co/..." oninput="previewCustomAvatar(this.value)">
-        
-        <div style="text-align:center; margin-top:10px;">
-            <div class="pro-avatar" id="avatar-preview" style="width:50px; height:50px; margin:auto;">🏃</div>
-            <span style="font-size:10px; color:#9ca3af;">معاينة</span>
+            <button class="btn btn-primary" onclick="saveAvatarSelection()" style="margin-top:15px;">حفظ الصورة</button>
+            <button class="btn btn-text" onclick="closeModal('modal-avatar')">إلغاء</button>
         </div>
-
-        <button class="btn btn-primary" onclick="saveAvatarSelection()" style="margin-top:15px;">حفظ الصورة</button>
-        <button class="btn btn-text" onclick="closeModal('modal-avatar')">إلغاء</button>
     </div>
-</div>
-
 
     <div id="modal-settings" class="modal-overlay">
         <div class="modal-box">
@@ -444,10 +432,7 @@
                 </button>
                 <div class="setting-item" id="btn-admin-entry" onclick="openAdminAuth()" style="display:none; border-color:var(--accent);">
                     <div class="setting-icon" style="color:var(--accent);"><i class="ri-admin-line"></i></div>
-                    <div class="setting-text">
-                        <span style="color:var(--accent);">لوحة المشرفين</span>
-                        <small>تحكم كامل بالتطبيق</small>
-                    </div>
+                    <div class="setting-text"><span style="color:var(--accent);">لوحة المشرفين</span><small>تحكم كامل بالتطبيق</small></div>
                 </div>
                 <button class="setting-item delete" onclick="logout()" style="margin-top:5px;">
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
@@ -480,7 +465,6 @@
             <div class="form-group" style="margin-top:20px;">
                 <label style="color:#9ca3af; font-size:12px;">الاسم</label>
                 <input type="text" id="edit-name">
-                
                 <div class="input-row">
                     <div class="input-wrap">
                         <label>النوع</label>
@@ -494,13 +478,11 @@
                         <input type="number" id="edit-birthyear" placeholder="مثال: 1995">
                     </div>
                 </div>
-
                 <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
                     <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                 </select>
             </div>
-
             <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
             <button class="btn btn-text" onclick="closeModal('modal-edit-profile')" style="margin-top:10px;">إلغاء</button>
         </div>
@@ -516,7 +498,6 @@
                 <p style="font-size:12px; color:#d1d5db; margin-bottom:10px;">اضغط مطولاً على الصورة لحفظها 👆</p>
                 <button class="btn btn-text" onclick="closeModal('modal-share')" style="background: rgba(255,255,255,0.1); color:#fff;">إغلاق</button>
             </div>
-            
             <div id="capture-area" class="share-card-template">
                 <div class="share-bg-glow"></div>
                 <div class="share-logo-area">
@@ -563,24 +544,15 @@
         <div class="modal-box">
             <div style="text-align:center; position:relative;">
                 <button onclick="closeModal('modal-view-user')" style="position:absolute; left:0; top:0; background:none; border:none; color:#fff; font-size:20px;">✕</button>
-                
                 <div class="bib-avatar" id="view-avatar" style="margin:0 auto 15px auto; width:70px; height:70px; font-size:30px;">🏃</div>
                 <h3 id="view-name" style="margin:0; font-size:20px;">Name</h3>
                 <span id="view-region" style="color:#9ca3af; font-size:12px;">Region</span>
                 <div class="rank-badge" id="view-rank" style="margin:10px auto; width:fit-content;">Rank</div>
             </div>
-
             <div class="stats-grid" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
-                <div class="stat-item">
-                    <span class="stat-val" id="view-total-dist">0</span>
-                    <span class="stat-lbl">كم إجمالي</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-val" id="view-total-runs">0</span>
-                    <span class="stat-lbl">جرية</span>
-                </div>
+                <div class="stat-item"><span class="stat-val" id="view-total-dist">0</span><span class="stat-lbl">كم إجمالي</span></div>
+                <div class="stat-item"><span class="stat-val" id="view-total-runs">0</span><span class="stat-lbl">جرية</span></div>
             </div>
-
             <div style="margin-top:20px; text-align:center;">
                 <button class="btn btn-primary" onclick="closeModal('modal-view-user')">تحية للكابتن 🫡</button>
             </div>
@@ -592,7 +564,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <script src="app.js?v=3.0"></script> 
+    <script src="app.js?v=3.1"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
@@ -603,6 +575,8 @@
         });
       }
     </script>
+    
     <div id="toast-container" class="toast-container"></div>
+    
 </body>
 </html>
