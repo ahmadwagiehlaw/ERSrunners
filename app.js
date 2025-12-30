@@ -1028,7 +1028,8 @@ const REGION_AR = {
     "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية",
     "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر",
     "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء",
-    "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية"
+    "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية", 
+    "Gharbia": "الغربية", "Beni Suef": "بني سويف"
 };
 
 // تم تحويل الدالة لـ async لتنتظر البيانات
