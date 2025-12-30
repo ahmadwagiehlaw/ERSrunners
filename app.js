@@ -303,65 +303,114 @@ function filterLeaderboard(type) {
     loadLeaderboard(type);
 }
 
-// ==================== 4. UI Updates ====================
+/// ==================== 4. UI Updates (Hero Card Logic) ====================
 function updateUI() {
     try {
         const headerName = document.getElementById('headerName');
         if (headerName) headerName.innerText = userData.name || "Runner";
 
-        // Dashboard Stats
-        document.getElementById('monthDist').innerText = (userData.monthDist || 0).toFixed(1);
-        document.getElementById('totalRuns').innerText = userData.totalRuns || 0;
-
-        // Profile
-        const rankData = calculateRank(userData.totalDist || 0);
-        document.getElementById('profileName').innerText = userData.name;
-        document.getElementById('profileRegion').innerText = userData.region;
+        // حساب البيانات
+        const total = userData.totalDist || 0;
+        const rankData = calculateRank(total);
         
-        // الأفاتار
-        // الأفاتار
-        const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
-        if (profileAvatar) {
-            // (V1.5) استخدام الدالة الذكية
-            // بدلاً من rankData.avatar سنستخدم دالتنا الجديدة
-            // لكن لو وصل لمرحلة "أسطورة" أو "محترف" نخليه مميز
-            let avatarIcon = getUserAvatar(userData);
+        // بناء الكارت الجديد
+        const statsCard = document.getElementById('user-stats-card');
+        
+        if (statsCard) {
+            // بيانات الشريط والعدادات
+            const nextMilestone = (Math.floor(total / 100) + 1) * 100;
+            const progressToNext = total % 100;
+            const calories = Math.floor(total * 60);
+            
+            // تحديد الأيقونة
+            let avatarIcon = '🏃';
+            if(typeof getUserAvatar === 'function') avatarIcon = getUserAvatar(userData);
             if(rankData.name === 'أسطورة') avatarIcon = '👑';
             else if(rankData.name === 'محترف') avatarIcon = '🦅';
 
-            profileAvatar.innerText = avatarIcon; 
-            
-            if(profileAvatar.classList.contains('bib-avatar')) {
-                profileAvatar.style.background = "#111827"; 
-                profileAvatar.style.color = "#fff";
-                profileAvatar.style.border = "2px solid var(--primary)";
-                profileAvatar.style.fontSize = "28px";
-            }
+            // رسم HTML الكارت (هنا يظهر الكارت المختفي)
+            statsCard.innerHTML = `
+                <div style="padding: 20px; position:relative; z-index:2;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div class="bib-avatar" style="width:45px; height:45px; font-size:22px; background:rgba(255,255,255,0.1); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                                ${avatarIcon}
+                            </div>
+                            <div>
+                                <div style="font-size:16px; font-weight:bold; color:#fff;">${userData.name || 'مستخدم'}</div>
+                                <div style="font-size:11px; color:var(--primary);">${rankData.name}</div>
+                            </div>
+                        </div>
+                        <div class="rank-badge" style="font-size:24px;">${rankData.icon}</div>
+                    </div>
+
+                    <div style="text-align:center; margin: 20px 0;">
+                        <div style="font-size:36px; font-weight:900; line-height:1; color:#fff;">
+                            ${formatNumber(total)} <span style="font-size:14px; color:#9ca3af; font-weight:normal;">كم</span>
+                        </div>
+                        <div style="font-size:11px; color:#6b7280; margin-top:5px;">إجمالي المسافة المقطوعة</div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; font-size:11px; color:#9ca3af; margin-bottom:5px;">
+                        <span>مستواك الحالي</span>
+                        <span>هدف ${nextMilestone} كم</span>
+                    </div>
+                    
+                    <div class="progress-track" style="background:rgba(255,255,255,0.05); height:8px; border-radius:10px; overflow:hidden;">
+                        <div class="progress-fill" style="width: ${progressToNext}%; background: linear-gradient(90deg, var(--primary) 0%, #34d399 100%); height:100%; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);"></div>
+                    </div>
+
+                    <div class="stats-footer-row" style="display:flex; justify-content:space-between; margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1);">
+                        <div class="mini-stat" style="text-align:center; flex:1;">
+                            <span style="display:block; font-size:10px; color:#9ca3af;">هذا الشهر 📅</span>
+                            <strong style="display:block; font-size:14px; color:var(--primary); margin-top:3px;">${formatNumber(userData.monthDist || 0)}</strong>
+                        </div>
+                        <div class="mini-stat" style="text-align:center; flex:1; border-right:1px solid rgba(255,255,255,0.1); border-left:1px solid rgba(255,255,255,0.1);">
+                            <span style="display:block; font-size:10px; color:#9ca3af;">أنشطة 🏃</span>
+                            <strong style="display:block; font-size:14px; color:#fff; margin-top:3px;">${userData.totalRuns || 0}</strong>
+                        </div>
+                        <div class="mini-stat" style="text-align:center; flex:1;">
+                            <span style="display:block; font-size:10px; color:#9ca3af;">حرق 🔥</span>
+                            <strong style="display:block; font-size:14px; color:#fff; margin-top:3px;">
+                                ${calories > 1000 ? (calories/1000).toFixed(1) + 'k' : calories}
+                            </strong>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
-        document.getElementById('profileTotalDist').innerText = (userData.totalDist || 0).toFixed(1);
-        document.getElementById('profileTotalRuns').innerText = userData.totalRuns || 0;
-        document.getElementById('profileRankText').innerText = rankData.name;
-        
-        // XP Bar
-        document.getElementById('nextLevelDist').innerText = rankData.remaining.toFixed(1);
-        document.getElementById('xpBar').style.width = `${rankData.percentage}%`;
-        document.getElementById('xpBar').style.backgroundColor = `var(--rank-color)`;
-        document.getElementById('xpText').innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
-        document.getElementById('xpPerc').innerText = `${Math.floor(rankData.percentage)}%`;
-
-        updateGoalRing();
+        // تحديث باقي العناصر
         renderBadges();
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
 
-        // --- إضافة جديدة: إظهار زر المشرفين للأدمن فقط ---
         const adminBtn = document.getElementById('btn-admin-entry');
-        if (adminBtn) {
-            // إذا كان المستخدم أدمن، اجعل الزر يظهر (flex)، وإلا اتركه مخفياً
-            adminBtn.style.display = (userData.isAdmin === true) ? 'flex' : 'none';
-        }
+        if (adminBtn) adminBtn.style.display = (userData.isAdmin === true) ? 'flex' : 'none';
 
     } catch (error) { console.error("UI Error:", error); }
+}
+
+// ==================== 5. Open Modal Helper (Corrected) ====================
+function openNewRun() { // ✅ تم تصحيح الخطأ الإملائي هنا
+    const btn = document.getElementById('save-run-btn');
+    if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
+    
+    const dateInput = document.getElementById('log-date');
+    if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
+    
+    // تنظيف الصور
+    const imgInput = document.getElementById('uploaded-img-url');
+    const preview = document.getElementById('img-preview');
+    const status = document.getElementById('upload-status');
+    const fileInput = document.getElementById('log-img-file');
+    
+    if(imgInput) imgInput.value = '';
+    if(preview) { preview.src = ''; preview.style.display = 'none'; }
+    if(status) status.innerText = '';
+    if(fileInput) fileInput.value = '';
+    
+    openLogModal();
+    if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
 }
 //========================== دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
