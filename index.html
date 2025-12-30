@@ -87,24 +87,7 @@
                     </div>
                 </div>
 
-                <div class="status-card">
-                    <div class="status-header">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span>مستواك الحالي</span><i id="rankIcon" class="ri-medal-line" style="color:var(--text-muted)"></i>
-                        </div>
-                        <span class="rank-badge" id="userRankBadge">مبتدئ</span>
-                    </div>
-                    <div class="stats-grid">
-                        <div class="stat-item"><span class="stat-val" id="monthDist">0</span><span class="stat-lbl">كم (شهر)</span></div>
-                        <div class="stat-item"><span class="stat-val" id="totalRuns">0</span><span class="stat-lbl">جرية</span></div>
-                        <div class="stat-item"><span class="stat-val" id="nextLevelDist">50</span><span class="stat-lbl">باقي للترقية</span></div>
-                    </div>
-                    <div class="xp-container" style="margin-top:15px;">
-                        <div class="xp-header"><span class="xp-text" id="xpText">0 / 50 كم</span><span class="xp-perc" id="xpPerc">0%</span></div>
-                        <div class="xp-track"><div class="xp-fill" id="xpBar"></div></div>
-                        <div class="xp-message" id="xpMessage">واصل الجري!</div>
-                    </div>
-                </div>
+                <div id="user-stats-card" class="stats-card" style="padding: 0; overflow: hidden; margin-bottom: 20px;"></div>
 
                 <div class="goal-card" onclick="setPersonalGoal()">
                     <div class="goal-info">
