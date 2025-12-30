@@ -177,15 +177,23 @@ listenForNotifications();
 // ==================== 3. Leaderboard 2.0 (The Podium Logic) 🏆 ====================
 async function loadLeaderboard(filterType = 'all') {
     const list = document.getElementById('leaderboard-list');
+    // ... (باقي تعريف المتغيرات podiumContainer إلخ كما هي) ...
     const podiumContainer = document.getElementById('podium-container');
     const teamTotalEl = document.getElementById('teamTotalDisplay');
     const teamBar = document.getElementById('teamGoalBar');
 
     if (!list) return;
 
-    // تحميل البيانات مرة واحدة وتخزينها (Caching)
+    // V1.5: عرض الهيكل العظمي إذا لم يكن هناك كاش
+    if (allUsersCache.length === 0) {
+        list.innerHTML = getSkeletonHTML('leaderboard');
+        if(podiumContainer) podiumContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#6b7280; font-size:12px;">جاري تجهيز المنصة... 🏆</div>';
+    }
+
     // استخدام الدالة المركزية الآمنة
     await fetchTopRunners();
+
+    // ... (باقي الكود كما هو تماماً من عند let displayUsers...)
 
     // الفلترة
     let displayUsers = allUsersCache;
@@ -943,12 +951,14 @@ function loadWeeklyChart() {
 // ==================== تحديث عرض التحديات (Mission Style) ====================
 function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges'); // في الرئيسية
+    const mini = document.getElementById('my-active-challenges'); 
     if(!list) return;
     
-    list.innerHTML = '<div style="text-align:center; margin-top:20px;">جاري تحميل المهمات...</div>';
+    // V1.5: عرض الهيكل العظمي
+    list.innerHTML = getSkeletonHTML('challenges');
 
     db.collection('challenges').where('active','==',true).get().then(async snap => {
+        // ... (باقي الكود كما هو) ...
         if(snap.empty) { 
             list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'><i class='ri-flag-line' style='font-size:40px'></i><br>لا توجد مهمات نشطة حالياً</div>"; 
             if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
@@ -1131,13 +1141,19 @@ function processRegionData(users, listElement) {
     
     listElement.innerHTML = html + '</div>';
 }
-// ==================== 4. Feed (نسخة كشف الأخطاء) ====================
+ 
 // ==================== 4. Feed (النسخة الكاملة مع التعليقات) ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
 
+    // V1.5: عرض الهيكل العظمي عند التحميل الأولي فقط
+    if(!list.hasChildNodes() || list.innerHTML.includes('جاري التحميل')) {
+        list.innerHTML = getSkeletonHTML('feed');
+    }
+
     db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+        // ... (باقي الكود كما هو) ...
         let html = '';
         if(snap.empty) { 
             list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>'; 
@@ -1345,3 +1361,46 @@ window.addEventListener('appinstalled', () => {
     const btn = document.getElementById('header-install-btn');
     if(btn) btn.style.display = 'none';
 });
+
+
+
+// ==================== 10. Skeleton UI Generators (V1.5) ====================
+function getSkeletonHTML(type) {
+    if (type === 'leaderboard') {
+        // يولد 5 صفوف وهمية
+        return Array(5).fill('').map(() => `
+            <div class="sk-leader-row">
+                <div class="skeleton sk-circle" style="width:30px; height:30px;"></div>
+                <div style="flex:1">
+                    <div class="skeleton sk-line long"></div>
+                    <div class="skeleton sk-line short"></div>
+                </div>
+                <div class="skeleton sk-line" style="width:40px;"></div>
+            </div>
+        `).join('');
+    }
+    
+    if (type === 'feed') {
+        // يولد 3 كروت وهمية
+        return Array(3).fill('').map(() => `
+            <div class="sk-feed-card">
+                <div class="sk-header">
+                    <div class="skeleton sk-circle"></div>
+                    <div style="flex:1">
+                        <div class="skeleton sk-line long"></div>
+                        <div class="skeleton sk-line short"></div>
+                    </div>
+                </div>
+                <div class="skeleton sk-line" style="width:100%; height:15px;"></div>
+            </div>
+        `).join('');
+    }
+
+    if (type === 'challenges') {
+        return Array(2).fill('').map(() => `
+            <div class="skeleton sk-challenge-card"></div>
+        `).join('');
+    }
+    
+    return '<div style="padding:20px; text-align:center;">جاري التحميل...</div>';
+}
