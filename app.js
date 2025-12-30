@@ -497,7 +497,7 @@ function openNewRun() {
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
     document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-    / (V1.3 Updated)
+    
     const dateInput = document.getElementById('log-date');
     if(dateInput) dateInput.value = getLocalInputDate();
     
