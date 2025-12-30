@@ -1,4 +1,4 @@
-// ERS Runners - Service Worker (V1.5 Fast Load)
+// ERS Runners - Service Worker (V1.5 Profile update)
 const CACHE_NAME = 'ers-runners-v1.5-fast'; // تحديث رقم النسخة
 const ASSETS_TO_CACHE = [
   './',
