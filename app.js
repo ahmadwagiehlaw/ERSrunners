@@ -814,7 +814,7 @@ function loadAdminStats() {
     if(!statsDiv) return;
     db.collection('users').get().then(snap => { statsDiv.innerHTML = `عدد الأعضاء: <strong style="color:#fff">${snap.size}</strong>`; });
 }
-aasync function saveProfileChanges() {
+async function saveProfileChanges() {
     const name = document.getElementById('edit-name').value;
     const region = document.getElementById('edit-region').value;
     const gender = document.getElementById('edit-gender').value;
