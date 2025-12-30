@@ -26,11 +26,22 @@ async function fetchTopRunners() {
     if (allUsersCache.length > 0) return allUsersCache;
     
     // جلب أعلى 50 عداء فقط لتوفير القراءات
-    const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
-    allUsersCache = [];
-    snap.forEach(doc => allUsersCache.push(doc.data()));
-    return allUsersCache;
-}
+    try {
+        const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
+        allUsersCache = [];
+        // (V1.9 Fix) دمج الـ UID مع البيانات لنستطيع التفاعل مع المستخدم
+        snap.forEach(doc => {
+            allUsersCache.push({ uid: doc.id, ...doc.data() }); 
+        });
+        return allUsersCache;
+    // ...
+    } catch(e) {
+        console.error("Network Error:", e);
+        return [];
+    }
+} // <--- تم إغلاق الدالة هنا
+
+// --- دوال مساعدة للتواريخ (V1.3) ---
 
 // --- دوال مساعدة للتواريخ (V1.3) ---
 
@@ -266,16 +277,16 @@ async function loadLeaderboard(filterType = 'all') {
     }
 
     restUsers.forEach((u, index) => {
-        // index هنا يبدأ من 0، لكن الرتبة الحقيقية هي index + 4
         const realRank = index + 4;
         const isMe = (u.name === userData.name) ? 'border:1px solid #10b981; background:rgba(16,185,129,0.1);' : '';
-
+        
+        // (V1.9) إضافة خاصية الضغط لفتح البروفايل
         list.innerHTML += `
-            <div class="leader-row" style="${isMe}">
+            <div class="leader-row" style="${isMe}; cursor:pointer;" onclick="viewUserProfile('${u.uid}')">
                 <div class="rank-col" style="font-size:14px; color:#9ca3af;">#${realRank}</div>
                 <div class="avatar-col">${(u.name || "?").charAt(0)}</div>
                 <div class="info-col">
-                    <div class="name">${u.name}</div>
+                    <div class="name">${u.name} ${isMe ? '(أنت)' : ''}</div>
                     <div class="region">${u.region}</div>
                 </div>
                 <div class="dist-col">${(u.totalDist||0).toFixed(1)}</div>
@@ -301,6 +312,30 @@ function filterLeaderboard(type) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
     if(event && event.target) event.target.classList.add('active');
     loadLeaderboard(type);
+}
+
+
+// --- عرض بروفايل مستخدم آخر (V1.9) ---
+function viewUserProfile(targetUid) {
+    // 1. البحث عن المستخدم في الكاش
+    const user = allUsersCache.find(u => u.uid === targetUid);
+    if (!user) return showToast("بيانات المستخدم غير متوفرة", "error");
+
+    // 2. تعبئة المودال بالبيانات
+    document.getElementById('view-name').innerText = user.name;
+    document.getElementById('view-region').innerText = user.region;
+    
+    // حساب الرتبة والأفاتار
+    const rankData = calculateRank(user.totalDist || 0);
+    const avatarChar = getUserAvatar(user);
+    
+    document.getElementById('view-avatar').innerText = avatarChar;
+    document.getElementById('view-rank').innerText = rankData.name;
+    document.getElementById('view-total-dist').innerText = (user.totalDist || 0).toFixed(1);
+    document.getElementById('view-total-runs').innerText = user.totalRuns || 0;
+
+    // 3. فتح المودال
+    document.getElementById('modal-view-user').style.display = 'flex';
 }
 
 // ==================== 4. UI Updates ====================
@@ -497,7 +532,7 @@ function openNewRun() {
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
     document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-    
+   
     const dateInput = document.getElementById('log-date');
     if(dateInput) dateInput.value = getLocalInputDate();
     
@@ -531,8 +566,22 @@ async function submitRun() {
     const link = document.getElementById('log-link').value;
     const dateInput = document.getElementById('log-date').value;
 
-    if (!dist || !time) return alert("البيانات ناقصة");
+    // 1. التحقق من وجود البيانات
+    if (!dist || !time) return showToast("البيانات ناقصة!", "error");
+
+    // 2. التحقق من منطقية الأرقام (Validation)
+    if (dist <= 0 || time <= 0) return showToast("الأرقام يجب أن تكون أكبر من صفر", "error");
+    if (dist > 100) return showToast("⛔ المسافة كبيرة جداً! (الحد الأقصى 100 كم)", "error");
+    if (time > 1440) return showToast("⛔ الوقت لا يمكن أن يتجاوز 24 ساعة", "error");
+
+    // 3. التحقق من التاريخ (منع المستقبل)
+    const selectedDate = new Date(dateInput);
+    const now = new Date();
+    if (selectedDate > now) return showToast("⛔ لا يمكن تسجيل نشاط في المستقبل!", "error");
+
+    // 4. تفعيل وضع التحميل
     if(btn) { btn.innerText = "جاري المعالجة..."; btn.disabled = true; }
+
 
     try {
         const uid = currentUser.uid;
@@ -645,14 +694,17 @@ function loadActivityLog() {
 }
 
 async function deleteRun(id, dist) {
+    // تصحيح: ضمان أن المسافة رقم لتجنب الأخطاء الحسابية
+    dist = parseFloat(dist);
+
     if(!confirm("هل أنت متأكد من حذف هذا النشاط؟\nسيتم خصم المسافة من رصيدك.")) return;
     
     try {
         const uid = currentUser.uid;
         
-        // 1. جلب بيانات الجرية قبل الحذف لنعرف توقيتها (مهم عشان نلاقي البوست في الـ Feed)
+        // 1. جلب بيانات الجرية قبل الحذف لنعرف توقيتها
         const runDoc = await db.collection('users').doc(uid).collection('runs').doc(id).get();
-        if (!runDoc.exists) return; // لو الجرية مش موجودة أصلاً نخرج
+        if (!runDoc.exists) return; 
         const runData = runDoc.data();
 
         // 2. حذف الجرية نفسها
@@ -665,8 +717,7 @@ async function deleteRun(id, dist) {
             monthDist: firebase.firestore.FieldValue.increment(-dist)
         });
 
-        // 4. (جديد V1.3) حذف المنشور من الـ Feed
-        // بنبحث عن المنشور اللي يملكه المستخدم وله نفس تاريخ الجرية بالضبط
+        // 4. حذف المنشور من الـ Feed
         if (runData.timestamp) {
             const feedQuery = await db.collection('activity_feed')
                 .where('uid', '==', uid)
@@ -680,23 +731,23 @@ async function deleteRun(id, dist) {
             await batch.commit(); 
         }
 
-        // 5. تحديث الواجهة فوراً (مسح محلي)
+        // 5. تحديث الواجهة فوراً
         userData.totalDist = Math.max(0, (userData.totalDist || 0) - dist);
         userData.totalRuns = Math.max(0, (userData.totalRuns || 0) - 1);
         userData.monthDist = Math.max(0, (userData.monthDist || 0) - dist);
 
-        allUsersCache = []; // تدمير الكاش عشان الترتيب يتظبط
+        allUsersCache = [];
         updateUI();
         loadActivityLog(); 
-        loadGlobalFeed(); // إعادة تحميل الـ Feed عشان البوست يختفي
+        loadGlobalFeed();
         
-        alert("تم حذف النشاط وتحديث السجلات.");
+        showToast("تم حذف النشاط وتحديث السجلات 🗑️", "success");
 
     } catch (error) {
         console.error(error);
-        alert("حدث خطأ أثناء الحذف: " + error.message);
+        showToast("فشل الحذف: " + error.message, "error");
     }
-}
+} // <--- 🟢 هذا القوس كان ناقصاً وتسبب في المشكلة
 
 // ==================== 7. Admin, Share & Helpers ====================
 function openAdminAuth() {
@@ -824,38 +875,49 @@ function loadAdminStats() {
 
 
 async function saveProfileChanges() {
-    const name = document.getElementById('edit-name').value;
+    const name = document.getElementById('edit-name').value.trim();
     const region = document.getElementById('edit-region').value;
     const gender = document.getElementById('edit-gender').value;
-    const birthYear = document.getElementById('edit-birthyear').value;
+    const birthYearVal = document.getElementById('edit-birthyear').value;
 
-    if(name) {
-        const btn = event.target;
-        btn.innerText = "جاري الحفظ...";
-        
-        try {
-            await db.collection('users').doc(currentUser.uid).update({ 
-                name, 
-                region,
-                gender: gender || 'male', 
-                birthYear: birthYear || ''
-            });
-            
-            // تحديث البيانات محلياً
-            userData.name = name; 
-            userData.region = region;
-            userData.gender = gender;
-            userData.birthYear = birthYear;
-            
-            allUsersCache = []; // تدمير الكاش
-            updateUI(); 
-            closeModal('modal-edit-profile'); 
-            alert("تم تحديث ملفك الشخصي بنجاح ✅");
-        } catch (e) {
-            console.error(e);
-            alert("حدث خطأ أثناء الحفظ");
+    // 1. التحقق (Validation)
+    if (name.length < 3) return showToast("الاسم قصير جداً (3 أحرف على الأقل)", "error");
+    
+    let birthYear = '';
+    if (birthYearVal) {
+        const year = parseInt(birthYearVal);
+        const currentYear = new Date().getFullYear();
+        if (year < 1940 || year > currentYear - 5) {
+            return showToast("يرجى إدخال سنة ميلاد صحيحة", "error");
         }
+        birthYear = year.toString();
+    }
+
+    const btn = event.target;
+    btn.innerText = "جاري الحفظ...";
+    btn.disabled = true;
+    
+    try {
+        await db.collection('users').doc(currentUser.uid).update({ 
+            name, region, gender, birthYear
+        });
+        
+        // تحديث البيانات محلياً
+        userData.name = name; 
+        userData.region = region;
+        userData.gender = gender;
+        userData.birthYear = birthYear;
+        
+        allUsersCache = []; // تدمير الكاش لتحديث القوائم
+        updateUI(); 
+        closeModal('modal-edit-profile'); 
+        showToast("تم تحديث ملفك الشخصي بنجاح ✅", "success");
+    } catch (e) {
+        console.error(e);
+        showToast("حدث خطأ أثناء الحفظ", "error");
+    } finally {
         btn.innerText = "حفظ التغييرات";
+        btn.disabled = false;
     }
 }
 
@@ -884,20 +946,66 @@ function setTab(tabName) {
     if (tabName === 'squads') loadRegionBattle();
     if (tabName === 'active-challenges') loadActiveChallenges();
 }
-async function toggleLike(pid, uid) {
-    if(!currentUser) return;
-    const ref = db.collection('activity_feed').doc(pid);
-    const doc = await ref.get();
-    if(doc.exists) {
-        const likes = doc.data().likes || [];
-        if(likes.includes(currentUser.uid)) {
+
+// متغير لمنع الضغط المتكرر (Debounce)
+let isLiking = false;
+
+
+   
+async function toggleLike(pid, postOwnerId) {
+    if(!currentUser || isLiking) return;
+    
+    // 1. تحديد العنصر وتغيير شكله فوراً (Optimistic UI)
+    const btn = event.currentTarget; // الزر الذي تم الضغط عليه
+    const icon = btn.querySelector('i');
+    const countSpan = btn.querySelector('.feed-compact-count');
+    const isCurrentlyLiked = icon.classList.contains('ri-heart-fill');
+    
+    // عكس الحالة شكلياً للمستخدم فوراً
+    if(isCurrentlyLiked) {
+        icon.classList.replace('ri-heart-fill', 'ri-heart-line');
+        btn.classList.remove('liked');
+        // تقليل العدد وهمياً
+        let c = parseInt(countSpan.innerText || 0);
+        countSpan.innerText = c > 1 ? c - 1 : '';
+    } else {
+        icon.classList.replace('ri-heart-line', 'ri-heart-fill');
+        btn.classList.add('liked');
+        // زيادة العدد وهمياً
+        let c = parseInt(countSpan.innerText || 0);
+        countSpan.innerText = c + 1;
+    }
+
+    // 2. إرسال الطلب للسيرفر
+    isLiking = true;
+    try {
+        const ref = db.collection('activity_feed').doc(pid);
+        if(isCurrentlyLiked) {
+            // إزالة اللايك
             await ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
         } else {
+            // إضافة اللايك
             await ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-            if(uid !== currentUser.uid) sendNotification(uid, `${userData.name} شجعك ❤️`);
+            // إرسال إشعار لصاحب البوست
+            if(postOwnerId !== currentUser.uid) { 
+                sendNotification(postOwnerId, `${userData.name} شجعك ❤️`); 
+            }
         }
+    } catch(e) {
+        console.error("Like Error", e);
+        // في حالة الخطأ، نعيد الزر كما كان (تراجع)
+        if(isCurrentlyLiked) {
+            icon.classList.replace('ri-heart-line', 'ri-heart-fill');
+            btn.classList.add('liked');
+        } else {
+            icon.classList.replace('ri-heart-fill', 'ri-heart-line');
+            btn.classList.remove('liked');
+        }
+    } finally {
+        isLiking = false;
     }
 }
+
 async function sendNotification(receiverId, message) {
     try {
         await db.collection('users').doc(receiverId).collection('notifications').add({
