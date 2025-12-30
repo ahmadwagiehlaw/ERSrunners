@@ -1,4 +1,4 @@
-/* ERS Runners - V1.14 (FINAL FIXED) */
+/* ERS Runners - V1.15 (FINAL FIXED) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
