@@ -347,14 +347,26 @@
             <div class="form-group" style="margin-top:20px;">
                 <label style="color:#9ca3af; font-size:12px;">الاسم</label>
                 <input type="text" id="edit-name">
+                
+                <div class="input-row">
+                    <div class="input-wrap">
+                        <label>النوع</label>
+                        <select id="edit-gender">
+                            <option value="male">ذكر 🙋‍♂️</option>
+                            <option value="female">أنثى 🙋‍♀️</option>
+                        </select>
+                    </div>
+                    <div class="input-wrap">
+                        <label>سنة الميلاد</label>
+                        <input type="number" id="edit-birthyear" placeholder="مثال: 1995">
+                    </div>
+                </div>
+
                 <label style="color:#9ca3af; font-size:12px; margin-top:10px;">المنطقة</label>
                 <select id="edit-region">
-                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Other">أخرى</option>
+                    <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
                 </select>
             </div>
-            <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
-            <button class="btn btn-text" onclick="closeModal('modal-edit-profile')">إلغاء</button>
-        </div>
     </div>
 
     <div id="modal-share" class="modal-overlay">
