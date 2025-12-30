@@ -363,7 +363,7 @@ function updateUI() {
 
     } catch (error) { console.error("UI Error:", error); }
 }
-// دالة مساعدة لحساب الرتبة
+//========================== دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
     const levels = [
         { name: "مبتدئ", min: 0, class: "rank-mubtadi", next: 50, avatar: "🥚" },
