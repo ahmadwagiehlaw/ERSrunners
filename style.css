@@ -1222,3 +1222,27 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 
 .squad-row.rank-2 { border-right: 4px solid #9ca3af; }
 .squad-row.rank-3 { border-right: 4px solid #cd7f32; }
+
+
+
+
+/* ==================== V1.3 Offline Banner ==================== */
+.offline-banner {
+    position: fixed;
+    top: -50px; /* مخفي في الأعلى */
+    left: 0;
+    width: 100%;
+    background-color: #ef4444; /* أحمر */
+    color: white;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 9999;
+    transition: top 0.3s ease-in-out;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.offline-banner.active {
+    top: 0; /* يظهر عند التفعيل */
+}
