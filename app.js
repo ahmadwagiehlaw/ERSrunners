@@ -1151,3 +1151,74 @@ async function uploadImageToImgBB() {
         if(saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "حفظ النشاط"; }
     }
 }
+
+// ==================== Weekly Chart (Fixed Timezone) ====================
+function loadWeeklyChart() {
+    const chartDiv = document.getElementById('weekly-chart');
+    if(!chartDiv) return;
+
+    // 1. تحضير الأيام الـ 7 الماضية (بتوقيتك المحلي)
+    const daysAr = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    let last7Days = [];
+
+    for(let i=6; i>=0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        // تكوين مفتاح التاريخ يدوياً (YYYY-MM-DD) حسب توقيت الجهاز
+        const localKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        
+        last7Days.push({
+            dayName: daysAr[d.getDay()],
+            dateKey: localKey,
+            dist: 0
+        });
+    }
+
+    // 2. تحديد وقت البداية (منذ 7 أيام)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 7);
+    startDate.setHours(0, 0, 0, 0); // من بداية اليوم
+
+    db.collection('users').doc(currentUser.uid).collection('runs')
+      .where('timestamp', '>=', startDate)
+      .get().then(snap => {
+          snap.forEach(doc => {
+              const run = doc.data();
+              if(run.timestamp) {
+                  const rDate = run.timestamp.toDate();
+                  // تحويل تاريخ الجرية لنفس الصيغة المحلية للمقارنة
+                  const rKey = rDate.getFullYear() + '-' + String(rDate.getMonth() + 1).padStart(2, '0') + '-' + String(rDate.getDate()).padStart(2, '0');
+
+                  const targetDay = last7Days.find(d => d.dateKey === rKey);
+                  if(targetDay) {
+                      targetDay.dist += (parseFloat(run.dist) || 0);
+                  }
+              }
+          });
+
+          // 3. رسم الشارت
+          let html = '';
+          const maxDist = Math.max(...last7Days.map(d => d.dist), 5); // حد أدنى 5 كم
+
+          last7Days.forEach(day => {
+              const heightPerc = (day.dist / maxDist) * 100;
+              let barClass = 'low';
+              if(day.dist > 10) barClass = 'high';
+              else if(day.dist > 5) barClass = 'med';
+
+              // ارتفاع جمالي لو القيمة صفر
+              const visualHeight = day.dist === 0 ? 5 : Math.max(heightPerc, 10);
+              const opacity = day.dist === 0 ? '0.2' : '1';
+              
+              html += `
+              <div class="chart-column">
+                  <span class="bar-tooltip" style="opacity:${day.dist > 0 ? 1 : 0}">${day.dist.toFixed(1)}</span>
+                  <div class="bar-bg">
+                      <div class="bar-fill ${barClass}" style="height: ${visualHeight}%; opacity: ${opacity}"></div>
+                  </div>
+                  <span class="bar-label">${day.dayName}</span>
+              </div>`;
+          });
+          chartDiv.innerHTML = html;
+      });
+}
