@@ -1,4 +1,4 @@
-/* ERS Runners - V1.13 (Podium & Auth Fixed) */
+/* ERS Runners - V1.14 (FINAL FIXED) */
 
 const firebaseConfig = {
   apiKey: "AIzaSyCHod8qSDNzKDKxRHj1yQlWgNAPXFNdAyg",
@@ -18,60 +18,49 @@ let userData = {};
 let isSignupMode = false;
 let editingRunId = null;
 let editingOldDist = 0;
-let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
-let deferredPrompt; // (V1.13) لتخزين حدث التثبيت
-// --- دالة مركزية لجلب البيانات بأمان (V1.3) -----------------------------
+let allUsersCache = []; 
+let deferredPrompt; 
+
+// --- دالة مركزية لجلب البيانات بأمان ---
 async function fetchTopRunners() {
-    // إذا كانت البيانات موجودة في الكاش، لا نحملها مرة أخرى
     if (allUsersCache.length > 0) return allUsersCache;
-    
-    // جلب أعلى 50 عداء فقط لتوفير القراءات
     const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
     allUsersCache = [];
     snap.forEach(doc => allUsersCache.push(doc.data()));
     return allUsersCache;
 }
 
-// --- دوال مساعدة للتواريخ (V1.3) ---
-
-// 1. تجهيز التاريخ الحالي لحقل الإدخال (Local ISO Format)
+// --- دوال مساعدة ---
 function getLocalInputDate() {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().slice(0,16);
 }
 
-// 2. حساب الزمن المنقضي (منذ كذا...)
 function getArabicTimeAgo(timestamp) {
     if (!timestamp) return "الآن";
-    const diff = (new Date() - timestamp.toDate()) / 60000; // الفرق بالدقائق
+    const diff = (new Date() - timestamp.toDate()) / 60000;
     if (diff < 1) return "الآن";
     if (diff < 60) return `${Math.floor(diff)} د`;
     if (diff < 1440) return `${Math.floor(diff/60)} س`;
     return `${Math.floor(diff/1440)} يوم`;
 }
-// 3. تنسيق الأرقام (رقم عشري واحد فقط) - (V1.3)
+
 function formatNumber(num) {
-    // تحويل النص لرقم، وفي حالة الخطأ نعتبره صفر
     const n = parseFloat(num) || 0;
-    // إرجاع رقم عشري واحد ثابت
     return n.toFixed(1);
 }
 
-// 4. تحديد الأفاتار بناء على النوع والمستوى (V1.5)
 function getUserAvatar(user) {
-    // لو المستخدم لسه جديد (مبتدئ)
     const isNew = (user.totalDist || 0) < 50;
-    
     if (user.gender === 'female') {
-        return isNew ? '🐣' : '🏃‍♀️'; // بنت
+        return isNew ? '🐣' : '🏃‍♀️';
     } else {
-        return isNew ? '🐣' : '🏃'; // ولد (الافتراضي)
+        return isNew ? '🐣' : '🏃';
     }
 }
-// ==================== 1. Authentication (Global Functions) ====================
-// هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
 
+// ==================== Auth ====================
 function toggleAuthMode() {
     isSignupMode = !isSignupMode;
     const fields = document.getElementById('signup-fields');
@@ -87,7 +76,6 @@ async function handleAuth() {
     const emailEl = document.getElementById('email');
     const passEl = document.getElementById('password');
     const msgEl = document.getElementById('auth-msg');
-    // الزرين المحتملين (الدخول أو التسجيل)
     const activeBtn = document.querySelector('.auth-box .btn-primary');
     
     if (!emailEl || !passEl) return;
@@ -95,7 +83,6 @@ async function handleAuth() {
     const pass = passEl.value;
     if (msgEl) msgEl.innerText = "";
 
-    // 1. تفعيل وضع التحميل
     const originalText = activeBtn.innerText;
     activeBtn.innerHTML = 'جاري الاتصال <span class="loader-btn"></span>';
     activeBtn.disabled = true;
@@ -110,7 +97,6 @@ async function handleAuth() {
             if (!name || !region) throw new Error("البيانات ناقصة");
 
             const cred = await auth.createUserWithEmailAndPassword(email, pass);
-            // ... (باقي كود الحفظ كما هو) ...
             await db.collection('users').doc(cred.user.uid).set({
                 name: name, region: region, email: email,
                 totalDist: 0, totalRuns: 0, badges: [],
@@ -119,10 +105,8 @@ async function handleAuth() {
         } else {
             await auth.signInWithEmailAndPassword(email, pass);
         }
-        // لا نحتاج لإعادة الزر هنا لأن الصفحة ستتغير أو يتم عمل Reload
     } catch (err) {
         if (msgEl) {
-            // ترجمة بعض أخطاء فايربيس الشائعة
             if(err.code === 'auth/email-already-in-use') msgEl.innerText = "هذا البريد مسجل بالفعل، حاول الدخول.";
             else if(err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة.";
             else if(err.code === 'auth/user-not-found') msgEl.innerText = "مستخدم غير موجود، سجل حساب جديد.";
@@ -130,8 +114,6 @@ async function handleAuth() {
             else msgEl.innerText = "خطأ: " + err.message;
         }
         console.error(err);
-        
-        // إعادة الزر لحالته الطبيعية عند الخطأ
         activeBtn.innerHTML = originalText;
         activeBtn.disabled = false;
         activeBtn.style.opacity = "1";
@@ -142,7 +124,6 @@ function logout() {
     if(confirm("تسجيل خروج؟")) { auth.signOut(); window.location.reload(); }
 }
 
-// مراقب الدخول
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
@@ -153,7 +134,6 @@ auth.onAuthStateChanged(async (user) => {
                 if (!userData.badges) userData.badges = [];
                 initApp();
             } else {
-                // حالة نادرة: إنشاء داتا افتراضية
                 userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0, badges: [] };
                 initApp();
             }
@@ -165,13 +145,11 @@ auth.onAuthStateChanged(async (user) => {
     }
 });
 
-// ==================== 2. App Initialization ====================
+// ==================== Init App ====================
 function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
     
-    
-    // تعيين التاريخ الافتراضي (V1.3 Updated)
     const dateInput = document.getElementById('log-date');
     if(dateInput) dateInput.value = getLocalInputDate();
 
@@ -179,94 +157,63 @@ function initApp() {
     loadActivityLog();
     loadActiveChallenges(); 
     loadGlobalFeed();
-  
-listenForNotifications();
+    listenForNotifications();
     if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
     
-    // تشغيل مراقب الشبكة
     initNetworkMonitor();
-    
-    // فحص البيانات المشاركة (V1.6)
     checkSharedData(); 
 }
-// ==================== 3. Leaderboard 2.0 (The Podium Logic) 🏆 ====================
+
+// ==================== Leaderboard ====================
 async function loadLeaderboard(filterType = 'all') {
     const list = document.getElementById('leaderboard-list');
-    // ... (باقي تعريف المتغيرات podiumContainer إلخ كما هي) ...
     const podiumContainer = document.getElementById('podium-container');
     const teamTotalEl = document.getElementById('teamTotalDisplay');
     const teamBar = document.getElementById('teamGoalBar');
 
     if (!list) return;
 
-    // V1.5: عرض الهيكل العظمي إذا لم يكن هناك كاش
     if (allUsersCache.length === 0) {
         list.innerHTML = getSkeletonHTML('leaderboard');
         if(podiumContainer) podiumContainer.innerHTML = '<div style="padding:20px; text-align:center; color:#6b7280; font-size:12px;">جاري تجهيز المنصة... 🏆</div>';
     }
 
-    // استخدام الدالة المركزية الآمنة
     await fetchTopRunners();
 
-    // ... (باقي الكود كما هو تماماً من عند let displayUsers...)
-
-    // الفلترة
     let displayUsers = allUsersCache;
     if (filterType === 'region') {
         displayUsers = allUsersCache.filter(u => u.region === userData.region);
     }
 
-    // 1. حساب إجمالي الفريق
     let teamTotal = 0;
     displayUsers.forEach(u => teamTotal += (u.totalDist || 0));
     if(teamTotalEl) teamTotalEl.innerText = teamTotal.toFixed(0);
     if(teamBar) {
-        // لنفترض الهدف 1000 كم
         let perc = Math.min((teamTotal / 1000) * 100, 100);
         teamBar.style.width = `${perc}%`;
     }
 
-    // 2. رسم المنصة (أول 3)
     if (podiumContainer) {
         let podiumHtml = '';
-        // نحتاج ترتيب معين: الثاني (يسار) - الأول (وسط) - الثالث (يمين)
-        // المصفوفة مرتبة: [0]=الأول, [1]=الثاني, [2]=الثالث
-        
-        // المتسابق الأول
         const u1 = displayUsers[0];
-        // المتسابق الثاني
         const u2 = displayUsers[1];
-        // المتسابق الثالث
         const u3 = displayUsers[2];
 
-        // بناء HTML للمنصة (الترتيب في الـ HTML مهم للـ CSS Flexbox order)
-        
-        // المركز الثاني
-        if(u2) {
-            podiumHtml += createPodiumItem(u2, 2);
-        }
-        // المركز الأول (يجب أن يكون في المنتصف، سنتحكم بالـ Order في CSS)
-        if(u1) {
-            podiumHtml += createPodiumItem(u1, 1);
-        }
-        // المركز الثالث
-        if(u3) {
-            podiumHtml += createPodiumItem(u3, 3);
-        }
+        if(u2) podiumHtml += createPodiumItem(u2, 2);
+        if(u1) podiumHtml += createPodiumItem(u1, 1);
+        if(u3) podiumHtml += createPodiumItem(u3, 3);
 
         podiumContainer.innerHTML = podiumHtml || '<div style="color:#9ca3af; font-size:12px;">لا يوجد أبطال بعد</div>';
     }
 
-    // 3. رسم باقي القائمة (من الرابع للنهاية)
     list.innerHTML = '';
-    const restUsers = displayUsers.slice(3); // تخطي أول 3
+    const restUsers = displayUsers.slice(3); 
     
     if (restUsers.length === 0 && displayUsers.length > 3) {
         list.innerHTML = '<div style="text-align:center; padding:10px;">لا يوجد المزيد</div>';
     }
 
     restUsers.forEach((u, index) => {
-        // index هنا يبدأ من 0، لكن الرتبة الحقيقية هي index + 4
         const realRank = index + 4;
         const isMe = (u.name === userData.name) ? 'border:1px solid #10b981; background:rgba(16,185,129,0.1);' : '';
 
@@ -303,32 +250,29 @@ function filterLeaderboard(type) {
     loadLeaderboard(type);
 }
 
-/// ==================== 4. UI Updates (Hero Card Logic) ====================
+// ==================== 4. UI Updates (Hero Card) ====================
 function updateUI() {
     try {
         const headerName = document.getElementById('headerName');
         if (headerName) headerName.innerText = userData.name || "Runner";
 
-        // حساب البيانات
         const total = userData.totalDist || 0;
         const rankData = calculateRank(total);
         
-        // بناء الكارت الجديد
         const statsCard = document.getElementById('user-stats-card');
         
         if (statsCard) {
-            // بيانات الشريط والعدادات
             const nextMilestone = (Math.floor(total / 100) + 1) * 100;
             const progressToNext = total % 100;
             const calories = Math.floor(total * 60);
-            
-            // تحديد الأيقونة
+
             let avatarIcon = '🏃';
-            if(typeof getUserAvatar === 'function') avatarIcon = getUserAvatar(userData);
+            if (typeof getUserAvatar === 'function') {
+                avatarIcon = getUserAvatar(userData);
+            }
             if(rankData.name === 'أسطورة') avatarIcon = '👑';
             else if(rankData.name === 'محترف') avatarIcon = '🦅';
 
-            // رسم HTML الكارت (هنا يظهر الكارت المختفي)
             statsCard.innerHTML = `
                 <div style="padding: 20px; position:relative; z-index:2;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
@@ -357,7 +301,7 @@ function updateUI() {
                     </div>
                     
                     <div class="progress-track" style="background:rgba(255,255,255,0.05); height:8px; border-radius:10px; overflow:hidden;">
-                        <div class="progress-fill" style="width: ${progressToNext}%; background: linear-gradient(90deg, var(--primary) 0%, #34d399 100%); height:100%; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);"></div>
+                        <div class="progress-fill" style="width: ${progressToNext}%; background: linear-gradient(90deg, var(--primary) 0%, #34d399 100%); height:100%; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); transition: width 1s ease;"></div>
                     </div>
 
                     <div class="stats-footer-row" style="display:flex; justify-content:space-between; margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.1);">
@@ -380,39 +324,19 @@ function updateUI() {
             `;
         }
 
-        // تحديث باقي العناصر
         renderBadges();
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
 
         const adminBtn = document.getElementById('btn-admin-entry');
-        if (adminBtn) adminBtn.style.display = (userData.isAdmin === true) ? 'flex' : 'none';
+        if (adminBtn) {
+            adminBtn.style.display = (userData.isAdmin === true) ? 'flex' : 'none';
+        }
 
-    } catch (error) { console.error("UI Error:", error); }
+    } catch (error) { 
+        console.error("UI Error:", error); 
+    }
 }
 
-// ==================== 5. Open Modal Helper (Corrected) ====================
-function openNewRun() { // ✅ تم تصحيح الخطأ الإملائي هنا
-    const btn = document.getElementById('save-run-btn');
-    if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
-    
-    const dateInput = document.getElementById('log-date');
-    if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
-    
-    // تنظيف الصور
-    const imgInput = document.getElementById('uploaded-img-url');
-    const preview = document.getElementById('img-preview');
-    const status = document.getElementById('upload-status');
-    const fileInput = document.getElementById('log-img-file');
-    
-    if(imgInput) imgInput.value = '';
-    if(preview) { preview.src = ''; preview.style.display = 'none'; }
-    if(status) status.innerText = '';
-    if(fileInput) fileInput.value = '';
-    
-    openLogModal();
-    if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
-}
-//========================== دالة مساعدة لحساب الرتبة
 function calculateRank(totalDist) {
     const levels = [
         { name: "مبتدئ", min: 0, class: "rank-mubtadi", next: 50, avatar: "🥚" },
@@ -438,39 +362,12 @@ function calculateRank(totalDist) {
         remaining: currentLevel.next - totalDist, 
         percentage: percentage, 
         distInLevel: distInLevel, 
-        distRequired: distRequired 
+        distRequired: distRequired,
+        icon: currentLevel.avatar
     };
 }
 
-function getNextRankName(current) {
-    if(current === "مبتدئ") return "هاوي"; if(current === "هاوي") return "عداء";
-    if(current === "عداء") return "محترف"; if(current === "محترف") return "أسطورة"; return "";
-}
-
-function updateGoalRing() {
-    const goalRing = document.getElementById('goalRing');
-    const goalText = document.getElementById('goalText');
-    const goalSub = document.getElementById('goalSub');
-    if(goalRing && goalText) {
-        const myGoal = userData.monthlyGoal || 0;
-        const currentMonthDist = userData.monthDist || 0;
-        if(myGoal === 0) {
-            goalText.innerText = "اضغط لتحديد هدف";
-            goalSub.innerText = "تحدى نفسك هذا الشهر";
-            goalRing.style.background = `conic-gradient(#374151 0deg, rgba(255,255,255,0.05) 0deg)`;
-        } else {
-            const perc = Math.min((currentMonthDist / myGoal) * 100, 100);
-            const deg = (perc / 100) * 360;
-            const remaining = Math.max(myGoal - currentMonthDist, 0).toFixed(1);
-            goalText.innerText = `${currentMonthDist.toFixed(1)} / ${myGoal} كم`;
-            goalSub.innerText = remaining == 0 ? "أنت أسطورة! 🎉" : `باقي ${remaining} كم`;
-            goalSub.style.color = remaining == 0 ? "#10b981" : "#a78bfa";
-            goalRing.style.background = `conic-gradient(#8b5cf6 ${deg}deg, rgba(255,255,255,0.1) 0deg)`;
-        }
-    }
-}
-
-// ==================== 5. Smart Coach & Badges ====================
+// ==================== Smart Coach & Badges ====================
 function updateCoachAdvice() {
     const msgEl = document.getElementById('coach-message');
     if(!msgEl) return;
@@ -519,7 +416,7 @@ async function checkNewBadges(currentRunDist, currentRunTime, runDateObj) {
         if(!userData.badges) userData.badges = [];
         userData.badges.push(...newBadgesEarned);
         const badgeNames = newBadgesEarned.map(b => BADGES_CONFIG.find(x => x.id === b).name).join(" و ");
-        alert(`🎉 مبروووك! إنجاز جديد:\n\n✨ ${badgeNames} ✨`);
+        showToast(`🎉 مبروووك! إنجاز جديد: ${badgeNames}`, "success");
     }
 }
 
@@ -537,17 +434,16 @@ function renderBadges() {
     grid.innerHTML = html;
 }
 
-// ==================== 6. Activity Log & Submission ====================
-// ==================== 5. Open Modal Helper (Updated V1.6) ====================
+// ==================== Activity Log & Submission ====================
+// --- ✅ تم تصحيح الخطأ هنا (function بدل ffunction) ---
 function openNewRun() {
     const btn = document.getElementById('save-run-btn');
     if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     
-    // ضبط التاريخ
     const dateInput = document.getElementById('log-date');
     if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
     
-    // تنظيف حقول الصورة (مهم جداً)
+    // تنظيف الحقول
     const imgInput = document.getElementById('uploaded-img-url');
     const preview = document.getElementById('img-preview');
     const status = document.getElementById('upload-status');
@@ -559,15 +455,10 @@ function openNewRun() {
     if(fileInput) fileInput.value = '';
     
     openLogModal();
-    
-    // تفعيل اللصق الذكي
     if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
 }
 
-// ==================== 4. Save Run Logic (Updated V1.6) ====================
-// ==================== 4. Save Run Logic (Corrected) ====================
 async function submitRun() {
-    // 1. التحقق من النت
     if (!navigator.onLine) {
         if(typeof showToast === 'function') showToast("لا يوجد اتصال بالإنترنت! ⚠️", "error");
         else alert("⚠️ لا يوجد اتصال بالإنترنت!");
@@ -610,10 +501,8 @@ async function submitRun() {
             runData.timestamp = firebase.firestore.Timestamp.fromDate(new Date(dateInput.value));
         }
 
-        // إضافة الجرية
         await db.collection('users').doc(uid).collection('runs').add(runData);
 
-        // إضافة للـ Feed
         await db.collection('activity_feed').add({
             uid: uid, 
             userName: userData.name, 
@@ -624,7 +513,6 @@ async function submitRun() {
             commentsCount: 0
         });
 
-        // تحديث الإجماليات
         const currentMonthKey = new Date().toISOString().slice(0, 7);
         let newMonthDist = (userData.monthDist || 0) + dist;
         if(userData.lastMonthKey !== currentMonthKey) newMonthDist = dist;
@@ -636,12 +524,13 @@ async function submitRun() {
             lastMonthKey: currentMonthKey
         }, { merge: true });
 
-        // تحديث محلي
         userData.totalDist += dist;
         userData.totalRuns += 1;
         userData.monthDist = newMonthDist;
 
-        // تنظيف
+        // التحقق من الأوسمة
+        checkNewBadges(dist, time, runData.timestamp ? runData.timestamp.toDate() : new Date());
+
         distInput.value = ''; timeInput.value = ''; linkInput.value = '';
         if(imgUrlInput) imgUrlInput.value = '';
         const preview = document.getElementById('img-preview');
@@ -662,8 +551,6 @@ async function submitRun() {
         if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     }
 } 
-// =============================⬆️ تأكد أن هذا القوس موجود! هذا ما كان ينقصك
-
 
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
@@ -705,7 +592,6 @@ function loadActivityLog() {
                       </div>
                       <div class="log-col-actions">
                           <button class="btn-mini-action btn-share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayStr}')"><i class="ri-share-forward-line"></i></button>
-                          <button class="btn-mini-action btn-edit" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}')"><i class="ri-pencil-line"></i></button>
                           <button class="btn-mini-action btn-del" onclick="deleteRun('${r.id}', ${r.dist})"><i class="ri-delete-bin-line"></i></button>
                       </div>
                   </div>`;
@@ -717,183 +603,86 @@ function loadActivityLog() {
 }
 
 async function deleteRun(id, dist) {
-    if(!confirm("هل أنت متأكد من حذف هذا النشاط؟\nسيتم خصم المسافة من رصيدك.")) return;
-    
+    if(!confirm("هل أنت متأكد من حذف هذا النشاط؟")) return;
     try {
         const uid = currentUser.uid;
-        
-        // 1. جلب بيانات الجرية قبل الحذف لنعرف توقيتها (مهم عشان نلاقي البوست في الـ Feed)
         const runDoc = await db.collection('users').doc(uid).collection('runs').doc(id).get();
-        if (!runDoc.exists) return; // لو الجرية مش موجودة أصلاً نخرج
+        if (!runDoc.exists) return;
         const runData = runDoc.data();
 
-        // 2. حذف الجرية نفسها
         await db.collection('users').doc(uid).collection('runs').doc(id).delete();
-        
-        // 3. تحديث العدادات (خصم المسافة)
         await db.collection('users').doc(uid).update({
             totalDist: firebase.firestore.FieldValue.increment(-dist),
             totalRuns: firebase.firestore.FieldValue.increment(-1),
             monthDist: firebase.firestore.FieldValue.increment(-dist)
         });
 
-        // 4. (جديد V1.3) حذف المنشور من الـ Feed
-        // بنبحث عن المنشور اللي يملكه المستخدم وله نفس تاريخ الجرية بالضبط
         if (runData.timestamp) {
             const feedQuery = await db.collection('activity_feed')
                 .where('uid', '==', uid)
                 .where('timestamp', '==', runData.timestamp)
                 .get();
-                
             const batch = db.batch();
-            feedQuery.forEach(doc => {
-                batch.delete(doc.ref); 
-            });
+            feedQuery.forEach(doc => batch.delete(doc.ref));
             await batch.commit(); 
         }
 
-        // 5. تحديث الواجهة فوراً (مسح محلي)
         userData.totalDist = Math.max(0, (userData.totalDist || 0) - dist);
         userData.totalRuns = Math.max(0, (userData.totalRuns || 0) - 1);
         userData.monthDist = Math.max(0, (userData.monthDist || 0) - dist);
 
-        allUsersCache = []; // تدمير الكاش عشان الترتيب يتظبط
+        allUsersCache = [];
         updateUI();
-        loadActivityLog(); 
-        loadGlobalFeed(); // إعادة تحميل الـ Feed عشان البوست يختفي
-        
-        alert("تم حذف النشاط وتحديث السجلات.");
-
-    } catch (error) {
-        console.error(error);
-        alert("حدث خطأ أثناء الحذف: " + error.message);
-    }
+        loadGlobalFeed();
+        alert("تم الحذف");
+    } catch (error) { console.error(error); alert("خطأ: " + error.message); }
 }
 
-// ==================== 7. Admin, Share & Helpers ====================
+// ==================== Admin & Shared ====================
 function openAdminAuth() {
-    // التحقق الآمن: هل المستخدم مسجل ولديه صلاحية isAdmin؟
     if (currentUser && userData && userData.isAdmin === true) {
         closeModal('modal-settings'); 
-        setTimeout(() => { 
-            switchView('admin'); 
-            loadAdminStats(); 
-            loadAdminFeed(); 
-        }, 100);
+        setTimeout(() => { switchView('admin'); loadAdminStats(); loadAdminFeed(); }, 100);
     } else { 
-        // رسالة رفض لطيفة بدون طلب كود
         alert("⛔ عذراً، هذه المنطقة مخصصة للمشرفين فقط."); 
     }
 }
 
-
-// ==================== 8- زر التحديث الاجباري Force update ====================
 async function forceUpdateApp() {
-    if(!confirm("سيتم تحديث التطبيق الآن لجلب آخر التحسينات.\nهل أنت جاهز؟")) return;
-    
-    // تغيير نص الزر ليعرف المستخدم أن شيئاً يحدث
-    const btn = event.target.closest('button');
-    if(btn) btn.innerText = "جاري التحديث...";
-
+    if(!confirm("سيتم تحديث التطبيق الآن.\nهل أنت جاهز؟")) return;
     try {
-        // 1. إلغاء تسجيل الـ Service Worker (فصل التطبيق عن الكاش القديم)
         if ('serviceWorker' in navigator) {
             const registrations = await navigator.serviceWorker.getRegistrations();
-            for (let registration of registrations) {
-                await registration.unregister();
-            }
+            for (let registration of registrations) await registration.unregister();
         }
-
-        // 2. مسح كاش التخزين تماماً
         if ('caches' in window) {
             const keys = await caches.keys();
             await Promise.all(keys.map(key => caches.delete(key)));
         }
     } catch(e) { console.log(e); }
-
-    // 3. إعادة تحميل قوية من السيرفر
     window.location.reload(true);
 }
-// ==================== 7. زر حذف الحساب بالكامل delete account =========
 
 async function deleteFullAccount() {
-    // 1. التأكيد الصارم (Double Confirmation)
-    if(!confirm("⚠️ تحذير نهائي!\nسيتم حذف حسابك، وسجلك الرياضي، وجميع بياناتك بلا رجعة.\n\nهل أنت متأكد تماماً؟")) return;
-    
-    // التحقق بالنص العربي لزيادة الأمان
-    const checkWord = prompt("للتأكيد النهائي، اكتب كلمة (حذف) أدناه:");
-    if (checkWord !== "حذف") return alert("تم إلغاء العملية. لم يتم حذف أي شيء.");
-
-    const btn = document.querySelector('.delete-danger'); // زر الحذف الأحمر
-    if(btn) { btn.innerText = "جاري الحذف..."; btn.disabled = true; }
+    if(!confirm("⚠️ تحذير نهائي!\nسيتم حذف حسابك بالكامل.")) return;
+    const checkWord = prompt("للتأكيد، اكتب (حذف):");
+    if (checkWord !== "حذف") return alert("تم إلغاء العملية.");
 
     try {
         const uid = currentUser.uid;
-
-        // 2. حذف البيانات من Firestore (على مراحل لتجنب الأخطاء)
-        
-        // أ) حذف الجريات (Runs)
         const runsSnapshot = await db.collection('users').doc(uid).collection('runs').get();
-        // الحذف باستخدام Promise.all لتخطي عقبة الـ 500 مستند (أكثر أماناً من الـ Batch في حالتنا البسيطة)
-        const deleteRunsPromises = runsSnapshot.docs.map(doc => doc.ref.delete());
-        await Promise.all(deleteRunsPromises);
+        await Promise.all(runsSnapshot.docs.map(doc => doc.ref.delete()));
 
-        // ب) حذف المنشورات (Activity Feed)
         const feedSnapshot = await db.collection('activity_feed').where('uid', '==', uid).get();
-        const deleteFeedPromises = feedSnapshot.docs.map(doc => doc.ref.delete());
-        await Promise.all(deleteFeedPromises);
+        await Promise.all(feedSnapshot.docs.map(doc => doc.ref.delete()));
 
-        // ج) حذف الإشعارات (Notifications) - (جديد V1.3)
-        const notifSnapshot = await db.collection('users').doc(uid).collection('notifications').get();
-        const deleteNotifPromises = notifSnapshot.docs.map(doc => doc.ref.delete());
-        await Promise.all(deleteNotifPromises);
-
-        // د) حذف وثيقة المستخدم الرئيسية (User Profile)
         await db.collection('users').doc(uid).delete();
-
-        // 3. حذف الحساب من المصادقة (Authentication)
         await currentUser.delete();
 
-        alert("تم حذف الحساب بنجاح. سنفتقدك! 👋");
+        alert("تم حذف الحساب.");
         window.location.reload();
-
-    } catch (error) {
-        console.error("Delete Error:", error);
-        
-        // معالجة خطأ "يتطلب إعادة تسجيل الدخول"
-        if (error.code === 'auth/requires-recent-login') {
-            alert("⚠️ لأمانك: مر وقت طويل منذ آخر تسجيل دخول.\nيرجى تسجيل الخروج ثم الدخول مرة أخرى لمحاولة حذف الحساب.");
-        } else {
-            alert("حدث خطأ أثناء الحذف: " + error.message);
-        }
-        
-        // إعادة الزر لحالته
-        if(btn) { 
-            btn.innerHTML = '<div class="setting-icon" style="color:#ef4444;"><i class="ri-delete-bin-7-line"></i></div><div class="setting-text" style="color:#ef4444;"><span>حذف الحساب والبيانات</span><small>لا يمكن التراجع</small></div>';
-            btn.disabled = false; 
-        }
-    }
+    } catch (error) { alert("خطأ: " + error.message); }
 }
-async function createChallengeUI() {
-    const t = document.getElementById('admin-ch-title').value;
-    const target = document.getElementById('admin-ch-target').value;
-    await db.collection('challenges').add({title:t, target:parseFloat(target), active:true, startDate: new Date().toISOString()});
-    alert("تم");
-}
-function loadAdminFeed() {
-    const list = document.getElementById('admin-feed-list');
-    db.collection('activity_feed').orderBy('timestamp','desc').limit(10).get().then(s => {
-        let h = ''; s.forEach(d => h += `<div>${d.data().userName} <button onclick="adminDelete('${d.id}')">حذف</button></div>`);
-        list.innerHTML = h;
-    });
-}
-async function adminDelete(id) { await db.collection('activity_feed').doc(id).delete(); alert("حذف"); loadAdminFeed(); loadGlobalFeed(); }
-function loadAdminStats() {
-    const statsDiv = document.getElementById('admin-stats');
-    if(!statsDiv) return;
-    db.collection('users').get().then(snap => { statsDiv.innerHTML = `عدد الأعضاء: <strong style="color:#fff">${snap.size}</strong>`; });
-}
-
 
 async function saveProfileChanges() {
     const name = document.getElementById('edit-name').value;
@@ -904,41 +693,29 @@ async function saveProfileChanges() {
     if(name) {
         const btn = event.target;
         btn.innerText = "جاري الحفظ...";
-        
         try {
             await db.collection('users').doc(currentUser.uid).update({ 
-                name, 
-                region,
-                gender: gender || 'male', 
-                birthYear: birthYear || ''
+                name, region, gender: gender || 'male', birthYear: birthYear || ''
             });
-            
-            // تحديث البيانات محلياً
-            userData.name = name; 
-            userData.region = region;
-            userData.gender = gender;
-            userData.birthYear = birthYear;
-            
-            allUsersCache = []; // تدمير الكاش
+            userData.name = name; userData.region = region;
+            userData.gender = gender; userData.birthYear = birthYear;
+            allUsersCache = [];
             updateUI(); 
             closeModal('modal-edit-profile'); 
-            alert("تم تحديث ملفك الشخصي بنجاح ✅");
-        } catch (e) {
-            console.error(e);
-            alert("حدث خطأ أثناء الحفظ");
-        }
+            showToast("تم تحديث ملفك الشخصي ✅", "success");
+        } catch (e) { console.error(e); alert("خطأ"); }
         btn.innerText = "حفظ التغييرات";
     }
 }
 
-
-  
+// ==================== UI Helpers ====================
 function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function showAuthScreen() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('app-content').style.display='none';}
 function openSettingsModal() { document.getElementById('modal-settings').style.display='flex'; }
 function showNotifications() { document.getElementById('modal-notifications').style.display='flex'; document.getElementById('notif-dot').classList.remove('active'); loadNotifications(); }
 function openEditProfile() { document.getElementById('modal-edit-profile').style.display='flex'; }
+
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -947,6 +724,7 @@ function switchView(viewId) {
     const map = {'home':0, 'challenges':1, 'profile':2};
     if(navItems[map[viewId]]) navItems[map[viewId]].classList.add('active');
 }
+
 function setTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tabName).classList.add('active');
@@ -956,6 +734,8 @@ function setTab(tabName) {
     if (tabName === 'squads') loadRegionBattle();
     if (tabName === 'active-challenges') loadActiveChallenges();
 }
+
+// ==================== Social Features ====================
 async function toggleLike(pid, uid) {
     if(!currentUser) return;
     const ref = db.collection('activity_feed').doc(pid);
@@ -970,6 +750,7 @@ async function toggleLike(pid, uid) {
         }
     }
 }
+
 async function sendNotification(receiverId, message) {
     try {
         await db.collection('users').doc(receiverId).collection('notifications').add({
@@ -977,6 +758,7 @@ async function sendNotification(receiverId, message) {
         });
     } catch(e) {}
 }
+
 let currentPostId = null; let currentPostOwner = null;
 function openComments(postId, postOwnerId) {
     currentPostId = postId; currentPostOwner = postOwnerId;
@@ -984,12 +766,13 @@ function openComments(postId, postOwnerId) {
     document.getElementById('comment-text').value = ''; 
     loadComments(postId);
 }
+
 function loadComments(postId) {
     const list = document.getElementById('comments-list');
-    list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:20px;">جاري تحميل المحادثة...</div>';
+    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري التحميل...</div>';
     db.collection('activity_feed').doc(postId).collection('comments').orderBy('timestamp', 'asc').onSnapshot(snap => {
           let html = '';
-          if(snap.empty) { list.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; margin-top:50px; opacity:0.7;"><i class="ri-chat-1-line" style="font-size:30px;"></i><br>كن أول من يشجع الكابتن!</div>'; return; }
+          if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px; opacity:0.7;">كن أول من يعلق!</div>'; return; }
           snap.forEach(doc => {
               const c = doc.data();
               const time = c.timestamp ? new Date(c.timestamp.toDate()).toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
@@ -999,6 +782,7 @@ function loadComments(postId) {
           list.scrollTop = list.scrollHeight;
       });
 }
+
 async function sendComment() {
     const input = document.getElementById('comment-text');
     const text = input.value.trim();
@@ -1009,9 +793,10 @@ async function sendComment() {
             text: text, userId: currentUser.uid, userName: userData.name, timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         await db.collection('activity_feed').doc(currentPostId).update({ commentsCount: firebase.firestore.FieldValue.increment(1) });
-        if(currentPostOwner !== currentUser.uid) { sendNotification(currentPostOwner, `علق ${userData.name} على نشاطك: "${text.substring(0, 20)}..."`); }
+        if(currentPostOwner !== currentUser.uid) { sendNotification(currentPostOwner, `علق ${userData.name} على نشاطك`); }
     } catch(e) { console.error("Comment Error:", e); }
 }
+
 function loadNotifications() {
     const list = document.getElementById('notifications-list');
     db.collection('users').doc(currentUser.uid).collection('notifications').orderBy('timestamp','desc').limit(10).get().then(snap => {
@@ -1020,12 +805,14 @@ function loadNotifications() {
         list.innerHTML = html || 'لا يوجد إشعارات';
     });
 }
+
 function listenForNotifications() {
     if(!currentUser) return;
     db.collection('users').doc(currentUser.uid).collection('notifications').where('read','==',false).onSnapshot(s => {
         if(!s.empty) document.getElementById('notif-dot').classList.add('active');
     });
 }
+
 function generateShareCard(dist, time, dateStr) {
     document.getElementById('share-name').innerText = userData.name || "Champion";
     const rankData = calculateRank(userData.totalDist || 0);
@@ -1048,50 +835,17 @@ function generateShareCard(dist, time, dateStr) {
         }).catch(err => { console.error(err); alert("حدث خطأ"); });
     }, 100);
 }
-function loadWeeklyChart() {
-    const chartDiv = document.getElementById('weekly-chart');
-    if(!chartDiv) return;
-    const days = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
-    let last7Days = [];
-    for(let i=6; i>=0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        last7Days.push({ dayName: days[d.getDay()], dateKey: d.toISOString().slice(0, 10), dist: 0 });
-    }
-    db.collection('users').doc(currentUser.uid).collection('runs')
-      .where('timestamp', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-      .get().then(snap => {
-          snap.forEach(doc => {
-              const run = doc.data();
-              if(run.timestamp) {
-                  const runDate = run.timestamp.toDate().toISOString().slice(0, 10);
-                  const targetDay = last7Days.find(d => d.dateKey === runDate);
-                  if(targetDay) targetDay.dist += (run.dist || 0);
-              }
-          });
-          let html = '';
-          const maxDist = Math.max(...last7Days.map(d => d.dist), 5);
-          last7Days.forEach(day => {
-              const heightPerc = (day.dist / maxDist) * 100;
-              let barClass = day.dist > 10 ? 'high' : (day.dist > 5 ? 'med' : 'low');
-              if(day.dist === 0) barClass = 'low';
-              html += `<div class="chart-column"><span class="bar-tooltip">${day.dist > 0 ? day.dist.toFixed(1) : ''}</span><div class="bar-bg"><div class="bar-fill ${barClass}" style="height: ${heightPerc}%"></div></div><span class="bar-label">${day.dayName}</span></div>`;
-          });
-          chartDiv.innerHTML = html;
-      });
-}
-// ==================== تحديث عرض التحديات (Mission Style) ====================
+
+// ==================== Challenges & Battles ====================
 function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
     const mini = document.getElementById('my-active-challenges'); 
     if(!list) return;
-    
-    // V1.5: عرض الهيكل العظمي
     list.innerHTML = getSkeletonHTML('challenges');
 
     db.collection('challenges').where('active','==',true).get().then(async snap => {
-        // ... (باقي الكود كما هو) ...
         if(snap.empty) { 
-            list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'><i class='ri-flag-line' style='font-size:40px'></i><br>لا توجد مهمات نشطة حالياً</div>"; 
+            list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'>لا توجد مهمات نشطة حالياً</div>"; 
             if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
             return; 
         }
@@ -1103,47 +857,32 @@ function loadActiveChallenges() {
             const ch = doc.data();
             let isJoined = false; 
             let progress = 0;
-            
-            // التحقق من الانضمام
             if(currentUser) {
                 const p = await doc.ref.collection('participants').doc(currentUser.uid).get();
                 if(p.exists) { isJoined = true; progress = p.data().progress || 0; }
             }
-
             const perc = Math.min((progress/ch.target)*100, 100);
             
-            // تصميم الكارت الجديد
             fullHtml += `
             <div class="mission-card">
                 <div class="mission-bg-icon"><i class="ri-trophy-line"></i></div>
-                
                 <div class="mission-header">
                     <div>
                         <h3 class="mission-title">${ch.title}</h3>
                         <div class="mission-meta">
                             <span><i class="ri-calendar-line"></i> نشط الآن</span>
-                            <span><i class="ri-group-line"></i> تحدي عام</span>
                         </div>
                     </div>
                     <div class="mission-target-badge">${ch.target} كم</div>
                 </div>
-
                 ${isJoined ? `
-                    <div class="mission-progress-container">
-                        <div class="mission-progress-bar" style="width:${perc}%"></div>
-                    </div>
-                    <div class="mission-stats">
-                        <span>أنجزت: <strong style="color:#fff">${progress.toFixed(1)}</strong></span>
-                        <span>${Math.floor(perc)}%</span>
-                    </div>
+                    <div class="mission-progress-container"><div class="mission-progress-bar" style="width:${perc}%"></div></div>
+                    <div class="mission-stats"><span>أنجزت: <strong>${progress.toFixed(1)}</strong></span><span>${Math.floor(perc)}%</span></div>
                 ` : `
-                    <button class="btn-join-mission" onclick="joinChallenge('${doc.id}')">
-                        <i class="ri-add-circle-line"></i> قبول التحدي
-                    </button>
+                    <button class="btn-join-mission" onclick="joinChallenge('${doc.id}')"><i class="ri-add-circle-line"></i> قبول التحدي</button>
                 `}
             </div>`;
 
-            // الكارت المصغر للصفحة الرئيسية
             if(isJoined && mini) {
                 miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div></div>`;
             }
@@ -1154,17 +893,7 @@ function loadActiveChallenges() {
         if(mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
     });
 }
-async function setPersonalGoal() {
-    const newGoal = prompt("حددي هدفك لهذا الشهر (كم):", userData.monthlyGoal || 0);
-    if(newGoal && newGoal > 0) {
-        await db.collection('users').doc(currentUser.uid).update({ monthlyGoal: parseFloat(newGoal) });
-        userData.monthlyGoal = parseFloat(newGoal);
-        updateUI();
-    }
-} 
-// ==================== معركة المحافظات (V36: Data Rich & Arabic) ====================
 
-// قاموس التعريب (يمكنك إضافة المزيد)
 const REGION_AR = {
     "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية",
     "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر",
@@ -1173,71 +902,42 @@ const REGION_AR = {
     "Gharbia": "الغربية", "Beni Suef": "بني سويف"
 };
 
-// تم تحويل الدالة لـ async لتنتظر البيانات
 async function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
-    
-    list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">جاري تحليل جيوش المحافظات... 📡</div>';
+    list.innerHTML = '<div style="text-align:center; padding:20px;">جاري التحميل...</div>';
     
     try {
-        // نطلب البيانات من الدالة المركزية الآمنة
         const sourceData = await fetchTopRunners();
-        
-        // معالجة البيانات
         processRegionData(sourceData, list);
     } catch (e) {
-        console.error(e);
         list.innerHTML = '<div style="text-align:center; color:red;">فشل تحميل البيانات</div>';
     }
 }
-// ================================================
+
 function processRegionData(users, listElement) {
     let stats = {};
-
-    // 1. تجميع البيانات
     users.forEach(u => {
         if(u.region) {
-            // توحيد الاسم (أول حرف كبير للباقي صغير لتجنب التكرار مثل Cairo/cairo)
             let regKey = u.region.charAt(0).toUpperCase() + u.region.slice(1).toLowerCase();
-            
-            if (!stats[regKey]) {
-                stats[regKey] = { totalDist: 0, players: 0 };
-            }
+            if (!stats[regKey]) { stats[regKey] = { totalDist: 0, players: 0 }; }
             stats[regKey].totalDist += (u.totalDist || 0);
             stats[regKey].players += 1;
         }
     });
 
-    // 2. الترتيب
     const sorted = Object.keys(stats)
-        .map(key => ({ 
-            originalName: key, 
-            ...stats[key],
-            avg: stats[key].totalDist / stats[key].players // حساب متوسط قوة الفرد
-        }))
+        .map(key => ({ originalName: key, ...stats[key], avg: stats[key].totalDist / stats[key].players }))
         .sort((a, b) => b.totalDist - a.totalDist);
 
-    listElement.innerHTML = '<div class="squad-list">';
-    
-    if (sorted.length === 0) {
-        listElement.innerHTML = '<div style="text-align:center;">لا توجد بيانات مناطق</div>';
-        return;
-    }
-
+    if (sorted.length === 0) { listElement.innerHTML = '<div style="text-align:center;">لا توجد بيانات</div>'; return; }
     const maxVal = sorted[0].totalDist || 1; 
 
-    // 3. الرسم
     let html = '<div class="squad-list">';
-    
     sorted.forEach((r, i) => {
         const rank = i + 1;
         const percent = (r.totalDist / maxVal) * 100;
-        
-        // التعريب (إذا وجد في القاموس وإلا يظهر الإنجليزي)
         const arabicName = REGION_AR[r.originalName] || r.originalName;
-        
-        // الستايل
         let rankClass = 'rank-other';
         let icon = '';
         if(rank === 1) { rankClass = 'rank-1'; icon = '👑'; }
@@ -1247,55 +947,38 @@ function processRegionData(users, listElement) {
         html += `
         <div class="squad-row ${rankClass}">
             <div class="squad-bg-bar" style="width:${percent}%"></div>
-            
             <div class="squad-header">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div class="squad-rank">${rank}</div>
-                    <div class="squad-name-box">
-                        <h4>${icon} ${arabicName}</h4>
-                    </div>
+                    <div class="squad-name-box"><h4>${icon} ${arabicName}</h4></div>
                 </div>
                 <div class="squad-total-badge">${r.totalDist.toFixed(0)} كم</div>
             </div>
-
             <div class="squad-stats-row">
-                <div class="stat-item" title="عدد اللاعبين">
-                    <i class="ri-user-3-line"></i> ${r.players} لاعب
-                </div>
+                <div class="stat-item"><i class="ri-user-3-line"></i> ${r.players} لاعب</div>
                 <div style="width:1px; height:10px; background:#4b5563;"></div>
-                <div class="stat-item" title="متوسط مساهمة الفرد">
-                    <i class="ri-speed-line"></i> القوة: ${r.avg.toFixed(1)} كم/لاعب
-                </div>
+                <div class="stat-item">القوة: ${r.avg.toFixed(1)}</div>
             </div>
         </div>`;
     });
-    
     listElement.innerHTML = html + '</div>';
 }
- 
-// ==================== 4. Feed (النسخة الكاملة مع التعليقات) ====================
+
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
-
-    // V1.5: عرض الهيكل العظمي عند التحميل الأولي فقط
     if(!list.hasChildNodes() || list.innerHTML.includes('جاري التحميل')) {
         list.innerHTML = getSkeletonHTML('feed');
     }
 
     db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
         let html = '';
-        if(snap.empty) { 
-            list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>'; 
-            return; 
-        }
+        if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px;">لا توجد أنشطة</div>'; return; }
         
         snap.forEach(doc => {
             const p = doc.data();
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
             const commentsCount = p.commentsCount || 0; 
-            
-            // حساب الوقت
             const timeAgo = getArabicTimeAgo(p.timestamp);
 
             html += `
@@ -1311,346 +994,124 @@ function loadGlobalFeed() {
                         </div>
                     </div>
                 </div>
-                
                 <div class="feed-compact-action">
-                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
-                    
-                    ${p.img ? `
-                        <button onclick="window.open('${p.img}', '_blank')" style="background:none; border:none; cursor:pointer; color:#8b5cf6; font-size:14px; display:flex; align-items:center; gap:3px;">
-                            <i class="ri-image-2-fill"></i> <span style="font-size:10px;">إثبات</span>
-                        </button>
-                    ` : ''}
-
+                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6;"><i class="ri-link"></i></a>` : ''}
+                    ${p.img ? `<button onclick="window.open('${p.img}', '_blank')" style="background:none; border:none; color:#8b5cf6;"><i class="ri-image-2-fill"></i> إثبات</button>` : ''}
                     <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
-                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
-                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
+                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i> <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
                     </button>
-
-                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
-                        <i class="ri-chat-3-line"></i>
-                        <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
+                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')">
+                        <i class="ri-chat-3-line"></i> <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
                     </button>
-
-                    <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
+                    <span class="feed-compact-meta">${timeAgo}</span>
                 </div>
             </div>`;
         });
         list.innerHTML = html;
-    }, (error) => {
-        console.error("Feed Error:", error);
-        list.innerHTML = `<div style="text-align:center; color:red; font-size:12px;">تأكد من قواعد البيانات (Rules)</div>`;
     });
 }
-// ==================== زر الطوارئ: إصلاح العدادات (V31 Improved) ====================
-async function fixMyStats() {
-    // 1. التأكيد
-    if(!confirm("⚠️ تنبيه:\nسيقوم هذا الزر بمراجعة كل الجريات المسجلة في حسابك وإعادة جمعها من الصفر لتصحيح الرقم الإجمالي.\n\nهل تريد المتابعة؟")) return;
-    
-    const btn = document.getElementById('fix-btn');
-    const originalText = btn ? btn.innerText : "إصلاح";
-    if(btn) { btn.innerText = "جاري الفحص..."; btn.disabled = true; }
 
-    try {
-        const uid = currentUser.uid;
-        console.log("Starting Fix for user:", uid);
-
-        // 2. جلب كل الجريات
-        const snapshot = await db.collection('users').doc(uid).collection('runs').get();
-        
-        let realTotalDist = 0;
-        let realTotalRuns = 0;
-        let runsFound = 0;
-
-        // 3. الجمع الدقيق (مع تحويل النصوص لأرقام إجبارياً)
-        snapshot.forEach(doc => {
-            const run = doc.data();
-            // تحويل القيمة لرقم عشري (Float) لتجنب جمع النصوص
-            const dist = parseFloat(run.dist);
-            
-            // التأكد أن الرقم صالح (ليس NaN)
-            if (!isNaN(dist)) {
-                realTotalDist += dist;
-            }
-            realTotalRuns += 1;
-            runsFound++;
-        });
-
-        // تصحيح الكسور العشرية (رقمين فقط)
-        realTotalDist = Math.round(realTotalDist * 100) / 100;
-
-        console.log(`Fix Result: Found ${runsFound} runs, Total Dist: ${realTotalDist}`);
-
-        if (runsFound === 0) {
-            alert("تنبيه: لم يتم العثور على أي جريات مسجلة في سجلك!\nسيتم تصفير العدادات.");
-        }
-
-        // 4. تحديث قاعدة البيانات
-        await db.collection('users').doc(uid).update({
-            totalDist: realTotalDist,
-            totalRuns: realTotalRuns,
-            // تحديث شهر "الحالي" فقط (حل مؤقت ذكي)
-            monthDist: realTotalDist 
-        });
-
-        // 5. تحديث الواجهة فوراً
-        userData.totalDist = realTotalDist;
-        userData.totalRuns = realTotalRuns;
-        userData.monthDist = realTotalDist;
-
-        // تدمير الكاش لإظهار النتيجة في المتصدرين
-        if (typeof allUsersCache !== 'undefined') allUsersCache = [];
-
-        updateUI(); // تحديث الشاشة
-
-        alert(`✅ تمت عملية الإصلاح بنجاح!\n\nعدد الجريات الفعلي: ${realTotalRuns}\nالمسافة الإجمالية الصحيحة: ${realTotalDist} كم`);
-
-    } catch (e) {
-        console.error("Fix Error:", e);
-        alert("حدث خطأ أثناء الإصلاح:\n" + e.message);
-    } finally {
-        if(btn) { btn.innerText = originalText; btn.disabled = false; }
-    }
-}
-
-// ==================== 8. Network Handling (V1.3) ====================
-
+// ==================== System & Helpers ====================
 function initNetworkMonitor() {
     const banner = document.getElementById('offline-banner');
-    
-    // دالة لتحديث الحالة
     function updateStatus() {
-        if (navigator.onLine) {
-            banner.classList.remove('active');
-            document.body.style.paddingTop = "0"; // إعادة الجسم لوضعه الطبيعي
-        } else {
-            banner.classList.add('active');
-            // لا نحتاج لإزاحة الجسم لأن البانر fixed ويغطي جزء بسيط
-        }
+        if (navigator.onLine) banner.classList.remove('active');
+        else banner.classList.add('active');
     }
-
-    // الاستماع لأحداث المتصفح
     window.addEventListener('online', updateStatus);
     window.addEventListener('offline', updateStatus);
-    
-    // فحص أولي عند التشغيل
     updateStatus();
 }
 
-// تحسين دالة الإرسال لمنع الأخطاء عند انقطاع النت
-// سنقوم بتعديل بسيط في بداية دالة submitRun الموجودة بالأعلى
-
-
-// ==================== 9. PWA Installation Logic (V1.4) ====================
-
-// 1. للأندرويد والكروم (BeforeInstallPrompt)
+// PWA Install
 window.addEventListener('beforeinstallprompt', (e) => {
-    // منع ظهور النافذة التلقائية المزعجة
     e.preventDefault();
     deferredPrompt = e;
-    
-    // إظهار زر التثبيت في الهيدر
     const btn = document.getElementById('header-install-btn');
     if(btn) btn.style.display = 'flex';
 });
 
-// 2. للآيفون (Detect iOS)
-function checkIosInstall() {
-    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    const isStandalone = window.navigator.standalone === true; // هل هو مثبت بالفعل؟
-
-    if (isIos && !isStandalone) {
-        const btn = document.getElementById('header-install-btn');
-        if(btn) btn.style.display = 'flex';
-    }
-}
-// تشغيل فحص الآيفون عند البدء
-checkIosInstall();
-
-
-// 3. دالة التثبيت عند الضغط على الزر
 async function installApp() {
-    // منطق الأندرويد/الكمبيوتر
     if (deferredPrompt) {
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
-        console.log(`Install choice: ${outcome}`);
         deferredPrompt = null;
-        if(outcome === 'accepted') {
-            document.getElementById('header-install-btn').style.display = 'none';
-        }
+        if(outcome === 'accepted') document.getElementById('header-install-btn').style.display = 'none';
         return;
     }
-
-    // منطق الآيفون (تعليمات يدوية)
     const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
-    if (isIos) {
-        alert("📲 لتثبيت التطبيق على الآيفون:\n\n1. اضغط على زر المشاركة (Share) في أسفل المتصفح ⬆️\n2. اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen) ➕");
-    } else {
-        // حالة نادرة: المتصفح لا يدعم التثبيت التلقائي ولا هو آيفون
-        alert("يمكنك تثبيت التطبيق من خيارات المتصفح -> Add to Home Screen");
-    }
+    if (isIos) alert("📲 للآيفون: اضغط Share ثم Add to Home Screen");
+    else alert("يمكنك تثبيت التطبيق من خيارات المتصفح");
 }
 
-// 4. إخفاء الزر بمجرد التثبيت الناجح
-window.addEventListener('appinstalled', () => {
-    const btn = document.getElementById('header-install-btn');
-    if(btn) btn.style.display = 'none';
-});
-
-
-
-// ==================== 10. Skeleton UI Generators (V1.5) ====================
 function getSkeletonHTML(type) {
-    if (type === 'leaderboard') {
-        // يولد 5 صفوف وهمية
-        return Array(5).fill('').map(() => `
-            <div class="sk-leader-row">
-                <div class="skeleton sk-circle" style="width:30px; height:30px;"></div>
-                <div style="flex:1">
-                    <div class="skeleton sk-line long"></div>
-                    <div class="skeleton sk-line short"></div>
-                </div>
-                <div class="skeleton sk-line" style="width:40px;"></div>
-            </div>
-        `).join('');
-    }
-    
-    if (type === 'feed') {
-        // يولد 3 كروت وهمية
-        return Array(3).fill('').map(() => `
-            <div class="sk-feed-card">
-                <div class="sk-header">
-                    <div class="skeleton sk-circle"></div>
-                    <div style="flex:1">
-                        <div class="skeleton sk-line long"></div>
-                        <div class="skeleton sk-line short"></div>
-                    </div>
-                </div>
-                <div class="skeleton sk-line" style="width:100%; height:15px;"></div>
-            </div>
-        `).join('');
-    }
-
-    if (type === 'challenges') {
-        return Array(2).fill('').map(() => `
-            <div class="skeleton sk-challenge-card"></div>
-        `).join('');
-    }
-    
-    return '<div style="padding:20px; text-align:center;">جاري التحميل...</div>';
+    if (type === 'leaderboard') return Array(5).fill('').map(() => `<div class="sk-leader-row"><div class="skeleton sk-circle"></div><div style="flex:1"><div class="skeleton sk-line long"></div></div></div>`).join('');
+    if (type === 'feed') return Array(3).fill('').map(() => `<div class="sk-feed-card"><div class="sk-header"><div class="skeleton sk-circle"></div><div class="skeleton sk-line long"></div></div><div class="skeleton sk-line"></div></div>`).join('');
+    return '<div style="padding:20px;">جاري التحميل...</div>';
 }
 
-
-
-// ==================== Custom Toast Notification ====================
 function showToast(message, type = 'success') {
     const container = document.getElementById('toast-container');
     if(!container) return;
-
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    
-    // أيقونة حسب النوع
     let icon = type === 'error' ? '<i class="ri-error-warning-line"></i>' : '<i class="ri-checkbox-circle-line"></i>';
-    
     toast.innerHTML = `${icon}<span>${message}</span>`;
     container.appendChild(toast);
-
-    // إخفاء تلقائي بعد 3 ثواني
     setTimeout(() => {
         toast.style.animation = 'fadeOut 0.4s forwards';
         setTimeout(() => toast.remove(), 400);
     }, 3000);
 }
 
-
-// ==================== 11. Web Share Target Logic (V1.6) ====================
 function checkSharedData() {
-    // قراءة البيانات من رابط الصفحة (Query Parameters)
     const urlParams = new URLSearchParams(window.location.search);
-    const title = urlParams.get('title') || '';
-    const text = urlParams.get('text') || '';
-    const url = urlParams.get('url') || '';
+    const title = urlParams.get('title');
+    const text = urlParams.get('text');
+    const url = urlParams.get('url');
 
-    // إذا وجدنا بيانات مشاركة (من سترافا مثلاً)
     if (title || text || url) {
-        // تنظيف الرابط من البارامترات حتى لا يتكرر الأمر عند التحديث
         window.history.replaceState({}, document.title, window.location.pathname);
-
-        // تجهيز النص المستلم لاستخراج البيانات منه (ذكاء بسيط)
-        // عادة النص يكون: "Check out my run on Strava. https://strava.app.link/..."
-        const fullText = `${title} ${text} ${url}`;
-        
-        // استخراج الرابط فقط
+        const fullText = `${title || ''} ${text || ''} ${url || ''}`;
         const extractedUrl = (fullText.match(/https?:\/\/[^\s]+/) || [''])[0];
 
-        // فتح نافذة الجري
         setTimeout(() => {
             if(currentUser) {
-                openNewRun(); // فتح النافذة
-                
-                // تعبئة الرابط تلقائياً
+                openNewRun(); 
                 const linkInput = document.getElementById('log-link');
                 if(linkInput && extractedUrl) {
                     linkInput.value = extractedUrl;
-                    showToast("تم استلام الرابط من التطبيق الخارجي 🔗", "success");
+                    showToast("تم استلام الرابط 🔗", "success");
                 }
-                
-                // (اختياري) محاولة تخمين المسافة لو مكتوبة في النص (متقدمة قليلاً)
-                // مثلا لو النص فيه "5.0 km"
                 const distMatch = fullText.match(/(\d+(\.\d+)?)\s*(km|كم)/i);
-                if(distMatch && distMatch[1]) {
-                    document.getElementById('log-dist').value = distMatch[1];
-                }
+                if(distMatch && distMatch[1]) document.getElementById('log-dist').value = distMatch[1];
             }
-        }, 1500); // ننتظر قليلاً حتى يحمل التطبيق والبيانات
+        }, 1500);
     }
 }
 
-
-// ==================== 12. Smart Paste Logic (V1.6) ====================
 function enableSmartPaste() {
     const linkInput = document.getElementById('log-link');
     const distInput = document.getElementById('log-dist');
-    const noteInput = document.getElementById('comment-text'); // أو أي حقل ملاحظات لو وجد
-
     if(!linkInput || !distInput) return;
 
     linkInput.addEventListener('paste', (event) => {
-        // ننتظر قليلاً حتى يتم اللصق فعلياً
         setTimeout(() => {
             const text = linkInput.value;
-            
-            // 1. محاولة استخراج المسافة (رقم يليه كلمة km أو كم)
-            // Regex يبحث عن: رقم (صحيح أو عشري) + مسافة اختيارية + (km أو كم)
             const distMatch = text.match(/(\d+(\.\d+)?)\s*(km|k|كم)/i);
-            
             if (distMatch && distMatch[1]) {
                 const extractedDist = parseFloat(distMatch[1]);
-                
-                // تنبيه المستخدم وتعبئة الحقل
-                if(confirm(`🤖 اكتشفت مسافة ${extractedDist} كم في النص المنسوخ.\nهل تريد كتابتها تلقائياً؟`)) {
+                if(confirm(`🤖 اكتشفت مسافة ${extractedDist} كم. هل أكتبها؟`)) {
                     distInput.value = extractedDist;
-                    
-                    // ومضة خضراء للحقل لتأكيد العملية
-                    distInput.style.backgroundColor = "rgba(16, 185, 129, 0.2)";
-                    setTimeout(() => distInput.style.backgroundColor = "", 500);
-                    
-                    showToast("تم استخراج المسافة بنجاح ⚡", "success");
+                    showToast("تم استخراج المسافة ⚡", "success");
                 }
             }
-            
-            // 2. محاولة تنظيف الرابط (إبقاء الرابط فقط وحذف النص الزائد)
             const urlMatch = text.match(/https?:\/\/[^\s]+/);
-            if (urlMatch && urlMatch[0] !== text) {
-                linkInput.value = urlMatch[0]; // استبدال النص الطويل بالرابط فقط
-            }
-
+            if (urlMatch && urlMatch[0] !== text) linkInput.value = urlMatch[0]; 
         }, 100);
     });
 }
 
-// ==================== 13. ImgBB Upload Logic (V1.6) ====================
 async function uploadImageToImgBB() {
     const fileInput = document.getElementById('log-img-file');
     const status = document.getElementById('upload-status');
@@ -1667,33 +1128,26 @@ async function uploadImageToImgBB() {
 
     const formData = new FormData();
     formData.append("image", file);
-    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; // مفتاحك ✅
+    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; 
 
     try {
-        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-            method: "POST", body: formData
-        });
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, { method: "POST", body: formData });
         const data = await response.json();
 
         if (data.success) {
             const imageUrl = data.data.url;
             hiddenInput.value = imageUrl;
-            
             preview.src = imageUrl;
             preview.style.display = 'block';
-            status.innerText = "تم إرفاق الصورة بنجاح ✅";
+            status.innerText = "تم إرفاق الصورة ✅";
             status.style.color = "#10b981";
-            
             if(saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "حفظ النشاط"; }
-            if(typeof showToast === 'function') showToast("تم رفع الصورة 📸", "success");
-        } else {
-            throw new Error(data.error ? data.error.message : "فشل الرفع");
-        }
+            showToast("تم رفع الصورة 📸", "success");
+        } else { throw new Error(data.error.message); }
     } catch (error) {
         console.error("ImgBB Error:", error);
         status.innerText = "فشل الرفع! ❌";
         status.style.color = "#ef4444";
         if(saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "حفظ النشاط"; }
-        alert("لم نتمكن من رفع الصورة.");
     }
 }
