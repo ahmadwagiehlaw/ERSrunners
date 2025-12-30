@@ -1,13 +1,12 @@
-// ERS Runners - Service Worker
-const CACHE_NAME = 'ers-runners-v1.4'; // رقم جديد
+// ERS Runners - Service Worker (V1.5 Fast Load)
+const CACHE_NAME = 'ers-runners-v1.5-fast'; // تحديث رقم النسخة
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
   './app.js',
   './manifest.json',
-  './icon.png' 
-  // تأكد أن أسماء الصور هنا تطابق الموجود عندك بالضبط (jpg أو png)
+  './icon.png'
 ];
 
 // 1. التثبيت (Install)
@@ -27,7 +26,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            console.log('مسح الكاش القديم:', cache);
+            console.log('تنظيف كاش قديم:', cache);
             return caches.delete(cache);
           }
         })
@@ -37,30 +36,32 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// 3. جلب الملفات (Fetch Strategy: Network First)
-// يحاول يجيب أحدث نسخة من النت، لو فشل (أوفلاين) يجيب من الكاش
+// 3. استراتيجية السرعة القصوى (Stale-While-Revalidate)
 self.addEventListener('fetch', (event) => {
-  // تجاهل طلبات الفايربيس (عشان الداتابيز تشتغل صح)
-  if (event.request.url.includes('firestore') || event.request.url.includes('googleapis')) {
+  // استثناء طلبات الفايربيس (يجب أن تكون مباشرة دائماً)
+  if (event.request.url.includes('firestore') || 
+      event.request.url.includes('googleapis') || 
+      event.request.url.includes('auth')) {
     return; 
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // لو نجحنا نجيب نسخة جديدة، نخزنها في الكاش للمرة الجاية
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // 1. حاول العثور على الملف في الكاش أولاً
+      const cachedResponse = await cache.match(event.request);
+      
+      // 2. قم بطلب تحديث من الشبكة في الخلفية للمرة القادمة
+      const networkFetch = fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          cache.put(event.request, networkResponse.clone());
         }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-        return response;
-      })
-      .catch(() => {
-        // لو مفيش نت، هات من الكاش
-        return caches.match(event.request);
-      })
+        return networkResponse;
+      }).catch(() => {
+        // لو مفيش نت، مش مشكلة، إحنا عرضنا الكاش خلاص
+      });
+
+      // 3. لو الملف موجود في الكاش اعرضه فوراً (سرعة)، وإلا انتظر الشبكة
+      return cachedResponse || networkFetch;
+    })
   );
 });
