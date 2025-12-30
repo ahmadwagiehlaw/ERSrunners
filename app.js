@@ -1456,3 +1456,26 @@ function getSkeletonHTML(type) {
     
     return '<div style="padding:20px; text-align:center;">جاري التحميل...</div>';
 }
+
+
+
+// ==================== Custom Toast Notification ====================
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    if(!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    
+    // أيقونة حسب النوع
+    let icon = type === 'error' ? '<i class="ri-error-warning-line"></i>' : '<i class="ri-checkbox-circle-line"></i>';
+    
+    toast.innerHTML = `${icon}<span>${message}</span>`;
+    container.appendChild(toast);
+
+    // إخفاء تلقائي بعد 3 ثواني
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.4s forwards';
+        setTimeout(() => toast.remove(), 400);
+    }, 3000);
+}
