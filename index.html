@@ -10,7 +10,6 @@
     
     <meta name="theme-color" content="#111827">
     <meta name="background-color" content="#111827">
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ERS Runners">
@@ -21,8 +20,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-   <link rel="stylesheet" href="style.css?v=2.0">
-
+    <link rel="stylesheet" href="style.css?v=3.0">
 </head>
 <body>
     <div id="offline-banner" class="offline-banner">⚠️ لا يوجد اتصال بالإنترنت - وضع التصفح</div>
@@ -134,32 +132,66 @@
                 </div>
             </section>
 
-            <section id="view-admin" class="view">
-                <div class="section-header">
-                    <h4>لوحة التحكم 🛠️</h4>
-                    <span class="link-text" onclick="switchView('home')">خروج</span>
+            <div id="view-admin" class="view">
+                <div class="section-title-row">
+                    <h4>🦅 غرفة العمليات</h4>
+                    <button class="btn-text" onclick="switchView('profile')">خروج</button>
                 </div>
-                <div class="admin-card">
-                    <h3>إنشاء تحدي جديد 🏆</h3>
-                    <div class="form-group" style="margin-top:10px;">
-                        <input type="text" id="admin-ch-title" placeholder="عنوان التحدي">
-                        <input type="text" id="admin-ch-desc" placeholder="الوصف">
-                        <div class="input-row">
-                            <div class="input-wrap"><input type="number" id="admin-ch-target" placeholder="الهدف (كم)"></div>
-                            <div class="input-wrap"><input type="number" id="admin-ch-days" placeholder="المدة (أيام)"></div>
-                        </div>
-                        <button class="btn btn-primary" onclick="createChallengeUI()" style="margin-top:10px;">نشر التحدي</button>
+
+                <div class="dashboard-grid">
+                    <div class="dash-card">
+                        <span class="dash-num" id="total-users-count">0</span>
+                        <span class="dash-lbl">إجمالي الأعضاء</span>
+                    </div>
+                    <div class="dash-card">
+                        <span class="dash-num" id="flagged-runs-count" style="color:#ef4444;">0</span>
+                        <span class="dash-lbl">حالات اشتباه 🚨</span>
                     </div>
                 </div>
-                <div class="admin-card" style="margin-top:15px;">
-                    <h3>إدارة المنشورات 👮‍♂️</h3>
-                    <div id="admin-feed-list" class="feed-list"></div>
+
+                <div class="admin-card" style="margin-bottom:20px; border-color:#ef4444;">
+                    <h4 style="margin-top:0; color:#ef4444; display:flex; align-items:center; gap:5px;">
+                        <i class="ri-alarm-warning-line"></i> رادار السرعة
+                    </h4>
+                    <p style="font-size:10px; color:#9ca3af; margin-bottom:10px;">يعرض الجريات التي سرعتها أقل من 2.5 د/كم أو مسافتها +45 كم</p>
+                    <div id="suspicious-list">
+                        <div style="text-align:center; font-size:11px; padding:10px;">جاري المسح...</div>
+                    </div>
                 </div>
-                <div class="admin-card" style="margin-top:15px;">
-                    <h3>إحصائيات 📊</h3>
-                    <div id="admin-stats" style="color:#9ca3af; font-size:12px;">...</div>
+
+                <div class="section-title-row">
+                    <h4>قائمة الأعضاء</h4>
+                    <button class="btn-text" onclick="loadAllUsersTable()">تحديث</button>
                 </div>
-            </section>
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>المنطقة</th>
+                                <th>تحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            </tbody>
+                    </table>
+                </div>
+
+                <div class="admin-card" style="margin-top:20px;">
+                    <h4 style="margin-top:0; color:var(--primary);">🎯 إطلاق تحدي جديد</h4>
+                    <div class="form-group" style="margin-top:10px; gap:8px;">
+                        <input type="text" id="adv-ch-title" placeholder="عنوان التحدي (مثال: ماراثون الجمعة)">
+                        <div class="input-row">
+                            <div class="input-wrap"><label>الهدف (كم)</label><input type="number" id="adv-ch-target"></div>
+                            <div class="input-wrap"><label>المدة (أيام)</label><input type="number" id="adv-ch-days"></div>
+                        </div>
+                        <div class="input-row">
+                            <div class="input-wrap"><label>تاريخ البدء</label><input type="date" id="adv-ch-start"></div>
+                        </div>
+                        <button class="btn btn-primary" onclick="createAdvancedChallenge()">نشر التحدي 🚀</button>
+                    </div>
+                </div>
+            </div>
 
             <section id="view-challenges" class="view">
                 <div class="tabs-nav">
@@ -167,11 +199,12 @@
                     <div class="tab-item" onclick="setTab('leaderboard')">المتصدرون</div>
                     <div class="tab-item" onclick="setTab('squads')">المناطق</div>
                 </div>
+                
                 <div id="tab-active-challenges" class="tab-content active">
                     <div id="challenges-list" class="challenges-grid"></div>
                 </div>
-               <div id="tab-leaderboard" class="tab-content">
-                    
+                
+                <div id="tab-leaderboard" class="tab-content">
                     <div class="team-goal-card">
                         <div class="team-title">إجمالي جري الفريق (الشهر)</div>
                         <div class="team-val" id="teamTotalDisplay">0</div>
@@ -206,12 +239,9 @@
                             </button>
                         </div>
                     </div>
-                    
-                    <div id="leaderboard-list" class="rank-list"></div>
-                    </div>
-                    
                     <div id="leaderboard-list" class="rank-list"></div>
                 </div>
+                
                 <div id="tab-squads" class="tab-content">
                     <div id="region-battle-list"></div>
                 </div>
@@ -245,18 +275,29 @@
                 </div>
 
                 <div class="section-title-row">
-    <h4>تحليل النشاط</h4>
-    <div class="chart-toggle-row">
-        <button class="chart-toggle-btn active" onclick="loadChart('week', this)">أسبوع</button>
-        <button class="chart-toggle-btn" onclick="loadChart('month', this)">شهر</button>
-    </div>
-</div>
-<div class="chart-scroll-wrapper">
-    <div class="chart-container" id="main-chart-area">
-        <div style="margin:auto; font-size:12px; color:#6b7280;">جاري التحميل...</div>
-    </div>
-</div>
+                    <h4>تحليل النشاط</h4>
+                    <div class="chart-toggle-row">
+                        <button class="chart-toggle-btn active" onclick="loadChart('week', this)">أسبوع</button>
+                        <button class="chart-toggle-btn" onclick="loadChart('month', this)">شهر</button>
+                    </div>
+                </div>
+                <div class="chart-scroll-wrapper">
+                    <div class="chart-container" id="main-chart-area">
+                        <div style="margin:auto; font-size:12px; color:#6b7280;">جاري التحميل...</div>
+                    </div>
+                </div>
                 
+                <div class="status-card" style="background: linear-gradient(135deg, #374151, #1f2937); margin-top:20px;">
+                    <div class="status-header" style="color:#fff; margin-bottom:10px;">
+                        <i class="ri-medal-line" style="color:#f59e0b;"></i> أرقامي القياسية
+                    </div>
+                    <div class="stats-grid">
+                        <div><span class="stat-val" id="best-dist">0</span><span class="stat-lbl">أطول جرية (كم)</span></div>
+                        <div><span class="stat-val" id="best-pace">-</span><span class="stat-lbl">أفضل بيس</span></div>
+                        <div><span class="stat-val" id="total-time-hours">0</span><span class="stat-lbl">ساعات الجري</span></div>
+                    </div>
+                </div>
+
                 <div class="badges-section" style="margin-top: 20px;">
                     <h3 class="section-title">إنجازاتي 🎖️</h3>
                     <div id="badges-grid" class="badges-grid">
@@ -312,17 +353,17 @@
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
                     <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
                 </button>
-                <button id="btn-admin-entry" class="setting-item" onclick="openAdminAuth()" style="display: none;">
-                    <div class="setting-icon"><i class="ri-shield-user-line"></i></div>
-                    <div class="setting-text"><span>دخول المشرفين</span><small>للأدمن فقط</small></div>
-                </button>
-               
-
                 <button id="fix-btn" class="setting-item" onclick="fixMyStats()">
-    <div class="setting-icon"><i class="ri-tools-line"></i></div>
-    <div class="setting-text"><span>إصلاح العدادات</span><small>اضغط هنا لو الأرقام خاطئة</small></div>
-</button>
-                
+                    <div class="setting-icon"><i class="ri-tools-line"></i></div>
+                    <div class="setting-text"><span>إصلاح العدادات</span><small>اضغط هنا لو الأرقام خاطئة</small></div>
+                </button>
+                <div class="setting-item" id="btn-admin-entry" onclick="openAdminAuth()" style="display:none; border-color:var(--accent);">
+                    <div class="setting-icon" style="color:var(--accent);"><i class="ri-admin-line"></i></div>
+                    <div class="setting-text">
+                        <span style="color:var(--accent);">لوحة المشرفين</span>
+                        <small>تحكم كامل بالتطبيق</small>
+                    </div>
+                </div>
                 <button class="setting-item delete" onclick="logout()" style="margin-top:5px;">
                     <div class="setting-icon"><i class="ri-logout-box-r-line"></i></div>
                     <div class="setting-text">تسجيل الخروج</div>
@@ -433,23 +474,6 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <script src="app.js?v=2"></script> 
-
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .then((reg) => console.log('Service Worker Registered 🟢', reg.scope))
-            .catch((err) => console.log('Service Worker Error 🔴', err));
-        });
-      }
-    </script>
-    <div id="toast-container" class="toast-container"></div>
     <div id="modal-view-user" class="modal-overlay">
         <div class="modal-box">
             <div style="text-align:center; position:relative;">
@@ -477,5 +501,23 @@
             </div>
         </div>
     </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <script src="app.js?v=3.0"></script> 
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then((reg) => console.log('Service Worker Registered 🟢', reg.scope))
+            .catch((err) => console.log('Service Worker Error 🔴', err));
+        });
+      }
+    </script>
+    <div id="toast-container" class="toast-container"></div>
 </body>
 </html>
