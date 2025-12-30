@@ -489,51 +489,36 @@ function renderBadges() {
 }
 
 // ==================== 6. Activity Log & Submission ====================
+// ==================== 5. Open Modal Helper (Updated V1.6) ====================
 function openNewRun() {
-    // 1. إعادة ضبط الزر للنص الأصلي
-    document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-    document.getElementById('save-run-btn').disabled = false;
+    const btn = document.getElementById('save-run-btn');
+    if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     
-    // 2. ضبط التاريخ
+    // ضبط التاريخ
     const dateInput = document.getElementById('log-date');
-    if(dateInput) dateInput.value = getLocalInputDate();
+    if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
     
-    // 3. (جديد V1.6) تنظيف حقول الصورة بالكامل 🧹
+    // تنظيف حقول الصورة (V1.6)
     const imgInput = document.getElementById('uploaded-img-url');
     const preview = document.getElementById('img-preview');
     const status = document.getElementById('upload-status');
     const fileInput = document.getElementById('log-img-file');
     
-    if(imgInput) imgInput.value = ''; // مسح الرابط
-    if(preview) { 
-        preview.src = ''; 
-        preview.style.display = 'none'; // إخفاء الصورة المصغرة
-    }
-    if(status) status.innerText = ''; // مسح رسالة "تم الرفع"
-    if(fileInput) fileInput.value = ''; // تصفير الملف المختار من الجهاز
+    if(imgInput) imgInput.value = '';
+    if(preview) { preview.src = ''; preview.style.display = 'none'; }
+    if(status) status.innerText = '';
+    if(fileInput) fileInput.value = '';
     
-    // 4. فتح النافذة
     openLogModal();
     
-    // 5. تفعيل اللصق الذكي (لو مفعله عندك)
     if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
 }
-
-window.editRun = function(id, dist, time, type, link) {
-    editingRunId = id;
-    editingOldDist = dist;
-    document.getElementById('log-dist').value = dist;
-    document.getElementById('log-time').value = time;
-    document.getElementById('log-type').value = type;
-    document.getElementById('log-link').value = link || '';
-    document.getElementById('save-run-btn').innerText = "تعديل النشاط";
-    openLogModal();
-}
-
+// ==================== 4. Save Run Logic (Updated V1.6) ====================
 async function submitRun() {
     // التحقق من النت (V1.3)
     if (!navigator.onLine) {
-        alert("⚠️ لا يوجد اتصال بالإنترنت!");
+        if(typeof showToast === 'function') showToast("لا يوجد اتصال بالإنترنت! ⚠️", "error");
+        else alert("⚠️ لا يوجد اتصال بالإنترنت!");
         return;
     }
 
@@ -543,34 +528,34 @@ async function submitRun() {
     const typeInput = document.getElementById('log-type');
     const linkInput = document.getElementById('log-link');
     const dateInput = document.getElementById('log-date');
-    
-    // (جديد) قراءة رابط الصورة من الحقل المخفي
-    const imgUrlInput = document.getElementById('uploaded-img-url');
-    
+    const imgUrlInput = document.getElementById('uploaded-img-url'); // (V1.6)
+
     const dist = parseFloat(distInput.value);
     const time = parseFloat(timeInput.value);
     const type = typeInput.value;
     const link = linkInput.value;
-    const img = imgUrlInput ? imgUrlInput.value : ''; // الرابط المرفوع
+    const img = imgUrlInput ? imgUrlInput.value : ''; 
 
-    if (!dist || !time) return alert("البيانات ناقصة (المسافة والزمن)");
+    if (!dist || !time) {
+        if(typeof showToast === 'function') showToast("يرجى كتابة المسافة والزمن 📝", "error");
+        else alert("البيانات ناقصة");
+        return;
+    }
 
     if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
         
-        // تجهيز بيانات الجرية (لاحظ حقل img الجديد)
         const runData = {
             dist, 
             time, 
             type, 
             link: link || '', 
-            img: img || '',   // <--- هنا التعديل المهم
+            img: img || '', 
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // التعامل مع التاريخ المخصص لو وجد
         if(dateInput && dateInput.value) {
             runData.date = dateInput.value;
             runData.timestamp = firebase.firestore.Timestamp.fromDate(new Date(dateInput.value));
@@ -584,16 +569,15 @@ async function submitRun() {
             uid: uid, 
             userName: userData.name, 
             userRegion: userData.region,
-            userGender: userData.gender || 'male', // عشان الأفاتار يظبط
+            userGender: userData.gender || 'male',
             ...runData, 
             likes: [], 
             commentsCount: 0
         });
 
-        // 3. تحديث إجماليات المستخدم
+        // 3. تحديث الإجماليات
         const currentMonthKey = new Date().toISOString().slice(0, 7);
         let newMonthDist = (userData.monthDist || 0) + dist;
-        // تصفير الشهر لو دخلنا شهر جديد
         if(userData.lastMonthKey !== currentMonthKey) newMonthDist = dist;
 
         await db.collection('users').doc(uid).set({
@@ -603,19 +587,21 @@ async function submitRun() {
             lastMonthKey: currentMonthKey
         }, { merge: true });
 
-        // تحديث محلي سريع
+        // تحديث محلي
         userData.totalDist += dist;
         userData.totalRuns += 1;
         userData.monthDist = newMonthDist;
 
-        // تنظيف الفورم
+        // تنظيف
         distInput.value = ''; timeInput.value = ''; linkInput.value = '';
-        if(imgUrlInput) imgUrlInput.value = ''; // مسح رابط الصورة
-        document.getElementById('img-preview').style.display = 'none'; // إخفاء المعاينة
-        document.getElementById('upload-status').innerText = '';
+        if(imgUrlInput) imgUrlInput.value = '';
+        const preview = document.getElementById('img-preview');
+        if(preview) { preview.src = ''; preview.style.display = 'none'; }
+        const status = document.getElementById('upload-status');
+        if(status) status.innerText = '';
 
         closeModal('modal-log');
-        allUsersCache = []; // تحديث المتصدرين
+        allUsersCache = [];
         updateUI();
         loadGlobalFeed();
         loadActivityLog();
@@ -628,17 +614,7 @@ async function submitRun() {
     } finally {
         if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     }
-}
-        // 🔥 مسح الكاش لتظهر نتيجتك الجديدة في المتصدرين فوراً
-        allUsersCache = []; 
-
-        updateUI(); 
-        loadGlobalFeed(); 
-        loadActivityLog();
-
-    } catch (error) { alert("خطأ: " + error.message); } 
-    finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
-}
+} // <--- ✅ هذا القوس كان ناقصاً وتسبب في المشكلة!
 
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
@@ -1633,56 +1609,42 @@ async function uploadImageToImgBB() {
     const hiddenInput = document.getElementById('uploaded-img-url');
     const saveBtn = document.getElementById('save-run-btn');
 
-    // 1. التأكد من وجود ملف
     if (!fileInput.files || fileInput.files.length === 0) return;
     const file = fileInput.files[0];
 
-    // 2. تحديث الواجهة (جاري الرفع)
     status.innerText = "جاري رفع الصورة... ⏳";
-    status.style.color = "#f59e0b"; // برتقالي
-    saveBtn.disabled = true; // نمنع الحفظ لحد ما الرفع يخلص
-    saveBtn.innerText = "انتظر...";
+    status.style.color = "#f59e0b";
+    if(saveBtn) { saveBtn.disabled = true; saveBtn.innerText = "انتظر..."; }
 
-    // 3. تجهيز البيانات (بالمفتاح بتاعك)
     const formData = new FormData();
     formData.append("image", file);
-    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; // 🔑 مفتاحك
+    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; // مفتاحك ✅
 
     try {
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
-            method: "POST",
-            body: formData
+            method: "POST", body: formData
         });
-
         const data = await response.json();
 
         if (data.success) {
-            // 4. نجح الرفع!
             const imageUrl = data.data.url;
-            hiddenInput.value = imageUrl; // نخزن الرابط في الحقل المخفي
+            hiddenInput.value = imageUrl;
             
-            // نعرض الصورة
             preview.src = imageUrl;
             preview.style.display = 'block';
-            
             status.innerText = "تم إرفاق الصورة بنجاح ✅";
-            status.style.color = "#10b981"; // أخضر
+            status.style.color = "#10b981";
             
-            // نرجع زر الحفظ
-            saveBtn.disabled = false;
-            saveBtn.innerText = "حفظ النشاط";
-            
+            if(saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "حفظ النشاط"; }
             if(typeof showToast === 'function') showToast("تم رفع الصورة 📸", "success");
         } else {
-            throw new Error(data.error ? data.error.message : "فشل غير معروف");
+            throw new Error(data.error ? data.error.message : "فشل الرفع");
         }
-
     } catch (error) {
         console.error("ImgBB Error:", error);
-        status.innerText = "فشل الرفع! تأكد من النت ❌";
+        status.innerText = "فشل الرفع! ❌";
         status.style.color = "#ef4444";
-        saveBtn.disabled = false;
-        saveBtn.innerText = "حفظ النشاط";
-        alert("لم نتمكن من رفع الصورة، حاول مرة أخرى.");
+        if(saveBtn) { saveBtn.disabled = false; saveBtn.innerText = "حفظ النشاط"; }
+        alert("لم نتمكن من رفع الصورة.");
     }
 }
