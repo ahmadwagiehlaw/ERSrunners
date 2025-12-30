@@ -32,6 +32,31 @@ async function fetchTopRunners() {
     return allUsersCache;
 }
 
+// --- دوال مساعدة للتواريخ (V1.3) ---
+
+// 1. تجهيز التاريخ الحالي لحقل الإدخال (Local ISO Format)
+function getLocalInputDate() {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0,16);
+}
+
+// 2. حساب الزمن المنقضي (منذ كذا...)
+function getArabicTimeAgo(timestamp) {
+    if (!timestamp) return "الآن";
+    const diff = (new Date() - timestamp.toDate()) / 60000; // الفرق بالدقائق
+    if (diff < 1) return "الآن";
+    if (diff < 60) return `${Math.floor(diff)} د`;
+    if (diff < 1440) return `${Math.floor(diff/60)} س`;
+    return `${Math.floor(diff/1440)} يوم`;
+}
+// 3. تنسيق الأرقام (رقم عشري واحد فقط) - (V1.3)
+function formatNumber(num) {
+    // تحويل النص لرقم، وفي حالة الخطأ نعتبره صفر
+    const n = parseFloat(num) || 0;
+    // إرجاع رقم عشري واحد ثابت
+    return n.toFixed(1);
+}
 // ==================== 1. Authentication (Global Functions) ====================
 // هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
 
@@ -133,11 +158,10 @@ function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
     
-    // تعيين التاريخ الافتراضي
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    
+    // تعيين التاريخ الافتراضي (V1.3 Updated)
     const dateInput = document.getElementById('log-date');
-    if(dateInput) dateInput.value = now.toISOString().slice(0,16);
+    if(dateInput) dateInput.value = getLocalInputDate();
 
     updateUI();
     loadActivityLog();
@@ -441,10 +465,9 @@ function openNewRun() {
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
     document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    // (V1.3 Updated)
     const dateInput = document.getElementById('log-date');
-    if(dateInput) dateInput.value = now.toISOString().slice(0,16);
+    if(dateInput) dateInput.value = getLocalInputDate();
     openLogModal();
 }
 
@@ -566,7 +589,7 @@ function loadActivityLog() {
                       ${badge}
                       <div class="log-col-main">
                           <div class="log-type-icon"><i class="${r.type === 'Walk' ? 'ri-walk-line' : 'ri-run-line'}"></i></div>
-                          <div><span class="log-dist-val">${r.dist}</span> <span class="log-dist-unit">كم</span></div>
+                          <div><span class="log-dist-val">${formatNumber(r.dist)}</span> <span class="log-dist-unit">كم</span></div>
                       </div>
                       <div class="log-col-meta">
                           <span class="log-date-text">${dayStr}</span>
@@ -1037,13 +1060,8 @@ function loadGlobalFeed() {
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
             const commentsCount = p.commentsCount || 0; // عداد التعليقات
             
-            let timeAgo = "الآن";
-            if(p.timestamp) {
-                const diff = (new Date() - p.timestamp.toDate()) / 60000;
-                if(diff < 60) timeAgo = `${Math.floor(diff)} د`;
-                else if(diff < 1440) timeAgo = `${Math.floor(diff/60)} س`;
-                else timeAgo = `${Math.floor(diff/1440)} يوم`;
-            }
+           // حساب الوقت باستخدام الدالة المساعدة (V1.3)
+            const timeAgo = getArabicTimeAgo(p.timestamp);
 
             html += `
             <div class="feed-card-compact">
@@ -1054,7 +1072,7 @@ function loadGlobalFeed() {
                             <strong>${p.userName}</strong> <span style="opacity:0.7">(${p.userRegion})</span>
                         </div>
                         <div class="feed-compact-text" style="margin-top:2px;">
-                            ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${p.dist} كم</span>
+                            ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${formatNumber(p.dist)} كم</span>
                         </div>
                     </div>
                 </div>
