@@ -490,21 +490,33 @@ function renderBadges() {
 
 // ==================== 6. Activity Log & Submission ====================
 function openNewRun() {
-    editingRunId = null;
-    editingOldDist = 0;
-    document.getElementById('log-dist').value = '';
-    document.getElementById('log-time').value = '';
-    document.getElementById('log-type').value = 'Run';
-    document.getElementById('log-link').value = '';
+    // 1. إعادة ضبط الزر للنص الأصلي
     document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-    / (V1.3 Updated)
+    document.getElementById('save-run-btn').disabled = false;
+    
+    // 2. ضبط التاريخ
     const dateInput = document.getElementById('log-date');
     if(dateInput) dateInput.value = getLocalInputDate();
     
+    // 3. (جديد V1.6) تنظيف حقول الصورة بالكامل 🧹
+    const imgInput = document.getElementById('uploaded-img-url');
+    const preview = document.getElementById('img-preview');
+    const status = document.getElementById('upload-status');
+    const fileInput = document.getElementById('log-img-file');
+    
+    if(imgInput) imgInput.value = ''; // مسح الرابط
+    if(preview) { 
+        preview.src = ''; 
+        preview.style.display = 'none'; // إخفاء الصورة المصغرة
+    }
+    if(status) status.innerText = ''; // مسح رسالة "تم الرفع"
+    if(fileInput) fileInput.value = ''; // تصفير الملف المختار من الجهاز
+    
+    // 4. فتح النافذة
     openLogModal();
     
-    // تفعيل اللصق الذكي (V1.6)
-    enableSmartPaste(); 
+    // 5. تفعيل اللصق الذكي (لو مفعله عندك)
+    if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
 }
 
 window.editRun = function(id, dist, time, type, link) {
@@ -519,69 +531,104 @@ window.editRun = function(id, dist, time, type, link) {
 }
 
 async function submitRun() {
-    // V1.3: منع الإرسال إذا لم يوجد إنترنت
+    // التحقق من النت (V1.3)
     if (!navigator.onLine) {
-        alert("⚠️ لا يوجد اتصال بالإنترنت!\nيرجى التحقق من الشبكة ثم المحاولة.");
+        alert("⚠️ لا يوجد اتصال بالإنترنت!");
         return;
     }
-    const btn = document.getElementById('save-run-btn');
-    const dist = parseFloat(document.getElementById('log-dist').value);
-    const time = parseFloat(document.getElementById('log-time').value);
-    const type = document.getElementById('log-type').value;
-    const link = document.getElementById('log-link').value;
-    const dateInput = document.getElementById('log-date').value;
 
-    if (!dist || !time) return alert("البيانات ناقصة");
-    if(btn) { btn.innerText = "جاري المعالجة..."; btn.disabled = true; }
+    const btn = document.getElementById('save-run-btn');
+    const distInput = document.getElementById('log-dist');
+    const timeInput = document.getElementById('log-time');
+    const typeInput = document.getElementById('log-type');
+    const linkInput = document.getElementById('log-link');
+    const dateInput = document.getElementById('log-date');
+    
+    // (جديد) قراءة رابط الصورة من الحقل المخفي
+    const imgUrlInput = document.getElementById('uploaded-img-url');
+    
+    const dist = parseFloat(distInput.value);
+    const time = parseFloat(timeInput.value);
+    const type = typeInput.value;
+    const link = linkInput.value;
+    const img = imgUrlInput ? imgUrlInput.value : ''; // الرابط المرفوع
+
+    if (!dist || !time) return alert("البيانات ناقصة (المسافة والزمن)");
+
+    if(btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
 
     try {
         const uid = currentUser.uid;
-        if (editingRunId) {
-            const distDiff = dist - editingOldDist; 
-            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({ dist, time, type, link });
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(distDiff),
-                monthDist: firebase.firestore.FieldValue.increment(distDiff)
-            }, { merge: true });
-            alert("تم تعديل الجرية بنجاح ✅");
-            editingRunId = null;
-        } else {
-            const selectedDate = new Date(dateInput);
-            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
-            let newMonthDist = (userData.monthDist || 0) + dist;
-            if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
+        
+        // تجهيز بيانات الجرية (لاحظ حقل img الجديد)
+        const runData = {
+            dist, 
+            time, 
+            type, 
+            link: link || '', 
+            img: img || '',   // <--- هنا التعديل المهم
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        };
 
-            const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
-            await db.collection('users').doc(uid).collection('runs').add(runData);
-            await db.collection('activity_feed').add({
-                uid: uid, userName: userData.name, userRegion: userData.region,
-                ...runData, likes: []
-            });
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(dist),
-                totalRuns: firebase.firestore.FieldValue.increment(1),
-                monthDist: newMonthDist, lastMonthKey: currentMonthKey
-            }, { merge: true });
-
-            const activeCh = await db.collection('challenges').where('active', '==', true).get();
-            const batch = db.batch();
-            activeCh.forEach(doc => {
-                batch.set(doc.ref.collection('participants').doc(uid), {
-                    progress: firebase.firestore.FieldValue.increment(dist),
-                    lastUpdate: timestamp, name: userData.name, region: userData.region
-                }, { merge: true });
-            });
-            await batch.commit();
-
-            userData.totalDist += dist; userData.totalRuns += 1; userData.monthDist = newMonthDist;
-            await checkNewBadges(dist, time, selectedDate);
-            alert("تم الحفظ!");
+        // التعامل مع التاريخ المخصص لو وجد
+        if(dateInput && dateInput.value) {
+            runData.date = dateInput.value;
+            runData.timestamp = firebase.firestore.Timestamp.fromDate(new Date(dateInput.value));
         }
-        
+
+        // 1. إضافة الجرية
+        await db.collection('users').doc(uid).collection('runs').add(runData);
+
+        // 2. إضافة للـ Feed
+        await db.collection('activity_feed').add({
+            uid: uid, 
+            userName: userData.name, 
+            userRegion: userData.region,
+            userGender: userData.gender || 'male', // عشان الأفاتار يظبط
+            ...runData, 
+            likes: [], 
+            commentsCount: 0
+        });
+
+        // 3. تحديث إجماليات المستخدم
+        const currentMonthKey = new Date().toISOString().slice(0, 7);
+        let newMonthDist = (userData.monthDist || 0) + dist;
+        // تصفير الشهر لو دخلنا شهر جديد
+        if(userData.lastMonthKey !== currentMonthKey) newMonthDist = dist;
+
+        await db.collection('users').doc(uid).set({
+            totalDist: firebase.firestore.FieldValue.increment(dist),
+            totalRuns: firebase.firestore.FieldValue.increment(1),
+            monthDist: newMonthDist,
+            lastMonthKey: currentMonthKey
+        }, { merge: true });
+
+        // تحديث محلي سريع
+        userData.totalDist += dist;
+        userData.totalRuns += 1;
+        userData.monthDist = newMonthDist;
+
+        // تنظيف الفورم
+        distInput.value = ''; timeInput.value = ''; linkInput.value = '';
+        if(imgUrlInput) imgUrlInput.value = ''; // مسح رابط الصورة
+        document.getElementById('img-preview').style.display = 'none'; // إخفاء المعاينة
+        document.getElementById('upload-status').innerText = '';
+
         closeModal('modal-log');
-        document.getElementById('save-run-btn').innerText = "حفظ النشاط";
+        allUsersCache = []; // تحديث المتصدرين
+        updateUI();
+        loadGlobalFeed();
+        loadActivityLog();
         
+        if(typeof showToast === 'function') showToast("تم حفظ الجرية يا بطل! 🔥", "success");
+
+    } catch (error) {
+        console.error(error);
+        alert("خطأ: " + error.message);
+    } finally {
+        if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
+    }
+}
         // 🔥 مسح الكاش لتظهر نتيجتك الجديدة في المتصدرين فوراً
         allUsersCache = []; 
 
@@ -1212,7 +1259,6 @@ function loadGlobalFeed() {
     }
 
     db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
-        // ... (باقي الكود كما هو) ...
         let html = '';
         if(snap.empty) { 
             list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>'; 
@@ -1222,9 +1268,9 @@ function loadGlobalFeed() {
         snap.forEach(doc => {
             const p = doc.data();
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
-            const commentsCount = p.commentsCount || 0; // عداد التعليقات
+            const commentsCount = p.commentsCount || 0; 
             
-           // حساب الوقت باستخدام الدالة المساعدة (V1.3)
+            // حساب الوقت
             const timeAgo = getArabicTimeAgo(p.timestamp);
 
             html += `
@@ -1244,6 +1290,12 @@ function loadGlobalFeed() {
                 <div class="feed-compact-action">
                     ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
                     
+                    ${p.img ? `
+                        <button onclick="window.open('${p.img}', '_blank')" style="background:none; border:none; cursor:pointer; color:#8b5cf6; font-size:14px; display:flex; align-items:center; gap:3px;">
+                            <i class="ri-image-2-fill"></i> <span style="font-size:10px;">إثبات</span>
+                        </button>
+                    ` : ''}
+
                     <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
                         <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
                         <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
@@ -1264,7 +1316,6 @@ function loadGlobalFeed() {
         list.innerHTML = `<div style="text-align:center; color:red; font-size:12px;">تأكد من قواعد البيانات (Rules)</div>`;
     });
 }
-
 // ==================== زر الطوارئ: إصلاح العدادات (V31 Improved) ====================
 async function fixMyStats() {
     // 1. التأكيد
@@ -1572,4 +1623,66 @@ function enableSmartPaste() {
 
         }, 100);
     });
+}
+
+// ==================== 13. ImgBB Upload Logic (V1.6) ====================
+async function uploadImageToImgBB() {
+    const fileInput = document.getElementById('log-img-file');
+    const status = document.getElementById('upload-status');
+    const preview = document.getElementById('img-preview');
+    const hiddenInput = document.getElementById('uploaded-img-url');
+    const saveBtn = document.getElementById('save-run-btn');
+
+    // 1. التأكد من وجود ملف
+    if (!fileInput.files || fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
+
+    // 2. تحديث الواجهة (جاري الرفع)
+    status.innerText = "جاري رفع الصورة... ⏳";
+    status.style.color = "#f59e0b"; // برتقالي
+    saveBtn.disabled = true; // نمنع الحفظ لحد ما الرفع يخلص
+    saveBtn.innerText = "انتظر...";
+
+    // 3. تجهيز البيانات (بالمفتاح بتاعك)
+    const formData = new FormData();
+    formData.append("image", file);
+    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; // 🔑 مفتاحك
+
+    try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 4. نجح الرفع!
+            const imageUrl = data.data.url;
+            hiddenInput.value = imageUrl; // نخزن الرابط في الحقل المخفي
+            
+            // نعرض الصورة
+            preview.src = imageUrl;
+            preview.style.display = 'block';
+            
+            status.innerText = "تم إرفاق الصورة بنجاح ✅";
+            status.style.color = "#10b981"; // أخضر
+            
+            // نرجع زر الحفظ
+            saveBtn.disabled = false;
+            saveBtn.innerText = "حفظ النشاط";
+            
+            if(typeof showToast === 'function') showToast("تم رفع الصورة 📸", "success");
+        } else {
+            throw new Error(data.error ? data.error.message : "فشل غير معروف");
+        }
+
+    } catch (error) {
+        console.error("ImgBB Error:", error);
+        status.innerText = "فشل الرفع! تأكد من النت ❌";
+        status.style.color = "#ef4444";
+        saveBtn.disabled = false;
+        saveBtn.innerText = "حفظ النشاط";
+        alert("لم نتمكن من رفع الصورة، حاول مرة أخرى.");
+    }
 }
