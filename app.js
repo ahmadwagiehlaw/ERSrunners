@@ -814,6 +814,8 @@ function loadAdminStats() {
     if(!statsDiv) return;
     db.collection('users').get().then(snap => { statsDiv.innerHTML = `عدد الأعضاء: <strong style="color:#fff">${snap.size}</strong>`; });
 }
+
+
 async function saveProfileChanges() {
     const name = document.getElementById('edit-name').value;
     const region = document.getElementById('edit-region').value;
@@ -821,32 +823,33 @@ async function saveProfileChanges() {
     const birthYear = document.getElementById('edit-birthyear').value;
 
     if(name) {
-        // تغيير نص الزر ليعرف المستخدم أن الحفظ جاري
         const btn = event.target;
         btn.innerText = "جاري الحفظ...";
         
-        await db.collection('users').doc(currentUser.uid).update({ 
-            name, 
-            region,
-            gender: gender || 'male', 
-            birthYear: birthYear || ''
-        });
-        
-        // تحديث البيانات محلياً
-        userData.name = name; 
-        userData.region = region;
-        userData.gender = gender;
-        userData.birthYear = birthYear;
-        
-        allUsersCache = []; // تدمير الكاش
-        updateUI(); 
-        closeModal('modal-edit-profile'); 
-        alert("تم تحديث ملفك الشخصي بنجاح ✅");
-        
-        // إعادة الزر لطبيعته
+        try {
+            await db.collection('users').doc(currentUser.uid).update({ 
+                name, 
+                region,
+                gender: gender || 'male', 
+                birthYear: birthYear || ''
+            });
+            
+            // تحديث البيانات محلياً
+            userData.name = name; 
+            userData.region = region;
+            userData.gender = gender;
+            userData.birthYear = birthYear;
+            
+            allUsersCache = []; // تدمير الكاش
+            updateUI(); 
+            closeModal('modal-edit-profile'); 
+            alert("تم تحديث ملفك الشخصي بنجاح ✅");
+        } catch (e) {
+            console.error(e);
+            alert("حدث خطأ أثناء الحفظ");
+        }
         btn.innerText = "حفظ التغييرات";
     }
-}
 }
 
 
