@@ -143,10 +143,13 @@ function initApp() {
     loadActivityLog();
     loadActiveChallenges(); 
     loadGlobalFeed();
-    listenForNotifications();
+  
+listenForNotifications();
     if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
+    
+    // تشغيل مراقب الشبكة
+    initNetworkMonitor();
 }
-
 // ==================== 3. Leaderboard 2.0 (The Podium Logic) 🏆 ====================
 async function loadLeaderboard(filterType = 'all') {
     const list = document.getElementById('leaderboard-list');
@@ -457,6 +460,11 @@ window.editRun = function(id, dist, time, type, link) {
 }
 
 async function submitRun() {
+    // V1.3: منع الإرسال إذا لم يوجد إنترنت
+    if (!navigator.onLine) {
+        alert("⚠️ لا يوجد اتصال بالإنترنت!\nيرجى التحقق من الشبكة ثم المحاولة.");
+        return;
+    }
     const btn = document.getElementById('save-run-btn');
     const dist = parseFloat(document.getElementById('log-dist').value);
     const time = parseFloat(document.getElementById('log-time').value);
@@ -1145,3 +1153,30 @@ async function fixMyStats() {
         if(btn) { btn.innerText = originalText; btn.disabled = false; }
     }
 }
+
+// ==================== 8. Network Handling (V1.3) ====================
+
+function initNetworkMonitor() {
+    const banner = document.getElementById('offline-banner');
+    
+    // دالة لتحديث الحالة
+    function updateStatus() {
+        if (navigator.onLine) {
+            banner.classList.remove('active');
+            document.body.style.paddingTop = "0"; // إعادة الجسم لوضعه الطبيعي
+        } else {
+            banner.classList.add('active');
+            // لا نحتاج لإزاحة الجسم لأن البانر fixed ويغطي جزء بسيط
+        }
+    }
+
+    // الاستماع لأحداث المتصفح
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    
+    // فحص أولي عند التشغيل
+    updateStatus();
+}
+
+// تحسين دالة الإرسال لمنع الأخطاء عند انقطاع النت
+// سنقوم بتعديل بسيط في بداية دالة submitRun الموجودة بالأعلى
