@@ -596,12 +596,22 @@ async function deleteRun(id, dist) {
 
 // ==================== 7. Admin, Share & Helpers ====================
 function openAdminAuth() {
-    const pin = prompt("أدخل كود المشرف:");
-    if(pin === "a4450422") { 
+    // التحقق الآمن: هل المستخدم مسجل ولديه صلاحية isAdmin؟
+    if (currentUser && userData && userData.isAdmin === true) {
         closeModal('modal-settings'); 
-        setTimeout(() => { switchView('admin'); loadAdminStats(); loadAdminFeed(); }, 100);
-    } else { alert("كود خاطئ"); }
+        setTimeout(() => { 
+            switchView('admin'); 
+            loadAdminStats(); 
+            loadAdminFeed(); 
+        }, 100);
+    } else { 
+        // رسالة رفض لطيفة بدون طلب كود
+        alert("⛔ عذراً، هذه المنطقة مخصصة للمشرفين فقط."); 
+    }
 }
+
+
+
 async function forceUpdateApp() {
     if(confirm("تحديث؟")) {
         if('serviceWorker' in navigator) { (await navigator.serviceWorker.getRegistrations()).forEach(r => r.unregister()); }
