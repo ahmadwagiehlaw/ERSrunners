@@ -57,6 +57,18 @@ function formatNumber(num) {
     // إرجاع رقم عشري واحد ثابت
     return n.toFixed(1);
 }
+
+// 4. تحديد الأفاتار بناء على النوع والمستوى (V1.5)
+function getUserAvatar(user) {
+    // لو المستخدم لسه جديد (مبتدئ)
+    const isNew = (user.totalDist || 0) < 50;
+    
+    if (user.gender === 'female') {
+        return isNew ? '🐣' : '🏃‍♀️'; // بنت
+    } else {
+        return isNew ? '🐣' : '🏃'; // ولد (الافتراضي)
+    }
+}
 // ==================== 1. Authentication (Global Functions) ====================
 // هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
 
@@ -304,9 +316,18 @@ function updateUI() {
         document.getElementById('profileRegion').innerText = userData.region;
         
         // الأفاتار
+        // الأفاتار
         const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
         if (profileAvatar) {
-            profileAvatar.innerText = rankData.avatar; 
+            // (V1.5) استخدام الدالة الذكية
+            // بدلاً من rankData.avatar سنستخدم دالتنا الجديدة
+            // لكن لو وصل لمرحلة "أسطورة" أو "محترف" نخليه مميز
+            let avatarIcon = getUserAvatar(userData);
+            if(rankData.name === 'أسطورة') avatarIcon = '👑';
+            else if(rankData.name === 'محترف') avatarIcon = '🦅';
+
+            profileAvatar.innerText = avatarIcon; 
+            
             if(profileAvatar.classList.contains('bib-avatar')) {
                 profileAvatar.style.background = "#111827"; 
                 profileAvatar.style.color = "#fff";
@@ -793,15 +814,10 @@ function loadAdminStats() {
     if(!statsDiv) return;
     db.collection('users').get().then(snap => { statsDiv.innerHTML = `عدد الأعضاء: <strong style="color:#fff">${snap.size}</strong>`; });
 }
-async function saveProfileChanges() {
-    const name = document.getElementById('edit-name').value;
-    const region = document.getElementById('edit-region').value;
-    if(name) {
-        await db.collection('users').doc(currentUser.uid).update({ name, region });
-        userData.name = name; userData.region = region;
-        updateUI(); closeModal('modal-edit-profile'); alert("تم الحفظ");
-    }
-}
+async function saveProfileChanges
+
+
+  
 function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function showAuthScreen() { document.getElementById('auth-screen').style.display = 'flex'; document.getElementById('app-content').style.display='none';}
