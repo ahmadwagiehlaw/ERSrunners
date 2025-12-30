@@ -134,6 +134,7 @@ function logout() {
     if(confirm("تسجيل خروج؟")) { auth.signOut(); window.location.reload(); }
 }
 
+// ==================== Auth State Observer (Fixed) ====================
 auth.onAuthStateChanged(async (user) => {
     if (user) {
         currentUser = user;
@@ -142,19 +143,29 @@ auth.onAuthStateChanged(async (user) => {
             if (doc.exists) {
                 userData = doc.data();
                 
-                // --- 🛡️ إضافة جديدة: فحص الحظر ---
+                // فحص الحظر
                 if (userData.isBanned) {
-                    alert(`⛔ تم حظر حسابك من قبل الإدارة.\nالسبب: ${userData.banReason || "مخالفة الشروط"}`);
+                    alert(`⛔ تم حظر حسابك.\nالسبب: ${userData.banReason || "مخالفة الشروط"}`);
                     auth.signOut();
                     return;
                 }
-                // ----------------------------------
 
                 if (!userData.badges) userData.badges = [];
                 initApp();
             } else {
-                // ... (باقي الكود القديم)
+                // حالة مستخدم جديد جداً أو خطأ في الداتا
+                userData = { name: "Runner", region: "Cairo", totalDist: 0, totalRuns: 0, badges: [] };
+                initApp();
             }
+        } catch (e) { console.error("Auth Error:", e); }
+    } else {
+        // حالة تسجيل الخروج
+        currentUser = null;
+        const authScreen = document.getElementById('auth-screen');
+        const appContent = document.getElementById('app-content');
+        if(authScreen) authScreen.style.display = 'flex';
+        if(appContent) appContent.style.display = 'none';
+    }
 });
 
 // ==================== Init App ====================
@@ -1238,7 +1249,6 @@ async function createChallengeUI() {
         await db.collection('challenges').add({ title: t, target: parseFloat(k), active: true, startDate: new Date().toISOString() });
         alert("تم");
     }
-}
 
 
  
