@@ -1250,4 +1250,3 @@ async function createChallengeUI() {
         alert("تم");
     }
 }
- 
