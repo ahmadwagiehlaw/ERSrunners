@@ -20,6 +20,18 @@ let editingRunId = null;
 let editingOldDist = 0;
 let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
 
+// --- دالة مركزية لجلب البيانات بأمان (V1.3) -----------------------------
+async function fetchTopRunners() {
+    // إذا كانت البيانات موجودة في الكاش، لا نحملها مرة أخرى
+    if (allUsersCache.length > 0) return allUsersCache;
+    
+    // جلب أعلى 50 عداء فقط لتوفير القراءات
+    const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
+    allUsersCache = [];
+    snap.forEach(doc => allUsersCache.push(doc.data()));
+    return allUsersCache;
+}
+
 // ==================== 1. Authentication (Global Functions) ====================
 // هذه الدوال يجب أن تكون ظاهرة لـ HTML مباشرة
 
@@ -145,11 +157,8 @@ async function loadLeaderboard(filterType = 'all') {
     if (!list) return;
 
     // تحميل البيانات مرة واحدة وتخزينها (Caching)
-    if (allUsersCache.length === 0) {
-        const snap = await db.collection('users').orderBy('totalDist', 'desc').limit(50).get();
-        allUsersCache = [];
-        snap.forEach(doc => allUsersCache.push(doc.data()));
-    }
+    // استخدام الدالة المركزية الآمنة
+    await fetchTopRunners();
 
     // الفلترة
     let displayUsers = allUsersCache;
@@ -903,27 +912,25 @@ const REGION_AR = {
     "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية"
 };
 
-function loadRegionBattle() {
+// تم تحويل الدالة لـ async لتنتظر البيانات
+async function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
     
     list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">جاري تحليل جيوش المحافظات... 📡</div>';
     
-    // استخدام الكاش الموجود أصلاً لسرعة العرض
-    let sourceData = allUsersCache;
-    
-    // إذا الكاش فارغ (أول فتحة)، نجلب البيانات
-    if (sourceData.length === 0) {
-        db.collection('users').get().then(snap => {
-            let freshData = [];
-            snap.forEach(doc => freshData.push(doc.data()));
-            processRegionData(freshData, list);
-        });
-    } else {
+    try {
+        // نطلب البيانات من الدالة المركزية الآمنة
+        const sourceData = await fetchTopRunners();
+        
+        // معالجة البيانات
         processRegionData(sourceData, list);
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; color:red;">فشل تحميل البيانات</div>';
     }
 }
-
+// ================================================
 function processRegionData(users, listElement) {
     let stats = {};
 
