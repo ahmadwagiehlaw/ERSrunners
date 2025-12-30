@@ -292,6 +292,22 @@
             <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
                 <label>رابط إثبات (Strava/Nike) - اختياري</label>
                 <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
+                </div>
+            
+            <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
+                <label>إثبات الجرية (صورة / سكرين شوت)</label>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <label for="log-img-file" class="btn btn-text" style="border:1px dashed var(--border); width:100%; cursor:pointer; color:#9ca3af;">
+                        <i class="ri-camera-line"></i> اضغط لرفع صورة
+                    </label>
+                    <input type="file" id="log-img-file" accept="image/*" style="display:none;" onchange="uploadImageToImgBB()">
+                    
+                    <img id="img-preview" style="width:40px; height:40px; border-radius:8px; display:none; object-fit:cover; border:1px solid var(--primary);">
+                </div>
+                
+                <input type="hidden" id="uploaded-img-url">
+                
+                <small id="upload-status" style="display:block; margin-top:5px; font-size:10px; color:var(--text-muted);"></small>
             </div>
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
