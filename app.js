@@ -490,7 +490,7 @@ function renderBadges() {
 
 // ==================== 6. Activity Log & Submission ====================
 // ==================== 5. Open Modal Helper (Updated V1.6) ====================
-function openNewRun() {
+ffunction openNewRun() {
     const btn = document.getElementById('save-run-btn');
     if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     
@@ -498,7 +498,7 @@ function openNewRun() {
     const dateInput = document.getElementById('log-date');
     if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
     
-    // تنظيف حقول الصورة (V1.6)
+    // تنظيف حقول الصورة (مهم جداً)
     const imgInput = document.getElementById('uploaded-img-url');
     const preview = document.getElementById('img-preview');
     const status = document.getElementById('upload-status');
@@ -511,11 +511,14 @@ function openNewRun() {
     
     openLogModal();
     
+    // تفعيل اللصق الذكي
     if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
 }
+
 // ==================== 4. Save Run Logic (Updated V1.6) ====================
+// ==================== 4. Save Run Logic (Corrected) ====================
 async function submitRun() {
-    // التحقق من النت (V1.3)
+    // 1. التحقق من النت
     if (!navigator.onLine) {
         if(typeof showToast === 'function') showToast("لا يوجد اتصال بالإنترنت! ⚠️", "error");
         else alert("⚠️ لا يوجد اتصال بالإنترنت!");
@@ -528,7 +531,7 @@ async function submitRun() {
     const typeInput = document.getElementById('log-type');
     const linkInput = document.getElementById('log-link');
     const dateInput = document.getElementById('log-date');
-    const imgUrlInput = document.getElementById('uploaded-img-url'); // (V1.6)
+    const imgUrlInput = document.getElementById('uploaded-img-url'); 
 
     const dist = parseFloat(distInput.value);
     const time = parseFloat(timeInput.value);
@@ -537,8 +540,7 @@ async function submitRun() {
     const img = imgUrlInput ? imgUrlInput.value : ''; 
 
     if (!dist || !time) {
-        if(typeof showToast === 'function') showToast("يرجى كتابة المسافة والزمن 📝", "error");
-        else alert("البيانات ناقصة");
+        alert("يرجى كتابة المسافة والزمن");
         return;
     }
 
@@ -548,9 +550,7 @@ async function submitRun() {
         const uid = currentUser.uid;
         
         const runData = {
-            dist, 
-            time, 
-            type, 
+            dist, time, type, 
             link: link || '', 
             img: img || '', 
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
@@ -561,10 +561,10 @@ async function submitRun() {
             runData.timestamp = firebase.firestore.Timestamp.fromDate(new Date(dateInput.value));
         }
 
-        // 1. إضافة الجرية
+        // إضافة الجرية
         await db.collection('users').doc(uid).collection('runs').add(runData);
 
-        // 2. إضافة للـ Feed
+        // إضافة للـ Feed
         await db.collection('activity_feed').add({
             uid: uid, 
             userName: userData.name, 
@@ -575,7 +575,7 @@ async function submitRun() {
             commentsCount: 0
         });
 
-        // 3. تحديث الإجماليات
+        // تحديث الإجماليات
         const currentMonthKey = new Date().toISOString().slice(0, 7);
         let newMonthDist = (userData.monthDist || 0) + dist;
         if(userData.lastMonthKey !== currentMonthKey) newMonthDist = dist;
@@ -597,16 +597,14 @@ async function submitRun() {
         if(imgUrlInput) imgUrlInput.value = '';
         const preview = document.getElementById('img-preview');
         if(preview) { preview.src = ''; preview.style.display = 'none'; }
-        const status = document.getElementById('upload-status');
-        if(status) status.innerText = '';
-
+        
         closeModal('modal-log');
         allUsersCache = [];
         updateUI();
         loadGlobalFeed();
         loadActivityLog();
         
-        if(typeof showToast === 'function') showToast("تم حفظ الجرية يا بطل! 🔥", "success");
+        if(typeof showToast === 'function') showToast("تم حفظ الجرية! 🔥", "success");
 
     } catch (error) {
         console.error(error);
@@ -614,7 +612,9 @@ async function submitRun() {
     } finally {
         if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
     }
-} // <--- ✅ هذا القوس كان ناقصاً وتسبب في المشكلة!
+} 
+// =============================⬆️ تأكد أن هذا القوس موجود! هذا ما كان ينقصك
+
 
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
