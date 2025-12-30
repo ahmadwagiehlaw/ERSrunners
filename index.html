@@ -244,12 +244,18 @@
                     </div>
                 </div>
 
-                <div class="chart-section" style="margin-top: 15px;">
-                    <h3 class="section-title" style="font-size:13px; margin-bottom:10px;">أداء آخر 7 أيام 📈</h3>
-                    <div class="chart-container">
-                        <div id="weekly-chart" class="bar-chart"></div>
-                    </div>
-                </div>
+                <div class="section-title-row">
+    <h4>تحليل النشاط</h4>
+    <div class="chart-toggle-row">
+        <button class="chart-toggle-btn active" onclick="loadChart('week', this)">أسبوع</button>
+        <button class="chart-toggle-btn" onclick="loadChart('month', this)">شهر</button>
+    </div>
+</div>
+<div class="chart-scroll-wrapper">
+    <div class="chart-container" id="main-chart-area">
+        <div style="margin:auto; font-size:12px; color:#6b7280;">جاري التحميل...</div>
+    </div>
+</div>
                 
                 <div class="badges-section" style="margin-top: 20px;">
                     <h3 class="section-title">إنجازاتي 🎖️</h3>
@@ -444,5 +450,32 @@
       }
     </script>
     <div id="toast-container" class="toast-container"></div>
+    <div id="modal-view-user" class="modal-overlay">
+        <div class="modal-box">
+            <div style="text-align:center; position:relative;">
+                <button onclick="closeModal('modal-view-user')" style="position:absolute; left:0; top:0; background:none; border:none; color:#fff; font-size:20px;">✕</button>
+                
+                <div class="bib-avatar" id="view-avatar" style="margin:0 auto 15px auto; width:70px; height:70px; font-size:30px;">🏃</div>
+                <h3 id="view-name" style="margin:0; font-size:20px;">Name</h3>
+                <span id="view-region" style="color:#9ca3af; font-size:12px;">Region</span>
+                <div class="rank-badge" id="view-rank" style="margin:10px auto; width:fit-content;">Rank</div>
+            </div>
+
+            <div class="stats-grid" style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                <div class="stat-item">
+                    <span class="stat-val" id="view-total-dist">0</span>
+                    <span class="stat-lbl">كم إجمالي</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-val" id="view-total-runs">0</span>
+                    <span class="stat-lbl">جرية</span>
+                </div>
+            </div>
+
+            <div style="margin-top:20px; text-align:center;">
+                <button class="btn btn-primary" onclick="closeModal('modal-view-user')">تحية للكابتن 🫡</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
