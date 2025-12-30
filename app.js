@@ -614,12 +614,12 @@ async function deleteRun(id, dist) {
     try {
         const uid = currentUser.uid;
         
-        // 1. جلب بيانات الجرية قبل الحذف لنعرف توقيتها
+        // 1. جلب بيانات الجرية قبل الحذف لنعرف توقيتها (مهم عشان نلاقي البوست في الـ Feed)
         const runDoc = await db.collection('users').doc(uid).collection('runs').doc(id).get();
-        if (!runDoc.exists) return;
+        if (!runDoc.exists) return; // لو الجرية مش موجودة أصلاً نخرج
         const runData = runDoc.data();
 
-        // 2. حذف الجرية
+        // 2. حذف الجرية نفسها
         await db.collection('users').doc(uid).collection('runs').doc(id).delete();
         
         // 3. تحديث العدادات (خصم المسافة)
@@ -629,8 +629,8 @@ async function deleteRun(id, dist) {
             monthDist: firebase.firestore.FieldValue.increment(-dist)
         });
 
-        // 4. (جديد V1.3) محاولة حذف المنشور من الـ Feed
-        // سنبحث عن المنشور الذي يملكه المستخدم وله نفس تاريخ الجرية بالضبط
+        // 4. (جديد V1.3) حذف المنشور من الـ Feed
+        // بنبحث عن المنشور اللي يملكه المستخدم وله نفس تاريخ الجرية بالضبط
         if (runData.timestamp) {
             const feedQuery = await db.collection('activity_feed')
                 .where('uid', '==', uid)
@@ -639,21 +639,20 @@ async function deleteRun(id, dist) {
                 
             const batch = db.batch();
             feedQuery.forEach(doc => {
-                batch.delete(doc.ref); // تجهيز أمر الحذف
+                batch.delete(doc.ref); 
             });
-            await batch.commit(); // تنفيذ الحذف
+            await batch.commit(); 
         }
 
-        // 5. تحديث الواجهة
-        // خصم القيم محلياً للعرض الفوري
+        // 5. تحديث الواجهة فوراً (مسح محلي)
         userData.totalDist = Math.max(0, (userData.totalDist || 0) - dist);
         userData.totalRuns = Math.max(0, (userData.totalRuns || 0) - 1);
         userData.monthDist = Math.max(0, (userData.monthDist || 0) - dist);
 
-        allUsersCache = []; // تدمير الكاش لتحديث الترتيب
+        allUsersCache = []; // تدمير الكاش عشان الترتيب يتظبط
         updateUI();
         loadActivityLog(); 
-        loadGlobalFeed(); // إعادة تحميل الـ Feed لإخفاء البوست المحذوف
+        loadGlobalFeed(); // إعادة تحميل الـ Feed عشان البوست يختفي
         
         alert("تم حذف النشاط وتحديث السجلات.");
 
@@ -680,28 +679,31 @@ function openAdminAuth() {
 }
 
 
-
+// ==================== 8- زر التحديث الاجباري Force update ====================
 async function forceUpdateApp() {
     if(!confirm("سيتم تحديث التطبيق الآن لجلب آخر التحسينات.\nهل أنت جاهز؟")) return;
     
+    // تغيير نص الزر ليعرف المستخدم أن شيئاً يحدث
     const btn = event.target.closest('button');
     if(btn) btn.innerText = "جاري التحديث...";
 
-    // 1. إلغاء تسجيل الـ Service Worker
-    if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (let registration of registrations) {
-            await registration.unregister();
+    try {
+        // 1. إلغاء تسجيل الـ Service Worker (فصل التطبيق عن الكاش القديم)
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
         }
-    }
 
-    // 2. مسح كاش التخزين
-    if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map(key => caches.delete(key)));
-    }
+        // 2. مسح كاش التخزين تماماً
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+        }
+    } catch(e) { console.log(e); }
 
-    // 3. إعادة تحميل قوية من السيرفر (تجاهل الكاش)
+    // 3. إعادة تحميل قوية من السيرفر
     window.location.reload(true);
 }
 // ==================== 7. زر حذف الحساب بالكامل delete account =========
