@@ -1250,3 +1250,46 @@ async function createChallengeUI() {
         alert("تم");
     }
 }
+
+function openAdminAuth() {
+    // التحقق: هل المستخدم مسجل؟ وهل لديه صلاحية isAdmin = true؟
+    if (currentUser && userData && userData.isAdmin === true) {
+        closeModal('modal-settings'); // إغلاق الإعدادات
+        
+        // الانتقال لصفحة الأدمن
+        switchView('admin'); 
+        
+        // تشغيل التبويب الأول (نظرة عامة)
+        if(typeof switchAdminTab === 'function') {
+            switchAdminTab('overview');
+        }
+    } else { 
+        // رسالة تظهر لو لم تكن أدمن
+        alert("⛔ عذراً، هذه المنطقة مخصصة للمشرفين فقط."); 
+    }
+}
+async function forceUpdateApp() {
+    if(!confirm("سيتم تحديث التطبيق الآن لجلب آخر التحسينات.\nهل أنت جاهز؟")) return;
+    
+    const btn = event.target;
+    btn.innerText = "جاري التحديث...";
+
+    try {
+        // 1. إلغاء الـ Service Workers
+        if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (let registration of registrations) {
+                await registration.unregister();
+            }
+        }
+
+        // 2. مسح الكاش (Cache Storage)
+        if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(key => caches.delete(key)));
+        }
+    } catch(e) { console.log(e); }
+
+    // 3. إعادة تحميل قوية
+    window.location.reload(true);
+}
