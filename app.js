@@ -192,7 +192,7 @@ function initApp() {
     loadGlobalFeed();
   
 listenForNotifications();
-    if(typeof loadWeeklyChart === 'function') loadWeeklyChart();
+    if(typeof loadWeeklyChart === 'function') loadChart('week');
     
     // تشغيل مراقب الشبكة
     initNetworkMonitor();
@@ -345,15 +345,17 @@ function updateUI() {
         if (headerName) headerName.innerText = userData.name || "Runner";
 
         // Dashboard Stats
-        document.getElementById('monthDist').innerText = (userData.monthDist || 0).toFixed(1);
-        document.getElementById('totalRuns').innerText = userData.totalRuns || 0;
-
+        const mDistEl = document.getElementById('monthDist');
+        const tRunsEl = document.getElementById('totalRuns');
+// التأكد من أن العناصر موجودة قبل التحريك
+        if(mDistEl) animateValue(mDistEl, 0, userData.monthDist || 0, 1500);
+        if(tRunsEl) animateValue(tRunsEl, 0, userData.totalRuns || 0, 1500);
         // Profile
         const rankData = calculateRank(userData.totalDist || 0);
         document.getElementById('profileName').innerText = userData.name;
         document.getElementById('profileRegion').innerText = userData.region;
         
-        // الأفاتار
+        
         // الأفاتار
         const profileAvatar = document.querySelector('.bib-avatar') || document.getElementById('profileAvatar');
         if (profileAvatar) {
@@ -1084,36 +1086,23 @@ function generateShareCard(dist, time, dateStr) {
         }).catch(err => { console.error(err); alert("حدث خطأ"); });
     }, 100);
 }
-function loadWeeklyChart() {
-    const chartDiv = document.getElementById('weekly-chart');
-    if(!chartDiv) return;
-    const days = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
-    let last7Days = [];
-    for(let i=6; i>=0; i--) {
-        const d = new Date(); d.setDate(d.getDate() - i);
-        last7Days.push({ dayName: days[d.getDay()], dateKey: d.toISOString().slice(0, 10), dist: 0 });
-    }
-    db.collection('users').doc(currentUser.uid).collection('runs')
-      .where('timestamp', '>=', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-      .get().then(snap => {
-          snap.forEach(doc => {
-              const run = doc.data();
-              if(run.timestamp) {
-                  const runDate = run.timestamp.toDate().toISOString().slice(0, 10);
-                  const targetDay = last7Days.find(d => d.dateKey === runDate);
-                  if(targetDay) targetDay.dist += (run.dist || 0);
-              }
-          });
-          let html = '';
-          const maxDist = Math.max(...last7Days.map(d => d.dist), 5);
-          last7Days.forEach(day => {
-              const heightPerc = (day.dist / maxDist) * 100;
-              let barClass = day.dist > 10 ? 'high' : (day.dist > 5 ? 'med' : 'low');
-              if(day.dist === 0) barClass = 'low';
-              html += `<div class="chart-column"><span class="bar-tooltip">${day.dist > 0 ? day.dist.toFixed(1) : ''}</span><div class="bar-bg"><div class="bar-fill ${barClass}" style="height: ${heightPerc}%"></div></div><span class="bar-label">${day.dayName}</span></div>`;
-          });
-          chartDiv.innerHTML = html;
-      });
+// دالة لتحريك الأرقام تصاعدياً (V2.0)
+function animateValue(obj, start, end, duration) {
+    if (!obj) return;
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        // التعامل مع الأرقام العشرية والصحيحة
+        const value = progress * (end - start) + start;
+        obj.innerHTML = Number.isInteger(end) ? Math.floor(value) : value.toFixed(1);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        } else {
+            obj.innerHTML = Number.isInteger(end) ? end : end.toFixed(1);
+        }
+    };
+    window.requestAnimationFrame(step);
 }
 // ==================== تحديث عرض التحديات (Mission Style) ====================
 function loadActiveChallenges() {
@@ -1680,4 +1669,102 @@ function enableSmartPaste() {
 
         }, 100);
     });
+}
+
+
+
+
+// ==================== V2.0 Advanced Charts ====================
+
+let currentChartMode = 'week'; // لتذكر الوضع الحالي
+
+function loadChart(mode, btnElement) {
+    currentChartMode = mode;
+    
+    // 1. تحديث شكل الأزرار
+    if (btnElement) {
+        document.querySelectorAll('.chart-toggle-btn').forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+    }
+
+    const chartDiv = document.getElementById('main-chart-area');
+    if(!chartDiv) return;
+
+    chartDiv.innerHTML = '<div style="margin:auto; font-size:11px; color:#6b7280;">جاري تحليل البيانات...</div>';
+    
+    // إزالة كلاس "monthly" لإعادة التنسيق الافتراضي، ثم إضافته لو احتجنا
+    chartDiv.classList.remove('monthly');
+
+    const daysCount = mode === 'week' ? 7 : 30;
+    const daysMap = [];
+    const daysAr = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+
+    // 2. تجهيز هيكل الأيام الفارغة
+    for(let i = daysCount - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateKey = d.toISOString().slice(0, 10);
+        
+        let label = "";
+        if (mode === 'week') {
+            label = daysAr[d.getDay()]; // اسم اليوم (سبت، أحد...)
+        } else {
+            label = `${d.getDate()}/${d.getMonth()+1}`; // التاريخ (15/11)
+        }
+        
+        daysMap.push({ label: label, dateKey: dateKey, dist: 0 });
+    }
+
+    // 3. جلب البيانات (الأسبوع أو الشهر)
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysCount);
+
+    db.collection('users').doc(currentUser.uid).collection('runs')
+      .where('timestamp', '>=', startDate)
+      .get().then(snap => {
+          // تجميع البيانات
+          snap.forEach(doc => {
+              const run = doc.data();
+              if(run.timestamp) {
+                  const runDate = run.timestamp.toDate().toISOString().slice(0, 10);
+                  const target = daysMap.find(d => d.dateKey === runDate);
+                  if(target) target.dist += (run.dist || 0);
+              }
+          });
+
+          // 4. الرسم
+          if (mode === 'month') chartDiv.classList.add('monthly'); // لتصغير الأعمدة
+          
+          let html = '';
+          // حساب أعلى قيمة لضبط ارتفاع الأعمدة
+          const maxDist = Math.max(...daysMap.map(d => d.dist), 5); // 5 كحد أدنى
+
+          daysMap.forEach(day => {
+              const heightPerc = (day.dist / maxDist) * 100;
+              
+              // تلوين الأعمدة حسب النشاط
+              let barClass = 'low';
+              if(day.dist > 10) barClass = 'high';
+              else if(day.dist > 3) barClass = 'med';
+              if(day.dist === 0) barClass = 'low'; // رمادي للفارغ
+
+              html += `
+                <div class="chart-column">
+                    <span class="bar-tooltip">${day.dist > 0 ? day.dist.toFixed(1) : ''}</span>
+                    <div class="bar-bg">
+                        <div class="bar-fill ${barClass}" style="height: ${heightPerc}%"></div>
+                    </div>
+                    <span class="bar-label" style="font-size:${mode==='month'?'8px':'9px'}">${day.label}</span>
+                </div>`;
+          });
+          
+          chartDiv.innerHTML = html;
+          
+          // سكرول تلقائي للنهاية (لرؤية أحدث الأيام) في وضع الشهر
+          if(mode === 'month') {
+             const wrapper = document.querySelector('.chart-scroll-wrapper');
+             if(wrapper) wrapper.scrollLeft = 0; // في العربية RTL الـ 0 هو اليمين (البداية) لكن نجرب
+             // ملاحظة: في RTL قد نحتاج لضبط السكرول
+          }
+      });
 }
