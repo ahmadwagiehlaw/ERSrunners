@@ -20,6 +20,10 @@ let editingRunId = null;
 let editingOldDist = 0;
 let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
 
+let editingOldDist = 0;
+let allUsersCache = []; // كاش للمستخدمين لتقليل التحميل
+let deferredPrompt; // (V1.4) لتخزين حدث التثبيت
+
 // --- دالة مركزية لجلب البيانات بأمان (V1.3) -----------------------------
 async function fetchTopRunners() {
     // إذا كانت البيانات موجودة في الكاش، لا نحملها مرة أخرى
@@ -1287,3 +1291,61 @@ function initNetworkMonitor() {
 
 // تحسين دالة الإرسال لمنع الأخطاء عند انقطاع النت
 // سنقوم بتعديل بسيط في بداية دالة submitRun الموجودة بالأعلى
+
+
+// ==================== 9. PWA Installation Logic (V1.4) ====================
+
+// 1. للأندرويد والكروم (BeforeInstallPrompt)
+window.addEventListener('beforeinstallprompt', (e) => {
+    // منع ظهور النافذة التلقائية المزعجة
+    e.preventDefault();
+    deferredPrompt = e;
+    
+    // إظهار زر التثبيت في الهيدر
+    const btn = document.getElementById('header-install-btn');
+    if(btn) btn.style.display = 'flex';
+});
+
+// 2. للآيفون (Detect iOS)
+function checkIosInstall() {
+    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true; // هل هو مثبت بالفعل؟
+
+    if (isIos && !isStandalone) {
+        const btn = document.getElementById('header-install-btn');
+        if(btn) btn.style.display = 'flex';
+    }
+}
+// تشغيل فحص الآيفون عند البدء
+checkIosInstall();
+
+
+// 3. دالة التثبيت عند الضغط على الزر
+async function installApp() {
+    // منطق الأندرويد/الكمبيوتر
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`Install choice: ${outcome}`);
+        deferredPrompt = null;
+        if(outcome === 'accepted') {
+            document.getElementById('header-install-btn').style.display = 'none';
+        }
+        return;
+    }
+
+    // منطق الآيفون (تعليمات يدوية)
+    const isIos = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    if (isIos) {
+        alert("📲 لتثبيت التطبيق على الآيفون:\n\n1. اضغط على زر المشاركة (Share) في أسفل المتصفح ⬆️\n2. اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home Screen) ➕");
+    } else {
+        // حالة نادرة: المتصفح لا يدعم التثبيت التلقائي ولا هو آيفون
+        alert("يمكنك تثبيت التطبيق من خيارات المتصفح -> Add to Home Screen");
+    }
+}
+
+// 4. إخفاء الزر بمجرد التثبيت الناجح
+window.addEventListener('appinstalled', () => {
+    const btn = document.getElementById('header-install-btn');
+    if(btn) btn.style.display = 'none';
+});
