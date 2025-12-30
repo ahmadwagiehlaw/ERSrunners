@@ -1344,3 +1344,69 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeOut { to { opacity: 0; transform: translateY(-10px); } }
+
+
+/* ==================== V1.7 Hero Card Update ==================== */
+
+/* 1. تحسين خلفية الكارت */
+.stats-card {
+    background: linear-gradient(145deg, #1f2937 0%, #111827 100%);
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+/* إضافة لمعة خفيفة في الخلفية */
+.stats-card::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+/* 2. تحسين البار (المؤشر) ليصبح مضيئاً */
+.progress-track {
+    background: rgba(255, 255, 255, 0.1) !important; /* لون الخلفية الفاتح */
+    border-radius: 10px;
+    height: 8px !important;
+    overflow: hidden;
+    margin: 15px 0 5px 0;
+}
+
+.progress-fill {
+    /* تدرج لوني من الأخضر للأزرق الفاتح */
+    background: linear-gradient(90deg, var(--primary) 0%, #34d399 100%);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5); /* وهج (Glow) */
+    border-radius: 10px;
+    height: 100%;
+    transition: width 1s ease-in-out;
+}
+
+/* 3. شريط الإحصائيات السفلي الجديد */
+.stats-footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mini-stat {
+    text-align: center;
+    flex: 1;
+}
+
+.mini-stat span {
+    display: block;
+    font-size: 10px;
+    color: #9ca3af;
+    margin-bottom: 2px;
+}
+
+.mini-stat strong {
+    display: block;
+    font-size: 14px;
+    color: #fff;
+    font-weight: 700;
+}
