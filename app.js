@@ -185,6 +185,9 @@ listenForNotifications();
     
     // تشغيل مراقب الشبكة
     initNetworkMonitor();
+    
+    // فحص البيانات المشاركة (V1.6)
+    checkSharedData(); 
 }
 // ==================== 3. Leaderboard 2.0 (The Podium Logic) 🏆 ====================
 async function loadLeaderboard(filterType = 'all') {
@@ -1478,4 +1481,48 @@ function showToast(message, type = 'success') {
         toast.style.animation = 'fadeOut 0.4s forwards';
         setTimeout(() => toast.remove(), 400);
     }, 3000);
+}
+
+
+// ==================== 11. Web Share Target Logic (V1.6) ====================
+function checkSharedData() {
+    // قراءة البيانات من رابط الصفحة (Query Parameters)
+    const urlParams = new URLSearchParams(window.location.search);
+    const title = urlParams.get('title') || '';
+    const text = urlParams.get('text') || '';
+    const url = urlParams.get('url') || '';
+
+    // إذا وجدنا بيانات مشاركة (من سترافا مثلاً)
+    if (title || text || url) {
+        // تنظيف الرابط من البارامترات حتى لا يتكرر الأمر عند التحديث
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // تجهيز النص المستلم لاستخراج البيانات منه (ذكاء بسيط)
+        // عادة النص يكون: "Check out my run on Strava. https://strava.app.link/..."
+        const fullText = `${title} ${text} ${url}`;
+        
+        // استخراج الرابط فقط
+        const extractedUrl = (fullText.match(/https?:\/\/[^\s]+/) || [''])[0];
+
+        // فتح نافذة الجري
+        setTimeout(() => {
+            if(currentUser) {
+                openNewRun(); // فتح النافذة
+                
+                // تعبئة الرابط تلقائياً
+                const linkInput = document.getElementById('log-link');
+                if(linkInput && extractedUrl) {
+                    linkInput.value = extractedUrl;
+                    showToast("تم استلام الرابط من التطبيق الخارجي 🔗", "success");
+                }
+                
+                // (اختياري) محاولة تخمين المسافة لو مكتوبة في النص (متقدمة قليلاً)
+                // مثلا لو النص فيه "5.0 km"
+                const distMatch = fullText.match(/(\d+(\.\d+)?)\s*(km|كم)/i);
+                if(distMatch && distMatch[1]) {
+                    document.getElementById('log-dist').value = distMatch[1];
+                }
+            }
+        }, 1500); // ننتظر قليلاً حتى يحمل التطبيق والبيانات
+    }
 }
