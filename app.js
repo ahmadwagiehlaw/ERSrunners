@@ -1152,7 +1152,7 @@ async function uploadImageToImgBB() {
     }
 }
 
-// ==================== Weekly Chart (Fixed Timezone) ====================
+// ==================== Weekly Chart (Timezone Fixed V2.1) ====================
 function loadWeeklyChart() {
     const chartDiv = document.getElementById('weekly-chart');
     if(!chartDiv) return;
@@ -1164,7 +1164,7 @@ function loadWeeklyChart() {
     for(let i=6; i>=0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        // تكوين مفتاح التاريخ يدوياً (YYYY-MM-DD) حسب توقيت الجهاز
+        // تكوين مفتاح التاريخ يدوياً (YYYY-MM-DD)
         const localKey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
         
         last7Days.push({
@@ -1177,7 +1177,7 @@ function loadWeeklyChart() {
     // 2. تحديد وقت البداية (منذ 7 أيام)
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - 7);
-    startDate.setHours(0, 0, 0, 0); // من بداية اليوم
+    startDate.setHours(0, 0, 0, 0); 
 
     db.collection('users').doc(currentUser.uid).collection('runs')
       .where('timestamp', '>=', startDate)
@@ -1198,7 +1198,7 @@ function loadWeeklyChart() {
 
           // 3. رسم الشارت
           let html = '';
-          const maxDist = Math.max(...last7Days.map(d => d.dist), 5); // حد أدنى 5 كم
+          const maxDist = Math.max(...last7Days.map(d => d.dist), 5); 
 
           last7Days.forEach(day => {
               const heightPerc = (day.dist / maxDist) * 100;
@@ -1206,7 +1206,6 @@ function loadWeeklyChart() {
               if(day.dist > 10) barClass = 'high';
               else if(day.dist > 5) barClass = 'med';
 
-              // ارتفاع جمالي لو القيمة صفر
               const visualHeight = day.dist === 0 ? 5 : Math.max(heightPerc, 10);
               const opacity = day.dist === 0 ? '0.2' : '1';
               
