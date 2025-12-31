@@ -165,37 +165,59 @@
                 </div>
             </section>
 
-<div id="view-challenges" class="view">
-        <div class="content-container">
-            <h2 class="page-title">التحديات والمهمات 🏆</h2>
-            
-            <div class="tabs-container">
-                <button class="tab-item active" onclick="setTab('active-challenges')">مهمات نشطة</button>
-                <button class="tab-item" onclick="setTab('squads')">دوري المحافظات</button>
-                <button class="tab-item" onclick="setTab('leaderboard')">لوحة الشرف</button>
-            </div>
+<section id="view-challenges" class="view">
+                
+                <div class="tabs-nav">
+                    <div class="tab-item active" onclick="setTab('active-challenges')">مهمات نشطة</div>
+                    <div class="tab-item" onclick="setTab('leaderboard')">لوحة الشرف</div>
+                    <div class="tab-item" onclick="setTab('squads')">دوري المحافظات</div>
+                </div>
 
-            <div id="tab-active-challenges" class="tab-content active">
-                <div id="challenges-list"></div>
-            </div>
+                <div id="tab-active-challenges" class="tab-content active">
+                    <div id="challenges-list" class="challenges-grid"></div>
+                </div>
 
-            <div id="tab-squads" class="tab-content">
-                <div id="region-battle-list"></div>
-            </div>
+                <div id="tab-leaderboard" class="tab-content">
+                    <div class="team-goal-card">
+                        <div class="team-title">إجمالي جري الفريق (الشهر)</div>
+                        <div class="team-val" id="teamTotalDisplay">0</div>
+                        <div class="xp-track" style="margin-top:10px; height:8px; background:rgba(255,255,255,0.1);">
+                            <div class="xp-fill" id="teamGoalBar" style="width:0%; background:#f59e0b;"></div>
+                        </div>
+                        <div class="team-goal-labels">
+                            <span>البداية</span>
+                            <span>الهدف: 1000 كم</span>
+                        </div>
+                    </div>
 
-            <div id="tab-leaderboard" class="tab-content">
-                <div class="leaderboard-filters">
-                    <button class="filter-btn active" onclick="filterLeaderboard('all')">الكل</button>
-                    <button class="filter-btn" onclick="filterLeaderboard('region')">منطقتي</button>
+                    <div class="podium-section">
+                        <div class="podium-title">أبطال الشهر 👑</div>
+                        <div id="podium-container" class="podium-container">
+                            <div style="color:#6b7280; font-size:12px;">جاري تحميل الأبطال...</div>
+                        </div>
+                    </div>
+
+                    <div class="leaderboard-controls">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
+                            <span style="font-size:10px; color:#6b7280;">اضغط للفلترة 👇</span>
+                        </div>
+                        <div class="filter-large-toggle">
+                            <button class="filter-btn active" onclick="filterLeaderboard('all')">
+                                <i class="ri-earth-line"></i> الكل
+                            </button>
+                            <button class="filter-btn" onclick="filterLeaderboard('region')">
+                                <i class="ri-map-pin-user-line"></i> منطقتي
+                            </button>
+                        </div>
+                    </div>
+                    <div id="leaderboard-list" class="rank-list"></div>
                 </div>
                 
-                <div id="podium-container" class="podium-container"></div>
-                
-                <div id="leaderboard-list"></div>
-            </div>
-        </div>
-        <div style="height:80px;"></div>
-    </div>
+                <div id="tab-squads" class="tab-content">
+                    <div id="region-battle-list"></div>
+                </div>
+            </section>
 
 
 
@@ -216,6 +238,8 @@
 
                 <div id="admin-overview" class="admin-content-section active">
                     
+                        
+                
                     <div class="stats-grid-4">
                         <div class="stat-card-mini">
                             <span class="stat-val-big" id="adm-live-now">0</span>
