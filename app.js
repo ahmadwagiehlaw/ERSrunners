@@ -99,6 +99,177 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+ 
+// ==================== V1.4 Admin Logic ====================
+
+function switchAdminTab(tabName) {
+    // 1. تحديث أزرار التبويب
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+
+    // 2. تحديث المحتوى
+    document.querySelectorAll('.admin-content-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('admin-' + tabName).classList.add('active');
+
+    // 3. تحميل البيانات حسب التبويب (Lazy Loading)
+    if(tabName === 'overview') loadAdminStats();
+    if(tabName === 'inspector') loadAdminRuns();
+    if(tabName === 'studio') loadAdminChallengesList();
+    if(tabName === 'users') loadAllUsersTable();
+}
+async function loadAdminStats() {
+    // 1. حساب التواريخ
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const fifteenMinsAgo = new Date(now.getTime() - 15 * 60000); // 15 دقيقة للوراء
+
+    // 2. المتواجدون الآن (Last Seen > 15 mins ago)
+    // ملاحظة: تتطلب فهرس مركب في فايربيس، سنستخدم التصفية اليدوية مؤقتاً للأداء في القوائم الصغيرة
+    const snapLive = await db.collection('users')
+        .where('lastSeen', '>=', firebase.firestore.Timestamp.fromDate(fifteenMinsAgo))
+        .orderBy('lastSeen', 'desc')
+        .limit(20)
+        .get();
+
+    // 3. زوار اليوم
+    const snapVisitors = await db.collection('users')
+        .where('lastLoginDate', '==', todayStr).get();
+
+    // 4. جريات اليوم
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const snapRuns = await db.collection('activity_feed')
+        .where('timestamp', '>=', todayStart)
+        .orderBy('timestamp', 'desc')
+        .get();
+
+    // 5. إجمالي الأعضاء (تقديري أو دقيق)
+    // للجلب السريع، يفضل تخزين الرقم في وثيقة منفصلة، لكن هنا سنستخدم الحجم
+    const snapTotal = await db.collection('users').get(); 
+
+    // === تحديث العدادات ===
+    if(document.getElementById('adm-live-now')) {
+        document.getElementById('adm-live-now').innerText = snapLive.size;
+        document.getElementById('adm-visitors-today').innerText = snapVisitors.size;
+        document.getElementById('adm-runs-today').innerText = snapRuns.size;
+        document.getElementById('adm-total-users').innerText = snapTotal.size;
+    }
+
+    // === ملء قائمة المتواجدين ===
+    const liveList = document.getElementById('live-users-list');
+    if(liveList) {
+        let liveHtml = '';
+        snapLive.forEach(doc => {
+            const u = doc.data();
+            liveHtml += `
+            <div class="mini-user-row">
+                <div class="mini-avatar">${(u.name||'?').charAt(0)}</div>
+                <div class="mini-info">
+                    <span class="mini-name">${u.name}</span>
+                    <span class="mini-sub">${u.region || 'غير محدد'}</span>
+                </div>
+                <span class="status-pill">نشط الآن</span>
+            </div>`;
+        });
+        liveList.innerHTML = liveHtml || '<div class="loader-placeholder">لا يوجد أعضاء أونلاين حالياً</div>';
+    }
+
+    // === ملء قائمة أحدث الأنشطة ===
+    const runsList = document.getElementById('recent-runs-list');
+    if(runsList) {
+        let runsHtml = '';
+        // نأخذ أول 10 فقط من النتائج
+        const recentRuns = snapRuns.docs.slice(0, 10);
+        recentRuns.forEach(doc => {
+            const r = doc.data();
+            const timeStr = r.timestamp ? r.timestamp.toDate().toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}) : '';
+            runsHtml += `
+            <div class="mini-user-row">
+                <div class="mini-avatar" style="background:var(--bg-card); color:var(--primary);">${r.type === 'Run' ? '🏃' : '🚶'}</div>
+                <div class="mini-info">
+                    <span class="mini-name">${r.userName}</span>
+                    <span class="mini-sub">${r.dist} كم • ${timeStr}</span>
+                </div>
+                <button onclick="viewUserProfile('${r.uid}')" style="background:none; border:none; color:#9ca3af; cursor:pointer;">👁️</button>
+            </div>`;
+        });
+        runsList.innerHTML = runsHtml || '<div class="loader-placeholder">لا توجد جريات اليوم</div>';
+    }
+
+    // تحديث الرادار
+    detectSuspiciousActivity();
+}
+function loadAdminRuns() {
+    const list = document.getElementById('admin-runs-feed');
+    if(!list) return;
+    list.innerHTML = '<div style="text-align:center; padding:20px;"><span class="loader-btn"></span></div>';
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).get().then(snap => {
+        let html = '';
+        snap.forEach(doc => {
+            const run = doc.data();
+            const timeAgo = getArabicTimeAgo(run.timestamp);
+            const pace = (run.dist > 0) ? (run.time / run.dist).toFixed(1) : '-';
+            
+            // روابط الصور والإثباتات
+            let evidence = '';
+            if(run.img) evidence += `<a href="${run.img}" target="_blank" style="color:#8b5cf6;">[صورة]</a> `;
+            if(run.link) evidence += `<a href="${run.link}" target="_blank" style="color:#3b82f6;">[رابط]</a>`;
+            if(!evidence) evidence = '<span style="color:#6b7280;">بلا إثبات</span>';
+
+            html += `
+            <div class="inspector-card">
+                <div class="inspector-header">
+                    <div class="inspector-user">
+                        <div style="width:20px; height:20px; background:#374151; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px;">${run.userName.charAt(0)}</div>
+                        <span>${run.userName}</span>
+                    </div>
+                    <span class="inspector-meta">${timeAgo}</span>
+                </div>
+                
+                <div class="inspector-data">
+                    <div>
+                        <span class="insp-val">${run.dist}</span> <span style="font-size:10px;">كم</span>
+                    </div>
+                    <div style="width:1px; height:20px; background:rgba(255,255,255,0.1);"></div>
+                    <div>
+                        <span class="insp-val" style="color:#fff;">${pace}</span> <span style="font-size:10px;">د/كم</span>
+                    </div>
+                    <div style="flex:1; text-align:left; font-size:11px;">
+                        ${evidence}
+                    </div>
+                </div>
+
+                <div class="insp-actions">
+                    <button class="btn-insp btn-reject" onclick="adminForceDelete('${doc.id}', '${run.uid}', ${run.dist})">حذف 🗑️</button>
+                    </div>
+            </div>`;
+        });
+        list.innerHTML = html || '<div style="text-align:center; padding:20px;">لا توجد أنشطة</div>';
+    });
+}
+
+function loadAdminChallengesList() {
+    const list = document.getElementById('admin-active-challenges-list');
+    if(!list) return;
+
+    db.collection('challenges').where('active', '==', true).get().then(snap => {
+        let html = '';
+        snap.forEach(doc => {
+            const ch = doc.data();
+            html += `
+            <div class="active-ch-row">
+                <div>
+                    <strong style="display:block; font-size:13px; color:#fff;">${ch.title}</strong>
+                    <span style="font-size:10px; color:#9ca3af;">${ch.type} • ${ch.target}</span>
+                </div>
+                <button onclick="deleteChallenge('${doc.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">
+                    <i class="ri-delete-bin-line"></i>
+                </button>
+            </div>`;
+        });
+        list.innerHTML = html || '<div style="text-align:center; font-size:11px;">لا توجد تحديات نشطة</div>';
+    });
+}
 // ==================== 1. Authentication ====================
 
 function toggleAuthMode() {
@@ -210,6 +381,18 @@ function initApp() {
     loadChart('week'); // استخدام الشارت الجديد
     initNetworkMonitor();
     checkSharedData(); 
+
+    // 🔥 تحديث حالة التواجد (V1.5 Presence System)
+    if (currentUser) {
+        const now = new Date();
+        const todayStr = now.toISOString().slice(0, 10); // 2024-01-01
+        
+        db.collection('users').doc(currentUser.uid).update({
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(), // لتحديد المتواجدين الآن
+            lastLoginDate: todayStr // لتحديد زوار اليوم
+        }).catch(err => console.log("Presence Error", err));
+    }
+
 }
 
 // ==================== 3. UI Updates & Profile ====================
@@ -243,6 +426,19 @@ function updateUI() {
             calEl.innerText = cal > 999 ? (cal/1000).toFixed(1) + 'k' : cal.toFixed(0);
         }
 
+        // تحديث الشعلة 🔥
+        const streakEl = document.getElementById('streak-badge');
+        const streakCount = document.getElementById('streak-count');
+        const myStreak = userData.currentStreak || 0;
+
+        if (streakEl && streakCount) {
+            if (myStreak > 0) {
+                streakEl.style.display = 'flex';
+                streakCount.innerText = myStreak + " يوم";
+            } else {
+                streakEl.style.display = 'none';
+            }
+        }
 // ... باقي الكود كما هو ...
        // ... داخل updateUI ...
         const profileAvatar = document.getElementById('profileAvatar');
@@ -542,6 +738,7 @@ async function submitRun() {
             editingRunId = null;
         } else {
             const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+            const streakInfo = updateStreakLogic(selectedDate);
             const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
             let newMonthDist = (userData.monthDist || 0) + dist;
             if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
@@ -555,7 +752,13 @@ async function submitRun() {
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(dist),
                 totalRuns: firebase.firestore.FieldValue.increment(1),
-                monthDist: newMonthDist, lastMonthKey: currentMonthKey
+                monthDist: newMonthDist, 
+                lastMonthKey: currentMonthKey,
+                
+                // 🔥 بيانات الستريك الجديدة
+                currentStreak: streakInfo.streak,
+                lastRunDate: streakInfo.lastDate
+
             }, { merge: true });
 
             
@@ -865,11 +1068,14 @@ const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandr
 async function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
-    list.innerHTML = '<div style="text-align:center; padding:10px; color:#9ca3af;">جاري التحليل... 📡</div>';
+    
+    // ✅ استخدام الهيكل العظمي الجديد بدلاً من النص
+    list.innerHTML = getSkeletonHTML('squads');
     
     try {
         const users = await fetchTopRunners();
         let stats = {};
+        
         users.forEach(u => {
             if(u.region) {
                 let regKey = u.region.charAt(0).toUpperCase() + u.region.slice(1).toLowerCase();
@@ -883,7 +1089,8 @@ async function loadRegionBattle() {
             .map(key => ({ originalName: key, ...stats[key], avg: stats[key].totalDist / stats[key].players }))
             .sort((a, b) => b.totalDist - a.totalDist);
 
-        if (sorted.length === 0) { list.innerHTML = '<div>لا توجد بيانات</div>'; return; }
+        if (sorted.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280">لا توجد بيانات</div>'; return; }
+        
         const maxVal = sorted[0].totalDist || 1; 
         let html = '<div class="squad-list">';
         
@@ -912,7 +1119,10 @@ async function loadRegionBattle() {
             </div>`;
         });
         list.innerHTML = html + '</div>';
-    } catch (e) { list.innerHTML = 'خطأ في التحميل'; }
+    } catch (e) { 
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; color:red">خطأ في التحميل</div>'; 
+    }
 }
 
 // ==================== 7. Feed & Social ====================
@@ -1021,7 +1231,7 @@ function openAdminAuth() {
         closeModal('modal-settings'); 
         setTimeout(() => { 
             switchView('admin'); 
-            loadAdminDashboard(); 
+            switchAdminTab('overview'); // تشغيل التبويب الافتراضي
         }, 100);
     } else { 
         showToast("⛔ هذه المنطقة محظورة", "error"); 
@@ -1352,31 +1562,63 @@ function setTab(tabName) {
 }
 
 function getSkeletonHTML(type) {
-    if (type === 'leaderboard') return Array(5).fill('').map(() => `<div class="sk-leader-row"><div class="skeleton sk-circle"></div><div style="flex:1"><div class="skeleton sk-line long"></div><div class="skeleton sk-line short"></div></div></div>`).join('');
-    if (type === 'feed') return Array(3).fill('').map(() => `<div class="sk-feed-card"><div class="sk-header"><div class="skeleton sk-circle"></div><div style="flex:1"><div class="skeleton sk-line long"></div></div></div><div class="skeleton sk-line"></div></div>`).join('');
+    // 1. المتصدرين
+    if (type === 'leaderboard') {
+        return Array(5).fill('').map(() => `
+            <div class="sk-leader-row">
+                <div class="skeleton sk-circle"></div>
+                <div style="flex:1">
+                    <div class="skeleton sk-line long"></div>
+                    <div class="skeleton sk-line short"></div>
+                </div>
+            </div>`).join('');
+    }
+    
+    // 2. المنشورات (Feed)
+    if (type === 'feed') {
+        return Array(3).fill('').map(() => `
+            <div class="feed-card-compact" style="pointer-events:none;">
+                <div class="feed-compact-content">
+                    <div class="skeleton sk-circle" style="width:30px; height:30px;"></div>
+                    <div style="flex:1">
+                        <div class="skeleton sk-line" style="width:60%; height:10px; margin-bottom:5px;"></div>
+                        <div class="skeleton sk-line" style="width:40%; height:8px;"></div>
+                    </div>
+                </div>
+            </div>`).join('');
+    }
+
+    // 3. التحديات
+    if (type === 'challenges') {
+        return Array(3).fill('').map(() => `
+            <div class="ch-card" style="border-color: rgba(255,255,255,0.05); pointer-events: none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                    <div class="skeleton sk-line" style="width:40%; height:20px;"></div>
+                    <div class="skeleton sk-line" style="width:20%; height:15px;"></div>
+                </div>
+                <div class="skeleton" style="width:100%; height:60px; border-radius:10px; margin-bottom:15px; opacity:0.5;"></div>
+                <div class="skeleton" style="width:100%; height:45px; border-radius:12px;"></div>
+            </div>
+        `).join('');
+    }
+
+    // 4. (الجديد 🔥) المناطق (Squads)
+    if (type === 'squads') {
+        return Array(5).fill('').map(() => `
+            <div class="squad-row" style="pointer-events: none; border-color: rgba(255,255,255,0.05);">
+                <div class="squad-header" style="margin-bottom:15px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="skeleton" style="width:28px; height:28px; border-radius:6px;"></div> <div class="skeleton" style="width:100px; height:15px;"></div> </div>
+                    <div class="skeleton" style="width:60px; height:20px; border-radius:6px;"></div> </div>
+                <div class="squad-stats-row" style="border:none; padding-top:0;">
+                    <div class="skeleton" style="width:100%; height:8px; opacity:0.3;"></div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
     return '...';
 }
-
-function enableSmartPaste() {
-    const linkInput = document.getElementById('log-link');
-    const distInput = document.getElementById('log-dist');
-    if(!linkInput || !distInput) return;
-    linkInput.addEventListener('paste', (event) => {
-        setTimeout(() => {
-            const text = linkInput.value;
-            const distMatch = text.match(/(\d+(\.\d+)?)\s*(km|k|كم)/i);
-            if (distMatch && distMatch[1]) {
-                if(confirm(`🤖 اكتشفت مسافة ${distMatch[1]} كم. كتابتها؟`)) {
-                    distInput.value = parseFloat(distMatch[1]);
-                    showToast("تم استخراج المسافة ⚡", "success");
-                }
-            }
-            const urlMatch = text.match(/https?:\/\/[^\s]+/);
-            if (urlMatch && urlMatch[0] !== text) linkInput.value = urlMatch[0]; 
-        }, 100);
-    });
-}
-
 // Notifications
 function loadNotifications() {
     const list = document.getElementById('notifications-list');
@@ -1584,7 +1826,7 @@ function loadActiveChallenges() {
         // عرض التحديات في صفحة المنافسة
         renderChallenges('all');
 
-        // 🔥 عرض التحديات في الصفحة الرئيسية
+      // 🔥 عرض التحديات في الصفحة الرئيسية
         if (mini) {
             mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
         }
@@ -1861,24 +2103,35 @@ async function uploadImageToImgBB() {
     }
 }
 
-// ==================== Custom Toast Notification ====================
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    if(!container) return;
+// ==================== V6.0 Streak Logic ====================
 
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+function updateStreakLogic(newRunDate) {
+    const lastRunStr = userData.lastRunDate || "";
+    const todayStr = newRunDate.toISOString().split('T')[0]; // YYYY-MM-DD
     
-    // أيقونة حسب النوع
-    let icon = type === 'error' ? '<i class="ri-error-warning-line"></i>' : '<i class="ri-checkbox-circle-line"></i>';
-    
-    toast.innerHTML = `${icon}<span>${message}</span>`;
-    container.appendChild(toast);
+    let currentStreak = userData.currentStreak || 0;
 
-    // إخفاء تلقائي بعد 3 ثواني
-    setTimeout(() => {
-        toast.style.animation = 'fadeOut 0.4s forwards';
-        setTimeout(() => toast.remove(), 400);
-    }, 3000);
+    // 1. إذا كان أول مرة يجري
+    if (!lastRunStr) {
+        return { streak: 1, lastDate: todayStr };
+    }
+
+    // 2. إذا كان جرى اليوم بالفعل (لا نزيد العداد)
+    if (lastRunStr === todayStr) {
+        return { streak: currentStreak, lastDate: todayStr };
+    }
+
+    // 3. حساب الفرق بالأيام
+    const lastDate = new Date(lastRunStr);
+    const newDate = new Date(todayStr);
+    const diffTime = Math.abs(newDate - lastDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+        // جرى بالأمس -> سلسلة متصلة 🔥
+        return { streak: currentStreak + 1, lastDate: todayStr };
+    } else {
+        // فاته يوم أو أكثر -> ابدأ من جديد 😢
+        return { streak: 1, lastDate: todayStr };
+    }
 }
-

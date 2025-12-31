@@ -57,9 +57,16 @@
                 <div class="header-right">
                     <img src="ers-logo.png" class="brand-logo" alt="Logo"> 
                     <div class="user-greeting-box">
-                        <span class="hello-text">أهلاً يا كابتن 👋</span>
-                        <h3 id="headerName">...</h3>
-                    </div>
+    <div style="display:flex; align-items:center; gap:5px;">
+        <span class="hello-text">أهلاً يا كابتن 👋</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:8px;">
+        <h3 id="headerName" style="margin:0;">...</h3>
+        <div id="streak-badge" class="streak-badge" style="display:none;">
+            <i class="ri-fire-fill"></i> <span id="streak-count">0</span>
+        </div>
+    </div>
+</div>
                 </div>
                 <div class="header-actions">
                     <div class="icon-badge add-btn" onclick="openNewRun()"><i class="ri-add-line"></i></div>
@@ -158,55 +165,124 @@
                 </div>
             </section>
 
-            <div id="view-admin" class="view">
+<div id="view-challenges" class="view">
+        <div class="content-container">
+            <h2 class="page-title">التحديات والمهمات 🏆</h2>
+            
+            <div class="tabs-container">
+                <button class="tab-item active" onclick="setTab('active-challenges')">مهمات نشطة</button>
+                <button class="tab-item" onclick="setTab('squads')">دوري المحافظات</button>
+                <button class="tab-item" onclick="setTab('leaderboard')">لوحة الشرف</button>
+            </div>
+
+            <div id="tab-active-challenges" class="tab-content active">
+                <div id="challenges-list"></div>
+            </div>
+
+            <div id="tab-squads" class="tab-content">
+                <div id="region-battle-list"></div>
+            </div>
+
+            <div id="tab-leaderboard" class="tab-content">
+                <div class="leaderboard-filters">
+                    <button class="filter-btn active" onclick="filterLeaderboard('all')">الكل</button>
+                    <button class="filter-btn" onclick="filterLeaderboard('region')">منطقتي</button>
+                </div>
+                
+                <div id="podium-container" class="podium-container"></div>
+                
+                <div id="leaderboard-list"></div>
+            </div>
+        </div>
+        <div style="height:80px;"></div>
+    </div>
+
+
+
+        <section id="view-admin" class="view">
                 <div class="section-title-row">
-                    <h4>🦅 غرفة العمليات</h4>
+                    <h4 style="display:flex; align-items:center; gap:5px;">
+                        <i class="ri-command-fill" style="color:var(--primary);"></i> مركز القيادة
+                    </h4>
                     <button class="btn-text" onclick="switchView('profile')">خروج</button>
                 </div>
 
-                <div class="dashboard-grid">
-                    <div class="dash-card">
-                        <span class="dash-num" id="total-users-count">0</span>
-                        <span class="dash-lbl">إجمالي الأعضاء</span>
-                    </div>
-                    <div class="dash-card">
-                        <span class="dash-num" id="flagged-runs-count" style="color:#ef4444;">0</span>
-                        <span class="dash-lbl">حالات اشتباه 🚨</span>
-                    </div>
+                <div class="admin-tabs-wrapper">
+                    <div class="admin-tab active" onclick="switchAdminTab('overview')">نظرة عامة</div>
+                    <div class="admin-tab" onclick="switchAdminTab('inspector')">المراقب</div>
+                    <div class="admin-tab" onclick="switchAdminTab('studio')">التحديات</div>
+                    <div class="admin-tab" onclick="switchAdminTab('users')">الأعضاء</div>
                 </div>
 
-                <div class="admin-card" style="margin-bottom:20px; border-color:#ef4444;">
-                    <h4 style="margin-top:0; color:#ef4444; display:flex; align-items:center; gap:5px;">
-                        <i class="ri-alarm-warning-line"></i> رادار السرعة
-                    </h4>
-                    <p style="font-size:10px; color:#9ca3af; margin-bottom:10px;">يعرض الجريات التي سرعتها أقل من 2.5 د/كم أو مسافتها +45 كم</p>
-                    <div id="suspicious-list">
-                        <div style="text-align:center; font-size:11px; padding:10px;">جاري المسح...</div>
-                    </div>
-                </div>
-
-                <div class="section-title-row">
-                    <h4>قائمة الأعضاء</h4>
-                    <button class="btn-text" onclick="loadAllUsersTable()">تحديث</button>
-                </div>
-                <div class="admin-table-container">
-                    <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>الاسم</th>
-                                <th>المنطقة</th>
-                                <th>تحكم</th>
-                            </tr>
-                        </thead>
-                        <tbody id="users-table-body"></tbody>
-                    </table>
-                </div>
-<div class="admin-card" style="margin-top:20px; border:1px solid var(--primary);">
-                    <h4 style="margin-top:0; color:var(--primary); display:flex; align-items:center; gap:5px;">
-                        <i class="ri-cpu-line"></i> مهندس التحديات V4
-                    </h4>
+                <div id="admin-overview" class="admin-content-section active">
                     
-                    <div class="form-group" style="margin-top:15px; gap:10px;">
+                    <div class="stats-grid-4">
+                        <div class="stat-card-mini">
+                            <span class="stat-val-big" id="adm-live-now">0</span>
+                            <span class="stat-lbl-mini"><span class="pulse-dot"></span> متواجدون الآن</span>
+                        </div>
+                        <div class="stat-card-mini">
+                            <span class="stat-val-big" id="adm-visitors-today">0</span>
+                            <span class="stat-lbl-mini">زوار اليوم</span>
+                        </div>
+                         <div class="stat-card-mini">
+                            <span class="stat-val-big" id="adm-runs-today">0</span>
+                            <span class="stat-lbl-mini">جريات اليوم</span>
+                        </div>
+                        <div class="stat-card-mini">
+                            <span class="stat-val-big" id="adm-total-users">0</span>
+                            <span class="stat-lbl-mini">إجمالي الأعضاء</span>
+                        </div>
+                    </div>
+
+                    <div class="live-dashboard-grid">
+                        
+                        <div class="admin-panel-box">
+                            <div class="panel-header">
+                                <h5><i class="ri-wifi-line" style="color:#10b981;"></i> نشطون الآن (آخر 15 دقيقة)</h5>
+                            </div>
+                            <div id="live-users-list" class="panel-list-scroll">
+                                <div class="loader-placeholder">جاري المسح...</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-panel-box">
+                            <div class="panel-header">
+                                <h5><i class="ri-run-line" style="color:var(--accent);"></i> أحدث الجريات المضافة</h5>
+                            </div>
+                            <div id="recent-runs-list" class="panel-list-scroll">
+                                <div class="loader-placeholder">جاري الجلب...</div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="admin-card compact-alert" style="border-color:#ef4444; margin-top:15px;">
+                        <h4 style="margin:0; color:#ef4444; font-size:12px; display:flex; justify-content:space-between;">
+                            <span><i class="ri-alarm-warning-line"></i> رادار السرعة (Live)</span>
+                            <span id="suspicious-count-badge" style="background:#ef4444; color:#fff; padding:0 5px; border-radius:4px;">0</span>
+                        </h4>
+                        <div id="suspicious-list" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+
+                <div id="admin-inspector" class="admin-content-section">
+                    <div style="margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:12px; color:#9ca3af;">آخر الجريات المرفوعة</span>
+                        <button class="btn-text" onclick="loadAdminRuns()"><i class="ri-refresh-line"></i> تحديث</button>
+                    </div>
+                    <div id="admin-runs-feed">
+                        <div style="text-align:center; padding:20px;">جاري تحميل السجل...</div>
+                    </div>
+                </div>
+
+                <div id="admin-studio" class="admin-content-section">
+                    <div class="studio-header">
+                        <h3 style="margin:0; color:#fff;">محرك التحديات V4 ⚙️</h3>
+                        <p style="font-size:10px; color:#9ca3af; margin:5px 0 0 0;">صمم منافسات ذكية وممتعة</p>
+                    </div>
+
+                    <div class="form-group" style="gap:10px;">
                         <label class="input-lbl">نوع التحدي</label>
                         <select id="adv-ch-type" onchange="updateChallengeUI()" class="full-select">
                             <option value="distance">🛣️ مسافة تراكمية (الوضع الطبيعي)</option>
@@ -234,99 +310,44 @@
 
                         <div class="advanced-rules-box">
                             <div class="rules-title" onclick="toggleRules()">
-                                <i class="ri-settings-5-line"></i> شروط وقواعد خاصة (اختياري) ▼
+                                <i class="ri-settings-5-line"></i> شروط خاصة (اختياري) ▼
                             </div>
                             <div id="rules-content" style="display:none; margin-top:10px;">
-                                
                                 <div class="input-wrap">
-                                    <label>أقل مسافة مقبولة للجرية (كم)</label>
-                                    <input type="number" id="rule-min-dist" placeholder="مثال: 2 (لمنع احتساب المشي القصير)">
+                                    <label>أقل مسافة للجرية (كم)</label>
+                                    <input type="number" id="rule-min-dist" placeholder="مثال: 2">
                                 </div>
-
-                                <label style="margin-top:10px; display:block; color:#f59e0b;">⏰ وقت الجري المسموح (نظام 24 ساعة)</label>
+                                <label style="margin-top:10px; display:block; color:#f59e0b; font-size:11px;">⏰ الجري في وقت محدد</label>
                                 <div class="input-row">
-                                    <div class="input-wrap">
-                                        <label>من الساعة</label>
-                                        <input type="number" id="rule-time-start" placeholder="مثال: 14 (للعصر)">
-                                    </div>
-                                    <div class="input-wrap">
-                                        <label>إلى الساعة</label>
-                                        <input type="number" id="rule-time-end" placeholder="مثال: 18 (للمغرب)">
-                                    </div>
+                                    <div class="input-wrap"><input type="number" id="rule-time-start" placeholder="من (ساعة)"></div>
+                                    <div class="input-wrap"><input type="number" id="rule-time-end" placeholder="إلى (ساعة)"></div>
                                 </div>
-                                <small style="color:#6b7280; font-size:9px;">اترك التوقيت فارغاً ليكون متاحاً طوال اليوم</small>
                             </div>
                         </div>
                         
                         <button class="btn btn-primary" onclick="createGeniusChallenge()">إطلاق التحدي 🚀</button>
                     </div>
-                </div>
-</div>
-            <section id="view-challenges" class="view">
-                
-                <div class="tabs-nav">
-                    <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
-                    <div class="tab-item" onclick="setTab('leaderboard')">المتصدرون</div>
-                    <div class="tab-item" onclick="setTab('squads')">المناطق</div>
-                </div>
-                
 
-                <div id="tab-active-challenges" class="tab-content active">
-                    <div id="challenges-list" class="challenges-grid"></div>
-                </div>
-                
-   
-                    <div id="challenges-list"></div>
+                    <div style="margin-top:30px;">
+                        <h4 style="color:#fff; font-size:14px; margin-bottom:10px;">التحديات النشطة حالياً</h4>
+                        <div id="admin-active-challenges-list">
+                            </div>
+                    </div>
                 </div>
 
-                
-                <div id="tab-leaderboard" class="tab-content">
-                    <div class="team-goal-card">
-                        <div class="team-title">إجمالي جري الفريق (الشهر)</div>
-                        <div class="team-val" id="teamTotalDisplay">0</div>
-                        <div class="xp-track" style="margin-top:10px; height:8px; background:rgba(255,255,255,0.1);">
-                            <div class="xp-fill" id="teamGoalBar" style="width:0%; background:#f59e0b;"></div>
-                        </div>
-                        <div class="team-goal-labels">
-                            <span>البداية</span>
-                            <span>الهدف: 1000 كم</span>
-                        </div>
+                <div id="admin-users" class="admin-content-section">
+                    <div style="display:flex; gap:5px; margin-bottom:10px;">
+                        <input type="text" id="admin-user-search" placeholder="بحث بالاسم..." style="padding:10px; font-size:12px;" oninput="searchUsers(this.value)">
                     </div>
-                 
-
-                    <div class="podium-section">
-                        <div class="podium-title">أبطال الشهر 👑</div>
-                        <div id="podium-container" class="podium-container">
-                            <div style="color:#6b7280; font-size:12px;">جاري تحميل الأبطال...</div>
-                        </div>
+                    <div class="admin-table-container">
+                        <table class="admin-table">
+                            <thead><tr><th>الاسم</th><th>المنطقة</th><th>تحكم</th></tr></thead>
+                            <tbody id="users-table-body"></tbody>
+                        </table>
                     </div>
-<div class="challenge-filter-bar">
-    <button class="ch-filter-btn active" onclick="filterChallengesUI('all', this)">الكل</button>
-    <button class="ch-filter-btn" onclick="filterChallengesUI('distance', this)">🛣️ مسافات</button>
-    <button class="ch-filter-btn" onclick="filterChallengesUI('frequency', this)">🗓️ التزام</button>
-    <button class="ch-filter-btn" onclick="filterChallengesUI('speed', this)">⚡ سرعة</button>
-</div>
-                    <div class="leaderboard-controls">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
-                            <span style="font-size:10px; color:#6b7280;">اضغط للفلترة 👇</span>
-                        </div>
-                        <div class="filter-large-toggle">
-                            <button class="filter-btn active" onclick="filterLeaderboard('all')">
-                                <i class="ri-earth-line"></i> الكل
-                            </button>
-                            <button class="filter-btn" onclick="filterLeaderboard('region')">
-                                <i class="ri-map-pin-user-line"></i> منطقتي
-                            </button>
-                        </div>
-                    </div>
-                    <div id="leaderboard-list" class="rank-list"></div>
-                </div>
-                
-                <div id="tab-squads" class="tab-content">
-                    <div id="region-battle-list"></div>
                 </div>
             </section>
+
 
             <section id="view-profile" class="view">
                 <div class="pro-hero-card compact">

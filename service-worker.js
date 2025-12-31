@@ -1,5 +1,5 @@
 // ERS Runners - Service Worker (V2.1)
-const CACHE_NAME = 'ers-runners-v1.5-fast'; // تحديث رقم النسخة
+const CACHE_NAME = 'ers-runners-v1.3.0-stable'; // تحديث رقم النسخة
 const ASSETS_TO_CACHE = [
   './',
   './index.html',

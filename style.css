@@ -1275,3 +1275,210 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px;
     background: rgba(255,255,255,0.1); color: #fff;
 }
+
+/* ==================== Skeleton UI Polish ==================== */
+
+/* تحسين حركة اللمعان لتكون أنعم */
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.skeleton::after {
+    background-image: linear-gradient(
+        90deg, 
+        rgba(255, 255, 255, 0) 0, 
+        rgba(255, 255, 255, 0.08) 20%, 
+        rgba(255, 255, 255, 0.15) 60%, 
+        rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 1.5s infinite; /* أسرع قليلاً */
+}
+
+/* تنسيق خاص لهيكل التحديات ليكون بنفس أبعاد الكروت الحقيقية */
+.ch-card .skeleton {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* ==================== V6.0 Streak Fire (سلسلة الحماس) ==================== */
+
+.streak-badge {
+    background: linear-gradient(135deg, #f97316, #ef4444);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+    animation: flamePulse 2s infinite;
+}
+
+.streak-badge i { font-size: 14px; }
+
+@keyframes flamePulse {
+    0% { box-shadow: 0 0 5px rgba(249, 115, 22, 0.4); transform: scale(1); }
+    50% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.7); transform: scale(1.05); }
+    100% { box-shadow: 0 0 5px rgba(249, 115, 22, 0.4); transform: scale(1); }
+}
+
+/* ==================== V1.3 Updates ==================== */
+.empty-state-mini {
+    width: 100%;
+    text-align: center;
+    padding: 15px;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(255,255,255,0.02);
+    border-radius: 12px;
+    border: 1px dashed var(--border);
+}
+
+
+
+/* ==================== V1.4 Admin Overhaul ==================== */
+
+/* 1. تبويبات الأدمن الفخمة */
+.admin-tabs-wrapper {
+    background: #111827;
+    border: 1px solid var(--border);
+    padding: 5px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    position: sticky; top: 70px; z-index: 99; /* تثبيت التبويبات عند التمرير */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.admin-tab {
+    flex: 1;
+    padding: 10px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.admin-tab.active {
+    background: var(--bg-card);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.admin-content-section { display: none; animation: fadeIn 0.3s ease; }
+.admin-content-section.active { display: block; }
+
+/* 2. كروت الإحصائيات الجديدة */
+.stats-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.stat-card-mini {
+    background: linear-gradient(145deg, var(--bg-card), #111827);
+    padding: 15px 10px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid var(--border);
+}
+.stat-val-big { font-size: 18px; font-weight: 900; color: #fff; display: block; margin-bottom: 2px; }
+.stat-lbl-mini { font-size: 10px; color: var(--text-muted); }
+
+/* 3. كارت "المراقب" للجريات (Run Inspector) */
+.inspector-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex; flex-direction: column; gap: 10px;
+}
+.inspector-header { display: flex; justify-content: space-between; align-items: center; }
+.inspector-user { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: bold; color: #fff; }
+.inspector-meta { font-size: 10px; color: var(--text-muted); }
+.inspector-data { 
+    display: flex; gap: 15px; background: rgba(0,0,0,0.2); 
+    padding: 8px; border-radius: 8px; align-items: center;
+}
+.insp-val { color: var(--primary); font-weight: 800; font-size: 14px; }
+.insp-actions { display: flex; gap: 5px; margin-top: 5px; }
+.btn-insp { flex: 1; padding: 8px; border-radius: 6px; border: none; font-size: 11px; cursor: pointer; font-weight: bold; }
+.btn-approve { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.btn-reject { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+/* 4. ستوديو التحديات */
+.studio-header {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    padding: 20px; border-radius: 16px; border: 1px solid var(--primary);
+    margin-bottom: 20px; text-align: center;
+}
+.active-ch-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-card); padding: 10px; border-radius: 8px; margin-bottom: 5px;
+    border-left: 3px solid var(--primary);
+}
+/* ==================== V1.5 Live Dashboard ==================== */
+
+/* تعديل الشبكة لتأخذ 4 أعمدة */
+.stats-grid-4 {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px;
+}
+@media (max-width: 480px) { .stats-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+
+/* تأثير النبض للمتواجدين */
+.pulse-dot {
+    display: inline-block; width: 8px; height: 8px; background: #10b981;
+    border-radius: 50%; box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+    animation: pulse-green 2s infinite; margin-left: 5px;
+}
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* تقسيم الشاشة لقسمين */
+.live-dashboard-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+}
+@media (max-width: 480px) { .live-dashboard-grid { grid-template-columns: 1fr; } }
+
+/* صناديق القوائم */
+.admin-panel-box {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 12px; overflow: hidden; height: 250px; display: flex; flex-direction: column;
+}
+.panel-header {
+    background: rgba(0,0,0,0.2); padding: 10px; border-bottom: 1px solid var(--border);
+}
+.panel-header h5 { margin: 0; font-size: 11px; color: #d1d5db; display: flex; align-items: center; gap: 5px; }
+
+.panel-list-scroll { flex: 1; overflow-y: auto; padding: 5px; }
+
+/* عناصر القوائم المصغرة */
+.mini-user-row {
+    display: flex; align-items: center; gap: 10px; padding: 8px;
+    border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 11px;
+}
+.mini-avatar {
+    width: 24px; height: 24px; border-radius: 50%; background: #374151;
+    display: flex; align-items: center; justify-content: center; font-size: 12px;
+}
+.mini-info { flex: 1; }
+.mini-name { display: block; color: #fff; font-weight: bold; }
+.mini-sub { display: block; color: var(--text-muted); font-size: 9px; }
+.status-pill {
+    font-size: 8px; padding: 2px 6px; border-radius: 8px;
+    background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.compact-alert { padding: 10px; background: rgba(239, 68, 68, 0.05); }
+.loader-placeholder { text-align:center; padding:20px; color:#6b7280; font-size:10px; }
