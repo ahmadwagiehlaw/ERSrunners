@@ -21,6 +21,7 @@ let editingOldDist = 0;
 let allUsersCache = [];
 let deferredPrompt;
 let isLiking = false; // Debounce variable
+let currentChallengeFilter = 'all'; // 🔥 هذا السطر مهم جداً ليعرف التطبيق البداية
 
 // ==================== 0. Helpers & Utilities ====================
 
@@ -1601,9 +1602,14 @@ function setTab(tabName) {
     document.getElementById('tab-' + tabName).classList.add('active');
     document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
     if(event && event.target) event.target.classList.add('active');
+    
     if (tabName === 'leaderboard') loadLeaderboard('all');
     if (tabName === 'squads') loadRegionBattle();
-    if (tabName === 'active-challenges') loadActiveChallenges();
+    
+    // 🔥 أضف هذا السطر: إعادة رسم التحديات عند فتح التبويب
+    if (tabName === 'active-challenges') {
+        renderChallenges(); 
+    }
 }
 
 function getSkeletonHTML(type) {
@@ -1809,26 +1815,30 @@ function generateShareCard(dist, time, dateStr) {
 let allChallengesCache = [];
 
 // تحميل وعرض التحديات (V5.1 Fixed Home Display)
+// تحميل وعرض التحديات (Fixed V6.2)
 function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
     const mini = document.getElementById('my-active-challenges'); 
     
     if(!list) return;
-    list.innerHTML = getSkeletonHTML('challenges');
+    
+    // عرض الهيكل العظمي فقط إذا كانت القائمة فارغة تماماً
+    if(allChallengesCache.length === 0) {
+        list.innerHTML = getSkeletonHTML('challenges');
+    }
 
     db.collection('challenges')
       .where('active', '==', true)
-      // .orderBy('startDate', 'desc') // معطل لتجنب خطأ الفهرس حالياً
       .get()
       .then(async snap => {
         if(snap.empty) { 
-            list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'>لا توجد تحديات</div>"; 
+            list.innerHTML = "<div class='empty-state-fun'><span class='fun-icon'>👻</span><div class='fun-title'>مفيش تحديات</div></div>"; 
             if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
             return; 
         }
 
-        allChallengesCache = [];
-        let miniHtml = ''; // متغير لتجميع كروت الصفحة الرئيسية
+        allChallengesCache = []; // تصفير الكاش
+        let miniHtml = '';
 
         for(const doc of snap.docs) {
             const ch = doc.data();
@@ -1844,12 +1854,10 @@ function loadActiveChallenges() {
                 }
             }
             
-            // حفظ في الكاش
             allChallengesCache.push({ id: doc.id, ...ch, isJoined, progress, completed });
 
-            // 🔥 هذا هو الجزء الذي كان مفقوداً: بناء كروت الصفحة الرئيسية
+            // تجميع المصغرات للصفحة الرئيسية
             if (isJoined && mini) {
-                // حساب النسبة
                 let perc = 0;
                 if (ch.type === 'speed') perc = completed ? 100 : 0;
                 else perc = Math.min((progress / ch.target) * 100, 100);
@@ -1868,16 +1876,21 @@ function loadActiveChallenges() {
             }
         }
 
-        // عرض التحديات في صفحة المنافسة
-        renderChallenges('all');
+        // 🔥 الإصلاح هنا: إعادة تعيين الفلتر وتحديث العرض فوراً
+        currentChallengeFilter = 'all'; 
+        
+        // تنشيط زر "الكل" بصرياً
+        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+        const allBtn = document.querySelector('.filter-pill:first-child'); 
+        if(allBtn) allBtn.classList.add('active');
 
-      // 🔥 عرض التحديات في الصفحة الرئيسية
+        renderChallenges(); // رسم القائمة فوراً
+
         if (mini) {
             mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
         }
     });
 }
-
 
 let currentReportFeedId = null;
 
@@ -1998,59 +2011,157 @@ async function submitReport() {
 
 
 //==========================================
+function setChallengeFilter(filter, btn) {
+    currentChallengeFilter = filter;
+    
+    // تحديث شكل الأزرار
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    // إعادة الرسم
+    renderChallenges(currentChartMode); // تمرير أي قيمة، الفلترة ستتم بالداخل
+}
 
-
-function renderChallenges(filterType) {
+//==========================================
+function renderChallenges(dummy) {
     const list = document.getElementById('challenges-list');
-    const displayList = (filterType === 'all') ? allChallengesCache : allChallengesCache.filter(ch => ch.type === filterType);
+    
+    // 1. تطبيق الفلترة
+    let displayList = allChallengesCache;
 
+    if (currentChallengeFilter === 'joined') {
+        displayList = displayList.filter(ch => ch.isJoined && !ch.completed);
+    } else if (currentChallengeFilter === 'new') {
+        displayList = displayList.filter(ch => !ch.isJoined);
+    } else if (currentChallengeFilter === 'completed') {
+        displayList = displayList.filter(ch => ch.completed);
+    }
+
+    // 2. الحالة الفارغة (مع رسائل مضحكة حسب الفلتر)
     if (displayList.length === 0) {
-        list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'>القائمة فارغة</div>";
+        let funIcon = "👻";
+        let funTitle = "المكان مهجور يا كابتن!";
+        let funDesc = "مفيش تحديات هنا حالياً.. ارجع بعدين";
+
+        // تخصيص الرسالة حسب الفلتر
+        if (currentChallengeFilter === 'joined') {
+            funIcon = "🐢";
+            funTitle = "إيه الكسل ده؟";
+            funDesc = "أنت مش مشترك في أي تحدي لسه!<br>روح على <b>'جديدة'</b> واشترك يا بطل وبطل فرجة 😂";
+        } else if (currentChallengeFilter === 'new') {
+            funIcon = "✅";
+            funTitle = "خلصت كل حاجة!";
+            funDesc = "يا جامد! مفيش تحديات جديدة قدامك.<br>أنت ختمت اللعبة ولا إيه؟";
+        } else if (currentChallengeFilter === 'completed') {
+            funIcon = "🏆";
+            funTitle = "لسه بدري ع الكؤوس";
+            funDesc = "لسه مخلصتش ولا تحدي؟<br>شد حيلك شوية يا وحش عايزين نشوف ميداليات!";
+        }
+
+        list.innerHTML = `
+            <div class="empty-state-fun">
+                <span class="fun-icon">${funIcon}</span>
+                <div class="fun-title">${funTitle}</div>
+                <div class="fun-desc">${funDesc}</div>
+            </div>`;
         return;
     }
 
+    // 3. عرض الكروت (نفس الكود السابق)
     let fullHtml = '';
     displayList.forEach(ch => {
-        // 1. أزرار الأدمن (يسار)
-        const deleteBtn = (userData.isAdmin) 
-            ? `<div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف" style="left:15px; right:auto; z-index:50;"><i class="ri-delete-bin-line"></i></div>` 
-            : '';
+        // ... (نفس منطق حساب الوقت والأزرار السابق) ...
+        
+        let daysLeftText = "مستمر";
+        let isUrgent = false;
+        if (ch.startDate) {
+            const start = new Date(ch.startDate);
+            const end = new Date(start);
+            end.setDate(end.getDate() + (ch.durationDays || 30));
+            const diffTime = end - new Date();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
-        const editBtn = (userData.isAdmin)
-             ? `<div class="admin-del-btn" onclick="editChallenge('${ch.id}')" title="تعديل" style="left:55px; right:auto; background:rgba(245, 158, 11, 0.15); color:#f59e0b; border-color:rgba(245, 158, 11, 0.3); z-index:50;"><i class="ri-pencil-line"></i></div>`
-             : '';
+            if (diffDays < 0) daysLeftText = "انتهى";
+            else if (diffDays <= 3) { daysLeftText = `🔥 باقي ${diffDays} يوم`; isUrgent = true; }
+            else daysLeftText = `⏳ باقي ${diffDays} يوم`;
 
-        // 2. زر الترتيب (في المنتصف حسب طلبك)
-        // 🔥 تم ضبط التنسيق ليكون في المنتصف تماماً دون تغطية الكارت
+            // 🔥 الفوتر الجديد (V6.5 Animated & Compact)
+        
+        // تحديد أيقونة وكلاس الوقت
+        let timeIcon = "ri-hourglass-2-fill";
+        let timeClass = "time";
+        
+        if (isUrgent) {
+            timeIcon = "ri-fire-fill"; // شعلة لو الوقت قليل
+            timeClass = "time urgent";
+        } else if (diffDays < 0) {
+            timeIcon = "ri-checkbox-circle-fill";
+            timeClass = "time done";
+        }
+
+        const metaFooter = `
+            <div class="ch-meta-footer">
+                <div class="meta-pill social" title="عدد الأبطال المشاركين">
+                    <i class="ri-group-fill"></i> 
+                    <span>${ch.participantsCount || 0}</span>
+                </div>
+
+                <div class="meta-pill ${timeClass}">
+                    <span>${daysLeftText}</span>
+                    <i class="${timeIcon}"></i>
+                </div>
+            </div>
+        `;
+        }
+
+        // أزرار الأدمن
+        let adminControls = '';
+        if (userData.isAdmin) {
+            adminControls = `
+            <div style="position:absolute; top:15px; left:15px; display:flex; gap:8px; z-index:50;">
+                <div class="admin-del-btn" onclick="editChallenge('${ch.id}')" title="تعديل" style="position:static; background:rgba(245, 158, 11, 0.15); color:#f59e0b; border-color:rgba(245, 158, 11, 0.3); width:32px; height:32px;"><i class="ri-pencil-line"></i></div>
+                <div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف" style="position:static; width:32px; height:32px;"><i class="ri-delete-bin-line"></i></div>
+            </div>`;
+        }
+
         const infoBtn = `
             <button onclick="openChallengeDetails('${ch.id}')" class="ch-leaderboard-btn" style="right:50%; transform:translateX(50%); top:15px; left:auto; z-index:40;">
                 <i class="ri-trophy-fill"></i> الترتيب
             </button>
         `;
 
-        // 3. زر قبول التحدي (الإصلاح هنا: z-index عالي)
-        const actionBtn = !ch.isJoined 
-            ? `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')" style="position:relative; z-index:100; cursor:pointer;">قبول التحدي</button>` 
-            : '';
+        let actionBtn = '';
+        if (!ch.isJoined) {
+            actionBtn = `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')" style="position:relative; z-index:100; cursor:pointer; margin-top:15px;">قبول التحدي</button>`;
+        } else if (ch.completed) {
+            actionBtn = `<div style="margin-top:15px; text-align:center; color:#10b981; font-weight:bold; font-size:12px; background:rgba(16,185,129,0.1); padding:8px; border-radius:8px;">🎉 التحدي مكتمل</div>`;
+        }
 
-        // --- القوالب (Templates) ---
+        const metaFooter = `
+            <div class="ch-meta-footer">
+                <div class="ch-meta-item">
+                    <i class="ri-group-line"></i> <span>${ch.participantsCount || 0} مشارك</span>
+                </div>
+                <div class="ch-meta-item ${isUrgent ? 'urgent' : ''}">
+                    ${daysLeftText}
+                </div>
+            </div>
+        `;
 
-        // أ) تصميم السرعة (Speed)
+        // دمج التصميمات
         if (ch.type === 'speed') {
             const isDone = ch.completed;
             fullHtml += `
             <div class="ch-card speed-mode ${isDone?'done':''}">
-                ${deleteBtn} ${editBtn} ${infoBtn}
-                
-                <div style="margin-top: 45px;"> <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
+                ${adminControls} ${infoBtn}
+                <div style="margin-top: 45px;">
+                    <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
                     <div class="speed-gauge" style="margin-top:10px;">${ch.target} <span style="font-size:12px">د/كم</span></div>
                 </div>
-                
                 ${ch.isJoined ? (isDone ? `<span class="speed-status" style="background:rgba(16,185,129,0.2); color:#10b981">🚀 حطمت الرقم!</span>` : `<span class="speed-status">أسرع بيس لك: --</span>`) : actionBtn}
+                ${metaFooter}
             </div>`;
         }
-        
-        // ب) تصميم الالتزام (Frequency)
         else if (ch.type === 'frequency') {
             let dotsHtml = '';
             const maxDots = Math.min(ch.target, 14); 
@@ -2062,38 +2173,34 @@ function renderChallenges(filterType) {
 
             fullHtml += `
             <div class="ch-card habit-mode">
-                ${deleteBtn} ${editBtn} ${infoBtn}
-                
+                ${adminControls} ${infoBtn}
                 <div class="ch-header-centered" style="margin-top:40px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
-                    <span style="font-size:10px; color:#c4b5fd; margin-top:5px;">${ch.durationDays} يوم • ${ch.target} جرية</span>
+                    <span style="font-size:10px; color:#c4b5fd; margin-top:5px;">هدف: ${ch.target} جرية</span>
                 </div>
-
-                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target}</span>` : actionBtn}
+                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target}</span>${actionBtn}` : actionBtn}
+                ${metaFooter}
             </div>`;
         }
-
-        // ج) تصميم المسافة (Distance - Default)
         else {
             const perc = Math.min((ch.progress / ch.target) * 100, 100);
             fullHtml += `
             <div class="ch-card dist-mode">
-                ${deleteBtn} ${editBtn} ${infoBtn}
-                
+                ${adminControls} ${infoBtn}
                 <div class="ch-header-centered" style="margin-top:40px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
                     <div style="display:flex; gap:10px; align-items:center; margin-top:5px; justify-content:center;">
-                        <span style="font-size:10px; color:#64748b;">${ch.durationDays} يوم</span>
                         <span style="font-size:14px; font-weight:bold; color:#fff;">${Math.floor(ch.progress)} <span style="font-size:10px; opacity:0.6">/ ${ch.target} كم</span></span>
                     </div>
                 </div>
-
-                ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>` : actionBtn}
+                ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>${actionBtn}` : actionBtn}
+                ${metaFooter}
             </div>`;
         }
     });
     list.innerHTML = fullHtml;
 }
+
 // ==================== V3.2 Avatar System ====================
 
 let selectedAvatarIcon = "🏃"; // الافتراضي

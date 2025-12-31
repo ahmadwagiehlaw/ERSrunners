@@ -167,14 +167,27 @@
 
             <section id="view-challenges" class="view">
                     <div class="tabs-nav">
-                    <div class="tab-item active" onclick="setTab('active-challenges')">مهمات نشطة</div>
+                    <div class="tab-item active" onclick="setTab('active-challenges')">التحديات والمهام</div>
                     <div class="tab-item" onclick="setTab('leaderboard')">لوحة الشرف</div>
                     <div class="tab-item" onclick="setTab('squads')">دوري المحافظات</div> 
                 </div>
 
+
+
                 <div id="tab-active-challenges" class="tab-content active">
-                    <div id="challenges-list" class="challenges-grid"></div>
-                </div>
+    
+    <div class="filter-scroll-container">
+        <button class="filter-pill active" onclick="setChallengeFilter('all', this)">الكل</button>
+        <button class="filter-pill" onclick="setChallengeFilter('joined', this)">مشترك فيها ✅</button>
+        <button class="filter-pill" onclick="setChallengeFilter('new', this)">جديدة 🆕</button>
+        <button class="filter-pill" onclick="setChallengeFilter('completed', this)">مكتملة 🏆</button>
+    </div>
+
+    <div id="challenges-list" class="challenges-grid"></div>
+</div>
+
+<div id="challenges-list" class="challenges-grid"></div>
+
 
                 <div id="tab-leaderboard" class="tab-content">
                     <div class="team-goal-card">

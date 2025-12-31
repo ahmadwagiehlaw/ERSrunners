@@ -1540,3 +1540,144 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     width: 100%;
     text-align: center;
 }
+
+/* ==================== V6.1 Big & Centered Filters ==================== */
+
+.filter-scroll-container {
+    display: flex;
+    justify-content: center; /* توسيط في منتصف الشاشة */
+    gap: 10px;
+    margin: 15px 0 25px 0; /* مسافات مريحة */
+    flex-wrap: wrap; /* يسمح بالنزول لسطر جديد لو الشاشة صغيرة جداً */
+}
+
+.filter-pill {
+    background: rgba(31, 41, 55, 0.8); /* لون أغمق قليلاً */
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-muted);
+    
+    /* تكبير الحجم */
+    padding: 12px 20px; 
+    border-radius: 50px;
+    font-size: 13px;
+    font-weight: 600;
+    
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; align-items: center; justify-content: center;
+}
+
+.filter-pill.active {
+    background: var(--primary);
+    color: #000;
+    border-color: var(--primary);
+    transform: scale(1.05); /* تكبير بسيط عند التفعيل */
+    box-shadow: 0 4px 15px var(--primary-glow); /* وهج جذاب */
+}
+
+.filter-pill:active {
+    transform: scale(0.95);
+}
+
+/* ==================== V6.1 Funny Empty State ==================== */
+.empty-state-fun {
+    text-align: center;
+    padding: 40px 20px;
+    background: rgba(255,255,255,0.02);
+    border-radius: 20px;
+    border: 2px dashed rgba(255,255,255,0.05);
+    margin-top: 10px;
+    animation: fadeIn 0.5s ease;
+}
+
+.fun-icon {
+    font-size: 80px;
+    display: block;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
+    animation: floatGhost 3s ease-in-out infinite;
+}
+
+.fun-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.fun-desc {
+    font-size: 12px;
+    color: #9ca3af;
+    line-height: 1.6;
+}
+
+@keyframes floatGhost {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(5deg); }
+}
+
+/* ==================== V6.5 Premium Meta Footer ==================== */
+
+.ch-meta-footer {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    margin-top: 15px; 
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+/* الكبسولة العامة */
+.meta-pill {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 800;
+    transition: all 0.3s ease;
+    cursor: default;
+    position: relative; overflow: hidden;
+}
+
+/* 1. كبسولة المشاركين (يسار - هادئة) */
+.meta-pill.social {
+    background: rgba(59, 130, 246, 0.15); /* أزرق شفاف */
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+.meta-pill.social i { font-size: 14px; }
+
+/* 2. كبسولة الوقت (يمين - تعتمد على الحالة) */
+.meta-pill.time {
+    background: rgba(255,255,255,0.05);
+    color: #9ca3af;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* 🔥 حالة الطوارئ (باقي وقت قليل) */
+.meta-pill.time.urgent {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.1));
+    color: #fca5a5;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    animation: pulse-border 2s infinite;
+}
+
+/* ✨ حالة النجاح/الانتهاء */
+.meta-pill.time.done {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+/* Animations */
+@keyframes pulse-border {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); border-color: rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); border-color: rgba(239, 68, 68, 0.1); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* حركة بسيطة للأيقونة */
+.meta-pill:hover i {
+    transform: scale(1.2);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
