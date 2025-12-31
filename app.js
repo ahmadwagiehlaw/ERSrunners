@@ -762,58 +762,80 @@ async function submitRun() {
             }, { merge: true });
 
             
-            // تحديث التحديات الذكية
+            // ... (داخل submitRun بعد حفظ الجرية في users و activity_feed)
+            
+            // 🔥 تحديث التحديات الذكية (مع تطبيق القواعد الصارمة)
             const activeCh = await db.collection('challenges').where('active', '==', true).get();
             const batch = db.batch();
             
             // حساب البيس للجرية الحالية
             const currentPace = dist > 0 ? time / dist : 0; 
+            const runHour = selectedDate.getHours(); // ساعة الجرية
 
             activeCh.forEach(doc => {
                 const ch = doc.data();
+                const rules = ch.rules || {}; // استدعاء القواعد
+
+                // ⛔ 1. فحص قاعدة: إجبارية الصورة
+                if (rules.requireImg && !imgUrlInput.value) {
+                    console.log(`تم تجاهل التحدي ${ch.title}: لا توجد صورة`);
+                    return; // تخطي هذا التحدي لهذه الجرية
+                }
+
+                // ⛔ 2. فحص قاعدة: الحد الأدنى للمسافة
+                if (rules.minDistPerRun && dist < rules.minDistPerRun) {
+                    return; // الجرية أقصر من المطلوب لهذا التحدي
+                }
+
+                // ⛔ 3. فحص قاعدة: التوقيت (مثلاً تحدي الصباح)
+                if (typeof rules.validHourStart !== 'undefined' && typeof rules.validHourEnd !== 'undefined') {
+                    if (runHour < rules.validHourStart || runHour > rules.validHourEnd) {
+                        return; // الجرية خارج الوقت المسموح
+                    }
+                }
+
+                // ... (إذا نجحنا في عبور كل الفلاتر، نقوم بالحساب) ...
+                
                 const participantRef = doc.ref.collection('participants').doc(uid);
                 
-                // منطق حسب نوع التحدي
                 let incrementValue = 0;
                 let isSpeedSuccess = false;
 
                 if (!ch.type || ch.type === 'distance') {
-                    // النوع القديم أو مسافة: نزيد المسافة
                     incrementValue = dist;
                 } else if (ch.type === 'frequency') {
-                    // تكرار: نزيد 1 (جرية واحدة)
                     incrementValue = 1;
                 } else if (ch.type === 'speed') {
-                    // سرعة: هل الجرية دي أسرع من الهدف؟ (الرقم الأقل هو الأسرع في البيس)
-                    // وتكون مسافتها مقبولة (مثلا أكبر من 1 كم عشان الغش)
+                    // في تحدي السرعة، لازم المسافة تكون مقبولة (مثلاً 1 كم) عشان الغش
                     if (currentPace <= ch.target && dist >= 1) {
                         isSpeedSuccess = true; 
                     }
                 }
 
+                // الحفظ في الداتابيز
                 if (ch.type === 'speed') {
-                    // في تحدي السرعة، لو نجح مرة واحدة يعتبر خلص التحدي
                     if (isSpeedSuccess) {
                         batch.set(participantRef, {
-                            progress: ch.target, // وصل للهدف
-                            lastUpdate: timestamp, name: userData.name, completed: true
+                            progress: ch.target, lastUpdate: timestamp, name: userData.name, completed: true, photoUrl: userData.photoUrl || null
                         }, { merge: true });
                     }
                 } else {
-                    // في المسافة والتكرار، نجمع
                     batch.set(participantRef, {
                         progress: firebase.firestore.FieldValue.increment(incrementValue),
-                        lastUpdate: timestamp, name: userData.name
+                        lastUpdate: timestamp, name: userData.name, photoUrl: userData.photoUrl || null
                     }, { merge: true });
                 }
             });
             await batch.commit();
+            // ... (باقي الكود)
 
             userData.totalDist += dist; userData.totalRuns += 1; userData.monthDist = newMonthDist;
             await checkNewBadges(dist, time, selectedDate);
             showToast("تم الحفظ بنجاح 🚀", "success");
         }
         
+
+
         closeModal('modal-log');
         document.getElementById('save-run-btn').innerText = "حفظ النشاط";
         allUsersCache = []; 
@@ -1204,6 +1226,10 @@ function loadGlobalFeed() {
                         </button>
                     ` : ''}
 
+                    <button class="feed-compact-btn" onclick="openReportModal('${doc.id}')" style="margin-right:auto; color:#ef4444;">
+                        <i class="ri-flag-line"></i>
+                    </button>
+
                     <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
                         <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
                         <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
@@ -1385,14 +1411,14 @@ async function adminForceDelete(feedId, userId, runDist) {
 
 // إنشاء تحدي ذكي V4.0 (يدعم القواعد المتقدمة)
 async function createGeniusChallenge() {
-    // 1. البيانات الأساسية
+    // البيانات الأساسية
     const title = document.getElementById('adv-ch-title').value;
     const type = document.getElementById('adv-ch-type').value;
     const target = parseFloat(document.getElementById('adv-ch-target').value);
     const days = parseInt(document.getElementById('adv-ch-days').value);
     const startDateVal = document.getElementById('adv-ch-start').value;
 
-    // 2. القواعد المتقدمة (Optional Rules)
+    // القواعد المتقدمة
     const minDist = parseFloat(document.getElementById('rule-min-dist').value) || 0;
     const startHour = document.getElementById('rule-time-start').value;
     const endHour = document.getElementById('rule-time-end').value;
@@ -1401,38 +1427,51 @@ async function createGeniusChallenge() {
 
     const startDate = startDateVal ? new Date(startDateVal).toISOString() : new Date().toISOString();
 
-    // تجهيز كائن القواعد (هذا هو العقل المدبر)
     let rules = {
-        minDistPerRun: minDist // أقل مسافة للجرية الواحدة
+        minDistPerRun: minDist,
+        requireImg: document.getElementById('rule-require-img').checked
     };
-
-    // إضافة شرط الوقت فقط إذا تم إدخاله
     if (startHour !== "" && endHour !== "") {
         rules.validHourStart = parseInt(startHour);
         rules.validHourEnd = parseInt(endHour);
     }
 
     const btn = event.target;
-    btn.innerText = "جاري الإنشاء...";
+    const originalText = btn.innerText;
+    btn.innerText = "جاري المعالجة...";
     btn.disabled = true;
 
     try {
-        await db.collection('challenges').add({
+        const challengeData = {
             title: title,
-            type: type, // distance, frequency, speed
+            type: type,
             target: target,
             durationDays: days,
             startDate: startDate,
-            active: true,
-            participantsCount: 0,
-            createdStr: new Date().toLocaleDateString('ar-EG'),
-            rules: rules // 🔥 تخزين القواعد هنا
-        });
-        showToast("تم إطلاق التحدي بنجاح 🎯", "success");
+            rules: rules
+        };
+
+        if (editingChallengeId) {
+            // 🔥 حالة التعديل
+            await db.collection('challenges').doc(editingChallengeId).update(challengeData);
+            showToast("تم تعديل التحدي بنجاح ✅", "success");
+            editingChallengeId = null; // تصفير الوضع
+            btn.style.background = "var(--primary)"; // العودة للون الأخضر
+        } else {
+            // 🔥 حالة الإنشاء الجديد
+            challengeData.active = true;
+            challengeData.participantsCount = 0;
+            challengeData.createdStr = new Date().toLocaleDateString('ar-EG');
+            
+            await db.collection('challenges').add(challengeData);
+            showToast("تم إطلاق التحدي بنجاح 🚀", "success");
+        }
         
         // تنظيف الحقول
         document.getElementById('adv-ch-title').value = '';
+        document.getElementById('adv-ch-target').value = '';
         document.getElementById('rules-content').style.display = 'none';
+        loadAdminChallengesList(); // تحديث القائمة فوراً
         
     } catch(e) {
         showToast("خطأ في النظام", "error");
@@ -1441,6 +1480,7 @@ async function createGeniusChallenge() {
         btn.innerText = "إطلاق التحدي 🚀";
         btn.disabled = false;
     }
+}
 
     // تغيير نصوص الواجهة حسب النوع
 function updateChallengeUI() {
@@ -1461,14 +1501,19 @@ function updateChallengeUI() {
 }
 
 // إظهار/إخفاء القواعد المتقدمة
+// إصلاح زر الشروط الخاصة
 function toggleRules() {
     const content = document.getElementById('rules-content');
-    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+    const currentStyle = window.getComputedStyle(content).display;
+    
+    if (currentStyle === 'none') {
+        content.style.display = 'block';
+        // تمرير لأسفل لرؤية الشروط
+        content.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+        content.style.display = 'none';
+    }
 }
-
-}
-
-
 // ==================== 9. Charts & Graphs (V2.0) ====================
 let currentChartMode = 'week'; 
 
@@ -1832,6 +1877,129 @@ function loadActiveChallenges() {
         }
     });
 }
+
+
+let currentReportFeedId = null;
+
+// فتح نافذة تفاصيل التحدي
+// ==================== V5.4 Challenge Details (Rank Fixed) ====================
+
+async function openChallengeDetails(chId) {
+    const modal = document.getElementById('modal-challenge-details');
+    const header = document.getElementById('ch-modal-header');
+    const list = document.getElementById('ch-leaderboard-list');
+    
+    if(!modal) return;
+
+    modal.style.display = 'flex';
+    list.innerHTML = '<div class="loader-placeholder">جاري سحب البيانات...</div>';
+    header.innerHTML = '';
+
+    // 1. جلب بيانات التحدي
+    const chDoc = await db.collection('challenges').doc(chId).get();
+    if (!chDoc.exists) return; 
+    const ch = chDoc.data();
+    
+    document.getElementById('ch-modal-title').innerText = ch.title;
+    
+    // عرض ملخص القواعد
+    let rulesText = "";
+    if(ch.rules?.requireImg) rulesText += "📸 صورة مطلوبة • ";
+    if(ch.rules?.minDistPerRun) rulesText += `📏 أقل مسافة ${ch.rules.minDistPerRun} كم • `;
+    
+    header.innerHTML = `
+        <div style="font-size:14px; color:#fff; font-weight:bold;">${ch.type === 'speed' ? 'تحدي سرعة ⚡' : (ch.type === 'frequency' ? 'تحدي التزام 🗓️' : 'سباق مسافات 🛣️')}</div>
+        <div style="font-size:11px; color:#9ca3af; margin-top:5px;">${rulesText || "قواعد عامة"}</div>
+        <div style="margin-top:10px; font-size:24px; font-weight:900; color:var(--primary);">${ch.target} <span style="font-size:12px;">${ch.type==='frequency'?'مرة':'كم'}</span></div>
+    `;
+
+    // 2. جلب المتصدرين
+    db.collection('challenges').doc(chId).collection('participants')
+        .orderBy('progress', 'desc').limit(50).get()
+        .then(snap => {
+            let html = '';
+            if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px;">كن أول المنضمين!</div>'; return; }
+            
+            // 🔥 الإصلاح هنا: استخدام snap.docs للحصول على الـ index (الترتيب) بشكل صحيح
+            snap.docs.forEach((doc, index) => {
+                const p = doc.data();
+                const rank = index + 1; // الآن سيعمل الترتيب (1، 2، 3) ولن يظهر NaN
+                const isMe = doc.id === currentUser.uid;
+                
+                // حماية الأرقام
+                let safeProgress = Number(p.progress);
+                if (isNaN(safeProgress)) safeProgress = 0;
+
+                // حساب النسبة
+                let perc = 0;
+                if(ch.target > 0) perc = Math.min((safeProgress / ch.target) * 100, 100);
+                if(ch.type === 'speed' && p.completed) perc = 100;
+
+                html += `
+                <div class="leader-row" style="${isMe ? 'border-color:var(--primary); background:rgba(16,185,129,0.05);' : ''}">
+                    <div class="rank-col" style="font-weight:bold; color:#fff; font-size:14px;">#${rank}</div>
+                    
+                    <div class="avatar-col" style="background-image:url('${p.photoUrl||''}'); background-size:cover;">${p.photoUrl?'':(p.name?p.name[0]:'?')}</div>
+                    
+                    <div class="info-col">
+                        <div class="name">${p.name} ${isMe?'(أنت)':''} ${p.completed?'✅':''}</div>
+                        <div class="mini-xp-track" style="margin-top:5px; height:4px;">
+                            <div class="mini-xp-fill" style="width:${perc}%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="dist-col" style="font-size:12px; text-align:left;">
+                        <span style="display:block; font-weight:bold; color:var(--accent);">${safeProgress.toFixed(1)}</span>
+                        <span style="font-size:9px; color:#6b7280;">${ch.type==='frequency'?'مرة':'كم'}</span>
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        });
+}// ==================== Community Reporting System (V5.0) ====================
+
+function openReportModal(feedId) {
+    currentReportFeedId = feedId;
+    document.getElementById('modal-report').style.display = 'flex';
+}
+
+async function submitReport() {
+    const reason = document.getElementById('report-reason').value;
+    if(!currentReportFeedId) return;
+    
+    const btn = event.target;
+    btn.innerText = "جاري الإرسال...";
+    
+    try {
+        // إضافة البلاغ في كولكشن منفصل
+        await db.collection('reports').add({
+            feedId: currentReportFeedId,
+            reporterId: currentUser.uid,
+            reporterName: userData.name,
+            reason: reason,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: 'pending' // pending, resolved
+        });
+        
+        // يمكننا أيضاً إضافة علامة على البوست نفسه
+        /* await db.collection('activity_feed').doc(currentReportFeedId).update({
+            flags: firebase.firestore.FieldValue.increment(1)
+        }); */
+
+        showToast("تم استلام البلاغ، شكراً لحرصك 👮‍♂️", "success");
+        closeModal('modal-report');
+    } catch(e) {
+        showToast("حدث خطأ", "error");
+    } finally {
+        btn.innerText = "إرسال البلاغ";
+    }
+}
+
+
+
+//==========================================
+
+
 function renderChallenges(filterType) {
     const list = document.getElementById('challenges-list');
     const displayList = (filterType === 'all') ? allChallengesCache : allChallengesCache.filter(ch => ch.type === filterType);
@@ -1842,11 +2010,24 @@ function renderChallenges(filterType) {
     }
 
     let fullHtml = '';
-    displayList.forEach(ch => {
-        // زر الحذف (يظهر فقط للأدمن)
+   displayList.forEach(ch => {
+        // زر الحذف (للأدمن) - يظهر في اليمين (حسب اتجاه الصفحة العربية)
         const deleteBtn = (userData.isAdmin) 
-            ? `<div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف التحدي"><i class="ri-delete-bin-line"></i></div>` 
+            ? `<div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف التحدي" style="right:15px; left:auto;"><i class="ri-delete-bin-line"></i></div>` 
             : '';
+            
+        // زر التعديل (للأدمن)
+        const editBtn = (userData.isAdmin)
+             ? `<div class="admin-del-btn" onclick="editChallenge('${ch.id}')" title="تعديل" style="right:50px; left:auto; background:rgba(245, 158, 11, 0.2); color:#f59e0b; border-color:#f59e0b;"><i class="ri-pencil-line"></i></div>`
+             : '';
+
+        // 🔥 زر الليدربورد الجديد (المتصدرون)
+        // هذا الزر سيظهر بتصميم الكبسولة الفخم
+        const infoBtn = `
+            <button onclick="openChallengeDetails('${ch.id}')" class="ch-leaderboard-btn">
+                <i class="ri-trophy-line"></i> الترتيب
+            </button>
+        `;
 
         const actionBtn = !ch.isJoined 
             ? `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')">قبول التحدي</button>` 
@@ -1857,8 +2038,7 @@ function renderChallenges(filterType) {
             const isDone = ch.completed;
             fullHtml += `
             <div class="ch-card speed-mode ${isDone?'done':''}">
-                ${deleteBtn}
-                <div class="ch-icon"><i class="ri-dashboard-3-line"></i></div>
+                ${deleteBtn} ${infoBtn} <div class="ch-icon"><i class="ri-dashboard-3-line"></i></div>
                 <div class="speed-target-lbl">الهدف: أسرع من</div>
                 <div class="speed-gauge">${ch.target} <span style="font-size:12px">د/كم</span></div>
                 ${ch.isJoined ? (isDone ? `<span class="speed-status" style="background:rgba(16,185,129,0.2); color:#10b981">🚀 حطمت الرقم!</span>` : `<span class="speed-status">أسرع بيس لك: --</span>`) : actionBtn}
@@ -1877,8 +2057,7 @@ function renderChallenges(filterType) {
 
             fullHtml += `
             <div class="ch-card habit-mode">
-                ${deleteBtn}
-                <div style="display:flex; justify-content:space-between; align-items:center;">
+                ${deleteBtn} ${infoBtn} <div style="display:flex; justify-content:space-between; align-items:center;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
                     <span style="font-size:10px; color:#c4b5fd;">${ch.durationDays} يوم</span>
                 </div>
@@ -1891,16 +2070,14 @@ function renderChallenges(filterType) {
             const perc = Math.min((ch.progress / ch.target) * 100, 100);
             fullHtml += `
             <div class="ch-card dist-mode">
-                ${deleteBtn}
-                <div class="dist-header">
+                ${deleteBtn} ${infoBtn} <div class="dist-header">
                     <div><h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3><span style="font-size:10px; color:#64748b;">${ch.durationDays} يوم</span></div>
                     <div class="dist-val-big">${Math.floor(ch.progress)}<span style="font-size:12px; opacity:0.5">/${ch.target}</span></div>
                 </div>
                 ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>` : actionBtn}
             </div>`;
         }
-    });
-    list.innerHTML = fullHtml;
+    });    list.innerHTML = fullHtml;
 }
 
 // دالة حذف التحدي (للأدمن)
@@ -2134,4 +2311,79 @@ function updateStreakLogic(newRunDate) {
         // فاته يوم أو أكثر -> ابدأ من جديد 😢
         return { streak: 1, lastDate: todayStr };
     }
+}
+
+// ==================== V5.0 Challenge Details & Reporting ====================
+
+// 1. دالة فتح تفاصيل التحدي (ليدربورد)
+// ==================== V5.3 Challenge Details (NaN Fix Final) ====================
+
+async function openChallengeDetails(chId) {
+    const modal = document.getElementById('modal-challenge-details');
+    const header = document.getElementById('ch-modal-header');
+    const list = document.getElementById('ch-leaderboard-list');
+    
+    if(!modal) return;
+
+    modal.style.display = 'flex';
+    list.innerHTML = '<div class="loader-placeholder">جاري سحب البيانات...</div>';
+    header.innerHTML = '';
+
+    // 1. جلب بيانات التحدي
+    const chDoc = await db.collection('challenges').doc(chId).get();
+    if (!chDoc.exists) return; 
+    const ch = chDoc.data();
+    
+    document.getElementById('ch-modal-title').innerText = ch.title;
+    
+    // عرض ملخص القواعد
+    let rulesText = "";
+    if(ch.rules?.requireImg) rulesText += "📸 صورة مطلوبة • ";
+    if(ch.rules?.minDistPerRun) rulesText += `📏 أقل مسافة ${ch.rules.minDistPerRun} كم • `;
+    
+    header.innerHTML = `
+        <div style="font-size:14px; color:#fff; font-weight:bold;">${ch.type === 'speed' ? 'تحدي سرعة ⚡' : (ch.type === 'frequency' ? 'تحدي التزام 🗓️' : 'سباق مسافات 🛣️')}</div>
+        <div style="font-size:11px; color:#9ca3af; margin-top:5px;">${rulesText || "قواعد عامة"}</div>
+        <div style="margin-top:10px; font-size:24px; font-weight:900; color:var(--primary);">${ch.target} <span style="font-size:12px;">${ch.type==='frequency'?'مرة':'كم'}</span></div>
+    `;
+
+    // 2. جلب المتصدرين
+    db.collection('challenges').doc(chId).collection('participants')
+        .orderBy('progress', 'desc').limit(20).get()
+        .then(snap => {
+            let html = '';
+            if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px;">كن أول المنضمين!</div>'; return; }
+            
+            snap.forEach((doc, index) => {
+                const p = doc.data();
+                const rank = index + 1;
+                const isMe = doc.id === currentUser.uid;
+                
+                // 🔥🔥🔥 التصحيح هنا: تحويل إجباري لرقم، ولو فشل يبقى صفر 🔥🔥🔥
+                let safeProgress = Number(p.progress);
+                if (isNaN(safeProgress)) safeProgress = 0;
+
+                // حساب النسبة (مع حماية إضافية من القسمة على صفر)
+                let perc = 0;
+                if(ch.target > 0) {
+                    perc = Math.min((safeProgress / ch.target) * 100, 100);
+                }
+                
+                if(ch.type === 'speed' && p.completed) perc = 100;
+
+                html += `
+                <div class="leader-row" style="${isMe ? 'border-color:var(--primary); background:rgba(16,185,129,0.05);' : ''}">
+                    <div class="rank-col">${rank}</div>
+                    <div class="avatar-col" style="background-image:url('${p.photoUrl||''}'); background-size:cover;">${p.photoUrl?'':(p.name?p.name[0]:'?')}</div>
+                    <div class="info-col">
+                        <div class="name">${p.name} ${isMe?'(أنت)':''} ${p.completed?'✅':''}</div>
+                        <div class="mini-xp-track" style="margin-top:5px; height:4px;">
+                            <div class="mini-xp-fill" style="width:${perc}%;"></div>
+                        </div>
+                    </div>
+                    <div class="dist-col" style="font-size:12px;">${safeProgress.toFixed(1)}</div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        });
 }

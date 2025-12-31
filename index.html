@@ -165,12 +165,11 @@
                 </div>
             </section>
 
-<section id="view-challenges" class="view">
-                
-                <div class="tabs-nav">
+            <section id="view-challenges" class="view">
+                    <div class="tabs-nav">
                     <div class="tab-item active" onclick="setTab('active-challenges')">مهمات نشطة</div>
                     <div class="tab-item" onclick="setTab('leaderboard')">لوحة الشرف</div>
-                    <div class="tab-item" onclick="setTab('squads')">دوري المحافظات</div>
+                    <div class="tab-item" onclick="setTab('squads')">دوري المحافظات</div> 
                 </div>
 
                 <div id="tab-active-challenges" class="tab-content active">
@@ -239,8 +238,7 @@
                 <div id="admin-overview" class="admin-content-section active">
                     
                         
-                
-                    <div class="stats-grid-4">
+                        <div class="stats-grid-4">
                         <div class="stat-card-mini">
                             <span class="stat-val-big" id="adm-live-now">0</span>
                             <span class="stat-lbl-mini"><span class="pulse-dot"></span> متواجدون الآن</span>
@@ -338,13 +336,19 @@
                             </div>
                             <div id="rules-content" style="display:none; margin-top:10px;">
                                 <div class="input-wrap">
-                                    <label>أقل مسافة للجرية (كم)</label>
-                                    <input type="number" id="rule-min-dist" placeholder="مثال: 2">
+                                    <label>أقل مسافة للجرية الواحدة (كم)</label>
+                                    <input type="number" id="rule-min-dist" placeholder="مثال: 3 كم">
                                 </div>
-                                <label style="margin-top:10px; display:block; color:#f59e0b; font-size:11px;">⏰ الجري في وقت محدد</label>
+                                
+                                <label style="margin-top:10px; display:block; color:#f59e0b; font-size:11px;">⏰ وقت محدد (مثلاً قبل الإفطار)</label>
                                 <div class="input-row">
-                                    <div class="input-wrap"><input type="number" id="rule-time-start" placeholder="من (ساعة)"></div>
-                                    <div class="input-wrap"><input type="number" id="rule-time-end" placeholder="إلى (ساعة)"></div>
+                                    <div class="input-wrap"><input type="number" id="rule-time-start" placeholder="من (الساعة 0-23)"></div>
+                                    <div class="input-wrap"><input type="number" id="rule-time-end" placeholder="إلى (الساعة 0-23)"></div>
+                                </div>
+
+                                <div style="margin-top:10px; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
+                                    <input type="checkbox" id="rule-require-img" style="width:auto;">
+                                    <label for="rule-require-img" style="margin:0; color:#fff; cursor:pointer;">⛔ رفض الجرية بدون صورة إثبات</label>
                                 </div>
                             </div>
                         </div>
@@ -696,5 +700,42 @@
     
     <div id="toast-container" class="toast-container"></div>
     
+ 
+    <div id="modal-challenge-details" class="modal-overlay">
+        <div class="modal-box" style="height: 80vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 id="ch-modal-title" style="margin:0; color:var(--accent);">تفاصيل التحدي</h3>
+                <button onclick="closeModal('modal-challenge-details')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+            </div>
+            
+            <div id="ch-modal-header" class="team-goal-card" style="padding:15px; margin-bottom:15px; min-height:auto;">
+                </div>
+
+            <h4 style="font-size:12px; color:#9ca3af; margin-bottom:10px;">🏆 المتصدرون في هذا التحدي</h4>
+            <div id="ch-leaderboard-list" class="comments-scroll-area">
+                <div class="loader-placeholder">جاري تحميل الأبطال...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-report" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="color:#ef4444;">🚨 إبلاغ عن مخالفة</h3>
+            <p style="font-size:12px; color:#9ca3af; margin-bottom:15px;">ساعدنا في الحفاظ على نزاهة المنافسة. سيقوم الأدمن بمراجعة هذا النشاط.</p>
+            
+            <label class="input-lbl">سبب الإبلاغ:</label>
+            <select id="report-reason" class="full-select">
+                <option value="fake_data">أرقام غير منطقية (سرعة/مسافة)</option>
+                <option value="no_proof">لا يوجد إثبات (صورة/رابط)</option>
+                <option value="duplicate">نشاط مكرر</option>
+                <option value="other">سبب آخر</option>
+            </select>
+            
+            <button class="btn btn-primary" style="background:#ef4444; margin-top:15px;" onclick="submitReport()">إرسال البلاغ</button>
+            <button class="btn btn-text" onclick="closeModal('modal-report')">إلغاء</button>
+        </div>
+    </div>
+
+
 </body>
 </html>

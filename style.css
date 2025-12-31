@@ -1482,3 +1482,41 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 }
 .compact-alert { padding: 10px; background: rgba(239, 68, 68, 0.05); }
 .loader-placeholder { text-align:center; padding:20px; color:#6b7280; font-size:10px; }
+
+/* زر ليدربورد التحدي الجديد (V5.5 Premium Badge) */
+.ch-leaderboard-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px; /* يظهر في اليسار بوضوح */
+    z-index: 10;
+    
+    background: rgba(0, 0, 0, 0.4); /* خلفية داكنة شفافة */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e0e7ff; /* لون نص أبيض مائل للأزرق الفاتح */
+    
+    padding: 6px 12px;
+    border-radius: 20px; /* شكل كبسولة */
+    
+    font-size: 11px;
+    font-weight: bold;
+    font-family: 'Tajawal', sans-serif;
+    
+    display: flex;
+    align-items: center;
+    gap: 6px; /* مسافة بين الأيقونة والكلمة */
+    
+    cursor: pointer;
+    backdrop-filter: blur(4px); /* تأثير الزجاج */
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.ch-leaderboard-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ch-leaderboard-btn i {
+    color: #f59e0b; /* لون الكأس ذهبي */
+    font-size: 14px;
+}
