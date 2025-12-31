@@ -431,30 +431,81 @@ function updateCoachAdvice() {
 }
 
 // ==================== 5. Activity Log Logic ====================
+// ==================== 1. فتح نافذة نشاط جديد (تنظيف كامل) ====================
 function openNewRun() {
+    // 1. تصفير متغيرات التعديل
     editingRunId = null;
     editingOldDist = 0;
+
+    // 2. تنظيف الحقول النصية
     document.getElementById('log-dist').value = '';
     document.getElementById('log-time').value = '';
     document.getElementById('log-type').value = 'Run';
     document.getElementById('log-link').value = '';
     document.getElementById('save-run-btn').innerText = "حفظ النشاط";
+    
+    // 3. ضبط التاريخ
     const dateInput = document.getElementById('log-date');
-    if(dateInput) dateInput.value = getLocalInputDate();
+    if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
+
+    // 4. (مهم) تنظيف حقول الصورة لضمان عدم وجود بقايا
+    const imgInput = document.getElementById('uploaded-img-url');
+    const preview = document.getElementById('img-preview');
+    const status = document.getElementById('upload-status');
+    const fileInput = document.getElementById('log-img-file');
+    
+    if(imgInput) imgInput.value = '';
+    if(preview) { preview.src = ''; preview.style.display = 'none'; }
+    if(status) status.innerText = '';
+    if(fileInput) fileInput.value = '';
+
+    // 5. فتح النافذة وتفعيل اللصق
     openLogModal();
-    enableSmartPaste(); 
+    if(typeof enableSmartPaste === 'function') enableSmartPaste(); 
 }
 
-window.editRun = function(id, dist, time, type, link) {
+// ==================== 2. تعديل نشاط موجود (إظهار البيانات) ====================
+// لاحظ: قمت بإضافة (img) في الأقواس لاستلام الصورة
+window.editRun = function(id, dist, time, type, link, img) {
+    // 1. وضع بيانات التعديل
     editingRunId = id;
     editingOldDist = dist;
+
+    // 2. تعبئة الحقول
     document.getElementById('log-dist').value = dist;
     document.getElementById('log-time').value = time;
     document.getElementById('log-type').value = type;
     document.getElementById('log-link').value = link || '';
     document.getElementById('save-run-btn').innerText = "تعديل النشاط";
+
+    // 3. معالجة الصورة في التعديل
+    const imgInput = document.getElementById('uploaded-img-url');
+    const preview = document.getElementById('img-preview');
+    const status = document.getElementById('upload-status');
+    const fileInput = document.getElementById('log-img-file');
+
+    // تنظيف رسائل الحالة والملف القديم
+    if(status) status.innerText = '';
+    if(fileInput) fileInput.value = '';
+
+    // لو الجرية فيها صورة، نعرضها ونحط الرابط في الحقل المخفي
+    if (img && img !== 'undefined' && img !== 'null') {
+        if(imgInput) imgInput.value = img;
+        if(preview) { 
+            preview.src = img; 
+            preview.style.display = 'block'; 
+        }
+    } else {
+        // لو مفيش صورة، ننظف الحقول
+        if(imgInput) imgInput.value = '';
+        if(preview) { preview.src = ''; preview.style.display = 'none'; }
+    }
+
+    // 4. فتح النافذة (مرة واحدة فقط)
     openLogModal();
 }
+
+
 
 async function submitRun() {
     if (!navigator.onLine) return alert("لا يوجد اتصال بالإنترنت ⚠️");
@@ -465,6 +516,9 @@ async function submitRun() {
     const type = document.getElementById('log-type').value;
     const link = document.getElementById('log-link').value;
     const dateInput = document.getElementById('log-date').value;
+
+    // (جديد) قراءة رابط الصورة من الحقل المخفي
+    const imgUrlInput = document.getElementById('uploaded-img-url');
 
     if (!dist || !time) return showToast("البيانات ناقصة!", "error");
     if (dist <= 0 || time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
@@ -594,7 +648,7 @@ function loadActivityLog() {
                   </div>
                   <div class="log-col-actions">
                       <button class="btn-mini-action btn-share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayStr}')"><i class="ri-share-forward-line"></i></button>
-                      <button class="btn-mini-action btn-edit" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}')"><i class="ri-pencil-line"></i></button>
+                      onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}', '${r.img || ''}')"
                       <button class="btn-mini-action btn-del" onclick="deleteRun('${r.id}', ${r.dist})"><i class="ri-delete-bin-line"></i></button>
                   </div>
               </div>`;
@@ -818,19 +872,27 @@ async function toggleLike(pid, postOwnerId) {
     } catch(e) { console.error(e); } finally { isLiking = false; }
 }
 
+// ==================== عرض المنشورات (محدث لزر الصورة) ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if(!list) return;
-    if(!list.hasChildNodes()) list.innerHTML = getSkeletonHTML('feed');
 
-    // تم التخفيض إلى 10 فقط لتسريع التحميل وتوفير الكوتا
-    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
-        if(snap.empty) { list.innerHTML = '<div style="text-align:center; color:#6b7280;">لا توجد أنشطة</div>'; return; }
+    // عرض الهيكل العظمي عند التحميل لأول مرة
+    if(!list.hasChildNodes() || list.innerHTML.includes('جاري التحميل')) {
+        list.innerHTML = getSkeletonHTML('feed');
+    }
+
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
         let html = '';
+        if(snap.empty) { 
+            list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>'; 
+            return; 
+        }
+        
         snap.forEach(doc => {
             const p = doc.data();
             const isLiked = p.likes && p.likes.includes(currentUser.uid);
-            const commentsCount = p.commentsCount || 0;
+            const commentsCount = p.commentsCount || 0; 
             const timeAgo = getArabicTimeAgo(p.timestamp);
 
             html += `
@@ -838,28 +900,44 @@ function loadGlobalFeed() {
                 <div class="feed-compact-content">
                     <div class="feed-compact-avatar">${(p.userName||"?").charAt(0)}</div>
                     <div>
-                        <div class="feed-compact-text"><strong>${p.userName}</strong> <span style="opacity:0.7">(${p.userRegion})</span></div>
+                        <div class="feed-compact-text">
+                            <strong>${p.userName}</strong> <span style="opacity:0.7">(${p.userRegion})</span>
+                        </div>
                         <div class="feed-compact-text" style="margin-top:2px;">
                             ${p.type === 'Run' ? 'جري' : p.type} <span style="color:#10b981; font-weight:bold;">${formatNumber(p.dist)} كم</span>
                         </div>
                     </div>
                 </div>
+                
                 <div class="feed-compact-action">
                     ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
+                    
+                    ${p.img ? `
+                        <button onclick="window.open('${p.img}', '_blank')" style="background:none; border:none; cursor:pointer; color:#8b5cf6; font-size:14px; display:flex; align-items:center; gap:3px;">
+                            <i class="ri-image-2-fill"></i> <span style="font-size:10px;">إثبات</span>
+                        </button>
+                    ` : ''}
+
                     <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid}')">
-                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i> <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
+                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
+                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
                     </button>
+
                     <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
-                        <i class="ri-chat-3-line"></i> <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
+                        <i class="ri-chat-3-line"></i>
+                        <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
                     </button>
+
                     <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
                 </div>
             </div>`;
         });
         list.innerHTML = html;
+    }, (error) => {
+        console.error("Feed Error:", error);
+        // في حالة الخطأ لا نفعل شيئاً أو نعرض رسالة بسيطة
     });
 }
-
 // ==================== 8. V3.0 Admin Dashboard (The Command Center) ====================
 
 function openAdminAuth() {
@@ -1465,6 +1543,68 @@ function toggleChallengeInputs() {
     } else if (type === 'speed') {
         lbl.innerText = "السرعة المطلوبة (دقيقة/كم)";
         input.placeholder = "4.5"; // يعني 4 دقائق و30 ثانية
+    }
+}
+
+// ==================== 13. ImgBB Upload Logic (V1.6) ====================
+async function uploadImageToImgBB() {
+    const fileInput = document.getElementById('log-img-file');
+    const status = document.getElementById('upload-status');
+    const preview = document.getElementById('img-preview');
+    const hiddenInput = document.getElementById('uploaded-img-url');
+    const saveBtn = document.getElementById('save-run-btn');
+
+    // 1. التأكد من وجود ملف
+    if (!fileInput.files || fileInput.files.length === 0) return;
+    const file = fileInput.files[0];
+
+    // 2. تحديث الواجهة (جاري الرفع)
+    status.innerText = "جاري رفع الصورة... ⏳";
+    status.style.color = "#f59e0b"; // برتقالي
+    saveBtn.disabled = true; // نمنع الحفظ لحد ما الرفع يخلص
+    saveBtn.innerText = "انتظر...";
+
+    // 3. تجهيز البيانات (بالمفتاح بتاعك)
+    const formData = new FormData();
+    formData.append("image", file);
+    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; // 🔑 مفتاحك
+
+    try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // 4. نجح الرفع!
+            const imageUrl = data.data.url;
+            hiddenInput.value = imageUrl; // نخزن الرابط في الحقل المخفي
+            
+            // نعرض الصورة
+            preview.src = imageUrl;
+            preview.style.display = 'block';
+            
+            status.innerText = "تم إرفاق الصورة بنجاح ✅";
+            status.style.color = "#10b981"; // أخضر
+            
+            // نرجع زر الحفظ
+            saveBtn.disabled = false;
+            saveBtn.innerText = "حفظ النشاط";
+            
+            if(typeof showToast === 'function') showToast("تم رفع الصورة 📸", "success");
+        } else {
+            throw new Error(data.error ? data.error.message : "فشل غير معروف");
+        }
+
+    } catch (error) {
+        console.error("ImgBB Error:", error);
+        status.innerText = "فشل الرفع! تأكد من النت ❌";
+        status.style.color = "#ef4444";
+        saveBtn.disabled = false;
+        saveBtn.innerText = "حفظ النشاط";
+        alert("لم نتمكن من رفع الصورة، حاول مرة أخرى.");
     }
 }
 

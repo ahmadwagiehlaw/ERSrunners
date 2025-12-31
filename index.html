@@ -392,10 +392,36 @@
             <select id="log-type" class="full-select">
                 <option value="Run">جري (Run)</option><option value="Walk">مشي (Walk)</option><option value="Race">سباق (Race)</option>
             </select>
+            
+
             <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
-                <label>رابط إثبات (Strava/Nike) - اختياري</label>
+                <label>رابط إثبات (Strava/Nike) - اختياري لنسخ بيانات الجرية</label>
                 <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
             </div>
+
+<div class="input-group" style="margin-top: 20px; margin-bottom: 20px;">
+                <div class="upload-zone-wrapper">
+                    
+                    <input type="file" id="log-img-file" accept="image/*" hidden onchange="uploadImageToImgBB()">
+                    <input type="hidden" id="uploaded-img-url">
+
+                    <label for="log-img-file" class="upload-trigger-label">
+                        <div class="upload-icon-container">
+                            <i class="ri-image-add-line"></i>
+                        </div>
+                        <div class="upload-text-content">
+                            <span class="upload-main-text">اضغط هنا لإرفاق صورة</span>
+                            <span class="upload-sub-text">إثبات النشاط (سيلفي / ساعة) 📸</span>
+                        </div>
+                    </label>
+
+                    <div id="upload-status" class="upload-status-msg"></div>
+                    <img id="img-preview" class="stylish-preview" alt="معاينة الصورة">
+                </div>
+            </div>
+            ```
+
+
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
         </div>
