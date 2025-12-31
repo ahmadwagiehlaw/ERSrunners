@@ -1483,40 +1483,60 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .compact-alert { padding: 10px; background: rgba(239, 68, 68, 0.05); }
 .loader-placeholder { text-align:center; padding:20px; color:#6b7280; font-size:10px; }
 
-/* زر ليدربورد التحدي الجديد (V5.5 Premium Badge) */
+/* زر المتصدرون (في المنتصف + تنسيق ذهبي فخم) */
 .ch-leaderboard-btn {
     position: absolute;
-    top: 15px;
-    left: 15px; /* يظهر في اليسار بوضوح */
-    z-index: 10;
+    top: 12px;           /* مسافة من الحافة العلوية */
+    left: 50%;           /* وضع نقطة البداية في منتصف العرض */
+    transform: translateX(-50%); /* سحب الزر لليسار بمقدار نصف حجمه ليتمركز بدقة */
+    z-index: 20;         /* لضمان ظهوره فوق أي عنصر آخر */
     
-    background: rgba(0, 0, 0, 0.4); /* خلفية داكنة شفافة */
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: #e0e7ff; /* لون نص أبيض مائل للأزرق الفاتح */
+    background: rgba(0, 0, 0, 0.7); /* خلفية داكنة أكثر وضوحاً */
+    border: 1px solid rgba(255, 215, 0, 0.3); /* حدود ذهبية خفيفة */
+    color: #ffd700;      /* لون النص ذهبي */
     
-    padding: 6px 12px;
-    border-radius: 20px; /* شكل كبسولة */
-    
-    font-size: 11px;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 10px;     /* حجم خط مناسب */
     font-weight: bold;
     font-family: 'Tajawal', sans-serif;
     
     display: flex;
     align-items: center;
-    gap: 6px; /* مسافة بين الأيقونة والكلمة */
+    gap: 5px;
     
     cursor: pointer;
-    backdrop-filter: blur(4px); /* تأثير الزجاج */
+    backdrop-filter: blur(5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4); /* ظل لإبراز الزر */
     transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    white-space: nowrap; /* منع النص من النزول لسطرين */
 }
 
 .ch-leaderboard-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(-50%) scale(0.95); /* تأثير ضغط لطيف مع الحفاظ على التمركز */
+    background: rgba(255, 215, 0, 0.1);
 }
 
 .ch-leaderboard-btn i {
-    color: #f59e0b; /* لون الكأس ذهبي */
-    font-size: 14px;
+    font-size: 13px;
+    color: #fbbf24; /* لون أيقونة الكأس */
+}
+
+
+/* 2. كلاس جديد لتوسيط هيدر التحدي */
+.ch-header-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    margin-top: 30px; /* مسافة علوية عشان الزرار ميغطيوش */
+    margin-bottom: 15px;
+}
+
+/* تعديل بسيط لعنوان التحدي عشان ييجي في النص */
+.ch-header-centered h3 {
+    width: 100%;
+    text-align: center;
 }

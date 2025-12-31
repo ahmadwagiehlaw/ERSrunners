@@ -2010,42 +2010,47 @@ function renderChallenges(filterType) {
     }
 
     let fullHtml = '';
-   displayList.forEach(ch => {
-        // زر الحذف (للأدمن) - يظهر في اليمين (حسب اتجاه الصفحة العربية)
+    displayList.forEach(ch => {
+        // 1. أزرار الأدمن (يسار)
         const deleteBtn = (userData.isAdmin) 
-            ? `<div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف التحدي" style="right:15px; left:auto;"><i class="ri-delete-bin-line"></i></div>` 
+            ? `<div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف" style="left:15px; right:auto; z-index:50;"><i class="ri-delete-bin-line"></i></div>` 
             : '';
             
-        // زر التعديل (للأدمن)
         const editBtn = (userData.isAdmin)
-             ? `<div class="admin-del-btn" onclick="editChallenge('${ch.id}')" title="تعديل" style="right:50px; left:auto; background:rgba(245, 158, 11, 0.2); color:#f59e0b; border-color:#f59e0b;"><i class="ri-pencil-line"></i></div>`
+             ? `<div class="admin-del-btn" onclick="editChallenge('${ch.id}')" title="تعديل" style="left:55px; right:auto; background:rgba(245, 158, 11, 0.15); color:#f59e0b; border-color:rgba(245, 158, 11, 0.3); z-index:50;"><i class="ri-pencil-line"></i></div>`
              : '';
 
-        // 🔥 زر الليدربورد الجديد (المتصدرون)
-        // هذا الزر سيظهر بتصميم الكبسولة الفخم
+        // 2. زر الترتيب (في المنتصف حسب طلبك)
+        // 🔥 تم ضبط التنسيق ليكون في المنتصف تماماً دون تغطية الكارت
         const infoBtn = `
-            <button onclick="openChallengeDetails('${ch.id}')" class="ch-leaderboard-btn">
-                <i class="ri-trophy-line"></i> الترتيب
+            <button onclick="openChallengeDetails('${ch.id}')" class="ch-leaderboard-btn" style="right:50%; transform:translateX(50%); top:15px; left:auto; z-index:40;">
+                <i class="ri-trophy-fill"></i> الترتيب
             </button>
         `;
 
+        // 3. زر قبول التحدي (الإصلاح هنا: z-index عالي)
         const actionBtn = !ch.isJoined 
-            ? `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')">قبول التحدي</button>` 
+            ? `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')" style="position:relative; z-index:100; cursor:pointer;">قبول التحدي</button>` 
             : '';
 
-        // 1. تصميم السرعة (Speed)
+        // --- القوالب (Templates) ---
+
+        // أ) تصميم السرعة (Speed)
         if (ch.type === 'speed') {
             const isDone = ch.completed;
             fullHtml += `
             <div class="ch-card speed-mode ${isDone?'done':''}">
-                ${deleteBtn} ${infoBtn} <div class="ch-icon"><i class="ri-dashboard-3-line"></i></div>
-                <div class="speed-target-lbl">الهدف: أسرع من</div>
-                <div class="speed-gauge">${ch.target} <span style="font-size:12px">د/كم</span></div>
+                ${deleteBtn} ${editBtn} ${infoBtn}
+                
+                <div style="margin-top: 45px;"> <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
+                    <div class="speed-gauge" style="margin-top:10px;">${ch.target} <span style="font-size:12px">د/كم</span></div>
+                </div>
+                
                 ${ch.isJoined ? (isDone ? `<span class="speed-status" style="background:rgba(16,185,129,0.2); color:#10b981">🚀 حطمت الرقم!</span>` : `<span class="speed-status">أسرع بيس لك: --</span>`) : actionBtn}
             </div>`;
         }
         
-        // 2. تصميم الالتزام (Frequency)
+        // ب) تصميم الالتزام (Frequency)
         else if (ch.type === 'frequency') {
             let dotsHtml = '';
             const maxDots = Math.min(ch.target, 14); 
@@ -2057,64 +2062,38 @@ function renderChallenges(filterType) {
 
             fullHtml += `
             <div class="ch-card habit-mode">
-                ${deleteBtn} ${infoBtn} <div style="display:flex; justify-content:space-between; align-items:center;">
+                ${deleteBtn} ${editBtn} ${infoBtn}
+                
+                <div class="ch-header-centered" style="margin-top:40px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
-                    <span style="font-size:10px; color:#c4b5fd;">${ch.durationDays} يوم</span>
+                    <span style="font-size:10px; color:#c4b5fd; margin-top:5px;">${ch.durationDays} يوم • ${ch.target} جرية</span>
                 </div>
-                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target} جرية</span>` : actionBtn}
+
+                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target}</span>` : actionBtn}
             </div>`;
         }
 
-        // 3. تصميم المسافة (Distance - Default)
+        // ج) تصميم المسافة (Distance - Default)
         else {
             const perc = Math.min((ch.progress / ch.target) * 100, 100);
             fullHtml += `
             <div class="ch-card dist-mode">
-                ${deleteBtn} ${infoBtn} <div class="dist-header">
-                    <div><h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3><span style="font-size:10px; color:#64748b;">${ch.durationDays} يوم</span></div>
-                    <div class="dist-val-big">${Math.floor(ch.progress)}<span style="font-size:12px; opacity:0.5">/${ch.target}</span></div>
+                ${deleteBtn} ${editBtn} ${infoBtn}
+                
+                <div class="ch-header-centered" style="margin-top:40px;">
+                    <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
+                    <div style="display:flex; gap:10px; align-items:center; margin-top:5px; justify-content:center;">
+                        <span style="font-size:10px; color:#64748b;">${ch.durationDays} يوم</span>
+                        <span style="font-size:14px; font-weight:bold; color:#fff;">${Math.floor(ch.progress)} <span style="font-size:10px; opacity:0.6">/ ${ch.target} كم</span></span>
+                    </div>
                 </div>
+
                 ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>` : actionBtn}
             </div>`;
         }
-    });    list.innerHTML = fullHtml;
-}
-
-// دالة حذف التحدي (للأدمن)
-async function deleteChallenge(id) {
-    if(!confirm("⚠️ حذف التحدي نهائياً؟\nسيختفي من عند جميع المشتركين.")) return;
-    try {
-        await db.collection('challenges').doc(id).delete();
-        showToast("تم الحذف 🗑️", "success");
-        loadActiveChallenges(); // إعادة تحميل القائمة
-    } catch(e) {
-        showToast("خطأ في الحذف", "error");
-    }
-}
-
-async function joinChallenge(cid) {
-    if(!confirm("قبول التحدي؟")) return;
-    await db.collection('challenges').doc(cid).collection('participants').doc(currentUser.uid).set({
-        progress: 0, joinedAt: new Date().toISOString(), name: userData.name
     });
-    loadActiveChallenges();
-    showToast("أنت قدها يا بطل 💪", "success");
+    list.innerHTML = fullHtml;
 }
-
-function setPersonalGoal() {
-    const g = prompt("هدفك الشهري (كم):", userData.monthlyGoal||0);
-    if(g && g>0) {
-        db.collection('users').doc(currentUser.uid).update({ monthlyGoal: parseFloat(g) });
-        userData.monthlyGoal = parseFloat(g); updateUI();
-    }
-}
-
-// PWA Install
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('header-install-btn').style.display = 'flex'; });
-async function installApp() {
-    if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; document.getElementById('header-install-btn').style.display = 'none'; }
-}
-
 // ==================== V3.2 Avatar System ====================
 
 let selectedAvatarIcon = "🏃"; // الافتراضي
@@ -2386,4 +2365,127 @@ async function openChallengeDetails(chId) {
             });
             list.innerHTML = html;
         });
+}
+
+// ==================== V5.5 Missing Logic Functions (The Fix) ====================
+
+// 1. دالة الانضمام للتحدي (لزر قبول التحدي)
+async function joinChallenge(chId) {
+    if(!currentUser) return showToast("يجب تسجيل الدخول", "error");
+    
+    const btn = event.target;
+    const originalText = btn.innerText;
+    btn.innerText = "...";
+    btn.disabled = true;
+
+    try {
+        // إضافة المستخدم لقائمة المشاركين
+        await db.collection('challenges').doc(chId).collection('participants').doc(currentUser.uid).set({
+            name: userData.name,
+            photoUrl: userData.photoUrl || null,
+            progress: 0,
+            completed: false,
+            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // زيادة عداد المشاركين
+        await db.collection('challenges').doc(chId).update({
+            participantsCount: firebase.firestore.FieldValue.increment(1)
+        });
+
+        // تحديث الكاش المحلي فوراً (لأداء أسرع)
+        const chIndex = allChallengesCache.findIndex(c => c.id === chId);
+        if(chIndex > -1) {
+            allChallengesCache[chIndex].isJoined = true;
+        }
+
+        showToast("تم الانضمام للتحدي! 🚀", "success");
+        
+        // إعادة رسم التحديات لتحديث حالة الزر
+        renderChallenges('all'); 
+        
+        // تحديث القوائم الأخرى
+        loadActiveChallenges(); 
+
+    } catch(e) {
+        console.error(e);
+        showToast("حدث خطأ في الانضمام", "error");
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+}
+
+// 2. دالة حذف التحدي (لزر الحذف في الأدمن وفي الكروت)
+async function deleteChallenge(id) {
+    if(!confirm("هل أنت متأكد من حذف هذا التحدي نهائياً؟")) return;
+    
+    try {
+        await db.collection('challenges').doc(id).delete();
+        showToast("تم حذف التحدي 🗑️", "success");
+        
+        // تحديث الكاش والواجهة
+        allChallengesCache = allChallengesCache.filter(c => c.id !== id);
+        
+        // تحديث المكانين (صفحة المنافسة وصفحة الأدمن)
+        renderChallenges('all');
+        if(document.getElementById('admin-active-challenges-list')) {
+            loadAdminChallengesList();
+        }
+    } catch(e) {
+        console.error(e);
+        showToast("فشل الحذف", "error");
+    }
+}
+
+// 3. دالة تعديل التحدي (لزر القلم)
+let editingChallengeId = null; // متغير عام
+
+async function editChallenge(id) {
+    // التأكد من أننا في وضع الأدمن
+    if (!userData.isAdmin) return;
+
+    const doc = await db.collection('challenges').doc(id).get();
+    if (!doc.exists) return showToast("التحدي غير موجود", "error");
+    const ch = doc.data();
+
+    // 1. الانتقال لتاب "ستوديو التحديات" في الأدمن
+    switchView('admin');
+    switchAdminTab('studio');
+
+    // 2. ملء البيانات في الحقول
+    document.getElementById('adv-ch-title').value = ch.title;
+    document.getElementById('adv-ch-type').value = ch.type || 'distance';
+    document.getElementById('adv-ch-target').value = ch.target;
+    document.getElementById('adv-ch-days').value = ch.durationDays;
+    
+    // التعامل مع التاريخ
+    if(ch.startDate) {
+        const dateVal = ch.startDate.includes('T') ? ch.startDate.split('T')[0] : ch.startDate;
+        document.getElementById('adv-ch-start').value = dateVal;
+    }
+
+    // 3. ملء القواعد الخاصة
+    if (ch.rules) {
+        document.getElementById('rule-min-dist').value = ch.rules.minDistPerRun || '';
+        document.getElementById('rule-time-start').value = ch.rules.validHourStart || '';
+        document.getElementById('rule-time-end').value = ch.rules.validHourEnd || '';
+        document.getElementById('rule-require-img').checked = ch.rules.requireImg || false;
+        
+        // فتح قائمة الشروط تلقائياً
+        const rulesContent = document.getElementById('rules-content');
+        if(rulesContent) rulesContent.style.display = 'block';
+    }
+
+    // 4. تغيير حالة الزر إلى "حفظ"
+    editingChallengeId = id;
+    const submitBtn = document.querySelector('#admin-studio .btn-primary');
+    if(submitBtn) {
+        submitBtn.innerText = "حفظ التعديلات 💾";
+        submitBtn.style.background = "#f59e0b"; // برتقالي
+    }
+    
+    // التمرير للأعلى
+    document.getElementById('admin-studio').scrollIntoView({ behavior: 'smooth' });
+    updateChallengeUI();
+    showToast("وضع التعديل: قم بالتغيير واضغط حفظ", "success");
 }
