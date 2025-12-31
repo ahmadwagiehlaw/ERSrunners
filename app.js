@@ -622,37 +622,113 @@ async function submitRun() {
     finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
 }
 
+// ==================== 6. سجل الأنشطة (تصميم كروت احترافي V3.0) ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
+
+    // جلب البيانات
     db.collection('users').doc(currentUser.uid).collection('runs')
-      .orderBy('timestamp', 'desc').limit(30).onSnapshot(snap => {
-          if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">لا توجد أنشطة</div>'; return; }
-          const runs = []; 
-          snap.forEach(doc => { const r = doc.data(); r.id = doc.id; runs.push(r); });
+      .orderBy('timestamp', 'desc').limit(50).onSnapshot(snap => {
           
-          let html = '';
-          runs.forEach(r => {
-              const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
-              const dayStr = dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
-              const pace = r.time > 0 ? (r.time / r.dist).toFixed(1) : '-';
-              html += `
-              <div class="log-row-compact">
-                  <div class="log-col-main">
-                      <div class="log-type-icon"><i class="${r.type === 'Walk' ? 'ri-walk-line' : 'ri-run-line'}"></i></div>
-                      <div><span class="log-dist-val">${formatNumber(r.dist)}</span> <span class="log-dist-unit">كم</span></div>
-                  </div>
-                  <div class="log-col-meta">
-                      <span class="log-date-text">${dayStr}</span>
-                      <span class="log-pace-text">${r.time}د • ${pace} د/كم</span>
-                  </div>
-                  <div class="log-col-actions">
-                      <button class="btn-mini-action btn-share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayStr}')"><i class="ri-share-forward-line"></i></button>
-                      onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}', '${r.img || ''}')"
-                      <button class="btn-mini-action btn-del" onclick="deleteRun('${r.id}', ${r.dist})"><i class="ri-delete-bin-line"></i></button>
-                  </div>
-              </div>`;
+          if(snap.empty) { 
+              list.innerHTML = `
+                <div style="text-align:center; padding:40px 20px; color:#6b7280;">
+                    <i class="ri-run-line" style="font-size:40px; margin-bottom:10px; display:block; opacity:0.5;"></i>
+                    لا توجد أنشطة مسجلة بعد.<br>ابدأ أول جرية لك الآن!
+                </div>`; 
+              return; 
+          }
+
+          const runs = []; 
+          let maxDist = 0;
+          
+          snap.forEach(doc => {
+              const r = doc.data(); 
+              r.id = doc.id;
+              if(r.dist > maxDist) maxDist = r.dist; // لتحديد أطول جرية
+              runs.push(r);
           });
+
+          // تجميع حسب الشهر
+          const groups = {};
+          runs.forEach(r => {
+              const date = r.timestamp ? r.timestamp.toDate() : new Date();
+              // تنسيق مفتاح الشهر: "يناير 2024"
+              const monthKey = date.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+              if(!groups[monthKey]) groups[monthKey] = [];
+              groups[monthKey].push(r);
+          });
+
+          let html = '';
+
+          for (const [month, monthRuns] of Object.entries(groups)) {
+              // حساب إجمالي مسافة الشهر للعرض في الهيدر
+              const monthTotal = monthRuns.reduce((acc, curr) => acc + (parseFloat(curr.dist)||0), 0).toFixed(1);
+
+              html += `
+              <div class="log-group">
+                  <div class="log-month-header">
+                      <span>${month}</span>
+                      <span style="font-size:10px; opacity:0.8;">إجمالي: ${monthTotal} كم</span>
+                  </div>
+              `;
+
+              monthRuns.forEach(r => {
+                  const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
+                  // التنسيق: الجمعة، 5
+                  const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
+                  const dayNum = dateObj.getDate();
+                  
+                  // حساب الـ Pace (السرعة)
+                  const pace = r.time > 0 ? (r.time / r.dist).toFixed(1) : '-';
+                  
+                  // شارة أطول جرية
+                  const badge = (r.dist === maxDist && maxDist > 5) 
+                    ? `<div class="badge-record-mini">🏆 الأطول</div>` : '';
+
+                  // تحديد أيقونة ونوع الجرية
+                  const isRun = r.type !== 'Walk';
+                  const iconClass = isRun ? 'ri-run-line' : 'ri-walk-line';
+                  const typeClass = isRun ? 'run' : 'walk';
+
+                  html += `
+                  <div class="log-row-compact">
+                      ${badge}
+                      
+                      <div class="log-icon-wrapper ${typeClass}">
+                          <i class="${iconClass}"></i>
+                      </div>
+
+                      <div class="log-details">
+                          <div class="log-main-stat">
+                              ${formatNumber(r.dist)} <span class="log-unit">كم</span>
+                          </div>
+                          <div class="log-sub-stat">
+                              <span><i class="ri-calendar-line"></i> ${dayNum} ${dayName}</span>
+                              <span><i class="ri-timer-flash-line"></i> ${pace} د/كم</span>
+                          </div>
+                      </div>
+
+                      <div class="log-actions">
+                          <button class="btn-icon-action share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayNum} ${month}')">
+                              <i class="ri-share-forward-line"></i>
+                          </button>
+                          
+                          <button class="btn-icon-action" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}', '${r.img || ''}')">
+                              <i class="ri-pencil-line"></i>
+                          </button>
+                          
+                          <button class="btn-icon-action delete" onclick="deleteRun('${r.id}', ${r.dist})">
+                              <i class="ri-delete-bin-line"></i>
+                          </button>
+                      </div>
+                  </div>`;
+              });
+
+              html += `</div>`; // إغلاق الجروب
+          }
+
           list.innerHTML = html;
       });
 }
@@ -789,7 +865,7 @@ const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandr
 async function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
-    list.innerHTML = '<div style="text-align:center; padding:20px; color:#9ca3af;">جاري التحليل... 📡</div>';
+    list.innerHTML = '<div style="text-align:center; padding:10px; color:#9ca3af;">جاري التحليل... 📡</div>';
     
     try {
         const users = await fetchTopRunners();
@@ -1041,6 +1117,7 @@ async function adminDelete(id, dist) {
     setTimeout(detectSuspiciousActivity, 2000); // تحديث القائمة
 }
 
+
 // دالة الحذف القسري للمشرفين (V3.1 Admin Fix)
 async function adminForceDelete(feedId, userId, runDist) {
     if(!confirm("هل أنت متأكد من حذف هذا النشاط للمستخدم؟")) return;
@@ -1096,16 +1173,38 @@ async function adminForceDelete(feedId, userId, runDist) {
     }
 }
 
+// إنشاء تحدي ذكي V4.0 (يدعم القواعد المتقدمة)
 async function createGeniusChallenge() {
+    // 1. البيانات الأساسية
     const title = document.getElementById('adv-ch-title').value;
     const type = document.getElementById('adv-ch-type').value;
     const target = parseFloat(document.getElementById('adv-ch-target').value);
     const days = parseInt(document.getElementById('adv-ch-days').value);
     const startDateVal = document.getElementById('adv-ch-start').value;
 
-    if(!title || !target || !days) return showToast("البيانات ناقصة", "error");
+    // 2. القواعد المتقدمة (Optional Rules)
+    const minDist = parseFloat(document.getElementById('rule-min-dist').value) || 0;
+    const startHour = document.getElementById('rule-time-start').value;
+    const endHour = document.getElementById('rule-time-end').value;
+
+    if(!title || !target || !days) return showToast("بيانات التحدي الأساسية ناقصة", "error");
 
     const startDate = startDateVal ? new Date(startDateVal).toISOString() : new Date().toISOString();
+
+    // تجهيز كائن القواعد (هذا هو العقل المدبر)
+    let rules = {
+        minDistPerRun: minDist // أقل مسافة للجرية الواحدة
+    };
+
+    // إضافة شرط الوقت فقط إذا تم إدخاله
+    if (startHour !== "" && endHour !== "") {
+        rules.validHourStart = parseInt(startHour);
+        rules.validHourEnd = parseInt(endHour);
+    }
+
+    const btn = event.target;
+    btn.innerText = "جاري الإنشاء...";
+    btn.disabled = true;
 
     try {
         await db.collection('challenges').add({
@@ -1116,14 +1215,50 @@ async function createGeniusChallenge() {
             startDate: startDate,
             active: true,
             participantsCount: 0,
-            createdStr: new Date().toLocaleDateString('ar-EG')
+            createdStr: new Date().toLocaleDateString('ar-EG'),
+            rules: rules // 🔥 تخزين القواعد هنا
         });
-        showToast("تم إطلاق التحدي الذكي 🧠", "success");
+        showToast("تم إطلاق التحدي بنجاح 🎯", "success");
+        
+        // تنظيف الحقول
         document.getElementById('adv-ch-title').value = '';
+        document.getElementById('rules-content').style.display = 'none';
+        
     } catch(e) {
-        showToast("خطأ", "error");
+        showToast("خطأ في النظام", "error");
+        console.error(e);
+    } finally {
+        btn.innerText = "إطلاق التحدي 🚀";
+        btn.disabled = false;
+    }
+
+    // تغيير نصوص الواجهة حسب النوع
+function updateChallengeUI() {
+    const type = document.getElementById('adv-ch-type').value;
+    const lbl = document.getElementById('lbl-target');
+    const input = document.getElementById('adv-ch-target');
+    
+    if(type === 'distance') {
+        lbl.innerText = "المسافة الإجمالية (كم)";
+        input.placeholder = "100";
+    } else if (type === 'frequency') {
+        lbl.innerText = "عدد الجريات المطلوبة";
+        input.placeholder = "15";
+    } else if (type === 'speed') {
+        lbl.innerText = "أقصى بيس (دقيقة/كم)";
+        input.placeholder = "4.5"; 
     }
 }
+
+// إظهار/إخفاء القواعد المتقدمة
+function toggleRules() {
+    const content = document.getElementById('rules-content');
+    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+}
+
+}
+
+
 // ==================== 9. Charts & Graphs (V2.0) ====================
 let currentChartMode = 'week'; 
 
@@ -1380,44 +1515,162 @@ function generateShareCard(dist, time, dateStr) {
     }, 100);
 }
 
-// Active Challenges Loader
+
+// عرض التحديات بذكاء (V4.1 Smart Display)
+// ==================== V5.0 Challenge Engine & Admin Tools ====================
+
+let allChallengesCache = [];
+
+// تحميل وعرض التحديات (V5.1 Fixed Home Display)
 function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
     const mini = document.getElementById('my-active-challenges'); 
+    
     if(!list) return;
     list.innerHTML = getSkeletonHTML('challenges');
 
-    db.collection('challenges').where('active','==',true).get().then(async snap => {
+    db.collection('challenges')
+      .where('active', '==', true)
+      // .orderBy('startDate', 'desc') // معطل لتجنب خطأ الفهرس حالياً
+      .get()
+      .then(async snap => {
         if(snap.empty) { 
-            list.innerHTML = "<div style='text-align:center; padding:20px; color:#6b7280'>لا توجد تحديات</div>"; 
+            list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'>لا توجد تحديات</div>"; 
             if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
             return; 
         }
-        let fullHtml = '<div class="challenges-grid">', miniHtml = '';
+
+        allChallengesCache = [];
+        let miniHtml = ''; // متغير لتجميع كروت الصفحة الرئيسية
+
         for(const doc of snap.docs) {
             const ch = doc.data();
-            let isJoined = false, progress = 0;
+            let isJoined = false, progress = 0, completed = false;
+            
             if(currentUser) {
                 const p = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(p.exists) { isJoined = true; progress = p.data().progress || 0; }
+                if(p.exists) { 
+                    const pData = p.data();
+                    isJoined = true; 
+                    progress = pData.progress || 0; 
+                    completed = pData.completed === true;
+                }
             }
-            const perc = Math.min((progress/ch.target)*100, 100);
             
-            fullHtml += `
-            <div class="mission-card">
-                <div class="mission-bg-icon"><i class="ri-trophy-line"></i></div>
-                <div class="mission-header">
-                    <div><h3 class="mission-title">${ch.title}</h3><div class="mission-meta"><span>${ch.durationDays} يوم</span></div></div>
-                    <div class="mission-target-badge">${ch.target} كم</div>
-                </div>
-                ${isJoined ? `<div class="mission-progress-container"><div class="mission-progress-bar" style="width:${perc}%"></div></div><div class="mission-stats"><span>${progress.toFixed(1)}</span><span>${Math.floor(perc)}%</span></div>` : `<button class="btn-join-mission" onclick="joinChallenge('${doc.id}')">قبول التحدي</button>`}
-            </div>`;
+            // حفظ في الكاش
+            allChallengesCache.push({ id: doc.id, ...ch, isJoined, progress, completed });
 
-            if(isJoined && mini) miniHtml += `<div class="mini-challenge-card"><div class="mini-ch-title">${ch.title}</div><div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div></div>`;
+            // 🔥 هذا هو الجزء الذي كان مفقوداً: بناء كروت الصفحة الرئيسية
+            if (isJoined && mini) {
+                // حساب النسبة
+                let perc = 0;
+                if (ch.type === 'speed') perc = completed ? 100 : 0;
+                else perc = Math.min((progress / ch.target) * 100, 100);
+
+                miniHtml += `
+                <div class="mini-challenge-card" style="border-left: 3px solid ${completed?'#10b981':'var(--accent)'}">
+                    <div class="mini-ch-title">${ch.title}</div>
+                    <div class="mini-ch-progress">
+                        <div class="mini-ch-fill" style="width:${perc}%; background:${completed?'#10b981':'var(--primary)'}"></div>
+                    </div>
+                    <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
+                        <span>${ch.type === 'speed' ? (completed?'نجحت!':'حاول') : Math.floor(progress)}</span>
+                        <span>${ch.target}</span>
+                    </div>
+                </div>`;
+            }
         }
-        list.innerHTML = fullHtml + '</div>';
-        if(mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم بعد</div>";
+
+        // عرض التحديات في صفحة المنافسة
+        renderChallenges('all');
+
+        // 🔥 عرض التحديات في الصفحة الرئيسية
+        if (mini) {
+            mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
+        }
     });
+}
+function renderChallenges(filterType) {
+    const list = document.getElementById('challenges-list');
+    const displayList = (filterType === 'all') ? allChallengesCache : allChallengesCache.filter(ch => ch.type === filterType);
+
+    if (displayList.length === 0) {
+        list.innerHTML = "<div style='text-align:center; padding:40px; color:#6b7280'>القائمة فارغة</div>";
+        return;
+    }
+
+    let fullHtml = '';
+    displayList.forEach(ch => {
+        // زر الحذف (يظهر فقط للأدمن)
+        const deleteBtn = (userData.isAdmin) 
+            ? `<div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف التحدي"><i class="ri-delete-bin-line"></i></div>` 
+            : '';
+
+        const actionBtn = !ch.isJoined 
+            ? `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')">قبول التحدي</button>` 
+            : '';
+
+        // 1. تصميم السرعة (Speed)
+        if (ch.type === 'speed') {
+            const isDone = ch.completed;
+            fullHtml += `
+            <div class="ch-card speed-mode ${isDone?'done':''}">
+                ${deleteBtn}
+                <div class="ch-icon"><i class="ri-dashboard-3-line"></i></div>
+                <div class="speed-target-lbl">الهدف: أسرع من</div>
+                <div class="speed-gauge">${ch.target} <span style="font-size:12px">د/كم</span></div>
+                ${ch.isJoined ? (isDone ? `<span class="speed-status" style="background:rgba(16,185,129,0.2); color:#10b981">🚀 حطمت الرقم!</span>` : `<span class="speed-status">أسرع بيس لك: --</span>`) : actionBtn}
+            </div>`;
+        }
+        
+        // 2. تصميم الالتزام (Frequency)
+        else if (ch.type === 'frequency') {
+            let dotsHtml = '';
+            const maxDots = Math.min(ch.target, 14); 
+            for(let i=0; i<maxDots; i++) {
+                const filled = i < ch.progress ? 'filled' : '';
+                dotsHtml += `<div class="habit-dot ${filled}"></div>`;
+            }
+            if(ch.target > 14) dotsHtml += `<span style="font-size:10px; color:#fff; align-self:center;">+${ch.target-14}</span>`;
+
+            fullHtml += `
+            <div class="ch-card habit-mode">
+                ${deleteBtn}
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
+                    <span style="font-size:10px; color:#c4b5fd;">${ch.durationDays} يوم</span>
+                </div>
+                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target} جرية</span>` : actionBtn}
+            </div>`;
+        }
+
+        // 3. تصميم المسافة (Distance - Default)
+        else {
+            const perc = Math.min((ch.progress / ch.target) * 100, 100);
+            fullHtml += `
+            <div class="ch-card dist-mode">
+                ${deleteBtn}
+                <div class="dist-header">
+                    <div><h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3><span style="font-size:10px; color:#64748b;">${ch.durationDays} يوم</span></div>
+                    <div class="dist-val-big">${Math.floor(ch.progress)}<span style="font-size:12px; opacity:0.5">/${ch.target}</span></div>
+                </div>
+                ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>` : actionBtn}
+            </div>`;
+        }
+    });
+    list.innerHTML = fullHtml;
+}
+
+// دالة حذف التحدي (للأدمن)
+async function deleteChallenge(id) {
+    if(!confirm("⚠️ حذف التحدي نهائياً؟\nسيختفي من عند جميع المشتركين.")) return;
+    try {
+        await db.collection('challenges').doc(id).delete();
+        showToast("تم الحذف 🗑️", "success");
+        loadActiveChallenges(); // إعادة تحميل القائمة
+    } catch(e) {
+        showToast("خطأ في الحذف", "error");
+    }
 }
 
 async function joinChallenge(cid) {
@@ -1628,3 +1881,4 @@ function showToast(message, type = 'success') {
         setTimeout(() => toast.remove(), 400);
     }, 3000);
 }
+
