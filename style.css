@@ -1045,3 +1045,233 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 #img-preview:not([src=""]) + .upload-trigger-label .upload-icon-container i {
     font-size: 20px;
 }
+
+/* ==================== Pro Activity Log V3.0 ==================== */
+
+/* حاوية السجل */
+#activity-log {
+    padding-bottom: 20px;
+}
+
+/* رأس الشهر (Sticky Header) */
+.log-month-header {
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--primary);
+    background: var(--bg-dark); /* ليغطي المحتوى عند التمرير */
+    padding: 10px 5px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* كارت النشاط الواحد */
+.log-row-compact {
+    display: grid;
+    grid-template-columns: 50px 1fr auto; /* أيقونة - تفاصيل - أزرار */
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
+    position: relative;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.log-row-compact:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* عمود الأيقونة */
+.log-icon-wrapper {
+    width: 40px;
+    height: 40px;
+    background: rgba(16, 185, 129, 0.1); /* خلفية خضراء شفافة */
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--primary);
+}
+
+.log-icon-wrapper.walk {
+    background: rgba(59, 130, 246, 0.1); /* أزرق للمشي */
+    color: var(--accent);
+}
+
+/* عمود التفاصيل (الوسط) */
+.log-details {
+    display: flex;
+    flex-direction: column;
+    padding-right: 12px; /* مسافة بين الأيقونة والنص */
+}
+
+.log-main-stat {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.log-unit {
+    font-size: 10px;
+    font-weight: normal;
+    color: var(--text-muted);
+}
+
+.log-sub-stat {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: flex;
+    gap: 10px;
+}
+
+/* عمود الإجراءات (اليسار) */
+.log-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.btn-icon-action {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255,255,255,0.05);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-icon-action:hover {
+    background: var(--bg-card);
+    color: #fff;
+}
+
+.btn-icon-action.delete { color: #ef4444; }
+.btn-icon-action.share { color: var(--accent); }
+
+/* شارة الأرقام القياسية */
+.badge-record-mini {
+    position: absolute;
+    top: -8px;
+    left: 10px;
+    background: linear-gradient(45deg, #f59e0b, #d97706);
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(245, 158, 11, 0.3);
+}
+
+/* ==================== V4.0 Admin UI Updates ==================== */
+
+.input-lbl { font-size: 11px; color: var(--primary); font-weight: bold; margin-bottom: 5px; display: block; }
+
+.advanced-rules-box {
+    background: rgba(0,0,0,0.2);
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.rules-title {
+    font-size: 11px; color: #9ca3af; cursor: pointer;
+    display: flex; align-items: center; gap: 5px;
+    font-weight: bold;
+}
+.rules-title:hover { color: #fff; }
+
+.full-select {
+    width: 100%; padding: 12px; 
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 12px; color: #fff;
+    font-family: inherit; font-size: 14px;
+    outline: none; margin-bottom: 5px;
+}
+
+/* ==================== V5.0 Elite Challenges UI (أضف هذا في النهاية) ==================== */
+
+.ch-card {
+    position: relative;
+    border-radius: 20px; padding: 20px; margin-bottom: 20px;
+    overflow: hidden; border: 1px solid rgba(255,255,255,0.05);
+    background: #1f2937; /* لون افتراضي */
+}
+
+/* زر الحذف للأدمن */
+.admin-del-btn {
+    position: absolute; top: 15px; left: 15px; z-index: 10;
+    background: rgba(239, 68, 68, 0.2); color: #ef4444;
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(239, 68, 68, 0.5); cursor: pointer;
+}
+
+/* 1. تصميم السرعة (أحمر ناري) */
+.ch-card.speed-mode {
+    background: linear-gradient(135deg, #450a0a, #1a0505); border-color: #ef4444; text-align: center;
+}
+.ch-card.speed-mode .ch-icon { 
+    font-size: 28px; color: #ef4444; margin-bottom: 10px; 
+}
+.speed-gauge {
+    margin: 10px 0; font-family: monospace; font-size: 32px; font-weight: 900; color: #fff;
+}
+.speed-status { 
+    background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 5px 10px; border-radius: 8px; font-size: 11px;
+}
+.ch-card.speed-mode.done {
+    background: linear-gradient(135deg, #064e3b, #022c22); border-color: #10b981;
+}
+.ch-card.speed-mode.done .speed-gauge { color: #10b981; }
+
+/* 2. تصميم الالتزام (بنفسجي خلايا) */
+.ch-card.habit-mode {
+    background: linear-gradient(135deg, #312e81, #1e1b4b); border-color: #6366f1;
+}
+.habit-grid {
+    display: flex; gap: 5px; flex-wrap: wrap; margin-top: 15px; justify-content: center;
+}
+.habit-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);
+}
+.habit-dot.filled {
+    background: #a855f7; border-color: #a855f7; box-shadow: 0 0 5px #a855f7; transform: scale(1.1);
+}
+.habit-counter { font-size: 14px; color: #e0e7ff; margin-top: 10px; display: block; text-align: center; }
+
+/* 3. تصميم المسافة (أزرق طريق) */
+.ch-card.dist-mode { background: linear-gradient(135deg, #0f172a, #1e293b); }
+.dist-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+.dist-val-big { font-size: 24px; font-weight: 900; color: #fff; }
+.road-track {
+    height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px;
+    position: relative; overflow: hidden; margin: 10px 0;
+}
+.road-fill {
+    height: 100%; background: #3b82f6; border-radius: 4px; box-shadow: 0 0 10px #3b82f6;
+}
+
+.ch-join-btn {
+    width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-top: 15px;
+    background: rgba(255,255,255,0.1); color: #fff;
+}

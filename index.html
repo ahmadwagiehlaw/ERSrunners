@@ -201,43 +201,84 @@
                         <tbody id="users-table-body"></tbody>
                     </table>
                 </div>
-
-                <div class="admin-card" style="margin-top:20px;">
-                    <h4 style="margin-top:0; color:var(--primary);">🎯 مهندس التحديات</h4>
-                    <div class="form-group" style="margin-top:10px; gap:8px;">
-                        <input type="text" id="adv-ch-title" placeholder="عنوان التحدي (مثال: وحش السرعة)">
-                        
-                        <label style="font-size:11px; color:#9ca3af;">نوع التحدي</label>
-                        <select id="adv-ch-type" onchange="toggleChallengeInputs()">
-                            <option value="distance">🛣️ مسافة تراكمية (مثال: 100 كم في شهر)</option>
-                            <option value="frequency">🗓️ التزام وتكرار (مثال: 15 جرية في شهر)</option>
-                            <option value="speed">⚡ سرعة قصوى (مثال: 5 كم بسرعة 4:00)</option>
+<div class="admin-card" style="margin-top:20px; border:1px solid var(--primary);">
+                    <h4 style="margin-top:0; color:var(--primary); display:flex; align-items:center; gap:5px;">
+                        <i class="ri-cpu-line"></i> مهندس التحديات V4
+                    </h4>
+                    
+                    <div class="form-group" style="margin-top:15px; gap:10px;">
+                        <label class="input-lbl">نوع التحدي</label>
+                        <select id="adv-ch-type" onchange="updateChallengeUI()" class="full-select">
+                            <option value="distance">🛣️ مسافة تراكمية (الوضع الطبيعي)</option>
+                            <option value="frequency">🗓️ التزام (عدد مرات الجري)</option>
+                            <option value="speed">⚡ سرعة قصوى (بيس محدد)</option>
                         </select>
 
-                        <div class="input-row">
-                            <div class="input-wrap"><label id="lbl-target">الهدف (كم)</label><input type="number" id="adv-ch-target" step="0.1"></div>
-                            <div class="input-wrap"><label>المدة (أيام)</label><input type="number" id="adv-ch-days"></div>
-                        </div>
+                        <input type="text" id="adv-ch-title" placeholder="عنوان التحدي (مثال: تحدي رمضان 🌙)">
                         
                         <div class="input-row">
-                            <div class="input-wrap"><label>تاريخ البدء</label><input type="date" id="adv-ch-start"></div>
+                            <div class="input-wrap">
+                                <label id="lbl-target">الهدف (كم)</label>
+                                <input type="number" id="adv-ch-target" step="0.1">
+                            </div>
+                            <div class="input-wrap">
+                                <label>المدة (أيام)</label>
+                                <input type="number" id="adv-ch-days" placeholder="30">
+                            </div>
+                        </div>
+
+                        <div class="input-wrap">
+                            <label>تاريخ البدء</label>
+                            <input type="date" id="adv-ch-start">
+                        </div>
+
+                        <div class="advanced-rules-box">
+                            <div class="rules-title" onclick="toggleRules()">
+                                <i class="ri-settings-5-line"></i> شروط وقواعد خاصة (اختياري) ▼
+                            </div>
+                            <div id="rules-content" style="display:none; margin-top:10px;">
+                                
+                                <div class="input-wrap">
+                                    <label>أقل مسافة مقبولة للجرية (كم)</label>
+                                    <input type="number" id="rule-min-dist" placeholder="مثال: 2 (لمنع احتساب المشي القصير)">
+                                </div>
+
+                                <label style="margin-top:10px; display:block; color:#f59e0b;">⏰ وقت الجري المسموح (نظام 24 ساعة)</label>
+                                <div class="input-row">
+                                    <div class="input-wrap">
+                                        <label>من الساعة</label>
+                                        <input type="number" id="rule-time-start" placeholder="مثال: 14 (للعصر)">
+                                    </div>
+                                    <div class="input-wrap">
+                                        <label>إلى الساعة</label>
+                                        <input type="number" id="rule-time-end" placeholder="مثال: 18 (للمغرب)">
+                                    </div>
+                                </div>
+                                <small style="color:#6b7280; font-size:9px;">اترك التوقيت فارغاً ليكون متاحاً طوال اليوم</small>
+                            </div>
                         </div>
                         
                         <button class="btn btn-primary" onclick="createGeniusChallenge()">إطلاق التحدي 🚀</button>
                     </div>
                 </div>
-            </div>
-
+</div>
             <section id="view-challenges" class="view">
+                
                 <div class="tabs-nav">
                     <div class="tab-item active" onclick="setTab('active-challenges')">التحديات</div>
                     <div class="tab-item" onclick="setTab('leaderboard')">المتصدرون</div>
                     <div class="tab-item" onclick="setTab('squads')">المناطق</div>
                 </div>
                 
+
                 <div id="tab-active-challenges" class="tab-content active">
                     <div id="challenges-list" class="challenges-grid"></div>
                 </div>
+                
+   
+                    <div id="challenges-list"></div>
+                </div>
+
                 
                 <div id="tab-leaderboard" class="tab-content">
                     <div class="team-goal-card">
@@ -251,6 +292,7 @@
                             <span>الهدف: 1000 كم</span>
                         </div>
                     </div>
+                 
 
                     <div class="podium-section">
                         <div class="podium-title">أبطال الشهر 👑</div>
@@ -258,7 +300,12 @@
                             <div style="color:#6b7280; font-size:12px;">جاري تحميل الأبطال...</div>
                         </div>
                     </div>
-
+<div class="challenge-filter-bar">
+    <button class="ch-filter-btn active" onclick="filterChallengesUI('all', this)">الكل</button>
+    <button class="ch-filter-btn" onclick="filterChallengesUI('distance', this)">🛣️ مسافات</button>
+    <button class="ch-filter-btn" onclick="filterChallengesUI('frequency', this)">🗓️ التزام</button>
+    <button class="ch-filter-btn" onclick="filterChallengesUI('speed', this)">⚡ سرعة</button>
+</div>
                     <div class="leaderboard-controls">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
