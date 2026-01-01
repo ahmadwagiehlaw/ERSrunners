@@ -1541,26 +1541,27 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     text-align: center;
 }
 
-/* ==================== V6.1 Big & Centered Filters ==================== */
+/* ==================== V6.2 Compact Filters (Mobile Friendly) ==================== */
 
 .filter-scroll-container {
     display: flex;
-    justify-content: center; /* توسيط في منتصف الشاشة */
-    gap: 10px;
-    margin: 15px 0 25px 0; /* مسافات مريحة */
-    flex-wrap: wrap; /* يسمح بالنزول لسطر جديد لو الشاشة صغيرة جداً */
+    justify-content: center;
+    gap: 8px; /* تقليل المسافة بين الأزرار قليلاً */
+    margin: 15px 0 20px 0;
+    flex-wrap: wrap; 
 }
 
 .filter-pill {
-    background: rgba(31, 41, 55, 0.8); /* لون أغمق قليلاً */
+    background: rgba(31, 41, 55, 0.8);
     border: 1px solid rgba(255,255,255,0.1);
     color: var(--text-muted);
     
-    /* تكبير الحجم */
-    padding: 12px 20px; 
+    /* 🔥 التعديلات هنا: تصغير الحجم */
+    padding: 8px 16px;      /* كان 12px 20px */
     border-radius: 50px;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 11px;        /* كان 13px */
+    font-weight: 500;       /* كان 600 (عشان يبقى أرفع) */
+    font-family: 'Tajawal', sans-serif; /* لضمان التناسق */
     
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1571,8 +1572,9 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     background: var(--primary);
     color: #000;
     border-color: var(--primary);
-    transform: scale(1.05); /* تكبير بسيط عند التفعيل */
-    box-shadow: 0 4px 15px var(--primary-glow); /* وهج جذاب */
+    font-weight: 700; /* التمييز بالسمك عند التفعيل فقط */
+    transform: scale(1.02); /* تكبير بسيط جداً */
+    box-shadow: 0 2px 10px var(--primary-glow);
 }
 
 .filter-pill:active {
@@ -1934,3 +1936,103 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .feedback-stats div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .feedback-stats span { font-weight: 800; font-size: 16px; color: #fff; }
 .feedback-stats small { font-size: 10px; color: #9ca3af; }
+
+
+/* تنسيق الأيقونة الذهبية (للأرقام القياسية) */
+.log-icon-wrapper.record {
+    background: linear-gradient(135deg, #f59e0b, #d97706); /* تدرج ذهبي */
+    color: #fff; /* لون الكأس أبيض */
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); /* وهج ذهبي */
+    border: 1px solid #fbbf24;
+    animation: pulse-gold 2s infinite; /* نبض خفيف */
+}
+
+@keyframes pulse-gold {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+/* 1. الذهبي (المسافة الأطول) - موجود سابقاً */
+.log-icon-wrapper.record-gold {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff; border: 1px solid #fbbf24;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+    animation: pulse-gold 2s infinite;
+}
+
+/* 2. الأحمر الناري (الأسرع - Best Pace) */
+.log-icon-wrapper.record-fire {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #fff; border: 1px solid #fca5a5;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+/* 3. البنفسجي العميق (أطول وقت) */
+.log-icon-wrapper.record-time {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    color: #fff; border: 1px solid #c4b5fd;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.4);
+}
+
+/* تأثير النبض الذهبي */
+@keyframes pulse-gold {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); transform: scale(1); }
+    70% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); transform: scale(1); }
+}
+
+/* ==================== إصلاح زحمة الهيدر في الموبايل ==================== */
+
+@media (max-width: 480px) {
+    /* 1. تقليل الهوامش الجانبية للشاشة */
+    .glass-header {
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-top: calc(10px + env(safe-area-inset-top));
+        padding-bottom: 10px;
+    }
+
+    /* 2. تصغير اللوجو */
+    .brand-logo {
+        height: 55px; /* كان 55px */
+    }
+
+    /* 3. تقليل الفراغ بين اللوجو والاسم */
+    .header-right {
+        gap: 10px; /* كان 15px */
+    }
+
+    /* 4. تصغير خط الترحيب والاسم */
+    .hello-text {
+        font-size: 11px;
+    }
+    .user-greeting-box h3 {
+        font-size: 13px; /* كان 15px */
+        max-width: 90px; /* لضمان عدم تمدد الاسم الطويل */
+    }
+
+    /* 5. ضغط حاوية الأزرار */
+    .header-actions {
+        gap: 3px; /* تقليل المسافة بين الزراير */
+        padding: 4px; /* تقليل الحشو الداخلي */
+    }
+
+    /* 6. تصغير الأزرار الدائرية */
+    .icon-badge {
+        width: 32px; /* كان 38px */
+        height: 32px;
+    }
+    .icon-badge i {
+        font-size: 16px; /* تصغير الأيقونة داخل الزر */
+    }
+
+    /* 7. ضبط شارة الستريك (النار) */
+    .streak-badge {
+        padding: 1px 6px;
+        font-size: 10px;
+    }
+    .streak-badge i {
+        font-size: 10px;
+    }
+}

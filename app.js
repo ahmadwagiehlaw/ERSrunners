@@ -1034,6 +1034,7 @@ userData.totalDist += dist;
 }
 
 // ==================== 6. سجل الأنشطة (تصميم كروت احترافي V3.0) ====================
+// ==================== 6. سجل الأنشطة (New Badge Logic) ====================
 function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
@@ -1052,20 +1053,32 @@ function loadActivityLog() {
           }
 
           const runs = []; 
-          let maxDist = 0;
           
+          // 1. استخراج البيانات وحساب الأرقام القياسية
+          let maxDist = 0;
+          let maxTime = 0;
+          let bestPace = 999; // رقم كبير مبدئياً
+
           snap.forEach(doc => {
               const r = doc.data(); 
               r.id = doc.id;
-              if(r.dist > maxDist) maxDist = r.dist; // لتحديد أطول جرية
-              runs.push(r);
+              runs.push(r); // إضافة الجرية للمصفوفة
+
+              // حساب الأرقام القياسية
+              if (r.dist > maxDist) maxDist = r.dist;
+              if (r.time > maxTime) maxTime = r.time;
+              
+              // حساب أفضل بيس (بشرط المسافة > 1 كم لتجنب أخطاء الـ GPS)
+              if (r.dist >= 1 && r.time > 0) {
+                  const p = r.time / r.dist;
+                  if (p < bestPace) bestPace = p;
+              }
           });
 
-          // تجميع حسب الشهر
+          // 2. تجميع حسب الشهر
           const groups = {};
           runs.forEach(r => {
               const date = r.timestamp ? r.timestamp.toDate() : new Date();
-              // تنسيق مفتاح الشهر: "يناير 2024"
               const monthKey = date.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
               if(!groups[monthKey]) groups[monthKey] = [];
               groups[monthKey].push(r);
@@ -1073,8 +1086,8 @@ function loadActivityLog() {
 
           let html = '';
 
+          // 3. عرض البيانات (لوب الشهور)
           for (const [month, monthRuns] of Object.entries(groups)) {
-              // حساب إجمالي مسافة الشهر للعرض في الهيدر
               const monthTotal = monthRuns.reduce((acc, curr) => acc + (parseFloat(curr.dist)||0), 0).toFixed(1);
 
               html += `
@@ -1085,28 +1098,43 @@ function loadActivityLog() {
                   </div>
               `;
 
+              // 4. عرض الجريات داخل الشهر
               monthRuns.forEach(r => {
                   const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
-                  // التنسيق: الجمعة، 5
                   const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
                   const dayNum = dateObj.getDate();
                   
-                  // حساب الـ Pace (السرعة)
-                  const pace = r.time > 0 ? (r.time / r.dist).toFixed(1) : '-';
-                  
-                  // شارة أطول جرية
-                  const badge = (r.dist === maxDist && maxDist > 5) 
-                    ? `<div class="badge-record-mini">🏆 الأطول</div>` : '';
+                  // حساب البيس الحالي
+                  let currentPace = 0;
+                  if(r.dist > 0 && r.time > 0) currentPace = r.time / r.dist;
+                  const paceDisplay = currentPace > 0 ? currentPace.toFixed(1) : '-';
 
-                  // تحديد أيقونة ونوع الجرية
-                  const isRun = r.type !== 'Walk';
-                  const iconClass = isRun ? 'ri-run-line' : 'ri-walk-line';
-                  const typeClass = isRun ? 'run' : 'walk';
+                  // 🔥 تحديد نوع الإنجاز والألوان
+                  let iconClass = r.type !== 'Walk' ? 'ri-run-line' : 'ri-walk-line';
+                  let typeClass = r.type !== 'Walk' ? 'run' : 'walk';
+                  let recordLabel = ''; 
+
+                  // أ) هل هي الأطول مسافة؟ (الذهبي)
+                  if (r.dist === maxDist && maxDist > 5) {
+                      iconClass = 'ri-trophy-fill';
+                      typeClass = 'record-gold';
+                      recordLabel = '<span style="font-size:9px; color:#f59e0b; margin-right:5px;">(الأطول)</span>';
+                  } 
+                  // ب) هل هي الأسرع؟ (الأحمر) - بشرط تكون جري وليست مشي
+                  else if (currentPace === bestPace && r.dist >= 1 && r.type === 'Run') {
+                      iconClass = 'ri-flashlight-fill'; 
+                      typeClass = 'record-fire';
+                      recordLabel = '<span style="font-size:9px; color:#ef4444; margin-right:5px;">(الأسرع)</span>';
+                  }
+                  // ج) هل هي الأطول زمناً؟ (البنفسجي)
+                  else if (r.time === maxTime && maxTime > 30) {
+                      iconClass = 'ri-hourglass-fill';
+                      typeClass = 'record-time';
+                      recordLabel = '<span style="font-size:9px; color:#a78bfa; margin-right:5px;">(تحمل)</span>';
+                  }
 
                   html += `
                   <div class="log-row-compact">
-                      ${badge}
-                      
                       <div class="log-icon-wrapper ${typeClass}">
                           <i class="${iconClass}"></i>
                       </div>
@@ -1114,10 +1142,11 @@ function loadActivityLog() {
                       <div class="log-details">
                           <div class="log-main-stat">
                               ${formatNumber(r.dist)} <span class="log-unit">كم</span>
+                              ${recordLabel}
                           </div>
                           <div class="log-sub-stat">
                               <span><i class="ri-calendar-line"></i> ${dayNum} ${dayName}</span>
-                              <span><i class="ri-timer-flash-line"></i> ${pace} د/كم</span>
+                              <span><i class="ri-timer-flash-line"></i> ${paceDisplay} د/كم</span>
                           </div>
                       </div>
 
@@ -1137,13 +1166,12 @@ function loadActivityLog() {
                   </div>`;
               });
 
-              html += `</div>`; // إغلاق الجروب
+              html += `</div>`; // إغلاق ديف الشهر
           }
 
           list.innerHTML = html;
       });
 }
-
 async function deleteRun(id, dist) {
     dist = parseFloat(dist);
     if(!confirm("هل أنت متأكد من الحذف؟")) return;
