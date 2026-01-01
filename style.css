@@ -1903,3 +1903,34 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     20% { left: 100%; } /* تتحرك بسرعة للنهاية */
     100% { left: 100%; } /* تنتظر باقي الوقت */
 }
+
+/* ==================== V12.0 Coach Feedback Pop-up ==================== */
+
+.coach-feedback-avatar {
+    position: absolute;
+    top: -40px; left: 50%; transform: translateX(-50%);
+    width: 80px; height: 80px;
+}
+
+.coach-img {
+    width: 100%; height: 100%; border-radius: 50%;
+    background-image: url('https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg'); /* نفس صورة الكوتش */
+    background-size: cover; background-position: center;
+    border: 3px solid var(--bg-card);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+}
+
+.coach-badge {
+    position: absolute; bottom: 0; right: 0;
+    font-size: 20px; background: var(--bg-card); border-radius: 50%;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--primary);
+}
+
+.feedback-stats {
+    display: flex; justify-content: space-between;
+    margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.1);
+}
+.feedback-stats div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.feedback-stats span { font-weight: 800; font-size: 16px; color: #fff; }
+.feedback-stats small { font-size: 10px; color: #9ca3af; }

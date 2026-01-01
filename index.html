@@ -493,6 +493,37 @@
         </nav>
     </div>
 
+
+    <div id="modal-run-feedback" class="modal-overlay" style="z-index: 4000;">
+        <div class="modal-box" style="text-align:center; padding-top:40px; position:relative; overflow:visible;">
+            
+            <div class="coach-feedback-avatar">
+                <div class="coach-img"></div>
+                <div class="coach-badge">👔</div>
+            </div>
+
+            <h2 id="feedback-title" style="margin:10px 0 5px 0; color:var(--primary);">تحليل الأداء ⚡</h2>
+            
+            <div id="feedback-body" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin:15px 0; border:1px solid rgba(255,255,255,0.1);">
+                <p id="feedback-msg" style="font-size:14px; line-height:1.6; color:#e5e7eb; margin:0;">
+                    جاري تحليل الجرية...
+                </p>
+            </div>
+
+            <div class="feedback-stats">
+                <div><span id="fb-pace">0.0</span> <small>السرعة</small></div>
+                <div style="border-right:1px solid #444; border-left:1px solid #444;">
+                    <span id="fb-score">Excellent</span> <small>التقييم</small>
+                </div>
+                <div><span id="fb-cal">0</span> <small>كالوري</small></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="closeModal('modal-run-feedback')" style="margin-top:20px;">
+                شكراً يا كوتش 💪
+            </button>
+        </div>
+    </div>
+    
     <div id="modal-log" class="modal-overlay">
         <div class="modal-box">
             <h3>تسجيل نشاط 🏃‍♂️</h3>

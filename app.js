@@ -1003,11 +1003,23 @@ async function submitRun() {
             await batch.commit();
             // ... (باقي الكود)
 
-            userData.totalDist += dist; userData.totalRuns += 1; userData.monthDist = newMonthDist;
+userData.totalDist += dist; 
+            userData.totalRuns += 1; 
+            userData.monthDist = newMonthDist;
+            
             await checkNewBadges(dist, time, selectedDate);
-            showToast("تم الحفظ بنجاح 🚀", "success");
-        }
-        
+            
+            // ❌ احذف أو عطل السطر القديم: showToast("تم الحفظ بنجاح 🚀", "success");
+            
+            // ✅ استدعي الكوتش الجديد:
+            closeModal('modal-log'); // نغلق نافذة التسجيل الأول
+            
+            // نعرض الكوتش بتأخير بسيط جداً (عشان الـ Animation)
+            setTimeout(() => {
+                showRunAnalysis(dist, time, type);
+            }, 300);
+
+        } // إغلاق القوس الخاص بـ else (حالة التسجيل الجديد)        
 
 
         closeModal('modal-log');
@@ -2928,4 +2940,70 @@ async function confirmPlan() {
     } catch(e) {
         showToast("خطأ في الحفظ", "error");
     }
+}
+
+
+// ==================== V12.0 Run Analysis Engine (Coach Feedback) ====================
+
+function showRunAnalysis(dist, time, type) {
+    const pace = dist > 0 ? (time / dist) : 0;
+    const name = (userData.name || "يا بطل").split(' ')[0];
+    
+    let title = "تم يا بطل! ✅";
+    let msg = "";
+    let score = "جيد";
+    
+    // 1. تحليل الأداء (Logic)
+    
+    // حالة 1: جرية طويلة (Long Run)
+    if (dist >= 10) {
+        title = "وحش المسافات 🦁";
+        msg = `الله عليك يا ${name}! ${dist} كم مسافة محترمة جداً. النفس الطويل ده هو اللي بيبني أبطال المارثون.`;
+        score = "Legend";
+    } 
+    // حالة 2: سرعة عالية (Fast Pace - أقل من 5 دقايق للكيلو)
+    else if (pace > 0 && pace < 5.0 && type === 'Run') {
+        title = "صاروخ أرض جو 🚀";
+        msg = `إيه السرعة دي! بيس ${pace.toFixed(1)} ده مستوى عالي. حافظ على السرعة دي، أنت في الطريق للقمة.`;
+        score = "Speedster";
+    }
+    // حالة 3: جرية خفيفة/قصيرة
+    else if (dist < 3) {
+        title = "بداية موفقة 🌱";
+        msg = `عاش الاستمرارية. حتى المسافات القصيرة بتفرق في اللياقة. المهم إنك نزلت ومكسلتش!`;
+        score = "Active";
+    }
+    // حالة 4: مشي
+    else if (type === 'Walk') {
+        title = "نشاط وحيوية 🚶";
+        msg = `المشي رياضة ممتازة لحرق الدهون وتصفية الذهن. استمر يا كوتش!`;
+        score = "Steady";
+    }
+    // حالة افتراضية
+    else {
+        title = "تمرين ممتاز 💪";
+        msg = `مجهود رائع يا ${name}. كل خطوة بتقربك من هدفك. ريح جسمك كويس واشرب مية كتير.`;
+        score = "Strong";
+    }
+
+    // 2. مقارنة بالخطة (إذا وجدت)
+    if (userData.activePlan && userData.activePlan.status === 'active') {
+        msg += `<br><br><span style="color:var(--primary); font-size:12px;">✅ تم تسجيل هذا التمرين ضمن خطة الـ ${userData.activePlan.target}.</span>`;
+    }
+
+    // 3. عرض البيانات في المودال
+    document.getElementById('feedback-title').innerText = title;
+    document.getElementById('feedback-msg').innerHTML = msg;
+    
+    document.getElementById('fb-pace').innerText = pace > 0 ? pace.toFixed(1) : '-';
+    document.getElementById('fb-score').innerText = score;
+    
+    // حساب تقريبي للكالوري (الوزن المتوسط 70 * المسافة)
+    document.getElementById('fb-cal').innerText = (dist * 60).toFixed(0);
+
+    // إظهار المودال
+    document.getElementById('modal-run-feedback').style.display = 'flex';
+    
+    // تشغيل صوت تشجيعي (اختياري)
+    // playSuccessSound(); 
 }
