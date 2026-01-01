@@ -668,12 +668,47 @@ const COACH_DB = {
     }
 };
 
+// إلغاء الخطة الحالية والبدء من جديد
+async function resetActivePlan(btnElement) {
+    if(!confirm("⚠️ هل أنت متأكد من حذف الخطة الحالية؟\nسيتم فقدان تقدمك في الجدول وتعود لنقطة الصفر.")) return;
+
+    // ضمان التقاط الزر الصحيح حتى لو لم يتم تمريره (Fallout)
+    const btn = btnElement || event.target.closest('button');
+    const originalContent = btn.innerHTML; // حفظ المحتوى الأصلي (أيقونة + نص)
+    
+    btn.innerHTML = "جاري الحذف...";
+    btn.style.opacity = "0.5";
+    btn.disabled = true; // تعطيل الزر لمنع التكرار
+
+    try {
+        // 1. حذف حقل activePlan من قاعدة البيانات
+        await db.collection('users').doc(currentUser.uid).update({
+            activePlan: firebase.firestore.FieldValue.delete()
+        });
+
+        // 2. تحديث المتغير المحلي فوراً
+        delete userData.activePlan;
+
+        // 3. تحديث واجهة الكوتش ليعود الزر القديم
+        updateCoachAdvice();
+
+        showToast("تم إلغاء الخطة بنجاح 🗑️", "success");
+
+    } catch(e) {
+        console.error(e);
+        showToast("حدث خطأ أثناء الحذف", "error");
+        
+        // استعادة الزر في حالة الخطأ
+        btn.innerHTML = originalContent;
+        btn.style.opacity = "1";
+        btn.disabled = false;
+    }
+}
 // ==================== V11.0 Coach & Action Plan Logic ====================
 
 function updateCoachAdvice() {
     const msgEl = document.getElementById('coach-message');
     const labelEl = document.querySelector('.coach-label');
-    const iconEl = document.querySelector('.coach-icon'); // تحديد العنصر للصورة
     
     if(!msgEl) return;
 
@@ -696,17 +731,18 @@ function updateCoachAdvice() {
         message = `أهلاً كابتن ${name}! إحنا ماشيين على خطة الـ <b>${plan.target}</b>. <br>ركز في تمرين النهاردة ومستني أشوف العلامة الخضراء! ✅`;
     }
 
-    // 3. تجهيز الزر (إما إنشاء أو عرض)
+    // 3. تجهيز الأزرار (لاحظ التعديل في onclick)
     let actionBtn = '';
     
     if (hasPlan) {
-        // زر عرض الخطة
         actionBtn = `
         <button onclick="openMyPlan()" class="btn-plan-action">
-            <i class="ri-map-2-line"></i> عرض جدولي ومتابعة التنفيذ
+            <i class="ri-map-2-line"></i> متابعة تنفيذ خطة الجري
+        </button>
+        <button onclick="resetActivePlan(this)" class="btn-plan-reset">
+            <i class="ri-refresh-line"></i> إلغاء الخطة والبدء من جديد
         </button>`;
     } else {
-        // زر إنشاء الخطة
         actionBtn = `
         <button onclick="openPlanWizard()" class="btn-plan-action">
             <i class="ri-magic-line"></i> صمم لي خطة تدريب
@@ -716,78 +752,7 @@ function updateCoachAdvice() {
     // 4. العرض
     labelEl.innerText = title;
     msgEl.innerHTML = message + actionBtn;
-    
-    // (اختياري) يمكنك وضع كود هنا لتغيير صورة الكوتش لو أردت تغييرها برمجياً
-    // iconEl.style.backgroundImage = "url('path/to/your/image.jpg')";
 }
-
-// --- دوال عرض الخطة (Action Plan) ---
-
-function openMyPlan() {
-    if (!userData.activePlan) return showToast("لا توجد خطة نشطة", "error");
-    
-    const container = document.getElementById('plan-timeline-container');
-    const metaInfo = document.getElementById('plan-meta-info');
-    const plan = userData.activePlan;
-    
-    // تحديث العنوان
-    metaInfo.innerText = `هدف: ${plan.target} • أيام: ${plan.daysPerWeek}/أسبوع • مستوى: ${plan.level}`;
-    
-    // توليد الجدول (Simulated Logic based on Inputs)
-    let html = '<div class="plan-timeline">';
-    const totalWeeks = plan.target === '5k' ? 8 : (plan.target === '10k' ? 12 : 16);
-    const startDate = new Date(plan.startDate);
-    const today = new Date();
-    
-    // سنقوم بتوليد 4 أسابيع فقط للعرض (أو الكل حسب الرغبة)
-    for (let w = 1; w <= totalWeeks; w++) {
-        html += `<div style="color:var(--primary); font-weight:bold; margin:15px 0 10px 0;">الأسبوع ${w}</div>`;
-        
-        for (let d = 1; d <= plan.daysPerWeek; d++) {
-            // حساب تاريخ هذا اليوم
-            const dayOffset = ((w - 1) * 7) + ((d - 1) * 2); // نضرب في 2 لتوزيع الأيام (مجرد محاكاة)
-            const taskDate = new Date(startDate);
-            taskDate.setDate(startDate.getDate() + dayOffset);
-            
-            const isToday = taskDate.toDateString() === today.toDateString();
-            const isPast = taskDate < today;
-            // التحقق من قاعدة البيانات هل تم إنجاز هذا اليوم أم لا (سنفترض التخزين لاحقاً)
-            // حالياً سنعتمد على التاريخ
-            
-            let statusClass = '';
-            if (isToday) statusClass = 'today';
-            else if (isPast) statusClass = 'done'; // نفترض أن الماضي تم إنجازه للمحاكاة
-
-            // نوع التمرين (محاكاة ذكية)
-            let workoutTitle = "جري مريح (Easy Run)";
-            let workoutDesc = "3 كم برتم هادئ جداً.";
-            
-            if (d === parseInt(plan.daysPerWeek)) { // آخر يوم في الأسبوع
-                workoutTitle = "جري طويل (Long Run)";
-                workoutDesc = `${5 + w} كم برتم المحادثة.`;
-            } else if (w % 2 === 0 && d === 1) {
-                workoutTitle = "سرعة (Intervals)";
-                workoutDesc = "400م سريع / 200م مشي (x6)";
-            }
-
-            html += `
-            <div class="plan-day-card ${statusClass}">
-                <div class="plan-day-header">
-                    <span>اليوم ${d}</span>
-                    <span>${taskDate.toLocaleDateString('ar-EG', {month:'short', day:'numeric'})}</span>
-                </div>
-                <div class="plan-day-title">${workoutTitle}</div>
-                <div class="plan-day-desc">${workoutDesc}</div>
-            </div>`;
-        }
-    }
-    html += '</div>';
-    
-    container.innerHTML = html;
-    document.getElementById('modal-view-plan').style.display = 'flex';
-}
-
-
 //========================================================
 // دوال مساعدة للعرض
 function getDayName(d) {
@@ -2293,25 +2258,18 @@ function renderChallenges(dummy) {
         displayList = displayList.filter(ch => ch.completed);
     }
 
-    // 2. الحالة الفارغة (مع رسائل مضحكة حسب الفلتر)
+    // 2. الحالة الفارغة
     if (displayList.length === 0) {
         let funIcon = "👻";
         let funTitle = "المكان مهجور يا كابتن!";
         let funDesc = "مفيش تحديات هنا حالياً.. ارجع بعدين";
 
-        // تخصيص الرسالة حسب الفلتر
         if (currentChallengeFilter === 'joined') {
-            funIcon = "🐢";
-            funTitle = "إيه الكسل ده؟";
-            funDesc = "أنت مش مشترك في أي تحدي لسه!<br>روح على <b>'جديدة'</b> واشترك يا بطل وبطل فرجة 😂";
+            funIcon = "🐢"; funTitle = "إيه الكسل ده؟"; funDesc = "أنت مش مشترك في أي تحدي لسه!<br>روح على <b>'جديدة'</b> واشترك يا بطل.";
         } else if (currentChallengeFilter === 'new') {
-            funIcon = "✅";
-            funTitle = "خلصت كل حاجة!";
-            funDesc = "يا جامد! مفيش تحديات جديدة قدامك.<br>أنت ختمت اللعبة ولا إيه؟";
+            funIcon = "✅"; funTitle = "خلصت كل حاجة!"; funDesc = "يا جامد! مفيش تحديات جديدة قدامك.";
         } else if (currentChallengeFilter === 'completed') {
-            funIcon = "🏆";
-            funTitle = "لسه بدري ع الكؤوس";
-            funDesc = "لسه مخلصتش ولا تحدي؟<br>شد حيلك شوية يا وحش عايزين نشوف ميداليات!";
+            funIcon = "🏆"; funTitle = "لسه بدري ع الكؤوس"; funDesc = "شد حيلك شوية يا وحش عايزين نشوف ميداليات!";
         }
 
         list.innerHTML = `
@@ -2323,11 +2281,9 @@ function renderChallenges(dummy) {
         return;
     }
 
-    // 3. عرض الكروت (نفس الكود السابق)
+    // 3. عرض الكروت (القابلة للضغط بالكامل)
     let fullHtml = '';
     displayList.forEach(ch => {
-        // ... (نفس منطق حساب الوقت والأزرار السابق) ...
-        
         let daysLeftText = "مستمر";
         let isUrgent = false;
         if (ch.startDate) {
@@ -2340,76 +2296,60 @@ function renderChallenges(dummy) {
             if (diffDays < 0) daysLeftText = "انتهى";
             else if (diffDays <= 3) { daysLeftText = `🔥 باقي ${diffDays} يوم`; isUrgent = true; }
             else daysLeftText = `⏳ باقي ${diffDays} يوم`;
-
-            // 🔥 الفوتر الجديد (V6.5 Animated & Compact)
-        
-        // تحديد أيقونة وكلاس الوقت
-        let timeIcon = "ri-hourglass-2-fill";
-        let timeClass = "time";
-        
-        if (isUrgent) {
-            timeIcon = "ri-fire-fill"; // شعلة لو الوقت قليل
-            timeClass = "time urgent";
-        } else if (diffDays < 0) {
-            timeIcon = "ri-checkbox-circle-fill";
-            timeClass = "time done";
         }
+
+        // إعداد الفوتر
+        let timeIcon = isUrgent ? "ri-fire-fill" : "ri-hourglass-2-fill";
+        let timeClass = isUrgent ? "time urgent" : (daysLeftText === "انتهى" ? "time done" : "time");
+        if(daysLeftText === "انتهى") timeIcon = "ri-checkbox-circle-fill";
 
         const metaFooter = `
             <div class="ch-meta-footer">
-                <div class="meta-pill social" title="عدد الأبطال المشاركين">
-                    <i class="ri-group-fill"></i> 
-                    <span>${ch.participantsCount || 0}</span>
+                <div class="meta-pill social" title="عدد الأبطال">
+                    <i class="ri-group-fill"></i> <span>${ch.participantsCount || 0} مشارك</span>
                 </div>
-
                 <div class="meta-pill ${timeClass}">
-                    <span>${daysLeftText}</span>
-                    <i class="${timeIcon}"></i>
+                    <span>${daysLeftText}</span> <i class="${timeIcon}"></i>
                 </div>
             </div>
         `;
-        }
 
-        // أزرار الأدمن
+        // أزرار الأدمن (مع stopPropagation لمنع فتح المودال عند الحذف)
         let adminControls = '';
         if (userData.isAdmin) {
             adminControls = `
             <div style="position:absolute; top:15px; left:15px; display:flex; gap:8px; z-index:50;">
-                <div class="admin-del-btn" onclick="editChallenge('${ch.id}')" title="تعديل" style="position:static; background:rgba(245, 158, 11, 0.15); color:#f59e0b; border-color:rgba(245, 158, 11, 0.3); width:32px; height:32px;"><i class="ri-pencil-line"></i></div>
-                <div class="admin-del-btn" onclick="deleteChallenge('${ch.id}')" title="حذف" style="position:static; width:32px; height:32px;"><i class="ri-delete-bin-line"></i></div>
+                <div class="admin-del-btn" onclick="event.stopPropagation(); editChallenge('${ch.id}')" title="تعديل" style="position:static; background:rgba(245, 158, 11, 0.15); color:#f59e0b; border-color:rgba(245, 158, 11, 0.3); width:32px; height:32px;"><i class="ri-pencil-line"></i></div>
+                <div class="admin-del-btn" onclick="event.stopPropagation(); deleteChallenge('${ch.id}')" title="حذف" style="position:static; width:32px; height:32px;"><i class="ri-delete-bin-line"></i></div>
             </div>`;
         }
 
-        const infoBtn = `
-            <button onclick="openChallengeDetails('${ch.id}')" class="ch-leaderboard-btn" style="right:50%; transform:translateX(50%); top:15px; left:auto; z-index:40;">
+        // زر الترتيب (لم يعد له داعي كبير لأن الكارت كله يفتح، لكن سنبقيه كعنصر جمالي أو نحذفه، سأبقيه كأيقونة فقط)
+        const rankBadge = `
+            <div class="ch-leaderboard-btn" style="pointer-events:none;">
                 <i class="ri-trophy-fill"></i> الترتيب
-            </button>
+            </div>
         `;
 
+        // زر الحالة أو الانضمام
         let actionBtn = '';
         if (!ch.isJoined) {
-            actionBtn = `<button class="ch-join-btn" onclick="joinChallenge('${ch.id}')" style="position:relative; z-index:100; cursor:pointer; margin-top:15px;">قبول التحدي</button>`;
+            // انتبه: stopPropagation هنا ضروري لكي يعمل زر الانضمام دون فتح التفاصيل فوراً (اختياري)
+            // لكن الأفضل أن يفتح التفاصيل ومن هناك ينضم، ولكن سأترك الزر يعمل مباشرة
+            actionBtn = `<button class="ch-join-btn" onclick="event.stopPropagation(); joinChallenge('${ch.id}')" style="position:relative; z-index:20;">قبول التحدي</button>`;
         } else if (ch.completed) {
             actionBtn = `<div style="margin-top:15px; text-align:center; color:#10b981; font-weight:bold; font-size:12px; background:rgba(16,185,129,0.1); padding:8px; border-radius:8px;">🎉 التحدي مكتمل</div>`;
         }
 
-        const metaFooter = `
-            <div class="ch-meta-footer">
-                <div class="ch-meta-item">
-                    <i class="ri-group-line"></i> <span>${ch.participantsCount || 0} مشارك</span>
-                </div>
-                <div class="ch-meta-item ${isUrgent ? 'urgent' : ''}">
-                    ${daysLeftText}
-                </div>
-            </div>
-        `;
+        // السمة المشتركة للكارت (onclick يفتح التفاصيل)
+        const cardAttribs = `onclick="openChallengeDetails('${ch.id}')" style="cursor:pointer;"`;
 
-        // دمج التصميمات
+        // بناء الكارت حسب النوع
         if (ch.type === 'speed') {
             const isDone = ch.completed;
             fullHtml += `
-            <div class="ch-card speed-mode ${isDone?'done':''}">
-                ${adminControls} ${infoBtn}
+            <div class="ch-card speed-mode ${isDone?'done':''}" ${cardAttribs}>
+                ${adminControls} ${rankBadge}
                 <div style="margin-top: 45px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
                     <div class="speed-gauge" style="margin-top:10px;">${ch.target} <span style="font-size:12px">د/كم</span></div>
@@ -2428,35 +2368,34 @@ function renderChallenges(dummy) {
             if(ch.target > 14) dotsHtml += `<span style="font-size:10px; color:#fff; align-self:center;">+${ch.target-14}</span>`;
 
             fullHtml += `
-            <div class="ch-card habit-mode">
-                ${adminControls} ${infoBtn}
+            <div class="ch-card habit-mode" ${cardAttribs}>
+                ${adminControls} ${rankBadge}
                 <div class="ch-header-centered" style="margin-top:40px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
                     <span style="font-size:10px; color:#c4b5fd; margin-top:5px;">هدف: ${ch.target} جرية</span>
                 </div>
-                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target}</span>${actionBtn}` : actionBtn}
+                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target}</span>` : actionBtn}
                 ${metaFooter}
             </div>`;
         }
         else {
             const perc = Math.min((ch.progress / ch.target) * 100, 100);
             fullHtml += `
-            <div class="ch-card dist-mode">
-                ${adminControls} ${infoBtn}
+            <div class="ch-card dist-mode" ${cardAttribs}>
+                ${adminControls} ${rankBadge}
                 <div class="ch-header-centered" style="margin-top:40px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
                     <div style="display:flex; gap:10px; align-items:center; margin-top:5px; justify-content:center;">
                         <span style="font-size:14px; font-weight:bold; color:#fff;">${Math.floor(ch.progress)} <span style="font-size:10px; opacity:0.6">/ ${ch.target} كم</span></span>
                     </div>
                 </div>
-                ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>${actionBtn}` : actionBtn}
+                ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>` : actionBtn}
                 ${metaFooter}
             </div>`;
         }
     });
     list.innerHTML = fullHtml;
 }
-
 // ==================== V3.2 Avatar System ====================
 
 let selectedAvatarIcon = "🏃"; // الافتراضي
@@ -2560,6 +2499,155 @@ function toggleChallengeInputs() {
     }
 }
 
+
+async function submitRun() {
+    if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+    
+    const btn = document.getElementById('save-run-btn');
+    const dist = parseFloat(document.getElementById('log-dist').value);
+    const time = parseFloat(document.getElementById('log-time').value);
+    const type = document.getElementById('log-type').value;
+    const link = document.getElementById('log-link').value;
+    const dateInput = document.getElementById('log-date').value;
+    const imgUrlInput = document.getElementById('uploaded-img-url');
+
+    if (!dist || !time) return showToast("البيانات ناقصة!", "error");
+    if (dist <= 0 || time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
+    
+    // تعطيل الزر لمنع التكرار
+    if(btn) { 
+        btn.innerText = "جاري الحفظ..."; 
+        btn.disabled = true; 
+        btn.style.opacity = "0.7";
+    }
+
+    try {
+        const uid = currentUser.uid;
+        const selectedDate = new Date(dateInput);
+        
+        // 1. منطق التعديل (Edit Mode)
+        if (editingRunId) {
+            const distDiff = dist - editingOldDist; 
+            
+            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({ 
+                dist, time, type, link, 
+                img: imgUrlInput.value 
+            }); 
+
+            await db.collection('users').doc(uid).set({
+                totalDist: firebase.firestore.FieldValue.increment(distDiff),
+                monthDist: firebase.firestore.FieldValue.increment(distDiff)
+            }, { merge: true });
+
+            // إعادة فحص التحديات بأثر رجعي عند إضافة صورة
+            if (imgUrlInput.value) { 
+                 const activeCh = await db.collection('challenges').where('active', '==', true).get();
+                 const batch = db.batch();
+                 let updatedCount = 0;
+
+                 activeCh.forEach(doc => {
+                    const ch = doc.data();
+                    const rules = ch.rules || {};
+                    if (rules.requireImg && dist >= (rules.minDistPerRun || 0)) {
+                        const participantRef = doc.ref.collection('participants').doc(uid);
+                        batch.set(participantRef, {
+                            photoUrl: userData.photoUrl || null,
+                            lastUpdate: firebase.firestore.Timestamp.now(),
+                            progress: firebase.firestore.FieldValue.increment(dist) 
+                        }, { merge: true });
+                        updatedCount++;
+                    }
+                 });
+                 if(updatedCount > 0) await batch.commit();
+            }
+            showToast("تم التعديل بنجاح ✅", "success");
+            editingRunId = null;
+
+        } else {
+            // 2. منطق الإضافة الجديدة (New Run)
+            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+            const streakInfo = updateStreakLogic(selectedDate);
+            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
+            let newMonthDist = (userData.monthDist || 0) + dist;
+            
+            // تصفير الشهر إذا دخلنا شهر جديد
+            if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
+
+            const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp, img: imgUrlInput.value };
+            
+            // الحفظ في المجموعات
+            await db.collection('users').doc(uid).collection('runs').add(runData);
+            await db.collection('activity_feed').add({
+                uid: uid, userName: userData.name, userRegion: userData.region, ...runData, likes: []
+            });
+
+            // تحديث إجماليات المستخدم
+            await db.collection('users').doc(uid).set({
+                totalDist: firebase.firestore.FieldValue.increment(dist),
+                totalRuns: firebase.firestore.FieldValue.increment(1),
+                monthDist: newMonthDist, 
+                lastMonthKey: currentMonthKey,
+                currentStreak: streakInfo.streak,
+                lastRunDate: streakInfo.lastDate
+            }, { merge: true });
+
+            // تحديث التحديات
+            const activeCh = await db.collection('challenges').where('active', '==', true).get();
+            const batch = db.batch();
+            const currentPace = dist > 0 ? time / dist : 0; 
+
+            activeCh.forEach(doc => {
+                const ch = doc.data();
+                const rules = ch.rules || {};
+
+                // شروط الرفض
+                if (rules.requireImg && !imgUrlInput.value) return; 
+                if (rules.minDistPerRun && dist < rules.minDistPerRun) return;
+
+                const participantRef = doc.ref.collection('participants').doc(uid);
+                let incrementValue = (ch.type === 'frequency') ? 1 : dist;
+                let isSpeedSuccess = (ch.type === 'speed' && currentPace <= ch.target && dist >= 1);
+
+                if (ch.type === 'speed') {
+                    if (isSpeedSuccess) {
+                        batch.set(participantRef, { progress: ch.target, lastUpdate: timestamp, name: userData.name, completed: true, photoUrl: userData.photoUrl||null }, { merge: true });
+                    }
+                } else {
+                    batch.set(participantRef, { progress: firebase.firestore.FieldValue.increment(incrementValue), lastUpdate: timestamp, name: userData.name, photoUrl: userData.photoUrl||null }, { merge: true });
+                }
+            });
+            await batch.commit();
+
+            // تحديث البيانات المحلية
+            userData.totalDist += dist; 
+            userData.totalRuns += 1; 
+            userData.monthDist = newMonthDist;
+            
+            checkNewBadges(dist, time, selectedDate);
+            setTimeout(() => { showRunAnalysis(dist, time, type); }, 300);
+        }     
+
+        // إغلاق وتنظيف
+        closeModal('modal-log');
+        allUsersCache = []; 
+        updateUI(); 
+        loadActivityLog();
+        loadGlobalFeed();
+        loadActiveChallenges(); 
+
+    } catch (error) { 
+        console.error(error);
+        showToast("خطأ: " + error.message, "error"); 
+    } 
+    finally { 
+        if(btn) { 
+            btn.innerText = "حفظ النشاط"; 
+            btn.disabled = false; 
+            btn.style.opacity = "1";
+        } 
+    }
+}
+
 // ==================== 13. ImgBB Upload Logic (V1.6) ====================
 async function uploadImageToImgBB() {
     const fileInput = document.getElementById('log-img-file');
@@ -2574,14 +2662,15 @@ async function uploadImageToImgBB() {
 
     // 2. تحديث الواجهة (جاري الرفع)
     status.innerText = "جاري رفع الصورة... ⏳";
-    status.style.color = "#f59e0b"; // برتقالي
-    saveBtn.disabled = true; // نمنع الحفظ لحد ما الرفع يخلص
-    saveBtn.innerText = "انتظر...";
+    status.style.color = "#f59e0b"; 
+    saveBtn.disabled = true; // تعطيل الزر مؤقتاً
+    saveBtn.innerText = "جاري الرفع...";
+    saveBtn.style.opacity = "0.5";
 
-    // 3. تجهيز البيانات (بالمفتاح بتاعك)
+    // 3. تجهيز البيانات
     const formData = new FormData();
     formData.append("image", file);
-    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; // 🔑 مفتاحك
+    const API_KEY = "0d0b1fefa53eb2fc054b27c6395af35c"; 
 
     try {
         const response = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`, {
@@ -2592,33 +2681,30 @@ async function uploadImageToImgBB() {
         const data = await response.json();
 
         if (data.success) {
-            // 4. نجح الرفع!
+            // نجح الرفع
             const imageUrl = data.data.url;
-            hiddenInput.value = imageUrl; // نخزن الرابط في الحقل المخفي
+            hiddenInput.value = imageUrl; 
             
-            // نعرض الصورة
             preview.src = imageUrl;
             preview.style.display = 'block';
             
             status.innerText = "تم إرفاق الصورة بنجاح ✅";
-            status.style.color = "#10b981"; // أخضر
-            
-            // نرجع زر الحفظ
-            saveBtn.disabled = false;
-            saveBtn.innerText = "حفظ النشاط";
-            
-            if(typeof showToast === 'function') showToast("تم رفع الصورة 📸", "success");
+            status.style.color = "#10b981"; 
         } else {
-            throw new Error(data.error ? data.error.message : "فشل غير معروف");
+            throw new Error("فشل من المصدر");
         }
 
     } catch (error) {
-        console.error("ImgBB Error:", error);
-        status.innerText = "فشل الرفع! تأكد من النت ❌";
+        console.error("Upload Error:", error);
+        status.innerText = "فشل الرفع! حاول مرة أخرى ❌";
         status.style.color = "#ef4444";
+        // تنظيف الحقل المخفي في حالة الفشل
+        hiddenInput.value = ""; 
+    } finally {
+        // 🔥 أهم خطوة: إعادة تفعيل الزر في كل الأحوال (نجح أو فشل)
         saveBtn.disabled = false;
         saveBtn.innerText = "حفظ النشاط";
-        alert("لم نتمكن من رفع الصورة، حاول مرة أخرى.");
+        saveBtn.style.opacity = "1";
     }
 }
 
@@ -3116,6 +3202,8 @@ function showPlanResult(days, target) {
 }
 
 // اعتماد الخطة (الحفظ في الداتابيز)
+// اعتماد الخطة (الحفظ في الداتابيز + تحديث فوري)
+// اعتماد الخطة (الحفظ في الداتابيز + تحديث فوري)
 async function confirmPlan() {
     const days = document.getElementById('plan-days').value;
     const target = document.getElementById('plan-target').value;
@@ -3124,32 +3212,43 @@ async function confirmPlan() {
     const btn = event.target;
     btn.innerText = "جاري إنشاء الجدول...";
     
+    // 🔥 التعديل هنا: تحديد تاريخ البدء ليكون بداية اليوم الحالي
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0); // تصفير الوقت ليحسب أي جرية تمت اليوم
+
+    // تجهيز كائن الخطة
+    const newPlanData = {
+        target: target,
+        daysPerWeek: days,
+        level: level,
+        startDate: startDate.toISOString(), // استخدام التاريخ المصحح
+        status: 'active'
+    };
+
     try {
-        // حفظ تفضيلات الخطة في بروفايل المستخدم
+        // 1. الحفظ في السيرفر
         await db.collection('users').doc(currentUser.uid).update({
-            activePlan: {
-                target: target,
-                daysPerWeek: days,
-                level: level,
-                startDate: new Date().toISOString(),
-                status: 'active'
-            }
+            activePlan: newPlanData
         });
         
+        // 2. تحديث البيانات المحلية فوراً
+        userData.activePlan = newPlanData;
+
+        // 3. تحديث واجهة الكوتش
+        updateCoachAdvice();
+
         showToast("تم تفعيل الخطة بنجاح! 🚀", "success");
         closeModal('modal-plan-wizard');
         
-        // هنا يمكننا توجيه المستخدم لصفحة "خطتي" الجديدة مستقبلاً
-        // switchView('plan'); 
+        setTimeout(() => openMyPlan(), 500); 
 
     } catch(e) {
+        console.error(e);
         showToast("خطأ في الحفظ", "error");
+    } finally {
+        btn.innerText = "اعتماد الخطة والبدء 🚀";
     }
 }
-
-
-
-
 // ==================== V12.0 Run Analysis Engine (Coach Feedback) ====================
 
 function showRunAnalysis(dist, time, type) {
@@ -3264,4 +3363,145 @@ async function submitBug() {
     } finally {
         btn.innerText = "إرسال";
     }
+}
+
+// فتح مودال تفاصيل الخطة وعرض الجدول
+function openMyPlan() {
+    const modal = document.getElementById('modal-my-plan');
+    if (!userData.activePlan) return showToast("لا توجد خطة نشطة!", "error");
+    
+    // إظهار المودال
+    if(modal) modal.style.display = 'flex';
+    
+    renderWeeklySchedule();
+}
+
+// توليد الجدول الأسبوعي ديناميكياً
+// توليد الجدول الأسبوعي ديناميكياً (نسخة ذكية تتصل بالسجل)
+async function renderWeeklySchedule() {
+    const container = document.getElementById('plan-schedule-list');
+    const plan = userData.activePlan;
+    
+    // عرض رسالة تحميل مؤقتة
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">جاري مراجعة التمارين... ⏳</div>';
+
+    // 1. حساب تواريخ الأسبوع الحالي
+    const planStartDate = new Date(plan.startDate);
+    const now = new Date();
+    
+    // تصحيح التوقيت لضمان دقة الأيام
+    planStartDate.setHours(0,0,0,0);
+    now.setHours(0,0,0,0);
+
+    const diffTime = now - planStartDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+    
+    // تحديد رقم الأسبوع الحالي
+    const currentWeek = Math.floor(diffDays / 7) + 1;
+    
+    // تحديد تاريخ بداية هذا الأسبوع (يوم 1 في الأسبوع الحالي)
+    const startOfCurrentWeek = new Date(planStartDate);
+    startOfCurrentWeek.setDate(planStartDate.getDate() + ((currentWeek - 1) * 7));
+
+    // 2. جلب جريات المستخدم التي تمت في هذا الأسبوع فقط
+    const endOfCurrentWeek = new Date(startOfCurrentWeek);
+    endOfCurrentWeek.setDate(endOfCurrentWeek.getDate() + 8); // +8 لضمان شمول آخر يوم
+
+    let weeklyRuns = [];
+    try {
+        const snapshot = await db.collection('users').doc(currentUser.uid).collection('runs')
+            .where('timestamp', '>=', startOfCurrentWeek)
+            .where('timestamp', '<', endOfCurrentWeek)
+            .get();
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // نحول التاريخ لنص بسيط للمقارنة (YYYY-MM-DD)
+            const dateKey = data.timestamp.toDate().toISOString().split('T')[0];
+            weeklyRuns.push({ date: dateKey, dist: data.dist });
+        });
+    } catch(e) {
+        console.error("Error fetching weekly runs", e);
+    }
+
+    // تحديث العناوين
+    document.getElementById('plan-modal-title').innerText = `خطة الـ ${plan.target} 🎯`;
+    document.getElementById('plan-modal-week').innerText = `الأسبوع ${currentWeek}`;
+
+    // 3. بناء الجدول
+    let html = '';
+    const daysCount = parseInt(plan.daysPerWeek) || 3;
+    
+    // نمط توزيع أيام الراحة
+    let runDays = [];
+    if(daysCount === 3) runDays = [1, 3, 5]; 
+    else if(daysCount === 4) runDays = [1, 2, 4, 6];
+    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
+    else runDays = [1, 2, 3, 4, 5, 6]; 
+
+    for (let i = 1; i <= 7; i++) {
+        // حساب تاريخ هذا اليوم (i)
+        const thisDayDate = new Date(startOfCurrentWeek);
+        thisDayDate.setDate(thisDayDate.getDate() + (i - 1));
+        const thisDayDateStr = thisDayDate.toISOString().split('T')[0];
+        const isToday = (thisDayDateStr === now.toISOString().split('T')[0]);
+
+        const isRunDay = runDays.includes(i);
+        
+        // فحص هل تم إنجاز التمرين؟
+        // نبحث هل يوجد جرية في هذا التاريخ ومسافتها أكبر من 1 كم (لتجنب الجريات الخاطئة)
+        const isCompleted = weeklyRuns.some(r => r.date === thisDayDateStr && r.dist >= 1);
+
+        // تحديد المحتوى
+        let title = "راحة واستشفاء 🧘‍♂️";
+        let desc = "رحرح جسمك النهاردة.";
+        let icon = "ri-cup-line";
+        let statusClass = "rest";
+        
+        if (isRunDay) {
+            let baseDist = parseInt(plan.target) / daysCount; 
+            if (i === runDays[0]) { 
+                title = `جري مسافة ${baseDist.toFixed(1)} كم`;
+                desc = "جري مريح لبناء الأساس الهوائي.";
+                icon = "ri-run-line";
+                statusClass = "run";
+            } else if (i === runDays[runDays.length-1]) { 
+                title = `جري طويل ${(baseDist * 1.2).toFixed(1)} كم`;
+                desc = "تحدي نهاية الأسبوع.";
+                icon = "ri-speed-line";
+                statusClass = "long-run";
+            } else { 
+                title = `جري سرعات ${(baseDist * 0.8).toFixed(1)} كم`;
+                desc = "جري سريع لرفع كفاءة القلب.";
+                icon = "ri-flashlight-fill";
+                statusClass = "interval";
+            }
+        }
+
+        // إضافة كلاس الإنجاز إذا تم
+        if (isCompleted && isRunDay) {
+            statusClass += " done"; // هذا الكلاس موجود في CSS ويضيف اللون الأخضر وعلامة صح
+            title = "تم الإنجاز! 🎉";
+            desc = `عاش يا وحش! سجلت جرية في هذا اليوم.`;
+        }
+
+        // تصميم الكارت
+        html += `
+        <div class="plan-day-card ${isToday ? 'today' : ''} ${statusClass}">
+            <div class="day-indicator">
+                <span class="d-name">يوم ${i} (${thisDayDate.toLocaleDateString('ar-EG', {weekday:'long'})})</span>
+                ${isToday ? '<span class="today-badge">اليوم</span>' : ''}
+            </div>
+            <div class="day-content">
+                <div class="d-icon"><i class="${icon}"></i></div>
+                <div class="d-info">
+                    <h4>${title}</h4>
+                    <p>${desc}</p>
+                </div>
+            </div>
+        </div>
+        `;
+    }
+
+    container.innerHTML = html;
 }
