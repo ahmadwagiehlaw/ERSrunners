@@ -1276,7 +1276,7 @@ async function loadRegionBattle() {
         let html = `
         <div class="battle-tutorial">
             <i class="ri-flashlight-fill" style="color:#f59e0b"></i>
-            <div>قوة المحافظة = <span>إجمالي المسافة</span> ÷ <span>عدد المحاربين</span></div>
+            <div>قوة المحافظة = <span>إجمالي المسافة</span> ÷ <span>عدد الأبطال</span></div>
         </div>
         <div class="squad-list">`;
 
