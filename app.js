@@ -1233,99 +1233,112 @@ function viewUserProfile(targetUid) {
 
 const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر", "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء", "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية", "Gharbia": "الغربية", "Beni Suef": "بني سويف" };
 
+// ==================== دوري المحافظات (نظام القوة النسبية V5.0) ====================
+// ==================== دوري المحافظات (Game Mode V6.0) ====================
 async function loadRegionBattle() {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
     
-    // ✅ استخدام الهيكل العظمي الجديد بدلاً من النص
+    // عرض اللودر
     list.innerHTML = getSkeletonHTML('squads');
     
     try {
-        const users = await fetchTopRunners();
-        let stats = {};
+        if (allUsersCache.length === 0) await fetchTopRunners();
+
+        let govStats = {};
         
-        users.forEach(u => {
-            if(u.region) {
-                let regKey = u.region.charAt(0).toUpperCase() + u.region.slice(1).toLowerCase();
-                if (!stats[regKey]) stats[regKey] = { totalDist: 0, players: 0 };
-                stats[regKey].totalDist += (u.totalDist || 0);
-                stats[regKey].players += 1;
+        // 1. الحسابات (القوة = المسافة ÷ العدد)
+        allUsersCache.forEach(user => {
+            if(user.region && user.monthDist > 0) { // استبعاد الخاملين
+                let gov = user.region;
+                if (!govStats[gov]) govStats[gov] = { name: gov, dist: 0, players: 0 };
+                govStats[gov].dist += user.monthDist;
+                govStats[gov].players += 1;
             }
         });
 
-        const sorted = Object.keys(stats)
-            .map(key => ({ originalName: key, ...stats[key], avg: stats[key].totalDist / stats[key].players }))
-            .sort((a, b) => b.totalDist - a.totalDist);
+        let leagueData = Object.values(govStats)
+            .map(g => {
+                g.power = g.players > 0 ? (g.dist / g.players) : 0;
+                return g;
+            })
+            .sort((a, b) => b.power - a.power);
 
-        if (sorted.length === 0) { list.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280">لا توجد بيانات</div>'; return; }
-        
-        const maxVal = sorted[0].totalDist || 1; 
-        let html = '<div class="squad-list">';
-        
-        sorted.forEach((r, i) => {
-            const rank = i + 1;
-            const percent = (r.totalDist / maxVal) * 100;
-            const arabicName = REGION_AR[r.originalName] || r.originalName;
-            let rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : (rank === 3 ? 'rank-3' : ''));
-            let icon = rank === 1 ? '👑' : '';
+        if (leagueData.length === 0) { 
+            list.innerHTML = '<div style="text-align:center; padding:30px; opacity:0.5;">😴 الساحة هادئة.. ابدأ الجري لإشعال المنافسة!</div>'; 
+            return; 
+        }
+
+        const maxPower = leagueData[0].power || 1;
+        const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر", "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء", "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية", "Gharbia": "الغربية", "Beni Suef": "بني سويف", "Fayoum": "الفيوم", "Minya": "المنيا", "Assiut": "أسيوط", "Sohag": "سوهاج", "Qena": "قنا", "Matrouh": "مطروح", "Port Said": "بورسعيد", "Damietta": "دمياط", "Suez": "السويس", "Ismailia": "الإسماعيلية" };
+
+        // 2. بناء الواجهة (مقدمة اللعبة + الكروت)
+        let html = `
+        <div class="battle-tutorial">
+            <i class="ri-flashlight-fill" style="color:#f59e0b"></i>
+            <div>قوة المحافظة = <span>إجمالي المسافة</span> ÷ <span>عدد المحاربين</span></div>
+        </div>
+        <div class="squad-list">`;
+
+        leagueData.forEach((gov, index) => {
+            const rank = index + 1;
+            const percent = Math.min((gov.power / maxPower) * 100, 100);
+            const arabicName = REGION_AR[gov.name] || gov.name;
+            
+            // ألوان الرتب
+            let color = 'var(--primary)'; // أخضر للباقي
+            let rankBadge = `<span style="font-size:12px; color:#6b7280">#${rank}</span>`;
+            
+            if (rank === 1) { color = '#f59e0b'; rankBadge = '👑'; } // ذهبي
+            else if (rank === 2) { color = '#9ca3af'; rankBadge = '🥈'; } // فضي
+            else if (rank === 3) { color = '#cd7f32'; rankBadge = '🥉'; } // برونزي
+
+            // تأخير الأنيميشن لكل كارت (Stagger Effect)
+            const animDelay = index * 0.1; 
 
             html += `
-            <div class="squad-row ${rankClass}">
-                <div class="squad-bg-bar" style="width:${percent}%"></div>
-                <div class="squad-header">
+            <div class="gov-game-card" style="animation-delay:${animDelay}s; border-right: 4px solid ${color};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div class="squad-rank">${rank}</div>
-                        <div class="squad-name-box"><h4>${icon} ${arabicName}</h4></div>
+                        <div style="font-size:22px; width:30px; text-align:center;">${rankBadge}</div>
+                        <div>
+                            <div style="font-size:15px; font-weight:bold; color:#fff;">${arabicName}</div>
+                            <div style="display:flex; gap:5px; margin-top:4px;">
+                                <div class="stat-pill"><i class="ri-user-3-line"></i> ${gov.players}</div>
+                                <div class="stat-pill"><i class="ri-route-line"></i> ${gov.dist.toFixed(0)}</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="squad-total-badge">${r.totalDist.toFixed(0)} كم</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:18px; font-weight:900; color:${color}; text-shadow:0 0 10px rgba(0,0,0,0.5);">${gov.power.toFixed(1)}</div>
+                        <div style="font-size:9px; color:#9ca3af; text-transform:uppercase;">Power</div>
+                    </div>
                 </div>
-                <div class="squad-stats-row">
-                    <div class="stat-item"><i class="ri-user-3-line"></i> ${r.players} لاعب</div>
-                    <div style="width:1px; height:10px; background:#4b5563;"></div>
-                    <div class="stat-item"><i class="ri-speed-line"></i> القوة: ${r.avg.toFixed(1)}</div>
+
+                <div class="power-track">
+                    <div class="power-fill" id="bar-${index}" style="background:${color}; width:0%"></div>
                 </div>
             </div>`;
         });
-        list.innerHTML = html + '</div>';
+
+        html += '</div>';
+        list.innerHTML = html;
+
+        // 3. تفعيل أنيميشن امتلاء الأشرطة (بعد رسم الكروت)
+        setTimeout(() => {
+            leagueData.forEach((gov, index) => {
+                const bar = document.getElementById(`bar-${index}`);
+                if (bar) {
+                    const percent = Math.min((gov.power / maxPower) * 100, 100);
+                    bar.style.width = `${percent}%`;
+                }
+            });
+        }, 100); // تأخير بسيط جداً ليسمح للمتصفح برسم العنصر أولاً
+
     } catch (e) { 
         console.error(e);
-        list.innerHTML = '<div style="text-align:center; color:red">خطأ في التحميل</div>'; 
     }
 }
-
-// ==================== 7. Feed & Social ====================
-async function toggleLike(pid, postOwnerId) {
-    if(!currentUser || isLiking) return;
-    const btn = event.currentTarget; 
-    const icon = btn.querySelector('i');
-    const countSpan = btn.querySelector('.feed-compact-count');
-    const isCurrentlyLiked = icon.classList.contains('ri-heart-fill');
-    
-    // Optimistic UI
-    if(isCurrentlyLiked) {
-        icon.classList.replace('ri-heart-fill', 'ri-heart-line');
-        btn.classList.remove('liked');
-        let c = parseInt(countSpan.innerText || 0);
-        countSpan.innerText = c > 1 ? c - 1 : '';
-    } else {
-        icon.classList.replace('ri-heart-line', 'ri-heart-fill');
-        btn.classList.add('liked');
-        let c = parseInt(countSpan.innerText || 0);
-        countSpan.innerText = c + 1;
-    }
-
-    isLiking = true;
-    try {
-        const ref = db.collection('activity_feed').doc(pid);
-        if(isCurrentlyLiked) {
-            await ref.update({ likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid) });
-        } else {
-            await ref.update({ likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid) });
-            if(postOwnerId !== currentUser.uid) sendNotification(postOwnerId, `${userData.name} شجعك ❤️`);
-        }
-    } catch(e) { console.error(e); } finally { isLiking = false; }
-}
-
 // ==================== عرض المنشورات (محدث لزر الصورة) ====================
 function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
@@ -3519,5 +3532,96 @@ async function renderWeeklySchedule() {
         `;
     }
 
+    container.innerHTML = html;
+}
+
+
+async function loadGovernorateLeague() {
+    const container = document.getElementById('admin-content-area'); // أو المكان المخصص للدوري
+    
+    // 1. تجميع البيانات
+    let govStats = {};
+    
+    // نستخدم الكاش الموجود لتسريع العملية
+    if (allUsersCache.length === 0) {
+        const snap = await db.collection('users').get();
+        snap.forEach(d => allUsersCache.push(d.data()));
+    }
+
+    allUsersCache.forEach(user => {
+        let gov = user.region || "غير محدد";
+        if (!govStats[gov]) govStats[gov] = { name: gov, dist: 0, players: 0 };
+        
+        govStats[gov].dist += (user.monthDist || 0); // ننافس على مسافة الشهر
+        govStats[gov].players += 1;
+    });
+
+    // 2. تحويلها لمصفوفة وترتيبها
+    let leagueData = Object.values(govStats).sort((a, b) => b.dist - a.dist);
+    
+    // حساب "المتوسط" لإنصاف المحافظات الصغيرة (اختياري)
+    // leagueData.sort((a, b) => (b.dist/b.players) - (a.dist/a.players));
+
+    // 3. بناء الواجهة (التصميم الجديد)
+    let html = `
+    <div style="padding: 20px;">
+        <div class="section-header">
+            <h3>🏆 دوري المحافظات</h3>
+            <p style="font-size:12px; color:#9ca3af;">المنافسة مشتعلة! شد حيلك وارفع علم محافظتك.</p>
+        </div>
+        <div class="gov-league-list">
+    `;
+
+    // الحصول على أعلى رقم (للمقياس)
+    const maxDist = leagueData.length > 0 ? leagueData[0].dist : 1;
+
+    leagueData.forEach((gov, index) => {
+        if (gov.dist === 0) return; // إخفاء المحافظات الصفرية
+
+        const rank = index + 1;
+        const percent = Math.min((gov.dist / maxDist) * 100, 100);
+        
+        // ألوان المراكز الأولى
+        let color = 'var(--primary)';
+        let badge = `<span class="gov-rank">#${rank}</span>`;
+        let glow = '';
+
+        if (rank === 1) { 
+            color = '#f59e0b'; // ذهبي
+            badge = '👑'; 
+            glow = 'box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); border:1px solid rgba(245, 158, 11, 0.5);';
+        } else if (rank === 2) {
+            color = '#9ca3af'; // فضي
+            badge = '🥈';
+        } else if (rank === 3) {
+            color = '#cd7f32'; // برونزي
+            badge = '🥉';
+        }
+
+        html += `
+        <div class="gov-card" style="margin-bottom: 12px; background:var(--bg-card); padding:15px; border-radius:12px; position:relative; overflow:hidden; ${glow}">
+            
+            <div style="position:absolute; top:0; left:0; height:100%; width:${percent}%; background:${color}; opacity:0.1; z-index:0;"></div>
+            
+            <div style="position:relative; z-index:1; display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="font-size:20px; font-weight:bold; width:30px; text-align:center;">${badge}</div>
+                    <div>
+                        <div style="font-size:16px; font-weight:bold; color:#fff;">${gov.name}</div>
+                        <div style="font-size:11px; color:#9ca3af;">${gov.players} لاعب نشط</div>
+                    </div>
+                </div>
+                
+                <div style="text-align:left;">
+                    <div style="font-size:18px; font-weight:900; color:${color};">${gov.dist.toFixed(1)}</div>
+                    <div style="font-size:10px; color:#9ca3af;">كم هذا الشهر</div>
+                </div>
+            </div>
+        </div>`;
+    });
+
+    html += `</div></div>`;
+    
+    // إذا كنت تعرض هذا في صفحة الأدمن أو صفحة مخصصة
     container.innerHTML = html;
 }
