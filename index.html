@@ -366,8 +366,13 @@
                             </div>
                         </div>
                         
-                        <button class="btn btn-primary" onclick="createGeniusChallenge()">إطلاق التحدي 🚀</button>
-                    </div>
+<div style="display:flex; gap:10px; margin-top:15px; align-items:center;">
+    <button id="btn-create-challenge" class="btn btn-primary" onclick="createGeniusChallenge()" style="flex:1;">إطلاق التحدي 🚀</button>
+    
+    <button id="btn-cancel-edit" class="btn btn-text" onclick="cancelEditMode()" style="display:none; color:#ef4444; border:1px solid #ef4444; border-radius:8px; padding:10px;">
+        إلغاء ❌
+    </button>
+</div>                    </div>
 
                     <div style="margin-top:30px;">
                         <h4 style="color:#fff; font-size:14px; margin-bottom:10px;">التحديات النشطة حالياً</h4>

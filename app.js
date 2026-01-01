@@ -104,15 +104,23 @@ function showToast(message, type = 'success') {
 // ==================== V1.4 Admin Logic ====================
 
 function switchAdminTab(tabName) {
-    // 1. تحديث أزرار التبويب
-    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-    event.currentTarget.classList.add('active');
+    // 1. تحديث أزرار التبويب (إزالة التنشيط من الكل)
+    const tabs = document.querySelectorAll('.admin-tab');
+    tabs.forEach(t => t.classList.remove('active'));
 
-    // 2. تحديث المحتوى
+    // 2. تنشيط الزر الصحيح يدوياً بناءً على الاسم
+    // (الترتيب: 0:overview, 1:inspector, 2:studio, 3:users)
+    if (tabName === 'overview' && tabs[0]) tabs[0].classList.add('active');
+    if (tabName === 'inspector' && tabs[1]) tabs[1].classList.add('active');
+    if (tabName === 'studio' && tabs[2]) tabs[2].classList.add('active');
+    if (tabName === 'users' && tabs[3]) tabs[3].classList.add('active');
+
+    // 3. تحديث المحتوى
     document.querySelectorAll('.admin-content-section').forEach(s => s.classList.remove('active'));
-    document.getElementById('admin-' + tabName).classList.add('active');
+    const content = document.getElementById('admin-' + tabName);
+    if(content) content.classList.add('active');
 
-    // 3. تحميل البيانات حسب التبويب (Lazy Loading)
+    // 4. تحميل البيانات حسب التبويب
     if(tabName === 'overview') loadAdminStats();
     if(tabName === 'inspector') loadAdminRuns();
     if(tabName === 'studio') loadAdminChallengesList();
@@ -249,28 +257,7 @@ function loadAdminRuns() {
     });
 }
 
-function loadAdminChallengesList() {
-    const list = document.getElementById('admin-active-challenges-list');
-    if(!list) return;
 
-    db.collection('challenges').where('active', '==', true).get().then(snap => {
-        let html = '';
-        snap.forEach(doc => {
-            const ch = doc.data();
-            html += `
-            <div class="active-ch-row">
-                <div>
-                    <strong style="display:block; font-size:13px; color:#fff;">${ch.title}</strong>
-                    <span style="font-size:10px; color:#9ca3af;">${ch.type} • ${ch.target}</span>
-                </div>
-                <button onclick="deleteChallenge('${doc.id}')" style="background:rgba(239,68,68,0.1); color:#ef4444; border:none; padding:5px 10px; border-radius:6px; cursor:pointer;">
-                    <i class="ri-delete-bin-line"></i>
-                </button>
-            </div>`;
-        });
-        list.innerHTML = html || '<div style="text-align:center; font-size:11px;">لا توجد تحديات نشطة</div>';
-    });
-}
 // ==================== 1. Authentication ====================
 
 function toggleAuthMode() {
@@ -399,8 +386,19 @@ function initApp() {
 // ==================== 3. UI Updates & Profile ====================
 function updateUI() {
     try {
+        // --- تعديل الاسم (الأول + الثاني) ---
+        const fullName = userData.name || "Runner";
+        const nameParts = fullName.split(' '); // تقسيم الاسم لمصفوفة كلمات
+        let displayName = nameParts[0]; // الاسم الأول
+        
+        // لو فيه اسم تاني، نضيفه
+        if (nameParts.length > 1) {
+            displayName += " " + nameParts[1];
+        }
+        
         const headerName = document.getElementById('headerName');
-        if (headerName) headerName.innerText = userData.name || "Runner";
+        if (headerName) headerName.innerText = displayName;
+        // ------------------------------------
 
         // Dashboard Animations (V2.0)
         const mDistEl = document.getElementById('monthDist');
@@ -1297,6 +1295,41 @@ function viewUserProfile(targetUid) {
     document.getElementById('view-total-runs').innerText = user.totalRuns || 0;
 
     document.getElementById('modal-view-user').style.display = 'flex';
+    // ... (داخل viewUserProfile) ...
+
+    // 🔥 عرض البادجات في بروفايل العضو (ميزة جديدة)
+    const badgesContainer = document.createElement('div');
+    badgesContainer.style.cssText = "margin-top:15px; display:flex; gap:5px; justify-content:center; flex-wrap:wrap;";
+    
+    if (user.badges && user.badges.length > 0) {
+        user.badges.forEach(bId => {
+            const badgeConfig = BADGES_CONFIG.find(x => x.id === bId);
+            if(badgeConfig) {
+                // لو أنا أدمن، أضيف زر الحذف عند الضغط
+                const action = userData.isAdmin ? `onclick="adminRevokeBadge('${user.uid}', '${bId}')"` : '';
+                const cursor = userData.isAdmin ? 'cursor:pointer; border:1px dashed #ef4444;' : '';
+                
+                badgesContainer.innerHTML += `
+                    <div title="${userData.isAdmin ? 'اضغط للحذف' : badgeConfig.name}" ${action} 
+                         style="background:rgba(255,255,255,0.1); padding:5px; border-radius:8px; font-size:16px; ${cursor}">
+                        ${badgeConfig.icon}
+                    </div>
+                `;
+            }
+        });
+    } else {
+        badgesContainer.innerHTML = '<span style="font-size:10px; color:#6b7280;">لا توجد إنجازات</span>';
+    }
+
+    // تنظيف أي حاوية بادجات قديمة وإضافة الجديدة
+    const existingBadges = document.getElementById('view-user-badges');
+    if(existingBadges) existingBadges.remove();
+    
+    badgesContainer.id = 'view-user-badges';
+    // إضافة البادجات بعد الـ stats-grid
+    document.querySelector('#modal-view-user .stats-grid').after(badgesContainer);
+
+    // ... (باقي الكود)
 }
 
 const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر", "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء", "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية", "Gharbia": "الغربية", "Beni Suef": "بني سويف" };
@@ -1623,78 +1656,6 @@ async function adminForceDelete(feedId, userId, runDist) {
     }
 }
 
-// إنشاء تحدي ذكي V4.0 (يدعم القواعد المتقدمة)
-async function createGeniusChallenge() {
-    // البيانات الأساسية
-    const title = document.getElementById('adv-ch-title').value;
-    const type = document.getElementById('adv-ch-type').value;
-    const target = parseFloat(document.getElementById('adv-ch-target').value);
-    const days = parseInt(document.getElementById('adv-ch-days').value);
-    const startDateVal = document.getElementById('adv-ch-start').value;
-
-    // القواعد المتقدمة
-    const minDist = parseFloat(document.getElementById('rule-min-dist').value) || 0;
-    const startHour = document.getElementById('rule-time-start').value;
-    const endHour = document.getElementById('rule-time-end').value;
-
-    if(!title || !target || !days) return showToast("بيانات التحدي الأساسية ناقصة", "error");
-
-    const startDate = startDateVal ? new Date(startDateVal).toISOString() : new Date().toISOString();
-
-    let rules = {
-        minDistPerRun: minDist,
-        requireImg: document.getElementById('rule-require-img').checked
-    };
-    if (startHour !== "" && endHour !== "") {
-        rules.validHourStart = parseInt(startHour);
-        rules.validHourEnd = parseInt(endHour);
-    }
-
-    const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = "جاري المعالجة...";
-    btn.disabled = true;
-
-    try {
-        const challengeData = {
-            title: title,
-            type: type,
-            target: target,
-            durationDays: days,
-            startDate: startDate,
-            rules: rules
-        };
-
-        if (editingChallengeId) {
-            // 🔥 حالة التعديل
-            await db.collection('challenges').doc(editingChallengeId).update(challengeData);
-            showToast("تم تعديل التحدي بنجاح ✅", "success");
-            editingChallengeId = null; // تصفير الوضع
-            btn.style.background = "var(--primary)"; // العودة للون الأخضر
-        } else {
-            // 🔥 حالة الإنشاء الجديد
-            challengeData.active = true;
-            challengeData.participantsCount = 0;
-            challengeData.createdStr = new Date().toLocaleDateString('ar-EG');
-            
-            await db.collection('challenges').add(challengeData);
-            showToast("تم إطلاق التحدي بنجاح 🚀", "success");
-        }
-        
-        // تنظيف الحقول
-        document.getElementById('adv-ch-title').value = '';
-        document.getElementById('adv-ch-target').value = '';
-        document.getElementById('rules-content').style.display = 'none';
-        loadAdminChallengesList(); // تحديث القائمة فوراً
-        
-    } catch(e) {
-        showToast("خطأ في النظام", "error");
-        console.error(e);
-    } finally {
-        btn.innerText = "إطلاق التحدي 🚀";
-        btn.disabled = false;
-    }
-}
 
     // تغيير نصوص الواجهة حسب النوع
 function updateChallengeUI() {
@@ -1901,9 +1862,24 @@ function getSkeletonHTML(type) {
 // Notifications
 function loadNotifications() {
     const list = document.getElementById('notifications-list');
-    db.collection('users').doc(currentUser.uid).collection('notifications').orderBy('timestamp','desc').limit(10).get().then(snap => {
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+      .orderBy('timestamp','desc').limit(10).get().then(snap => {
         let html = '';
-        snap.forEach(d => { html += `<div class="notif-item"><div class="notif-content">${d.data().msg}</div></div>`; d.ref.update({read:true}); });
+        snap.forEach(d => { 
+            const msg = d.data().msg;
+            // التحقق هل الإشعار إداري؟
+            const isAdmin = msg.includes("إداري") || msg.includes("Admin") || msg.includes("تنبيه");
+            const specialClass = isAdmin ? 'admin-alert' : '';
+            const icon = isAdmin ? '📢' : (msg.includes('❤️') ? '❤️' : '🔔');
+
+            html += `
+            <div class="notif-item ${specialClass}">
+                <div class="notif-icon" style="${isAdmin ? 'background:rgba(239,68,68,0.2); color:#ef4444;' : ''}">${icon}</div>
+                <div class="notif-content">${msg}</div>
+            </div>`; 
+            
+            if(!d.data().read) d.ref.update({read:true}); 
+        });
         list.innerHTML = html || '<div style="padding:20px;text-align:center;">لا جديد</div>';
     });
 }
@@ -2808,57 +2784,180 @@ async function deleteChallenge(id) {
     }
 }
 
-// 3. دالة تعديل التحدي (لزر القلم)
-let editingChallengeId = null; // متغير عام
 
+// ==================== ENGINE: Challenge Studio V8.0 (Final) ====================
+
+// 1. تعريف المتغير العام (Global)
+var editingChallengeId = null; 
+
+// 2. دالة تهيئة التعديل (عند الضغط على القلم)
 async function editChallenge(id) {
-    // التأكد من أننا في وضع الأدمن
     if (!userData.isAdmin) return;
 
-    const doc = await db.collection('challenges').doc(id).get();
-    if (!doc.exists) return showToast("التحدي غير موجود", "error");
-    const ch = doc.data();
+    // تغيير نص الزر ليعرف المستخدم أن هناك عملية تحميل
+    const allEditBtns = document.querySelectorAll('.ri-pencil-line');
+    allEditBtns.forEach(icon => icon.parentElement.style.opacity = '0.5');
 
-    // 1. الانتقال لتاب "ستوديو التحديات" في الأدمن
-    switchView('admin');
-    switchAdminTab('studio');
-
-    // 2. ملء البيانات في الحقول
-    document.getElementById('adv-ch-title').value = ch.title;
-    document.getElementById('adv-ch-type').value = ch.type || 'distance';
-    document.getElementById('adv-ch-target').value = ch.target;
-    document.getElementById('adv-ch-days').value = ch.durationDays;
-    
-    // التعامل مع التاريخ
-    if(ch.startDate) {
-        const dateVal = ch.startDate.includes('T') ? ch.startDate.split('T')[0] : ch.startDate;
-        document.getElementById('adv-ch-start').value = dateVal;
-    }
-
-    // 3. ملء القواعد الخاصة
-    if (ch.rules) {
-        document.getElementById('rule-min-dist').value = ch.rules.minDistPerRun || '';
-        document.getElementById('rule-time-start').value = ch.rules.validHourStart || '';
-        document.getElementById('rule-time-end').value = ch.rules.validHourEnd || '';
-        document.getElementById('rule-require-img').checked = ch.rules.requireImg || false;
+    try {
+        // جلب البيانات
+        const doc = await db.collection('challenges').doc(id).get();
         
-        // فتح قائمة الشروط تلقائياً
-        const rulesContent = document.getElementById('rules-content');
-        if(rulesContent) rulesContent.style.display = 'block';
+        // إعادة الشفافية للأزرار
+        allEditBtns.forEach(icon => icon.parentElement.style.opacity = '1');
+
+        if (!doc.exists) return showToast("التحدي غير موجود", "error");
+        const ch = doc.data();
+
+        // 1. الانتقال للواجهة أولاً
+        switchView('admin');
+        
+        // 2. تفعيل تبويب الستوديو (سيقوم الكود الجديد بالتعامل معه دون أخطاء)
+        switchAdminTab('studio');
+
+        // 3. ملء البيانات في النموذج
+        document.getElementById('adv-ch-title').value = ch.title || '';
+        document.getElementById('adv-ch-type').value = ch.type || 'distance';
+        document.getElementById('adv-ch-target').value = ch.target || '';
+        document.getElementById('adv-ch-days').value = ch.durationDays || '';
+        
+        // معالجة التاريخ
+        if(ch.startDate) {
+            let dateVal = ch.startDate;
+            // لو التاريخ مخزن بصيغة ISO نأخذ الجزء الأول فقط
+            if(dateVal.includes('T')) dateVal = dateVal.split('T')[0];
+            document.getElementById('adv-ch-start').value = dateVal;
+        }
+
+        // معالجة القواعد المتقدمة
+        if (ch.rules) {
+            document.getElementById('rule-min-dist').value = ch.rules.minDistPerRun || '';
+            document.getElementById('rule-time-start').value = (ch.rules.validHourStart !== undefined) ? ch.rules.validHourStart : '';
+            document.getElementById('rule-time-end').value = (ch.rules.validHourEnd !== undefined) ? ch.rules.validHourEnd : '';
+            document.getElementById('rule-require-img').checked = ch.rules.requireImg || false;
+            
+            // فتح قائمة القواعد إذا كان هناك بيانات
+            const rulesContent = document.getElementById('rules-content');
+            rulesContent.style.display = 'block';
+        }
+
+        // تحديث واجهة الإدخال حسب النوع
+        updateChallengeUI();
+
+        // 4. تفعيل وضع التعديل (تغيير أزرار الحفظ)
+        editingChallengeId = id; // تخزين الآيدي في المتغير العام
+        
+        const submitBtn = document.getElementById('btn-create-challenge');
+        const cancelBtn = document.getElementById('btn-cancel-edit');
+        
+        if(submitBtn) {
+            submitBtn.innerHTML = `حفظ التغييرات 💾`;
+            submitBtn.style.background = "#f59e0b"; // لون برتقالي للتعديل
+            submitBtn.style.color = "#000";
+        }
+        
+        if(cancelBtn) {
+            cancelBtn.style.display = 'flex'; // إظهار زر الإلغاء
+        }
+
+        // التمرير لأعلى النموذج
+        document.getElementById('admin-studio').scrollIntoView({ behavior: 'smooth' });
+        showToast(`جاري تعديل: ${ch.title}`, "success");
+
+    } catch (e) {
+        console.error(e);
+        showToast("حدث خطأ أثناء تحميل التحدي", "error");
+    }
+}
+
+
+// 4. دالة الحفظ الذكية (تميز بين الإنشاء والتعديل)
+async function createGeniusChallenge() {
+    const title = document.getElementById('adv-ch-title').value;
+    const type = document.getElementById('adv-ch-type').value;
+    const target = parseFloat(document.getElementById('adv-ch-target').value);
+    const days = parseInt(document.getElementById('adv-ch-days').value);
+    const startDateVal = document.getElementById('adv-ch-start').value;
+
+    if(!title || !target || !days) return showToast("البيانات ناقصة", "error");
+
+    const startDate = startDateVal ? new Date(startDateVal).toISOString() : new Date().toISOString();
+
+    let rules = {
+        minDistPerRun: parseFloat(document.getElementById('rule-min-dist').value) || 0,
+        requireImg: document.getElementById('rule-require-img').checked
+    };
+    
+    const startHour = document.getElementById('rule-time-start').value;
+    const endHour = document.getElementById('rule-time-end').value;
+    if (startHour !== "" && endHour !== "") {
+        rules.validHourStart = parseInt(startHour);
+        rules.validHourEnd = parseInt(endHour);
     }
 
-    // 4. تغيير حالة الزر إلى "حفظ"
-    editingChallengeId = id;
-    const submitBtn = document.querySelector('#admin-studio .btn-primary');
-    if(submitBtn) {
-        submitBtn.innerText = "حفظ التعديلات 💾";
-        submitBtn.style.background = "#f59e0b"; // برتقالي
+    const btn = document.getElementById('btn-create-challenge');
+    btn.innerText = "جاري المعالجة...";
+    btn.disabled = true;
+
+    try {
+        const challengeData = {
+            title, type, target, durationDays: days, startDate, rules
+        };
+
+        if (editingChallengeId) {
+            // 🔥 مسار التعديل
+            await db.collection('challenges').doc(editingChallengeId).update(challengeData);
+            showToast("تم حفظ التعديلات ✅", "success");
+            cancelEditMode(); 
+        } else {
+            // 🔥 مسار الإنشاء الجديد
+            challengeData.active = true;
+            challengeData.participantsCount = 0;
+            challengeData.createdStr = new Date().toLocaleDateString('ar-EG');
+            await db.collection('challenges').add(challengeData);
+            showToast("تم إطلاق التحدي 🚀", "success");
+            cancelEditMode(); 
+        }
+        
+        loadAdminChallengesList(); 
+        if(typeof renderChallenges === 'function') renderChallenges('all');
+        
+    } catch(e) {
+        console.error(e);
+        showToast("حدث خطأ", "error");
+    } finally {
+        btn.disabled = false;
+        if (editingChallengeId) btn.innerHTML = "حفظ التغييرات 💾";
+        else btn.innerHTML = "إطلاق التحدي 🚀";
     }
-    
-    // التمرير للأعلى
-    document.getElementById('admin-studio').scrollIntoView({ behavior: 'smooth' });
-    updateChallengeUI();
-    showToast("وضع التعديل: قم بالتغيير واضغط حفظ", "success");
+}
+
+// 5. دالة عرض القائمة (لضمان وجود زر التعديل)
+function loadAdminChallengesList() {
+    const list = document.getElementById('admin-active-challenges-list');
+    if(!list) return;
+
+    db.collection('challenges').where('active', '==', true).get().then(snap => {
+        let html = '';
+        snap.forEach(doc => {
+            const ch = doc.data();
+            html += `
+            <div class="active-ch-row" style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:5px; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <strong style="display:block; font-size:13px; color:#fff;">${ch.title}</strong>
+                    <span style="font-size:10px; color:#9ca3af;">${ch.type === 'speed' ? '⚡ سرعة' : '🛣️ مسافة'} • ${ch.target}</span>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button onclick="editChallenge('${doc.id}')" style="background:rgba(245, 158, 11, 0.15); color:#f59e0b; border:1px solid rgba(245, 158, 11, 0.3); padding:6px; border-radius:6px; cursor:pointer;">
+                        <i class="ri-pencil-line"></i>
+                    </button>
+                    <button onclick="deleteChallenge('${doc.id}')" style="background:rgba(239, 68, 68, 0.15); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.3); padding:6px; border-radius:6px; cursor:pointer;">
+                        <i class="ri-delete-bin-line"></i>
+                    </button>
+                </div>
+            </div>`;
+        });
+        list.innerHTML = html || '<div style="text-align:center; font-size:11px; color:#6b7280; padding:10px;">لا توجد تحديات نشطة</div>';
+    });
 }
 
 
@@ -3034,4 +3133,23 @@ function showRunAnalysis(dist, time, type) {
     
     // تشغيل صوت تشجيعي (اختياري)
     // playSuccessSound(); 
+}
+
+
+
+// دالة للأدمن فقط: سحب إنجاز
+async function adminRevokeBadge(targetUid, badgeId) {
+    if(!userData.isAdmin) return;
+    if(!confirm(`هل أنت متأكد من سحب إنجاز (${badgeId}) من هذا العضو؟`)) return;
+
+    try {
+        await db.collection('users').doc(targetUid).update({
+            badges: firebase.firestore.FieldValue.arrayRemove(badgeId)
+        });
+        showToast("تم سحب الإنجاز 🚫", "success");
+        // تحديث الواجهة فوراً
+        closeModal('modal-view-user');
+    } catch(e) {
+        showToast("خطأ في العملية", "error");
+    }
 }
