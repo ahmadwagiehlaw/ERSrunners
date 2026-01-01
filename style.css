@@ -1681,3 +1681,22 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     transform: scale(1.2);
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+
+/* تحسين كارت الكوتش ليتناسب مع الذكاء الجديد */
+.coach-card {
+    transition: transform 0.3s ease;
+}
+.coach-card:active {
+    transform: scale(0.98);
+}
+.coach-label {
+    font-size: 10px;
+    color: #bfdbfe;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 800; /* زيادة السمك */
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
