@@ -442,7 +442,7 @@ function updateUI() {
         }
 // ... باقي الكود كما هو ...
        // ... داخل updateUI ...
-        const profileAvatar = document.getElementById('profileAvatar');
+      const profileAvatar = document.getElementById('userMainAvatar'); // التصحيح
         
         if (profileAvatar) {
             // التحقق: هل توجد صورة مخصصة؟
@@ -670,78 +670,127 @@ const COACH_DB = {
     }
 };
 
+// ==================== V11.0 Coach & Action Plan Logic ====================
+
 function updateCoachAdvice() {
     const msgEl = document.getElementById('coach-message');
     const labelEl = document.querySelector('.coach-label');
+    const iconEl = document.querySelector('.coach-icon'); // تحديد العنصر للصورة
+    
     if(!msgEl) return;
 
-    // 1. قراءة بيانات اللاعب
+    // 1. البيانات الأساسية
     const name = (userData.name || "يا بطل").split(' ')[0];
-    const goal = userData.trainingGoal || "general"; // الهدف المختار
-    const userLevel = userData.manualLevel || calculateRank(userData.totalDist||0).class; // المستوى
+    const hasPlan = userData.activePlan && userData.activePlan.status === 'active';
     
-    // المتغيرات الزمنية
-    const today = new Date().getDay(); // 5 = الجمعة
-    const daysSinceLast = userData.lastRunDate ? Math.floor((new Date() - new Date(userData.lastRunDate)) / (86400000)) : 100;
-    const streak = userData.currentStreak || 0;
+    // إعداد النص الافتراضي
+    let title = "نصيحة الكوتش";
+    let message = `يا ${name}، الاستمرارية هي سر النجاح. لا تتوقف!`;
 
-    let title = "";
-    let message = "";
-    let icon = "🤖";
-
-    // === منطق القرار (Decision Tree) ===
-
-    // أ) حالات خاصة (كسل / نشاط زائد)
-    if (daysSinceLast > 5) {
-        title = "📢 نداء عاجل";
-        message = `كابتن ${name}! الفورمة بتنزل بعد 5 أيام راحة. 📉 انزل النهاردة حتى لو مشي سريع 20 دقيقة عشان ترجع.`;
-        icon = "🚨";
-    }
-    else if (streak >= 4) {
-        title = "🔥 أنت شعلة";
-        message = `ما شاء الله ${streak} أيام متواصلة! 🦁 نصيحتي: خد النهاردة راحة أو خفف الحمل جداً عشان تتجنب الإصابات.`;
-        icon = "🛌";
-    }
-    // ب) أيام التدريب الرئيسية (الجمعة / الثلاثاء / الأحد)
-    else if (today === 5 || today === 2 || today === 0) {
-        title = `تمرين اليوم (${getDayName(today)})`;
-        icon = "📅";
+    // 2. إذا كان هناك خطة نشطة، الكوتش يتابعها
+    if (hasPlan) {
+        const plan = userData.activePlan;
+        const startDate = new Date(plan.startDate);
+        const dayNum = Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24)) + 1;
+        const weekNum = Math.ceil(dayNum / 7);
         
-        // جلب التمرين المناسب لهدف اللاعب
-        const plan = COACH_DB.workouts[goal] || COACH_DB.workouts.general;
-        
-        if (today === 5) message = plan.long;      // الجمعة (طويل)
-        else if (today === 2) message = plan.intervals; // الثلاثاء (سرعة)
-        else if (today === 0) message = plan.tempo;     // الأحد (تمبو)
-        
-        // تخصيص المستوى (تعديل المسافة/التكرار في النص)
-        if (userLevel === 'beginner') message = message.replace('15-20', '5-8').replace('10 مرات', '4 مرات');
-        if (userLevel === 'elite') message = message.replace('15-20', '25-30').replace('10 مرات', '15 مرة');
-        
-        message = `<b>أهلاً كوتش ${name}</b> 👋<br>${message}`;
-    }
-    // ج) باقي الأيام (نصائح فنية + راحة)
-    else {
-        // نختار نصيحة عشوائية بناءً على الهدف
-        let tipsPool = COACH_DB.tips.form; // الأساسي للكل
-        if (goal === 'weight_loss') tipsPool = tipsPool.concat(COACH_DB.tips.weight_loss);
-        if (goal === 'speed' || goal === 'endurance') tipsPool = tipsPool.concat(COACH_DB.tips.speed);
-        
-        const randomTip = tipsPool[Math.floor(Math.random() * tipsPool.length)];
-        
-        title = "💡 معلومة فنية";
-        icon = "🧠";
-        message = `<b>يا ${name}، ركز في دي:</b><br>${randomTip}`;
+        title = `الأسبوع ${weekNum} - اليوم ${dayNum % 7 || 7}`;
+        message = `أهلاً كابتن ${name}! إحنا ماشيين على خطة الـ <b>${plan.target}</b>. <br>ركز في تمرين النهاردة ومستني أشوف العلامة الخضراء! ✅`;
     }
 
-    // عرض النتيجة
-    labelEl.innerHTML = `<span>${title}</span><span style="color:var(--primary);">${getGoalName(goal)}</span>`;
-    msgEl.innerHTML = message;
+    // 3. تجهيز الزر (إما إنشاء أو عرض)
+    let actionBtn = '';
     
-    const coachIconDiv = document.querySelector('.coach-icon');
-    if(coachIconDiv) coachIconDiv.innerText = icon;
+    if (hasPlan) {
+        // زر عرض الخطة
+        actionBtn = `
+        <button onclick="openMyPlan()" class="btn-plan-action">
+            <i class="ri-map-2-line"></i> عرض جدولي ومتابعة التنفيذ
+        </button>`;
+    } else {
+        // زر إنشاء الخطة
+        actionBtn = `
+        <button onclick="openPlanWizard()" class="btn-plan-action">
+            <i class="ri-magic-line"></i> صمم لي خطة تدريب
+        </button>`;
+    }
+
+    // 4. العرض
+    labelEl.innerText = title;
+    msgEl.innerHTML = message + actionBtn;
+    
+    // (اختياري) يمكنك وضع كود هنا لتغيير صورة الكوتش لو أردت تغييرها برمجياً
+    // iconEl.style.backgroundImage = "url('path/to/your/image.jpg')";
 }
 
+// --- دوال عرض الخطة (Action Plan) ---
+
+function openMyPlan() {
+    if (!userData.activePlan) return showToast("لا توجد خطة نشطة", "error");
+    
+    const container = document.getElementById('plan-timeline-container');
+    const metaInfo = document.getElementById('plan-meta-info');
+    const plan = userData.activePlan;
+    
+    // تحديث العنوان
+    metaInfo.innerText = `هدف: ${plan.target} • أيام: ${plan.daysPerWeek}/أسبوع • مستوى: ${plan.level}`;
+    
+    // توليد الجدول (Simulated Logic based on Inputs)
+    let html = '<div class="plan-timeline">';
+    const totalWeeks = plan.target === '5k' ? 8 : (plan.target === '10k' ? 12 : 16);
+    const startDate = new Date(plan.startDate);
+    const today = new Date();
+    
+    // سنقوم بتوليد 4 أسابيع فقط للعرض (أو الكل حسب الرغبة)
+    for (let w = 1; w <= totalWeeks; w++) {
+        html += `<div style="color:var(--primary); font-weight:bold; margin:15px 0 10px 0;">الأسبوع ${w}</div>`;
+        
+        for (let d = 1; d <= plan.daysPerWeek; d++) {
+            // حساب تاريخ هذا اليوم
+            const dayOffset = ((w - 1) * 7) + ((d - 1) * 2); // نضرب في 2 لتوزيع الأيام (مجرد محاكاة)
+            const taskDate = new Date(startDate);
+            taskDate.setDate(startDate.getDate() + dayOffset);
+            
+            const isToday = taskDate.toDateString() === today.toDateString();
+            const isPast = taskDate < today;
+            // التحقق من قاعدة البيانات هل تم إنجاز هذا اليوم أم لا (سنفترض التخزين لاحقاً)
+            // حالياً سنعتمد على التاريخ
+            
+            let statusClass = '';
+            if (isToday) statusClass = 'today';
+            else if (isPast) statusClass = 'done'; // نفترض أن الماضي تم إنجازه للمحاكاة
+
+            // نوع التمرين (محاكاة ذكية)
+            let workoutTitle = "جري مريح (Easy Run)";
+            let workoutDesc = "3 كم برتم هادئ جداً.";
+            
+            if (d === parseInt(plan.daysPerWeek)) { // آخر يوم في الأسبوع
+                workoutTitle = "جري طويل (Long Run)";
+                workoutDesc = `${5 + w} كم برتم المحادثة.`;
+            } else if (w % 2 === 0 && d === 1) {
+                workoutTitle = "سرعة (Intervals)";
+                workoutDesc = "400م سريع / 200م مشي (x6)";
+            }
+
+            html += `
+            <div class="plan-day-card ${statusClass}">
+                <div class="plan-day-header">
+                    <span>اليوم ${d}</span>
+                    <span>${taskDate.toLocaleDateString('ar-EG', {month:'short', day:'numeric'})}</span>
+                </div>
+                <div class="plan-day-title">${workoutTitle}</div>
+                <div class="plan-day-desc">${workoutDesc}</div>
+            </div>`;
+        }
+    }
+    html += '</div>';
+    
+    container.innerHTML = html;
+    document.getElementById('modal-view-plan').style.display = 'flex';
+}
+
+
+//========================================================
 // دوال مساعدة للعرض
 function getDayName(d) {
     const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
@@ -1913,6 +1962,7 @@ async function saveProfileChanges() {
         btn.disabled = false; 
     }
 }
+
 // Force Update
 async function forceUpdateApp() {
     if(!confirm("تحديث التطبيق الآن؟")) return;
@@ -2769,4 +2819,113 @@ async function editChallenge(id) {
     document.getElementById('admin-studio').scrollIntoView({ behavior: 'smooth' });
     updateChallengeUI();
     showToast("وضع التعديل: قم بالتغيير واضغط حفظ", "success");
+}
+
+
+// ==================== V10.0 AI Plan Generator Logic COACH ====================
+
+// فتح مودال الخطة
+function openPlanWizard() {
+    // تصفير الواجهة
+    document.getElementById('wizard-step-input').style.display = 'block';
+    document.getElementById('wizard-step-thinking').style.display = 'none';
+    document.getElementById('wizard-step-result').style.display = 'none';
+    
+    // تصفير الاختيارات
+    document.querySelectorAll('.sel-option').forEach(el => el.classList.remove('selected'));
+    document.getElementById('plan-days').value = '';
+    document.getElementById('plan-target').value = '';
+    
+    document.getElementById('modal-plan-wizard').style.display = 'flex';
+}
+
+// التعامل مع الاختيارات (Visual Selection)
+function selectPlanOption(el, type, value) {
+    // إزالة التحديد من أخواتها
+    el.parentElement.querySelectorAll('.sel-option').forEach(opt => opt.classList.remove('selected'));
+    // تحديد العنصر
+    el.classList.add('selected');
+    // حفظ القيمة
+    document.getElementById(`plan-${type}`).value = value;
+}
+
+// بدء عملية "التفكير" الوهمية
+function startPlanGeneration() {
+    const days = document.getElementById('plan-days').value;
+    const target = document.getElementById('plan-target').value;
+    
+    if(!days || !target) return showToast("يرجى اختيار الأيام والهدف", "error");
+
+    // 1. الانتقال لشاشة التفكير
+    document.getElementById('wizard-step-input').style.display = 'none';
+    document.getElementById('wizard-step-thinking').style.display = 'block';
+
+    const thinkingTexts = [
+        "جاري تحليل مستوى لياقتك...",
+        "حساب أحمال التدريب الأسبوعية...",
+        "توزيع أيام الراحة والاستشفاء...",
+        "تصميم جدول الجريات الطويلة...",
+        "ضبط اللمسات الأخيرة..."
+    ];
+    
+    const textEl = document.getElementById('thinking-text');
+    const barEl = document.getElementById('thinking-bar');
+    let step = 0;
+
+    // 2. تشغيل الأنيميشن (محاكاة الذكاء الاصطناعي)
+    const interval = setInterval(() => {
+        if(step >= thinkingTexts.length) {
+            clearInterval(interval);
+            showPlanResult(days, target); // إظهار النتيجة
+        } else {
+            textEl.innerText = thinkingTexts[step];
+            barEl.style.width = `${((step + 1) / thinkingTexts.length) * 100}%`;
+            step++;
+        }
+    }, 800); // كل خطوة تأخذ 0.8 ثانية
+}
+
+// إظهار النتيجة النهائية
+function showPlanResult(days, target) {
+    document.getElementById('wizard-step-thinking').style.display = 'none';
+    document.getElementById('wizard-step-result').style.display = 'block';
+    
+    // تحديث النصوص في النتيجة
+    document.getElementById('res-target').innerText = target === '21k' ? 'نصف ماراثون' : target;
+    
+    // هنا يمكننا مستقبلاً حفظ الخطة الحقيقية في المتغيرات
+    // let planDuration = target === '5k' ? 8 : 12; // أسابيع
+    // document.getElementById('res-weeks').innerText = planDuration + " أسابيع";
+}
+
+// اعتماد الخطة (الحفظ في الداتابيز)
+async function confirmPlan() {
+    const days = document.getElementById('plan-days').value;
+    const target = document.getElementById('plan-target').value;
+    const level = document.getElementById('plan-level').value;
+    
+    const btn = event.target;
+    btn.innerText = "جاري إنشاء الجدول...";
+    
+    try {
+        // حفظ تفضيلات الخطة في بروفايل المستخدم
+        await db.collection('users').doc(currentUser.uid).update({
+            activePlan: {
+                target: target,
+                daysPerWeek: days,
+                level: level,
+                startDate: new Date().toISOString(),
+                status: 'active'
+            }
+        });
+        
+        showToast("تم تفعيل الخطة بنجاح! 🚀", "success");
+        closeModal('modal-plan-wizard');
+        
+        // هنا يمكننا توجيه المستخدم لصفحة "خطتي" الجديدة مستقبلاً
+        // switchView('plan'); 
+
+    } catch(e) {
+        showToast("خطأ في الحفظ", "error");
+    }
 }

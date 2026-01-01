@@ -658,7 +658,7 @@
             <button class="btn btn-text" onclick="closeModal('modal-edit-profile')" style="margin-top:5px;">إلغاء</button>
         </div>
     </div>
-    
+
     <div id="modal-share" class="modal-overlay">
         <div class="modal-box" style="background: transparent; box-shadow: none; border: none; max-width: 100%;">
             <h3 style="color:#fff; text-align:center; margin-bottom:15px; text-shadow:0 2px 5px #000;">إنجازك جاهز للمشاركة 📸</h3>
@@ -710,6 +710,24 @@
             </div>
         </div>
     </div>
+
+
+<div id="modal-view-plan" class="modal-overlay">
+        <div class="modal-box" style="height: 85vh; display:flex; flex-direction:column;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
+                <div>
+                    <h3 style="margin:0; color:var(--primary);">خطة الطريق 🗺️</h3>
+                    <span id="plan-meta-info" style="font-size:10px; color:#9ca3af;">8 أسابيع • هدف 10 كم</span>
+                </div>
+                <button onclick="closeModal('modal-view-plan')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
+            </div>
+            
+            <div id="plan-timeline-container" style="flex:1; overflow-y:auto; padding-left:5px;">
+                <div style="text-align:center; padding:20px; color:#6b7280;">جاري تحميل الجدول...</div>
+            </div>
+        </div>
+    </div>
+    
 
     <div id="modal-view-user" class="modal-overlay">
         <div class="modal-box">
@@ -786,5 +804,79 @@
     </div>
 
 
+    <div id="modal-plan-wizard" class="modal-overlay">
+        <div class="modal-box" style="text-align:center; position:relative; overflow:hidden;">
+            
+            <div id="wizard-step-input">
+                <div class="wizard-icon">🤖</div>
+                <h3 style="margin-bottom:5px;">مصمم الخطط الذكي</h3>
+                <p style="font-size:12px; color:#9ca3af; margin-bottom:20px;">أجب على الأسئلة لأصمم لك جدولاً مخصصاً لا يقهر!</p>
+
+                <div class="form-group" style="text-align:right; gap:15px; margin-top:0;">
+                    
+                    <div class="input-wrap">
+                        <label style="color:#e5e7eb;">كم يوم تقدر تتمرن أسبوعياً؟</label>
+                        <div class="selection-grid">
+                            <div class="sel-option" onclick="selectPlanOption(this, 'days', 3)">3 أيام</div>
+                            <div class="sel-option" onclick="selectPlanOption(this, 'days', 4)">4 أيام</div>
+                            <div class="sel-option" onclick="selectPlanOption(this, 'days', 5)">5 أيام</div>
+                        </div>
+                        <input type="hidden" id="plan-days">
+                    </div>
+
+                    <div class="input-wrap">
+                        <label style="color:#e5e7eb;">ما هو هدفك القادم؟</label>
+                        <div class="selection-grid">
+                            <div class="sel-option" onclick="selectPlanOption(this, 'target', '5k')">5 كم</div>
+                            <div class="sel-option" onclick="selectPlanOption(this, 'target', '10k')">10 كم</div>
+                            <div class="sel-option" onclick="selectPlanOption(this, 'target', '21k')">21 كم</div>
+                        </div>
+                        <input type="hidden" id="plan-target">
+                    </div>
+
+                    <div class="input-wrap">
+                        <label style="color:#e5e7eb;">مستواك الحالي؟</label>
+                        <select id="plan-level" class="full-select" style="margin-bottom:0;">
+                            <option value="beginner">مبتدئ (عايز أكمل المسافة)</option>
+                            <option value="intermediate">متوسط (عايز أحسن رقمي)</option>
+                            <option value="advanced">محترف (عايز أكسر الرقم القياسي)</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <button class="btn btn-primary" onclick="startPlanGeneration()" style="margin-top:20px;">
+                    <i class="ri-magic-line"></i> ابدأ تصميم الخطة
+                </button>
+            </div>
+
+            <div id="wizard-step-thinking" style="display:none; padding:40px 0;">
+                <div class="brain-loader">
+                    <div class="brain-pulse"></div>
+                    <i class="ri-brain-line" style="font-size:50px; color:var(--primary); position:relative; z-index:2;"></i>
+                </div>
+                <h3 id="thinking-text" style="margin-top:20px;">جاري تحليل البيانات...</h3>
+                <div class="progress-line-box">
+                    <div class="progress-line-fill" id="thinking-bar"></div>
+                </div>
+            </div>
+
+            <div id="wizard-step-result" style="display:none;">
+                <div style="font-size:60px;">🎉</div>
+                <h3>تم تجهيز خطتك!</h3>
+                <p style="font-size:13px; color:#9ca3af; margin-bottom:20px;">
+                    تم إنشاء جدول تدريبي لمدة <span id="res-weeks" style="color:#fff; font-weight:bold;">8 أسابيع</span> 
+                    يستهدف <span id="res-target" style="color:var(--primary); font-weight:bold;">10 كم</span>.
+                </p>
+                <div class="plan-preview-card">
+                    <div class="pp-row"><span>📅 المدة:</span> <span>8 أسابيع</span></div>
+                    <div class="pp-row"><span>🔥 الشدة:</span> <span>تدريجية</span></div>
+                    <div class="pp-row"><span>🎯 التركيز:</span> <span>تحمل وسرعة</span></div>
+                </div>
+                <button class="btn btn-primary" onclick="confirmPlan()" style="margin-top:20px;">اعتماد الخطة والبدء 🚀</button>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
