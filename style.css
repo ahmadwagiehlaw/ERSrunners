@@ -2199,7 +2199,7 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     background: transparent;
     border: none;
     color: rgba(255, 255, 255, 0.4); /* لون باهت لعدم التشويش */
-    font-size: 11px;
+    font-size: 13px;
     margin-top: 10px;
     cursor: pointer;
     width: 100%;
@@ -2255,3 +2255,50 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .plan-day-card.run .d-icon { background: rgba(16, 185, 129, 0.1); color: #10b981; }
 .plan-day-card.long-run .d-icon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 .plan-day-card.interval .d-icon { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+/* ==================== تحسين كارت الإنجاز (Done Day) ==================== */
+
+/* الكارت نفسه عند الإنجاز */
+.plan-day-card.done {
+    opacity: 1 !important; /* إلغاء الشفافية القديمة */
+    background: linear-gradient(135deg, rgba(6, 78, 59, 0.4), rgba(16, 185, 129, 0.1)); /* خلفية خضراء عميقة */
+    border: 1px solid #10b981; /* حدود خضراء ساطعة */
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.15); /* توهج حول الكارت */
+    transform: scale(1.02); /* تكبير بسيط لبروزه */
+    z-index: 2;
+}
+
+/* الأيقونة داخل كارت الإنجاز */
+.plan-day-card.done .d-icon {
+    background: #10b981; /* خلفية صلبة */
+    color: #fff; /* أيقونة بيضاء */
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 10px #10b981; /* توهج للأيقونة */
+    font-size: 20px;
+}
+
+/* العنوان داخل كارت الإنجاز */
+.plan-day-card.done .d-info h4 {
+    color: #34d399; /* لون نص أخضر فاتح */
+    font-weight: 900;
+    text-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+/* الوصف داخل كارت الإنجاز */
+.plan-day-card.done .d-info p {
+    color: #d1fae5; /* أبيض مائل للخضار */
+    opacity: 0.9;
+}
+
+/* إضافة علامة "صح" عائمة في الخلفية كلمسة جمالية */
+.plan-day-card.done::after {
+    content: '✔';
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+    color: #10b981;
+    opacity: 0.1;
+    pointer-events: none;
+}
