@@ -618,34 +618,56 @@ function renderBadges() {
     grid.innerHTML = html;
 }
 
-// ==================== V7.0 Smart Coach Engine (The Brain) 🧠 ====================
+// ==================== V8.0 Pro Coach Engine (Training Planner) 🧠 ====================
+// ==================== V9.0 Mastermind Coach Engine 🧠 ====================
 
-const COACH_WISDOM = {
-    // 1. نصائح الفورم والتكنيك (عقلية المارثون)
-    form: [
-        "⚠️ ركز على استقامة ظهرك! الجري مش بس رجلين، الجري قوام مشدود.",
-        "👀 عينك على الأفق! لا تبص تحت رجلك، خليك كاشف الطريق عشان تتنفس صح.",
-        "💡 سر السرعة في الـ Cadence (عدد الخطوات). حاول تخلي خطواتك أسرع وأقصر.",
-        "🛑 كتفك مشدود؟ ارخِ كتافك وخلي ذراعك يتحرك بانسيابية جمب جسمك.",
-        "🦶 انزل على منتصف القدم (Mid-foot) مش الكعب. ده بيقلل الصدمات وبيحمي ركبك.",
-        "🏃‍♂️ وأنت بتجري، تخيل إن في حبل بيسحبك من صدرك لقدام. ده هو الـ Lean الصحيح."
-    ],
-    // 2. تنويع الأحمال (فلسفة التدريب)
-    workouts: [
-        "⛰️ اليوم يوم القوة! جرب تجري على مطلع (Hills) لتقوية العضلة الخلفية.",
-        "⚡ عايز سرعة؟ لازم تدخل فواصل (Intervals). جرب دقيقة سريع ودقيقة مشي 5 مرات.",
-        "⏱️ تمرين التمبو (Tempo) هو اللي بيبني تحملك للسباقات. اجري رتم ثابت غير مريح قليلاً لمدة 20 دقيقة.",
-        "🐢 الـ Long Run هو عصب المارثون. اجري مسافة طويلة ببطء شديد (Conversation Pace).",
-        "🛌 الراحة تمرين! عضلاتك بتتبني وأنت نايم مش وأنت بتجري. متهمش يوم الراحة."
-    ],
-    // 3. التحفيز النفسي
-    motivation: [
-        "🔥 الألم مؤقت، لكن فخر الوصول لخط النهاية بيدوم للأبد.",
-        "🥇 المنافسة الحقيقية هي مع نفسك بتاع امبارح. اسبق نفسك!",
-        "🧠 الجري 90% ذهني. لما رجلك تقولك قف، عقلك هو اللي بيكمل.",
-        "🌧️ الأبطال بيتصنعوا في الأيام الصعبة، مش في الجو الحلو. انزل اتمرن!",
-        "👟 أصعب خطوة هي خطوة الخروج من الباب. الباقي سهل."
-    ]
+const COACH_DB = {
+    // 1. جداول التدريب (مخصصة حسب الهدف)
+    workouts: {
+        weight_loss: {
+            long: "🏃‍♂️ مشي سريع أو هرولة 45 دقيقة (Zone 2) لحرق الدهون.",
+            intervals: "🔥 تمرين حرق: دقيقة جري سريع / دقيقتين مشي (كرر 8 مرات).",
+            tempo: "⏱️ 20 دقيقة هرولة متواصلة بدون توقف (ارفع النبض).",
+            rest: "🍏 اليوم راحة. ركز على أكلك، المطبخ أهم من الجري لخسارة الوزن!"
+        },
+        speed: {
+            long: "🐢 8 كم جري سهل جداً (Recovery Run) لتجهيز الرجل للسرعة.",
+            intervals: "⚡ تراك: 400م في 90 ثانية / راحة دقيقة (كرر 10 مرات).",
+            tempo: "🚀 30 دقيقة (Threshold Pace) - رتم سباق الـ 10 كم.",
+            rest: "🛌 راحة تامة. عضلات السرعة تحتاج استشفاء كامل."
+        },
+        endurance: {
+            long: "🛣️ Long Run: الموعد المقدس! 15-20 كم برتم محادثة.",
+            intervals: "⛰️ فارتليك (Fartlek): دقيقتين سريع / دقيقتين بطيء لمدة ساعة.",
+            tempo: "⏱️ 10 كم (Marathon Pace). عود جسمك على رتم السباق.",
+            rest: "🧘 إطالات (Stretching) أو يوجا خفيفة."
+        },
+        general: { // الافتراضي
+            long: "👟 جرية طويلة ممتعة (5-8 كم) في مكان جديد.",
+            intervals: "💨 5 سرعات (Sprints) لمدة 30 ثانية في نهاية الجرية.",
+            tempo: "⏱️ 3 كم رتم متوسط + 2 كم رتم سريع.",
+            rest: "🚶 مشي خفيف أو يوم راحة."
+        }
+    },
+
+    // 2. النصائح الفنية (مخصصة حسب الهدف)
+    tips: {
+        form: [
+            "⚠️ ظهرك مفرود! الجري بظهر محني بيقفل الرئة ويقلل الأكسجين.",
+            "🦶 انزل على وسط رجلك مش الكعب، ده بيقلل الصدمات على الركبة.",
+            "👀 عينك لقدام 10 متر، متبصش تحت رجلك عشان تفتح صدرك.",
+            "🛑 كتافك مشدودة؟ نزلهم وارخِ ايدك، الشد في الكتف بيضيع طاقة."
+        ],
+        weight_loss: [
+            "💧 اشرب مية قبل الجري بـ 10 دقايق، ده بيزود الحرق 30%.",
+            "🥗 الأكل بعد التمرين أهم من قبله. بروتين وسلطة عشان العضل يبني.",
+            "🏃‍♂️ الجري الصبح ع الريق بيحرق من مخزون الدهون المباشر."
+        ],
+        speed: [
+            "🚀 حرك دراعك أسرع، رجلك هتتحرك أسرع أوتوماتيك!",
+            "💡 زود الـ Cadence (عدد الخطوات). خطوات قصيرة وسريعة أفضل من خطوات واسعة."
+        ]
+    }
 };
 
 function updateCoachAdvice() {
@@ -653,79 +675,81 @@ function updateCoachAdvice() {
     const labelEl = document.querySelector('.coach-label');
     if(!msgEl) return;
 
-    // 1. تحليل بيانات اللاعب
-    const firstName = (userData.name || "يا بطل").split(' ')[0];
-    const totalRuns = userData.totalRuns || 0;
-    const lastRunStr = userData.lastRunDate || "";
+    // 1. قراءة بيانات اللاعب
+    const name = (userData.name || "يا بطل").split(' ')[0];
+    const goal = userData.trainingGoal || "general"; // الهدف المختار
+    const userLevel = userData.manualLevel || calculateRank(userData.totalDist||0).class; // المستوى
+    
+    // المتغيرات الزمنية
+    const today = new Date().getDay(); // 5 = الجمعة
+    const daysSinceLast = userData.lastRunDate ? Math.floor((new Date() - new Date(userData.lastRunDate)) / (86400000)) : 100;
     const streak = userData.currentStreak || 0;
-    
-    // حساب الأيام منذ آخر جرية
-    let daysSinceLast = 0;
-    if(lastRunStr) {
-        const diff = new Date() - new Date(lastRunStr);
-        daysSinceLast = Math.floor(diff / (1000 * 60 * 60 * 24));
-    }
 
-    let advice = "";
-    let moodIcon = "🤖"; // الافتراضي
+    let title = "";
+    let message = "";
+    let icon = "🤖";
 
-    // === المنطق الذكي (The Logic) ===
+    // === منطق القرار (Decision Tree) ===
 
-    // الحالة 1: لاعب جديد (Newbie)
-    if (totalRuns === 0) {
-        labelEl.innerText = "بداية الرحلة";
-        moodIcon = "🌱";
-        advice = `أهلاً بك يا كابتن ${firstName}! رحلة الألف ميل تبدأ بخطوة. نصيحتي: ابدأ بالمشي والجري الخفيف، ولا تستعجل السرعة.`;
+    // أ) حالات خاصة (كسل / نشاط زائد)
+    if (daysSinceLast > 5) {
+        title = "📢 نداء عاجل";
+        message = `كابتن ${name}! الفورمة بتنزل بعد 5 أيام راحة. 📉 انزل النهاردة حتى لو مشي سريع 20 دقيقة عشان ترجع.`;
+        icon = "🚨";
     }
-    // الحالة 2: لاعب كسلان (Inactive) - محتاج "قرصة ودن"
-    else if (daysSinceLast > 7) {
-        labelEl.innerText = "نداء عاجل!";
-        moodIcon = "📢";
-        advice = `يا ${firstName}، اللياقة بتقل بعد أسبوع راحة! 📉 انزل النهاردة حتى لو 10 دقايق مشي عشان ترجع الفورمة.`;
+    else if (streak >= 4) {
+        title = "🔥 أنت شعلة";
+        message = `ما شاء الله ${streak} أيام متواصلة! 🦁 نصيحتي: خد النهاردة راحة أو خفف الحمل جداً عشان تتجنب الإصابات.`;
+        icon = "🛌";
     }
-    else if (daysSinceLast > 3) {
-        labelEl.innerText = "تذكير";
-        moodIcon = "⏰";
-        advice = `وحشتنا يا ${firstName}! الاستمرارية أهم من السرعة. إيه رأيك في جرية خفيفة النهاردة؟`;
-    }
-    // الحالة 3: لاعب "مولعها" (On Streak)
-    else if (streak >= 3) {
-        labelEl.innerText = "أنت شعلة 🔥";
-        moodIcon = "🔥";
-        advice = `ما شاء الله ${streak} أيام ورا بعض! 💪 بس خلي بالك من الإصابات، لو حسيت بإرهاق خد يوم راحة أو خفف الحمل.`;
-    }
-    // الحالة 4: توجيه للتحديات (إذا لم يكن مشتركاً)
-    else if (activeChallengesCache && activeChallengesCache.length > 0 && !hasJoinedAnyChallenge()) {
-        labelEl.innerText = "تحدي جديد";
-        moodIcon = "🏆";
-        advice = `يا ${firstName}، مستواك يؤهلك للمنافسة! في تحديات جديدة نزلت، ادخل شوفها واشترك عشان مستواك يعلى.`;
-    }
-    // الحالة 5: نصيحة فنية/تدريبية (الوضع الافتراضي للمنتظمين)
-    else {
-        // نختار نصيحة عشوائية بناءً على "يوم الأسبوع" أو عشوائي
-        // هنا سنخلط بين التكنيك وأنواع التمارين
-        const category = Math.random() > 0.5 ? 'form' : 'workouts';
-        const tipsList = COACH_WISDOM[category];
-        const randomTip = tipsList[Math.floor(Math.random() * tipsList.length)];
+    // ب) أيام التدريب الرئيسية (الجمعة / الثلاثاء / الأحد)
+    else if (today === 5 || today === 2 || today === 0) {
+        title = `تمرين اليوم (${getDayName(today)})`;
+        icon = "📅";
         
-        labelEl.innerText = category === 'form' ? "نصيحة فنية 👟" : "فكرة تمرين 💡";
-        moodIcon = category === 'form' ? "🧠" : "⚡";
-        advice = `كابتن ${firstName}.. ${randomTip}`;
+        // جلب التمرين المناسب لهدف اللاعب
+        const plan = COACH_DB.workouts[goal] || COACH_DB.workouts.general;
+        
+        if (today === 5) message = plan.long;      // الجمعة (طويل)
+        else if (today === 2) message = plan.intervals; // الثلاثاء (سرعة)
+        else if (today === 0) message = plan.tempo;     // الأحد (تمبو)
+        
+        // تخصيص المستوى (تعديل المسافة/التكرار في النص)
+        if (userLevel === 'beginner') message = message.replace('15-20', '5-8').replace('10 مرات', '4 مرات');
+        if (userLevel === 'elite') message = message.replace('15-20', '25-30').replace('10 مرات', '15 مرة');
+        
+        message = `<b>أهلاً كوتش ${name}</b> 👋<br>${message}`;
+    }
+    // ج) باقي الأيام (نصائح فنية + راحة)
+    else {
+        // نختار نصيحة عشوائية بناءً على الهدف
+        let tipsPool = COACH_DB.tips.form; // الأساسي للكل
+        if (goal === 'weight_loss') tipsPool = tipsPool.concat(COACH_DB.tips.weight_loss);
+        if (goal === 'speed' || goal === 'endurance') tipsPool = tipsPool.concat(COACH_DB.tips.speed);
+        
+        const randomTip = tipsPool[Math.floor(Math.random() * tipsPool.length)];
+        
+        title = "💡 معلومة فنية";
+        icon = "🧠";
+        message = `<b>يا ${name}، ركز في دي:</b><br>${randomTip}`;
     }
 
-    // عرض الرسالة
-    msgEl.innerHTML = advice;
+    // عرض النتيجة
+    labelEl.innerHTML = `<span>${title}</span><span style="color:var(--primary);">${getGoalName(goal)}</span>`;
+    msgEl.innerHTML = message;
     
-    // تحديث أيقونة الكوتش حسب الحالة
     const coachIconDiv = document.querySelector('.coach-icon');
-    if(coachIconDiv) coachIconDiv.innerHTML = moodIcon;
+    if(coachIconDiv) coachIconDiv.innerText = icon;
 }
 
-// دالة مساعدة للتحقق من الانضمام للتحديات
-function hasJoinedAnyChallenge() {
-    // نفحص الكاش إذا كان المستخدم منضماً لأي تحدي نشط
-    if(!allChallengesCache) return false;
-    return allChallengesCache.some(ch => ch.isJoined);
+// دوال مساعدة للعرض
+function getDayName(d) {
+    const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+    return days[d];
+}
+function getGoalName(g) {
+    const names = { weight_loss: "حرق دهون", speed: "سرعة", endurance: "تحمل", general: "لياقة" };
+    return names[g] || "عام";
 }
 // ==================== 5. Activity Log Logic ====================
 // ==================== 1. فتح نافذة نشاط جديد (تنظيف كامل) ====================
@@ -1686,8 +1710,23 @@ function openLogModal() { document.getElementById('modal-log').style.display = '
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function openSettingsModal() { document.getElementById('modal-settings').style.display='flex'; }
 function showNotifications() { document.getElementById('modal-notifications').style.display='flex'; document.getElementById('notif-dot').classList.remove('active'); loadNotifications(); }
-function openEditProfile() { document.getElementById('modal-edit-profile').style.display='flex'; }
 
+// فتح نافذة التعديل مع ملء البيانات الحالية (V9.0)
+function openEditProfile() {
+    // 1. ملء البيانات الأساسية
+    document.getElementById('edit-name').value = userData.name || "";
+    document.getElementById('edit-region').value = userData.region || "Cairo";
+    document.getElementById('edit-gender').value = userData.gender || "male";
+    document.getElementById('edit-birthyear').value = userData.birthYear || "";
+
+    // 2. 🔥 ملء بيانات الكوتش (الجديدة)
+    // إذا لم يكن المستخدم قد اختار سابقاً، نضع القيم الافتراضية
+    document.getElementById('edit-goal').value = userData.trainingGoal || "general";
+    document.getElementById('edit-level').value = userData.manualLevel || "beginner";
+
+    // 3. عرض النافذة
+    document.getElementById('modal-edit-profile').style.display = 'flex';
+}
 function switchView(viewId) {
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
@@ -1820,25 +1859,60 @@ async function sendComment() {
 }
 
 // Profile Editing
+// حفظ بيانات البروفايل والكوتش (V9.0)
 async function saveProfileChanges() {
     const name = document.getElementById('edit-name').value.trim();
     const region = document.getElementById('edit-region').value;
     const gender = document.getElementById('edit-gender').value;
     const birthYear = document.getElementById('edit-birthyear').value;
+    
+    // 🔥 قراءة البيانات الجديدة للكوتش من القوائم
+    const goal = document.getElementById('edit-goal').value;
+    const level = document.getElementById('edit-level').value;
 
     if (name.length < 3) return showToast("الاسم قصير", "error");
-    const btn = event.target; btn.innerText = "جاري الحفظ..."; btn.disabled = true;
+    
+    const btn = event.target; 
+    btn.innerText = "جاري الحفظ..."; 
+    btn.disabled = true;
     
     try {
-        await db.collection('users').doc(currentUser.uid).update({ name, region, gender, birthYear });
-        userData.name = name; userData.region = region; userData.gender = gender; userData.birthYear = birthYear;
-        allUsersCache = []; 
-        updateUI(); closeModal('modal-edit-profile'); 
-        showToast("تم التحديث ✅", "success");
-    } catch (e) { showToast("خطأ", "error"); } 
-    finally { btn.innerText = "حفظ"; btn.disabled = false; }
-}
+        // إرسال التحديث لفايربيس
+        await db.collection('users').doc(currentUser.uid).update({ 
+            name: name,
+            region: region,
+            gender: gender,
+            birthYear: birthYear,
+            trainingGoal: goal, // حفظ الهدف
+            manualLevel: level  // حفظ المستوى المختار يدوياً
+        });
+        
+        // تحديث المتغيرات المحلية فوراً (عشان التغيير يظهر بدون ريفريش)
+        userData.name = name; 
+        userData.region = region; 
+        userData.gender = gender; 
+        userData.birthYear = birthYear;
+        userData.trainingGoal = goal;
+        userData.manualLevel = level;
 
+        allUsersCache = []; // تصفير الكاش لتحديث القوائم والترتيب
+        
+        updateUI(); // تحديث الواجهة
+        closeModal('modal-edit-profile'); 
+        showToast("تم تحديث البروفايل والخطة ✅", "success");
+        
+        // 🔥 تحديث رسالة الكوتش فوراً بناءً على الاختيار الجديد
+        if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
+
+    } catch (e) { 
+        console.error(e);
+        showToast("حدث خطأ أثناء الحفظ", "error"); 
+    } 
+    finally { 
+        btn.innerText = "حفظ التغييرات"; 
+        btn.disabled = false; 
+    }
+}
 // Force Update
 async function forceUpdateApp() {
     if(!confirm("تحديث التطبيق الآن؟")) return;
