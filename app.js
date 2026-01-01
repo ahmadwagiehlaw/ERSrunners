@@ -874,163 +874,97 @@ window.editRun = function(id, dist, time, type, link, img) {
 }
 
 
+// ================================================================= 
 
-async function submitRun() {
-    if (!navigator.onLine) return alert("لا يوجد اتصال بالإنترنت ⚠️");
+async function openChallengeDetails(chId) {
+    const modal = document.getElementById('modal-challenge-details');
+    const header = document.getElementById('ch-modal-header');
+    const list = document.getElementById('ch-leaderboard-list');
     
-    const btn = document.getElementById('save-run-btn');
-    const dist = parseFloat(document.getElementById('log-dist').value);
-    const time = parseFloat(document.getElementById('log-time').value);
-    const type = document.getElementById('log-type').value;
-    const link = document.getElementById('log-link').value;
-    const dateInput = document.getElementById('log-date').value;
+    if(!modal) return;
 
-    // (جديد) قراءة رابط الصورة من الحقل المخفي
-    const imgUrlInput = document.getElementById('uploaded-img-url');
-
-    if (!dist || !time) return showToast("البيانات ناقصة!", "error");
-    if (dist <= 0 || time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
-    if (dist > 100) return showToast("⛔ المسافة كبيرة جداً!", "error");
-    
-    const selectedDate = new Date(dateInput);
-    if (selectedDate > new Date()) return showToast("⛔ لا يمكن تسجيل نشاط في المستقبل!", "error");
-
-    if(btn) { btn.innerText = "جاري المعالجة..."; btn.disabled = true; }
+    modal.style.display = 'flex';
+    // تصفير المحتوى القديم وإظهار اللودر
+    header.innerHTML = '<div style="padding:20px; text-align:center; color:#9ca3af;">جاري تحميل التفاصيل...</div>';
+    list.innerHTML = '<div class="loader-placeholder">جاري سحب الأبطال...</div>';
+    document.getElementById('ch-modal-title').innerText = "التفاصيل";
 
     try {
-        const uid = currentUser.uid;
-        if (editingRunId) {
-            const distDiff = dist - editingOldDist; 
-            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({ dist, time, type, link });
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(distDiff),
-                monthDist: firebase.firestore.FieldValue.increment(distDiff)
-            }, { merge: true });
-            showToast("تم تعديل الجرية ✅", "success");
-            editingRunId = null;
-        } else {
-            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-            const streakInfo = updateStreakLogic(selectedDate);
-            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
-            let newMonthDist = (userData.monthDist || 0) + dist;
-            if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
+        // 1. جلب بيانات التحدي
+        const chDoc = await db.collection('challenges').doc(chId).get();
+        if (!chDoc.exists) {
+            header.innerHTML = "التحدي غير موجود";
+            return;
+        } 
+        const ch = chDoc.data();
+        
+        document.getElementById('ch-modal-title').innerText = ch.title;
+        
+        // تجهيز نصوص القواعد
+        let rulesText = [];
+        if(ch.rules?.requireImg) rulesText.push("📸 صورة مطلوبة");
+        if(ch.rules?.minDistPerRun) rulesText.push(`📏 أقل مسافة ${ch.rules.minDistPerRun} كم`);
+        if(rulesText.length === 0) rulesText.push("لا توجد شروط خاصة");
+        
+        // عرض الهيدر (الكارت العلوي)
+        header.innerHTML = `
+            <div style="font-size:14px; color:#fff; font-weight:bold;">
+                ${ch.type === 'speed' ? '⚡ تحدي سرعة' : (ch.type === 'frequency' ? '🗓️ تحدي التزام' : '🛣️ سباق مسافات')}
+            </div>
+            <div style="font-size:11px; color:#9ca3af; margin-top:5px;">${rulesText.join(" • ")}</div>
+            <div style="margin-top:10px; font-size:24px; font-weight:900; color:var(--primary);">
+                ${ch.target} <span style="font-size:12px;">${ch.type==='frequency'?'مرة':'كم'}</span>
+            </div>
+        `;
 
-            const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp };
-            await db.collection('users').doc(uid).collection('runs').add(runData);
-            await db.collection('activity_feed').add({
-                uid: uid, userName: userData.name, userRegion: userData.region,
-                ...runData, likes: []
-            });
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(dist),
-                totalRuns: firebase.firestore.FieldValue.increment(1),
-                monthDist: newMonthDist, 
-                lastMonthKey: currentMonthKey,
-                
-                // 🔥 بيانات الستريك الجديدة
-                currentStreak: streakInfo.streak,
-                lastRunDate: streakInfo.lastDate
+        // 2. جلب المتصدرين
+        const snap = await db.collection('challenges').doc(chId).collection('participants')
+            .orderBy('progress', 'desc').limit(50).get();
 
-            }, { merge: true });
-
+        let html = '';
+        if(snap.empty) { 
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">كن أول المنضمين!</div>'; 
+            return; 
+        }
+        
+        snap.forEach((doc, index) => {
+            const p = doc.data();
+            const rank = index + 1;
+            const isMe = (currentUser && doc.id === currentUser.uid);
             
-            // ... (داخل submitRun بعد حفظ الجرية في users و activity_feed)
+            // تصحيح الأرقام لمنع خطأ NaN
+            let safeProgress = Number(p.progress) || 0;
             
-            // 🔥 تحديث التحديات الذكية (مع تطبيق القواعد الصارمة)
-            const activeCh = await db.collection('challenges').where('active', '==', true).get();
-            const batch = db.batch();
-            
-            // حساب البيس للجرية الحالية
-            const currentPace = dist > 0 ? time / dist : 0; 
-            const runHour = selectedDate.getHours(); // ساعة الجرية
+            // حساب نسبة التقدم
+            let perc = 0;
+            if(ch.target > 0) perc = Math.min((safeProgress / ch.target) * 100, 100);
+            if(ch.type === 'speed' && p.completed) perc = 100;
 
-            activeCh.forEach(doc => {
-                const ch = doc.data();
-                const rules = ch.rules || {}; // استدعاء القواعد
+            html += `
+            <div class="leader-row" style="${isMe ? 'border:1px solid var(--primary); background:rgba(16,185,129,0.05);' : ''}">
+                <div class="rank-col" style="color:#fff; font-weight:bold;">#${rank}</div>
+                <div class="avatar-col" style="background-image:url('${p.photoUrl||''}'); background-size:cover;">
+                    ${p.photoUrl ? '' : (p.name ? p.name[0] : '?')}
+                </div>
+                <div class="info-col">
+                    <div class="name">${p.name} ${isMe?'(أنت)':''} ${p.completed?'✅':''}</div>
+                    <div class="mini-xp-track" style="margin-top:5px; height:4px; background:rgba(255,255,255,0.1);">
+                        <div class="mini-xp-fill" style="width:${perc}%; background:var(--accent);"></div>
+                    </div>
+                </div>
+                <div class="dist-col" style="font-size:12px;">
+                    ${safeProgress.toFixed(1)} <span style="font-size:9px; color:#6b7280;">${ch.type==='frequency'?'مرة':'كم'}</span>
+                </div>
+            </div>`;
+        });
+        
+        list.innerHTML = html;
 
-                // ⛔ 1. فحص قاعدة: إجبارية الصورة
-                if (rules.requireImg && !imgUrlInput.value) {
-                    console.log(`تم تجاهل التحدي ${ch.title}: لا توجد صورة`);
-                    return; // تخطي هذا التحدي لهذه الجرية
-                }
-
-                // ⛔ 2. فحص قاعدة: الحد الأدنى للمسافة
-                if (rules.minDistPerRun && dist < rules.minDistPerRun) {
-                    return; // الجرية أقصر من المطلوب لهذا التحدي
-                }
-
-                // ⛔ 3. فحص قاعدة: التوقيت (مثلاً تحدي الصباح)
-                if (typeof rules.validHourStart !== 'undefined' && typeof rules.validHourEnd !== 'undefined') {
-                    if (runHour < rules.validHourStart || runHour > rules.validHourEnd) {
-                        return; // الجرية خارج الوقت المسموح
-                    }
-                }
-
-                // ... (إذا نجحنا في عبور كل الفلاتر، نقوم بالحساب) ...
-                
-                const participantRef = doc.ref.collection('participants').doc(uid);
-                
-                let incrementValue = 0;
-                let isSpeedSuccess = false;
-
-                if (!ch.type || ch.type === 'distance') {
-                    incrementValue = dist;
-                } else if (ch.type === 'frequency') {
-                    incrementValue = 1;
-                } else if (ch.type === 'speed') {
-                    // في تحدي السرعة، لازم المسافة تكون مقبولة (مثلاً 1 كم) عشان الغش
-                    if (currentPace <= ch.target && dist >= 1) {
-                        isSpeedSuccess = true; 
-                    }
-                }
-
-                // الحفظ في الداتابيز
-                if (ch.type === 'speed') {
-                    if (isSpeedSuccess) {
-                        batch.set(participantRef, {
-                            progress: ch.target, lastUpdate: timestamp, name: userData.name, completed: true, photoUrl: userData.photoUrl || null
-                        }, { merge: true });
-                    }
-                } else {
-                    batch.set(participantRef, {
-                        progress: firebase.firestore.FieldValue.increment(incrementValue),
-                        lastUpdate: timestamp, name: userData.name, photoUrl: userData.photoUrl || null
-                    }, { merge: true });
-                }
-            });
-            await batch.commit();
-            // ... (باقي الكود)
-
-userData.totalDist += dist; 
-            userData.totalRuns += 1; 
-            userData.monthDist = newMonthDist;
-            
-            await checkNewBadges(dist, time, selectedDate);
-            
-            // ❌ احذف أو عطل السطر القديم: showToast("تم الحفظ بنجاح 🚀", "success");
-            
-            // ✅ استدعي الكوتش الجديد:
-            closeModal('modal-log'); // نغلق نافذة التسجيل الأول
-            
-            // نعرض الكوتش بتأخير بسيط جداً (عشان الـ Animation)
-            setTimeout(() => {
-                showRunAnalysis(dist, time, type);
-            }, 300);
-
-        } // إغلاق القوس الخاص بـ else (حالة التسجيل الجديد)        
-
-
-        closeModal('modal-log');
-        document.getElementById('save-run-btn').innerText = "حفظ النشاط";
-        allUsersCache = []; 
-        updateUI(); 
-        loadGlobalFeed(); 
-        loadActivityLog();
-
-    } catch (error) { showToast("خطأ: " + error.message, "error"); } 
-    finally { if(btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; } }
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; color:#ef4444;">حدث خطأ في تحميل البيانات</div>';
+    }
 }
-
 // ==================== 6. سجل الأنشطة (تصميم كروت احترافي V3.0) ====================
 // ==================== 6. سجل الأنشطة (New Badge Logic) ====================
 function loadActivityLog() {
@@ -1923,6 +1857,40 @@ async function sendComment() {
     if(currentPostOwner !== currentUser.uid) sendNotification(currentPostOwner, `علق ${userData.name}: "${text.substring(0, 20)}..."`);
 }
 
+
+// فتح مودال الهدف
+function setPersonalGoal() {
+    const currentGoal = userData.monthlyGoal || 0;
+    document.getElementById('input-monthly-goal').value = currentGoal > 0 ? currentGoal : '';
+    document.getElementById('modal-set-goal').style.display = 'flex';
+}
+
+// حفظ الهدف في قاعدة البيانات
+async function savePersonalGoal() {
+    const val = parseFloat(document.getElementById('input-monthly-goal').value);
+    if (!val || val <= 0) return showToast("أدخل رقماً صحيحاً", "error");
+
+    const btn = event.target;
+    btn.innerText = "...";
+    
+    try {
+        await db.collection('users').doc(currentUser.uid).update({
+            monthlyGoal: val
+        });
+        
+        userData.monthlyGoal = val;
+        updateUI(); // لتحديث الدائرة فوراً
+        updateGoalRing(); // تحديث الدائرة تحديداً
+        
+        closeModal('modal-set-goal');
+        showToast("تم تحديد الهدف! بالتوفيق 🔥", "success");
+    } catch(e) {
+        console.error(e);
+        showToast("حدث خطأ", "error");
+    } finally {
+        btn.innerText = "حفظ الهدف 🎯";
+    }
+}
 // Profile Editing
 // حفظ بيانات البروفايل والكوتش (V9.0)
 async function saveProfileChanges() {
@@ -2099,11 +2067,15 @@ function loadActiveChallenges() {
             // تجميع المصغرات للصفحة الرئيسية
             if (isJoined && mini) {
                 let perc = 0;
+                // حماية من القسمة على صفر
+                const safeTarget = ch.target > 0 ? ch.target : 1; 
+                
                 if (ch.type === 'speed') perc = completed ? 100 : 0;
-                else perc = Math.min((progress / ch.target) * 100, 100);
+                else perc = Math.min((progress / safeTarget) * 100, 100);
 
+                // 🔥 التعديل هنا: عند الضغط، نذهب لصفحة التحديات ونفتح تبويب التحديات النشطة
                 miniHtml += `
-                <div class="mini-challenge-card" style="border-left: 3px solid ${completed?'#10b981':'var(--accent)'}">
+                <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" style="cursor:pointer; border-left: 3px solid ${completed?'#10b981':'var(--accent)'}">
                     <div class="mini-ch-title">${ch.title}</div>
                     <div class="mini-ch-progress">
                         <div class="mini-ch-fill" style="width:${perc}%; background:${completed?'#10b981':'var(--primary)'}"></div>
@@ -2144,72 +2116,116 @@ async function openChallengeDetails(chId) {
     
     if(!modal) return;
 
+    // 1. فتح المودال وعرض لودر
     modal.style.display = 'flex';
-    list.innerHTML = '<div class="loader-placeholder">جاري سحب البيانات...</div>';
-    header.innerHTML = '';
+    list.innerHTML = '<div class="loader-placeholder">جاري سحب الأبطال...</div>';
+    header.innerHTML = ''; // تنظيف الهيدر مؤقتاً
 
-    // 1. جلب بيانات التحدي
-    const chDoc = await db.collection('challenges').doc(chId).get();
-    if (!chDoc.exists) return; 
-    const ch = chDoc.data();
-    
-    document.getElementById('ch-modal-title').innerText = ch.title;
-    
-    // عرض ملخص القواعد
-    let rulesText = "";
-    if(ch.rules?.requireImg) rulesText += "📸 صورة مطلوبة • ";
-    if(ch.rules?.minDistPerRun) rulesText += `📏 أقل مسافة ${ch.rules.minDistPerRun} كم • `;
-    
-    header.innerHTML = `
-        <div style="font-size:14px; color:#fff; font-weight:bold;">${ch.type === 'speed' ? 'تحدي سرعة ⚡' : (ch.type === 'frequency' ? 'تحدي التزام 🗓️' : 'سباق مسافات 🛣️')}</div>
-        <div style="font-size:11px; color:#9ca3af; margin-top:5px;">${rulesText || "قواعد عامة"}</div>
-        <div style="margin-top:10px; font-size:24px; font-weight:900; color:var(--primary);">${ch.target} <span style="font-size:12px;">${ch.type==='frequency'?'مرة':'كم'}</span></div>
-    `;
+    try {
+        // 2. جلب بيانات التحدي الأساسية
+        const chDoc = await db.collection('challenges').doc(chId).get();
+        if (!chDoc.exists) return showToast("التحدي غير موجود", "error");
+        
+        const ch = chDoc.data();
+        const target = parseFloat(ch.target) || 1; // لتجنب القسمة على صفر
+        document.getElementById('ch-modal-title').innerText = ch.title;
 
-    // 2. جلب المتصدرين
-    db.collection('challenges').doc(chId).collection('participants')
-        .orderBy('progress', 'desc').limit(50).get()
-        .then(snap => {
-            let html = '';
-            if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px;">كن أول المنضمين!</div>'; return; }
-            
-            // 🔥 الإصلاح هنا: استخدام snap.docs للحصول على الـ index (الترتيب) بشكل صحيح
-            snap.docs.forEach((doc, index) => {
-                const p = doc.data();
-                const rank = index + 1; // الآن سيعمل الترتيب (1، 2، 3) ولن يظهر NaN
-                const isMe = doc.id === currentUser.uid;
+        // 3. رسم كارت الهيدر الفخم (نفس الستايل الذهبي)
+        let typeIcon = ch.type === 'speed' ? '⚡' : '🛣️';
+        let typeText = ch.type === 'speed' ? 'تحدي سرعة' : 'سباق مسافات';
+        
+        header.innerHTML = `
+            <div style="text-align:center; width:100%;">
+                <div style="font-size:14px; color:#fff; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <span>${typeIcon}</span> ${typeText}
+                </div>
                 
-                // حماية الأرقام
-                let safeProgress = Number(p.progress);
-                if (isNaN(safeProgress)) safeProgress = 0;
+                <div style="font-size:11px; color:#9ca3af; margin-top:5px; display:flex; gap:10px; justify-content:center;">
+                    <span><i class="ri-flag-line"></i> هدف: ${ch.target} ${ch.type==='frequency'?'مرة':'كم'}</span>
+                    <span><i class="ri-time-line"></i> المدة: ${ch.durationDays || 30} يوم</span>
+                </div>
 
-                // حساب النسبة
-                let perc = 0;
-                if(ch.target > 0) perc = Math.min((safeProgress / ch.target) * 100, 100);
-                if(ch.type === 'speed' && p.completed) perc = 100;
+                <div style="margin-top:15px; font-size:32px; font-weight:900; color:var(--primary); text-shadow:0 0 20px rgba(16,185,129,0.3);">
+                    ${ch.target} <span style="font-size:14px; font-weight:normal;">كم</span>
+                </div>
+            </div>
+        `;
 
-                html += `
-                <div class="leader-row" style="${isMe ? 'border-color:var(--primary); background:rgba(16,185,129,0.05);' : ''}">
-                    <div class="rank-col" style="font-weight:bold; color:#fff; font-size:14px;">#${rank}</div>
-                    
-                    <div class="avatar-col" style="background-image:url('${p.photoUrl||''}'); background-size:cover;">${p.photoUrl?'':(p.name?p.name[0]:'?')}</div>
-                    
-                    <div class="info-col">
-                        <div class="name">${p.name} ${isMe?'(أنت)':''} ${p.completed?'✅':''}</div>
-                        <div class="mini-xp-track" style="margin-top:5px; height:4px;">
-                            <div class="mini-xp-fill" style="width:${perc}%;"></div>
-                        </div>
+        // 4. جلب وترتيب المشاركين (إصلاح الـ NaN)
+        const snap = await db.collection('challenges').doc(chId).collection('participants')
+            .orderBy('progress', 'desc').limit(50).get();
+
+        if (snap.empty) {
+            list.innerHTML = '<div style="text-align:center; padding:30px; color:#6b7280;">لا يوجد مشاركين بعد.<br>كن أنت الأول! 🚀</div>';
+            return;
+        }
+
+        let html = '';
+        snap.docs.forEach((doc, index) => {
+            const p = doc.data();
+            const rank = index + 1;
+            const isMe = (currentUser && doc.id === currentUser.uid);
+            
+            // 🔥🔥🔥 الإصلاح الجذري للـ NaN 🔥🔥🔥
+            // نحاول تحويل القيمة لرقم، ولو فشل نستخدم صفر
+            let safeProgress = parseFloat(p.progress);
+            if (isNaN(safeProgress)) safeProgress = 0;
+
+            // حساب النسبة المئوية
+            let percent = Math.min((safeProgress / target) * 100, 100);
+            if (ch.type === 'speed' && p.completed) percent = 100;
+
+            // تحديد شكل الأفاتار
+            let avatarHtml = '';
+            if (p.photoUrl) {
+                avatarHtml = `<div class="avatar-col" style="background-image:url('${p.photoUrl}'); background-size:cover; border:1px solid #444;"></div>`;
+            } else {
+                let initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
+                avatarHtml = `<div class="avatar-col" style="background:#374151; display:flex; align-items:center; justify-content:center; color:#fff;">${initial}</div>`;
+            }
+
+            // ستايل الصف (تمييز نفسي)
+            let rowStyle = isMe 
+                ? 'border:1px solid var(--primary); background:rgba(16,185,129,0.05);' 
+                : 'border-bottom:1px solid rgba(255,255,255,0.05);';
+
+            // تلوين المراكز الأولى
+            let rankBadge = `<span style="font-weight:bold; color:#9ca3af;">#${rank}</span>`;
+            if (rank === 1) rankBadge = '🥇';
+            if (rank === 2) rankBadge = '🥈';
+            if (rank === 3) rankBadge = '🥉';
+
+            html += `
+            <div class="leader-row" style="${rowStyle} padding:12px; border-radius:12px; margin-bottom:8px;">
+                <div class="rank-col" style="font-size:16px;">${rankBadge}</div>
+                ${avatarHtml}
+                
+                <div class="info-col">
+                    <div class="name" style="color:#fff; font-size:13px;">
+                        ${p.name || 'مستخدم'} ${isMe ? '<span style="color:var(--primary); font-size:10px;">(أنت)</span>' : ''}
                     </div>
                     
-                    <div class="dist-col" style="font-size:12px; text-align:left;">
-                        <span style="display:block; font-weight:bold; color:var(--accent);">${safeProgress.toFixed(1)}</span>
-                        <span style="font-size:9px; color:#6b7280;">${ch.type==='frequency'?'مرة':'كم'}</span>
+                    <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:5px; overflow:hidden;">
+                        <div style="width:${percent}%; height:100%; background:${p.completed ? '#10b981' : 'var(--accent)'};"></div>
                     </div>
-                </div>`;
-            });
-            list.innerHTML = html;
+                </div>
+
+                <div class="dist-col" style="text-align:left;">
+                    <span style="display:block; font-size:14px; font-weight:bold; color:#fff;">${safeProgress.toFixed(1)}</span>
+                    <span style="font-size:10px; color:#9ca3af;">${ch.type==='frequency'?'مرة':'كم'}</span>
+                </div>
+            </div>`;
         });
-}// ==================== Community Reporting System (V5.0) ====================
+
+        list.innerHTML = html;
+
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; color:#ef4444; padding:20px;">حدث خطأ في تحميل البيانات</div>';
+    }
+}
+
+// ==================== Community Reporting System (V5.0) ====================
 
 function openReportModal(feedId) {
     currentReportFeedId = feedId;
@@ -2652,68 +2668,129 @@ async function openChallengeDetails(chId) {
     if(!modal) return;
 
     modal.style.display = 'flex';
-    list.innerHTML = '<div class="loader-placeholder">جاري سحب البيانات...</div>';
-    header.innerHTML = '';
+    list.innerHTML = '<div class="loader-placeholder">جاري بناء المنصة...</div>';
+    header.innerHTML = ''; 
+    header.style.padding = '0'; // إزالة الحواف للتصميم الجديد
+    header.style.background = 'none';
+    header.style.border = 'none';
 
-    // 1. جلب بيانات التحدي
-    const chDoc = await db.collection('challenges').doc(chId).get();
-    if (!chDoc.exists) return; 
-    const ch = chDoc.data();
-    
-    document.getElementById('ch-modal-title').innerText = ch.title;
-    
-    // عرض ملخص القواعد
-    let rulesText = "";
-    if(ch.rules?.requireImg) rulesText += "📸 صورة مطلوبة • ";
-    if(ch.rules?.minDistPerRun) rulesText += `📏 أقل مسافة ${ch.rules.minDistPerRun} كم • `;
-    
-    header.innerHTML = `
-        <div style="font-size:14px; color:#fff; font-weight:bold;">${ch.type === 'speed' ? 'تحدي سرعة ⚡' : (ch.type === 'frequency' ? 'تحدي التزام 🗓️' : 'سباق مسافات 🛣️')}</div>
-        <div style="font-size:11px; color:#9ca3af; margin-top:5px;">${rulesText || "قواعد عامة"}</div>
-        <div style="margin-top:10px; font-size:24px; font-weight:900; color:var(--primary);">${ch.target} <span style="font-size:12px;">${ch.type==='frequency'?'مرة':'كم'}</span></div>
-    `;
+    try {
+        // 1. جلب بيانات التحدي
+        const chDoc = await db.collection('challenges').doc(chId).get();
+        if (!chDoc.exists) return showToast("التحدي غير موجود", "error");
+        
+        const ch = chDoc.data();
+        const target = parseFloat(ch.target) || 1; 
+        document.getElementById('ch-modal-title').innerText = ch.title;
 
-    // 2. جلب المتصدرين
-    db.collection('challenges').doc(chId).collection('participants')
-        .orderBy('progress', 'desc').limit(20).get()
-        .then(snap => {
-            let html = '';
-            if(snap.empty) { list.innerHTML = '<div style="text-align:center; padding:20px;">كن أول المنضمين!</div>'; return; }
-            
-            snap.forEach((doc, index) => {
-                const p = doc.data();
-                const rank = index + 1;
-                const isMe = doc.id === currentUser.uid;
-                
-                // 🔥🔥🔥 التصحيح هنا: تحويل إجباري لرقم، ولو فشل يبقى صفر 🔥🔥🔥
-                let safeProgress = Number(p.progress);
-                if (isNaN(safeProgress)) safeProgress = 0;
+        // 2. جلب بياناتي أنا في هذا التحدي (للعرض في الهيدر)
+        let myProgress = 0;
+        let amIJoined = false;
+        if(currentUser) {
+            const myEntry = await db.collection('challenges').doc(chId).collection('participants').doc(currentUser.uid).get();
+            if(myEntry.exists) {
+                amIJoined = true;
+                // 🔥 الفلتر القوي لعلاج NaN
+                let raw = myEntry.data().progress;
+                myProgress = (typeof raw === 'number' && !isNaN(raw)) ? raw : 0;
+            }
+        }
 
-                // حساب النسبة (مع حماية إضافية من القسمة على صفر)
-                let perc = 0;
-                if(ch.target > 0) {
-                    perc = Math.min((safeProgress / ch.target) * 100, 100);
-                }
-                
-                if(ch.type === 'speed' && p.completed) perc = 100;
+        // حساب النسبة للدائرة
+        let myPerc = Math.min((myProgress / target) * 100, 100);
+        const deg = (myPerc / 100) * 360;
 
-                html += `
-                <div class="leader-row" style="${isMe ? 'border-color:var(--primary); background:rgba(16,185,129,0.05);' : ''}">
-                    <div class="rank-col">${rank}</div>
-                    <div class="avatar-col" style="background-image:url('${p.photoUrl||''}'); background-size:cover;">${p.photoUrl?'':(p.name?p.name[0]:'?')}</div>
-                    <div class="info-col">
-                        <div class="name">${p.name} ${isMe?'(أنت)':''} ${p.completed?'✅':''}</div>
-                        <div class="mini-xp-track" style="margin-top:5px; height:4px;">
-                            <div class="mini-xp-fill" style="width:${perc}%;"></div>
-                        </div>
+        // 3. رسم الهيدر الثوري (الدائرة الكبيرة)
+        let headerHtml = `
+            <div class="rev-modal-header">
+                <div class="rev-progress-circle" style="--prog:${deg}deg; --primary:${ch.type==='speed'?'#ef4444':'#10b981'}">
+                    <div class="rev-progress-content">
+                        <span class="rev-val">${amIJoined ? myProgress.toFixed(1) : '0'}</span>
+                        <span class="rev-unit">${ch.type === 'frequency' ? 'مرات' : 'كم'}</span>
                     </div>
-                    <div class="dist-col" style="font-size:12px;">${safeProgress.toFixed(1)}</div>
-                </div>`;
-            });
-            list.innerHTML = html;
-        });
-}
+                </div>
+                <div style="color:#fff; font-weight:bold; font-size:14px;">
+                    ${amIJoined ? (myPerc >= 100 ? '🎉 التحدي مكتمل!' : '🔥 متكسلش يا بطل!') : 'انضم الآن للتحدي'}
+                </div>
+                <div style="font-size:11px; color:#9ca3af; margin-top:5px;">
+                    الهدف النهائي: ${ch.target} ${ch.type==='frequency'?'مرة':'كم'}
+                </div>
+        `;
+        
+        // إضافة زر الانضمام داخل الهيدر لو لم يكن مشتركاً
+        if(!amIJoined) {
+            headerHtml += `<button onclick="joinChallenge('${chId}')" class="btn btn-primary" style="margin-top:15px; padding:10px; font-size:12px;">قبول التحدي 🚀</button>`;
+        }
+        
+        headerHtml += `</div>`; // إغلاق الهيدر
+        header.innerHTML = headerHtml;
 
+
+        // 4. جلب وترتيب المشاركين (معالجة NaN لكل القائمة)
+        const snap = await db.collection('challenges').doc(chId).collection('participants')
+            .orderBy('progress', 'desc').limit(50).get();
+
+        if (snap.empty) {
+            list.innerHTML = '<div style="text-align:center; padding:30px; color:#6b7280;">كن أول بطل ينضم هنا! 🏆</div>';
+            return;
+        }
+
+        let listHtml = '<div class="rev-list">';
+        
+        snap.docs.forEach((doc, index) => {
+            const p = doc.data();
+            const rank = index + 1;
+            const isMe = (currentUser && doc.id === currentUser.uid);
+            
+            // 🔥 الفلتر القوي لعلاج NaN في القائمة
+            let safeProg = (typeof p.progress === 'number' && !isNaN(p.progress)) ? p.progress : 0;
+            
+            // تحديد الميدالية
+            let medal = `<span style="font-size:12px; font-weight:bold; color:#6b7280;">#${rank}</span>`;
+            let rankClass = '';
+            if(rank === 1) { medal = '🥇'; rankClass = 'rank-1'; }
+            if(rank === 2) { medal = '🥈'; rankClass = 'rank-2'; }
+            if(rank === 3) { medal = '🥉'; rankClass = 'rank-3'; }
+
+            // لون البار حسب الترتيب
+            let barColor = rank === 1 ? '#f59e0b' : (rank === 2 ? '#9ca3af' : (rank === 3 ? '#cd7f32' : 'var(--primary)'));
+            if(ch.type === 'speed') barColor = '#ef4444';
+
+            // نسبة البار
+            let barPerc = Math.min((safeProg / target) * 100, 100);
+
+            // الصورة
+            let avatarStyle = p.photoUrl ? `background-image:url('${p.photoUrl}')` : '';
+            let avatarContent = p.photoUrl ? '' : (p.name ? p.name[0] : '?');
+
+            listHtml += `
+            <div class="rev-item ${rankClass}" style="${isMe ? 'border-color:var(--primary);' : ''}">
+                <div class="rev-medal">${medal}</div>
+                
+                <div class="rev-avatar" style="${avatarStyle}">${avatarContent}</div>
+                
+                <div class="rev-info">
+                    <span class="rev-name">${p.name} ${isMe ? '(أنت)' : ''}</span>
+                    <div class="rev-bar-bg">
+                        <div class="rev-bar-fill" style="width:${barPerc}%; background:${barColor};"></div>
+                    </div>
+                </div>
+                
+                <div class="rev-stat">
+                    <span class="rev-stat-val">${safeProg.toFixed(1)}</span>
+                    <span class="rev-stat-lbl">${ch.type==='frequency'?'مرة':'كم'}</span>
+                </div>
+            </div>`;
+        });
+
+        listHtml += '</div>';
+        list.innerHTML = listHtml;
+
+    } catch (e) {
+        console.error(e);
+        list.innerHTML = '<div style="text-align:center; color:#ef4444; padding:20px;">حدث خطأ في تحميل البيانات</div>';
+    }
+}
 // ==================== V5.5 Missing Logic Functions (The Fix) ====================
 
 // 1. دالة الانضمام للتحدي (لزر قبول التحدي)
@@ -2963,6 +3040,7 @@ function loadAdminChallengesList() {
 
 // ==================== V10.0 AI Plan Generator Logic COACH ====================
 
+
 // فتح مودال الخطة
 function openPlanWizard() {
     // تصفير الواجهة
@@ -3070,6 +3148,8 @@ async function confirmPlan() {
 }
 
 
+
+
 // ==================== V12.0 Run Analysis Engine (Coach Feedback) ====================
 
 function showRunAnalysis(dist, time, type) {
@@ -3151,5 +3231,37 @@ async function adminRevokeBadge(targetUid, badgeId) {
         closeModal('modal-view-user');
     } catch(e) {
         showToast("خطأ في العملية", "error");
+    }
+}
+
+
+
+// ============== زر عائم الإبلاغ عن المشاكل
+function openBugReport() {
+    document.getElementById('bug-text').value = '';
+    document.getElementById('modal-bug-report').style.display = 'flex';
+}
+
+async function submitBug() {
+    const txt = document.getElementById('bug-text').value;
+    if(!txt.trim()) return showToast("اكتب شيئاً أولاً", "error");
+    
+    const btn = event.target;
+    btn.innerText = "جاري الإرسال...";
+    
+    try {
+        await db.collection('app_feedback').add({
+            uid: currentUser.uid,
+            name: userData.name,
+            msg: txt,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            version: 'V3.2'
+        });
+        showToast("وصلنا، شكراً لك! 🫡", "success");
+        closeModal('modal-bug-report');
+    } catch(e) {
+        showToast("فشل الإرسال", "error");
+    } finally {
+        btn.innerText = "إرسال";
     }
 }
