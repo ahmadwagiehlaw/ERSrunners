@@ -400,13 +400,16 @@
                         
                         <div class="pro-info-box">
 <div class="pro-name-row">
-                                <h2 id="profileName">...</h2>
-                                <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
-                                
-                                <button onclick="openEditProfile()" class="btn-edit-mini">
-                                    <i class="ri-settings-3-line"></i>
-                                </button>
-                            </div>                            <div class="pro-meta-row">
+    <h2 id="profileName">...</h2>
+    <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
+    
+    <button onclick="openEditProfile()" class="btn-edit-profile-fancy">
+        <i class="ri-user-settings-line"></i>
+        <span>تعديل بياناتك</span>
+    </button>
+</div>                         
+                            
+                            <div class="pro-meta-row">
                                 <span id="profileRegion"><i class="ri-map-pin-line"></i> ...</span>
                                 <span class="dot-sep">•</span>
                                 <span id="nextLevelDist">0</span> كم للترقية
@@ -716,7 +719,7 @@
         <div class="modal-box" style="height: 85vh; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
                 <div>
-                    <h3 style="margin:0; color:var(--primary);">خطة الطريق 🗺️</h3>
+                    <h3 style="margin:0; color:var(--primary);">خطة الجري 🗺️</h3>
                     <span id="plan-meta-info" style="font-size:10px; color:#9ca3af;">8 أسابيع • هدف 10 كم</span>
                 </div>
                 <button onclick="closeModal('modal-view-plan')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
@@ -727,7 +730,7 @@
             </div>
         </div>
     </div>
-    
+
 
     <div id="modal-view-user" class="modal-overlay">
         <div class="modal-box">
