@@ -2373,3 +2373,285 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 @keyframes slideUpFade {
     to { transform: translateY(0); opacity: 1; }
 }
+
+
+/* ===================== Coach Zone + Club (V3.3) ===================== */
+.coach-zone-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:14px;
+}
+
+.coach-action-card{
+    position:relative;
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.04);
+    border-radius:16px;
+    padding:12px;
+    cursor:pointer;
+}
+
+.coach-action-card .c-icon{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.10);
+    margin-bottom:10px;
+}
+
+.coach-action-card .c-text h4{
+    margin:0;
+    font-size:13px;
+    color:#fff;
+}
+
+.coach-action-card .c-text p{
+    margin:6px 0 0 0;
+    font-size:11px;
+    color:#9ca3af;
+    line-height:1.5;
+}
+
+.coach-action-card .c-cta{
+    position:absolute;
+    left:12px;
+    top:12px;
+    font-size:11px;
+    color:var(--primary);
+    font-weight:700;
+}
+
+.plan-card{
+    margin-top:14px;
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.03);
+    border-radius:16px;
+    padding:12px;
+}
+
+.plan-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+}
+
+.plan-head h4{
+    margin:0;
+    font-size:13px;
+    color:#fff;
+}
+
+.plan-actions{
+    display:flex;
+    gap:8px;
+}
+
+.chip{
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.10);
+    color:#e5e7eb;
+    border-radius:999px;
+    padding:6px 10px;
+    font-size:11px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+
+.chip.danger{
+    border-color:rgba(239,68,68,0.35);
+    color:#fecaca;
+}
+
+.plan-week{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+}
+
+.plan-item{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    border:1px solid rgba(255,255,255,0.08);
+    background:rgba(0,0,0,0.20);
+    border-radius:14px;
+    padding:10px;
+}
+
+.plan-item .pi-day{
+    font-size:11px;
+    color:#9ca3af;
+    min-width:64px;
+}
+
+.plan-item .pi-main{
+    flex:1;
+}
+
+.plan-item .pi-title{
+    font-size:12px;
+    color:#fff;
+    font-weight:700;
+}
+
+.plan-item .pi-sub{
+    font-size:11px;
+    color:#9ca3af;
+    margin-top:4px;
+    line-height:1.5;
+}
+
+.catalog-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+}
+
+.catalog-card{
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.03);
+    border-radius:16px;
+    padding:12px;
+    cursor:pointer;
+}
+
+.catalog-card .cat-emoji{ font-size:18px; }
+.catalog-card .cat-title{ margin-top:8px; font-size:12px; font-weight:800; color:#fff; }
+.catalog-card .cat-sub{ margin-top:4px; font-size:11px; color:#9ca3af; }
+
+/* Club */
+.club-hero{
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.03);
+    border-radius:18px;
+    padding:14px;
+}
+.club-hero h3{ margin:0; font-size:16px; color:#fff; }
+.club-hero p{ margin:6px 0 0 0; font-size:12px; color:#9ca3af; }
+
+.club-card{
+    margin-top:14px;
+    border:1px solid rgba(255,255,255,0.10);
+    background:rgba(255,255,255,0.03);
+    border-radius:18px;
+    padding:12px;
+}
+.club-card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:10px;
+}
+.club-card-head h4{ margin:0; font-size:13px; color:#fff; }
+.club-card-hint{ font-size:10px; color:#9ca3af; }
+.spotify-embed{ border:none; }
+
+.hof-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:10px;
+}
+
+.hof-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid rgba(255,255,255,0.08);
+    background:rgba(0,0,0,0.20);
+    border-radius:14px;
+    padding:10px;
+}
+
+.hof-rank{
+    width:26px;
+    height:26px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.10);
+    color:#fff;
+    font-weight:800;
+    font-size:12px;
+}
+
+.hof-avatar{
+    width:34px;
+    height:34px;
+    border-radius:12px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.10);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:16px;
+}
+
+.hof-main{ flex:1; }
+.hof-name{ font-size:12px; font-weight:800; color:#fff; }
+.hof-meta{ font-size:11px; color:#9ca3af; margin-top:3px; }
+.hof-dist{ font-size:12px; color:var(--primary); font-weight:900; }
+
+.data-actions-row{ margin:12px 0; }
+
+/* ==================== Header shortcuts ==================== */
+.header-name{ cursor:pointer; }
+.header-name:hover{ text-decoration: underline; }
+.header-name:active{ opacity:0.8; }
+
+/* ==================== Coach V2 (Decision) ==================== */
+.coach-topline{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.coach-mode-pill{
+  font-size:11px;
+  padding:4px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.12);
+  background:rgba(255,255,255,0.06);
+  color:#e5e7eb;
+  white-space:nowrap;
+}
+.coach-mode-pill.recovery{ border-color:rgba(16,185,129,0.35); background:rgba(16,185,129,0.10); color:#6ee7b7; }
+.coach-mode-pill.discipline{ border-color:rgba(245,158,11,0.35); background:rgba(245,158,11,0.10); color:#fcd34d; }
+.coach-mode-pill.push{ border-color:rgba(239,68,68,0.35); background:rgba(239,68,68,0.10); color:#fecaca; }
+.coach-mode-pill.build{ border-color:rgba(139,92,246,0.35); background:rgba(139,92,246,0.10); color:#ddd6fe; }
+
+.coach-command-title{ font-weight:900; font-size:15px; color:#fff; margin:8px 0 2px 0; }
+.coach-command-sub{ font-size:12px; color:#9ca3af; line-height:1.6; }
+.coach-message{ font-size:13px; line-height:1.7; color:#e5e7eb; margin-top:10px; }
+
+/* ==================== Club actions / social ==================== */
+.club-actions{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
+.club-actions .btn{ flex:1; min-width:150px; }
+
+.social-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.social-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+  border-radius:16px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  cursor:pointer;
+}
+.soc-ico{ font-size:22px; color:#fff; opacity:0.95; }
+.soc-text{ flex:1; }
+.soc-title{ font-weight:900; color:#fff; font-size:13px; }
+.soc-sub{ font-size:11px; color:#9ca3af; margin-top:2px; }
+.soc-go{ color:#9ca3af; }
+
+@media (max-width: 420px){
+  .social-grid{ grid-template-columns:1fr; }
+}

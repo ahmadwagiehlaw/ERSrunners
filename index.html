@@ -20,7 +20,7 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="style.css?v=3.2">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="offline-banner" class="offline-banner">⚠️ لا يوجد اتصال بالإنترنت - وضع التصفح</div>
@@ -61,7 +61,7 @@
         <span class="hello-text">أهلاً يا كابتن 👋</span>
     </div>
     <div style="display:flex; align-items:center; gap:8px;">
-        <h3 id="headerName" style="margin:0;">...</h3>
+        <h3 id="headerName" class="header-name" onclick="switchView('profile')" role="button" tabindex="0" style="margin:0;">...</h3>
         <div id="streak-badge" class="streak-badge" style="display:none;">
             <i class="ri-fire-fill"></i> <span id="streak-count">0</span>
         </div>
@@ -73,6 +73,7 @@
                     <div class="icon-badge" onclick="showNotifications()">
                         <i class="ri-notification-3-line"></i><span class="badge-dot" id="notif-dot"></span>
                     </div>
+                    <div class="icon-badge" onclick="openBugReport()" title="إبلاغ عن مشكلة"><i class="ri-bug-2-line"></i></div>
                     <div class="icon-badge" onclick="openSettingsModal()"><i class="ri-settings-4-line"></i></div>
                     
                     <div id="header-install-btn" class="icon-badge install-pulse" onclick="installApp()" style="display: none; background: #fff; color: #000;">
@@ -88,64 +89,72 @@
                 <div class="coach-card">
                     <div class="coach-icon"><i class="ri-robot-2-line"></i></div>
                     <div class="coach-content">
-                        <span class="coach-label">نصيحة الكوتش اليوم</span>
-                        <p id="coach-message">جاري تحليل أدائك...</p>
+                        <div class="coach-topline">
+                            <span class="coach-label">قرار اليوم</span>
+                            <span id="coach-mode-pill" class="coach-mode-pill">...</span>
+                        </div>
+                        <div id="coach-command-title" class="coach-command-title">جاري تجهيز تمرين اليوم…</div>
+                        <div id="coach-command-sub" class="coach-command-sub">حلّلنا آخر نشاطاتك والخطة الحالية.</div>
+                        <div id="coach-message" class="coach-message">جاري تحليل أدائك...</div>
                     </div>
                 </div>
 
-                <div class="hero-rank-card">
-                    <div class="hero-bg-glow"></div>
-                    <div class="hero-header">
-                        <div class="rank-info-box">
-                            <span class="rank-label">المستوى الحالي</span>
-                            <div class="rank-title-row">
-                                <h2 id="profileRankText">مبتدئ</h2>
-                                <div class="rank-icon-glow" id="homeRankIcon">🥚</div>
-                            </div>
+                <div class="coach-zone-grid">
+                    <div class="coach-action-card" onclick="openPlanWizard()">
+                        <div class="c-icon"><i class="ri-magic-line"></i></div>
+                        <div class="c-text">
+                            <h4>خطة تدريبك</h4>
+                            <p>جاوب على كام سؤال… وأنا أظبطلك أسبوع تدريبي مخصص.</p>
                         </div>
-                        <div class="next-rank-box">
-                            <span class="next-label">التالي: <span id="nextRankName" style="color:var(--primary);">هاوي</span></span>
-                            <span class="next-val">باقي <span id="nextLevelDist">0</span> كم</span>
-                        </div>
+                        <span class="c-cta">ابدأ</span>
                     </div>
 
-                    <div class="pro-progress-container">
-                        <div class="pro-progress-bar" id="xpBar" style="width: 0%;">
-                            <div class="pro-progress-glow"></div>
+                    <div class="coach-action-card" onclick="openNewRun()">
+                        <div class="c-icon"><i class="ri-add-circle-line"></i></div>
+                        <div class="c-text">
+                            <h4>سجل نشاطك</h4>
+                            <p>سجل الجرية فوراً عشان الكوتش يطلعلك تحليل دقيق.</p>
                         </div>
-                    </div>
-                    <div class="progress-text-row">
-                        <span id="xpPerc">0%</span>
-                        <span id="xpText">0 / 50 كم</span>
-                    </div>
-
-                    <div class="hero-stats-row">
-                        <div class="hero-stat">
-                            <div class="hero-icon"><i class="ri-road-map-line"></i></div>
-                            <div class="hero-data"><span class="h-val" id="monthDist">0.0</span><span class="h-lbl">كم (شهر)</span></div>
-                        </div>
-                        <div class="hero-divider"></div>
-                        <div class="hero-stat">
-                            <div class="hero-icon"><i class="ri-run-line"></i></div>
-                            <div class="hero-data"><span class="h-val" id="totalRuns">0</span><span class="h-lbl">جرية</span></div>
-                        </div>
-                        <div class="hero-divider"></div>
-                        <div class="hero-stat">
-                            <div class="hero-icon"><i class="ri-fire-line"></i></div>
-                            <div class="hero-data"><span class="h-val" id="caloriesEst">-</span><span class="h-lbl">كالوري</span></div>
-                        </div>
+                        <span class="c-cta">تسجيل</span>
                     </div>
                 </div>
 
-                <div class="goal-card" onclick="setPersonalGoal()">
-                    <div class="goal-info">
-                        <span class="goal-title">هدفي الشهري 🎯</span>
-                        <h3 id="goalText">اضغط لتحديد هدف</h3>
-                        <span class="goal-sub" id="goalSub">0 كم متبقي</span>
+                <div class="plan-card" id="plan-card">
+                    <div class="plan-head">
+                        <h4>الخطة النشطة 📅</h4>
+                        <div class="plan-actions">
+                            <button class="chip" onclick="openPlanWizard()"><i class="ri-edit-2-line"></i> تعديل</button>
+                            <button class="chip danger" onclick="resetActivePlan(this)"><i class="ri-delete-bin-6-line"></i> مسح</button>
+                        </div>
                     </div>
-                    <div class="goal-ring-wrapper">
-                        <div class="goal-ring" id="goalRing" style="--p:0"></div>
-                        <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
+                    <div id="plan-empty" class="empty-state-mini">لا توجد خطة بعد… اضغط <b>ابدأ</b> وسيبها على الكوتش 👟</div>
+                    <div id="plan-week" class="plan-week"></div>
+                </div>
+
+                <div class="section-title-row" style="margin-top:18px;">
+                    <h4>مكتبة التمارين 🏃‍♂️</h4>
+                    <span class="link-text" onclick="openRunCatalog('all')">استكشف</span>
+                </div>
+                <div class="catalog-grid">
+                    <div class="catalog-card" onclick="openRunCatalog('recovery')">
+                        <div class="cat-emoji">🫁</div>
+                        <div class="cat-title">استشفائي</div>
+                        <div class="cat-sub">جري سهل + تنفّس</div>
+                    </div>
+                    <div class="catalog-card" onclick="openRunCatalog('interval')">
+                        <div class="cat-emoji">⚡</div>
+                        <div class="cat-title">انترفل</div>
+                        <div class="cat-sub">سرعات + راحة</div>
+                    </div>
+                    <div class="catalog-card" onclick="openRunCatalog('tempo')">
+                        <div class="cat-emoji">🔥</div>
+                        <div class="cat-title">تمبو</div>
+                        <div class="cat-sub">ثابت ومؤلم</div>
+                    </div>
+                    <div class="catalog-card" onclick="openRunCatalog('long')">
+                        <div class="cat-emoji">🐢</div>
+                        <div class="cat-title">لونج رن</div>
+                        <div class="cat-sub">ثبات + تغذية</div>
                     </div>
                 </div>
 
@@ -157,12 +166,6 @@
                     <div class="empty-state-mini">لا توجد تحديات حالياً</div>
                 </div>
 
-                <div class="section-title-row" style="margin-top:25px;">
-                    <h4>نشاط الفريق ⚡</h4>
-                </div>
-                <div id="global-feed-list" class="feed-list-compact">
-                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
-                </div>
             </section>
 
             <section id="view-challenges" class="view">
@@ -184,10 +187,7 @@
     </div>
 
     <div id="challenges-list" class="challenges-grid"></div>
-</div>
-
-<div id="challenges-list" class="challenges-grid"></div>
-
+ </div>
 
                 <div id="tab-leaderboard" class="tab-content">
                     <div class="team-goal-card">
@@ -395,6 +395,69 @@
             </section>
 
 
+            <section id="view-club" class="view">
+                <div class="club-hero">
+                    <div>
+                        <h3>النادي 🎧🏆</h3>
+                        <p>بودكاست الفريق + لوحة الشرف + أخبار وفعاليات</p>
+                    </div>
+                </div>
+
+                <div class="club-card">
+                    <div class="club-card-head">
+                        <h4>ERS Podcast</h4>
+                        <span class="club-card-hint">شغّل الحلقة من جوّا التطبيق</span>
+                    </div>
+                    <iframe class="spotify-embed" style="border-radius:14px" src="https://open.spotify.com/embed/show/4cYIPTsFZa3cBIyHLTgcui" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+
+                    <div class="club-actions">
+                        <button class="btn btn-primary" onclick="openExternal('https://open.spotify.com/show/4cYIPTsFZa3cBIyHLTgcui?si=32e30d34dc1a41d7')">
+                            <i class="ri-spotify-fill"></i> افتح على Spotify
+                        </button>
+                        <button class="btn btn-ghost" onclick="openExternal('https://podcasts.apple.com/us/podcast/running-cast-egypt/id1800972032')">
+                            <i class="ri-apple-fill"></i> Apple Podcasts
+                        </button>
+                    </div>
+                </div>
+
+                <div class="section-title-row" style="margin-top:18px;">
+                    <h4>لوحة الشرف (Hall of Fame)</h4>
+                    <span class="link-text" onclick="switchView('challenges')">الترتيب الكامل</span>
+                </div>
+                <div id="hall-of-fame-list" class="hof-grid">
+                    <div class="empty-state-mini">جاري التحميل...</div>
+                </div>
+
+                <div class="section-title-row" style="margin-top:18px;">
+                    <h4>تابعنا على السوشيال 📣</h4>
+                </div>
+                <div class="social-grid">
+                    <div class="social-card" onclick="openExternal('https://www.facebook.com/egyrunnerssquad/')">
+                        <div class="soc-ico"><i class="ri-facebook-circle-fill"></i></div>
+                        <div class="soc-text">
+                            <div class="soc-title">صفحة الفريق</div>
+                            <div class="soc-sub">أخبار + فعاليات</div>
+                        </div>
+                        <i class="ri-external-link-line soc-go"></i>
+                    </div>
+                    <div class="social-card" onclick="openExternal('https://www.facebook.com/groups/egyrunners')">
+                        <div class="soc-ico"><i class="ri-group-fill"></i></div>
+                        <div class="soc-text">
+                            <div class="soc-title">جروب ERS</div>
+                            <div class="soc-sub">نقاشات + تحديات</div>
+                        </div>
+                        <i class="ri-external-link-line soc-go"></i>
+                    </div>
+                </div>
+
+                <div class="section-title-row" style="margin-top:22px;">
+                    <h4>أخبار الفريق ⚡</h4>
+                </div>
+                <div id="global-feed-list" class="feed-list-compact">
+                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
+                </div>
+            </section>
+
             <section id="view-profile" class="view">
                 <div class="pro-hero-card compact">
                     <div class="pro-card-header">
@@ -440,6 +503,24 @@
                             <span class="p-strip-val" id="profilePace">-</span>
                             <span class="p-strip-lbl">السرعة</span>
                         </div>
+                    </div>
+                </div>
+
+                <div class="data-actions-row">
+                    <button class="btn btn-primary" onclick="openNewRun()" style="width:100%;">
+                        <i class="ri-add-circle-fill"></i> تسجيل نشاط جديد
+                    </button>
+                </div>
+
+                <div class="goal-card" onclick="setPersonalGoal()">
+                    <div class="goal-info">
+                        <span class="goal-title">هدفي الشهري 🎯</span>
+                        <h3 id="goalText">اضغط لتحديد هدف</h3>
+                        <span class="goal-sub" id="goalSub">0 كم متبقي</span>
+                    </div>
+                    <div class="goal-ring-wrapper">
+                        <div class="goal-ring" id="goalRing" style="--p:0"></div>
+                        <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
                     </div>
                 </div>
 
@@ -492,9 +573,10 @@
         </main>
 
         <nav class="bottom-nav">
-            <div class="nav-item active" onclick="switchView('home')"><i class="ri-home-4-line"></i><span>الرئيسية</span></div>
-            <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>المنافسة</span></div>
-            <div class="nav-item" onclick="switchView('profile')"><i class="ri-user-smile-line"></i><span>بروفايل</span></div>
+            <div class="nav-item active" onclick="switchView('home')"><i class="ri-brain-line"></i><span>الكوتش</span></div>
+            <div class="nav-item" onclick="switchView('profile')"><i class="ri-dashboard-3-line"></i><span>بياناتي</span></div>
+            <div class="nav-item" onclick="switchView('club')"><i class="ri-community-line"></i><span>النادي</span></div>
+            <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>الأرينا</span></div>
         </nav>
     </div>
 
@@ -570,9 +652,6 @@
                     <img id="img-preview" class="stylish-preview" alt="معاينة الصورة">
                 </div>
             </div>
-            ```
-
-
             <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
             <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
         </div>
@@ -804,11 +883,14 @@
             </div>
         </div>
     </div>
-
-
-<div class="bug-fab" onclick="openBugReport()">
-    <i class="ri-bug-2-line"></i>
+<div id="modal-catalog" class="modal-overlay">
+    <div class="modal-box">
+        <h3 id="catalog-title">مكتبة التمارين</h3>
+        <div id="catalog-body" style="font-size:13px; line-height:1.8; color:#e5e7eb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:12px; margin-top:12px;"></div>
+        <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px;">تمام</button>
+    </div>
 </div>
+
 
 <div id="modal-bug-report" class="modal-overlay">
     <div class="modal-box">
@@ -828,7 +910,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <script src="app.js?v=3.1"></script> 
+    <script src="app.js"></script> 
 
     <script>
       if ('serviceWorker' in navigator) {
