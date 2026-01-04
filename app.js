@@ -459,18 +459,30 @@ function updateUI() {
             }
         }
 
-        document.getElementById('profileTotalDist').innerText = (userData.totalDist || 0).toFixed(1);
-        document.getElementById('profileTotalRuns').innerText = userData.totalRuns || 0;
-        document.getElementById('profileRankText').innerText = rankData.name;
-        
-        // XP Bar
-        document.getElementById('nextLevelDist').innerText = rankData.remaining.toFixed(1);
-        document.getElementById('xpBar').style.width = `${rankData.percentage}%`;
-        document.getElementById('xpBar').style.backgroundColor = `var(--rank-color)`;
-        document.getElementById('xpText').innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
-        document.getElementById('xpPerc').innerText = `${Math.floor(rankData.percentage)}%`;
+        const pTotal = document.getElementById('profileTotalDist');
+        if (pTotal) pTotal.innerText = (userData.totalDist || 0).toFixed(1);
+        const pRuns = document.getElementById('profileTotalRuns');
+        if (pRuns) pRuns.innerText = userData.totalRuns || 0;
+        const pRank = document.getElementById('profileRankText');
+        if (pRank) pRank.innerText = rankData.name;
+
+        // XP Bar (Profile)
+        const nextEl = document.getElementById('nextLevelDist');
+        if (nextEl) nextEl.innerText = rankData.remaining.toFixed(1);
+        const xpBar = document.getElementById('xpBar');
+        if (xpBar) {
+            xpBar.style.width = `${rankData.percentage}%`;
+            xpBar.style.backgroundColor = `var(--rank-color)`;
+        }
+
+        // (Optional legacy fields – قد لا تكون موجودة في DOM)
+        const xpText = document.getElementById('xpText');
+        if (xpText) xpText.innerText = `${rankData.distInLevel.toFixed(1)} / ${rankData.distRequired} كم`;
+        const xpPerc = document.getElementById('xpPerc');
+        if (xpPerc) xpPerc.innerText = `${Math.floor(rankData.percentage)}%`;
 
         updateGoalRing();
+        if (typeof renderPlanCard === 'function') renderPlanCard();
         renderBadges();
         calculatePersonalBests(); // (V2.2)
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
@@ -752,6 +764,149 @@ function updateCoachAdvice() {
     // 4. العرض
     labelEl.innerText = title;
     msgEl.innerHTML = message + actionBtn;
+
+    // 5. تحديث قرار اليوم (Coach V2)
+    if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI();
+}
+
+// ==================== Coach V2: Decision Engine (Safe / Non-breaking) ====================
+window._ersRunsCache = window._ersRunsCache || [];
+
+function openExternal(url){
+    if(!url) return;
+    try { window.open(url, '_blank', 'noopener,noreferrer'); }
+    catch(e) { location.href = url; }
+}
+
+function getPlanTodaySession(plan){
+    if(!plan) return null;
+
+    const startDate = new Date(plan.startDate);
+    const today = new Date();
+    startDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    const diffDays = Math.floor((today - startDate) / (1000*60*60*24));
+    const dayNum = diffDays + 1;
+    const dayInWeek = ((dayNum - 1) % 7) + 1; // 1..7
+
+    const daysCount = parseInt(plan.daysPerWeek) || 3;
+    let runDays = [];
+    if(daysCount === 3) runDays = [1, 3, 5];
+    else if(daysCount === 4) runDays = [1, 2, 4, 6];
+    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
+    else runDays = [1, 2, 3, 4, 5, 6];
+
+    const isRunDay = runDays.includes(dayInWeek);
+    let title = 'راحة واستشفاء 🧘‍♂️';
+    let sub = 'مشي خفيف + إطالة 8–10 دقايق.';
+    let mode = 'recovery';
+
+    if (isRunDay) {
+        const targetNum = parseFloat(plan.target);
+        const baseDist = (Number.isFinite(targetNum) ? (targetNum / daysCount) : 4);
+
+        if (dayInWeek === runDays[0]) {
+            title = `جري مريح (Easy)`;
+            sub = `${(baseDist).toFixed(1)} كم • تنفّس مريح (RPE 3–4).`;
+            mode = 'build';
+        } else if (dayInWeek === runDays[runDays.length-1]) {
+            title = `لونج رن (Long)`;
+            sub = `${(baseDist * 1.2).toFixed(1)} كم • ثابت وبهدوء + جرعة ماء.`;
+            mode = 'push';
+        } else {
+            title = `تمرين جودة (Speed/Tempo)`;
+            sub = `${(baseDist * 0.8).toFixed(1)} كم • ركّز على الإيقاع بدون تهور.`;
+            mode = 'push';
+        }
+    }
+
+    return { title, sub, mode, isRunDay };
+}
+
+function computeDecisionFromRuns(runs){
+    const now = new Date();
+    const msDay = 1000*60*60*24;
+    const last = runs && runs.length ? runs[0] : null;
+    const lastDate = last && last.timestamp ? last.timestamp.toDate() : null;
+    const daysSince = lastDate ? Math.floor((now - lastDate)/msDay) : 999;
+
+    // last 7 days
+    const last7 = (runs||[]).filter(r => {
+        const d = r.timestamp ? r.timestamp.toDate() : null;
+        return d && (now - d) <= (7*msDay);
+    });
+    const total7 = last7.reduce((acc, r) => acc + (parseFloat(r.dist)||0), 0);
+    const count7 = last7.length;
+
+    // قواعد بسيطة قوية
+    if (daysSince >= 7) {
+        return {
+            mode: 'discipline',
+            title: 'عودة ذكية 👟',
+            sub: '20–30 دقيقة جري سهل جدًا + 5 دقايق إطالة.',
+            why: 'بقينا بعيد شوية… هنرجع بثبات مش بعنف.'
+        };
+    }
+    if (daysSince >= 4) {
+        return {
+            mode: 'discipline',
+            title: 'إعادة تشغيل 🔁',
+            sub: '15–25 دقيقة جري خفيف/مشي سريع + تنفّس منتظم.',
+            why: 'انقطاع بسيط… المهم نكسر الكسل ونرجع للروتين.'
+        };
+    }
+    if (last && (parseFloat(last.dist)||0) >= 15 && daysSince <= 1) {
+        return {
+            mode: 'recovery',
+            title: 'استشفاء إلزامي 🧊',
+            sub: 'مشي 20–30 دقيقة أو جري خفيف جدًا (RPE 2–3).',
+            why: 'آخر جرية كانت تقيلة… النهارده بنصلّح مش بنهدم.'
+        };
+    }
+    if (count7 >= 5 || total7 >= 35) {
+        return {
+            mode: 'recovery',
+            title: 'يوم خفيف بذكاء 🫶',
+            sub: '25–40 دقيقة جري سهل + إطالات قصيرة.',
+            why: `آخر 7 أيام: ${count7} نشاط / ${total7.toFixed(1)} كم… حافظ على الاستمرارية بدون ضغط.`
+        };
+    }
+
+    // افتراضي: جودة بسيطة
+    return {
+        mode: 'build',
+        title: 'تمرين بناء 🧱',
+        sub: '10 دقائق إحماء → 6×(1 دقيقة أسرع + 1 دقيقة سهل) → 8 دقائق تهدئة.',
+        why: 'هنزود الجودة تدريجيًا… من غير تهور.'
+    };
+}
+
+function updateCoachDecisionUI(runsOverride){
+    const pill = document.getElementById('coach-mode-pill');
+    const tEl = document.getElementById('coach-command-title');
+    const sEl = document.getElementById('coach-command-sub');
+    if(!pill || !tEl || !sEl) return;
+
+    // 1) لو فيه خطة نشطة: القرار يطلع منها
+    const hasPlan = userData?.activePlan && userData.activePlan.status === 'active';
+    if (hasPlan) {
+        const s = getPlanTodaySession(userData.activePlan);
+        if (s) {
+            pill.className = `coach-mode-pill ${s.mode}`;
+            pill.textContent = s.mode === 'recovery' ? 'Recovery' : (s.mode === 'push' ? 'Push' : 'Build');
+            tEl.textContent = s.title;
+            sEl.textContent = s.sub;
+            return;
+        }
+    }
+
+    // 2) من واقع آخر النشاطات
+    const runs = runsOverride || window._ersRunsCache || [];
+    const d = computeDecisionFromRuns(runs);
+    pill.className = `coach-mode-pill ${d.mode}`;
+    pill.textContent = d.mode === 'recovery' ? 'Recovery' : (d.mode === 'discipline' ? 'Discipline' : (d.mode === 'push' ? 'Push' : 'Build'));
+    tEl.textContent = d.title;
+    sEl.textContent = `${d.sub} • ${d.why}`;
 }
 //========================================================
 // دوال مساعدة للعرض
@@ -971,6 +1126,10 @@ function loadActivityLog() {
                   if (p < bestPace) bestPace = p;
               }
           });
+
+          // Cache for Coach V2 decision engine
+          window._ersRunsCache = runs;
+          if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI(runs);
 
           // 2. تجميع حسب الشهر
           const groups = {};
@@ -1276,7 +1435,7 @@ async function loadRegionBattle() {
         let html = `
         <div class="battle-tutorial">
             <i class="ri-flashlight-fill" style="color:#f59e0b"></i>
-            <div>قوة المحافظة = <span>إجمالي المسافة</span> ÷ <span>عدد الأبطال</span></div>
+            <div>قوة المحافظة = <span>إجمالي المسافة</span> ÷ <span>عدد المحاربين</span></div>
         </div>
         <div class="squad-list">`;
 
@@ -1694,9 +1853,30 @@ function switchView(viewId) {
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
     document.getElementById('view-' + viewId).classList.add('active');
     const navItems = document.querySelectorAll('.nav-item');
-    const map = {'home':0, 'challenges':1, 'profile':2};
+    // ترتيب التبويبات الجديد: الكوتش / بياناتي / النادي / الأرينا
+    const map = {'home':0, 'profile':1, 'club':2, 'challenges':3};
     if(navItems[map[viewId]]) navItems[map[viewId]].classList.add('active');
+
+    // Hooks بسيطة للصفحات الجديدة
+    if (viewId === 'home') {
+        if (typeof renderPlanCard === 'function') renderPlanCard();
+        if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI();
+    }
+    if (viewId === 'club' && typeof loadHallOfFame === 'function') loadHallOfFame();
 }
+
+// Keyboard shortcut for header name (accessibility)
+try {
+    const _hn = document.getElementById('headerName');
+    if (_hn) {
+        _hn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                switchView('profile');
+            }
+        });
+    }
+} catch(e) {}
 
 function setTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -3367,7 +3547,7 @@ async function submitBug() {
             name: userData.name,
             msg: txt,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            version: 'V3.2'
+            version: 'V3.3'
         });
         showToast("وصلنا، شكراً لك! 🫡", "success");
         closeModal('modal-bug-report');
@@ -3624,4 +3804,156 @@ async function loadGovernorateLeague() {
     
     // إذا كنت تعرض هذا في صفحة الأدمن أو صفحة مخصصة
     container.innerHTML = html;
+}
+
+
+// ==================== Coach Zone UI Helpers (V3.3) ====================
+
+function renderPlanCard() {
+    const emptyEl = document.getElementById('plan-empty');
+    const weekEl = document.getElementById('plan-week');
+    if (!emptyEl || !weekEl) return;
+
+    const plan = userData?.activePlan;
+    const hasPlan = plan && plan.status === 'active';
+
+    if (!hasPlan) {
+        emptyEl.style.display = 'block';
+        weekEl.innerHTML = '';
+        return;
+    }
+
+    emptyEl.style.display = 'none';
+
+    // حساب اليوم داخل الخطة
+    const startDate = new Date(plan.startDate);
+    const today = new Date();
+    startDate.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    const diffDays = Math.floor((today - startDate) / (1000*60*60*24));
+    const dayNum = diffDays + 1;
+    const weekNum = Math.max(1, Math.ceil(dayNum / 7));
+    const dayInWeek = ((dayNum - 1) % 7) + 1; // 1..7
+
+    // توزيع أيام الجري
+    const daysCount = parseInt(plan.daysPerWeek) || 3;
+    let runDays = [];
+    if(daysCount === 3) runDays = [1, 3, 5];
+    else if(daysCount === 4) runDays = [1, 2, 4, 6];
+    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
+    else runDays = [1, 2, 3, 4, 5, 6];
+
+    const isRunDay = runDays.includes(dayInWeek);
+    let title = 'راحة واستشفاء 🧘‍♂️';
+    let sub = 'مشي خفيف + إطالة 8–10 دقايق.';
+
+    if (isRunDay) {
+        const targetNum = parseFloat(plan.target);
+        const baseDist = (Number.isFinite(targetNum) ? (targetNum / daysCount) : 4);
+
+        if (dayInWeek === runDays[0]) {
+            title = `جري مريح (Easy)`;
+            sub = `${(baseDist).toFixed(1)} كم • تنفّس مريح.`;
+        } else if (dayInWeek === runDays[runDays.length-1]) {
+            title = `لونج رن (Long)`;
+            sub = `${(baseDist * 1.2).toFixed(1)} كم • ثابت وبهدوء.`;
+        } else {
+            title = `تمرين جودة (Speed/Tempo)`;
+            sub = `${(baseDist * 0.8).toFixed(1)} كم • ركّز على الإيقاع.`;
+        }
+    }
+
+    weekEl.innerHTML = `
+        <div class="plan-week">
+            <div class="plan-item">
+                <div class="pi-day">الأسبوع ${weekNum}</div>
+                <div class="pi-main">
+                    <div class="pi-title">${title}</div>
+                    <div class="pi-sub">${sub}</div>
+                </div>
+                <button class="chip" onclick="openMyPlan()"><i class="ri-map-2-line"></i> التفاصيل</button>
+            </div>
+        </div>
+    `;
+}
+
+
+// ==================== Run Catalog (V3.3) ====================
+
+function openRunCatalog(type) {
+    const titleEl = document.getElementById('catalog-title');
+    const bodyEl = document.getElementById('catalog-body');
+    const modal = document.getElementById('modal-catalog');
+    if (!titleEl || !bodyEl || !modal) return;
+
+    const items = {
+        recovery: {
+            title: 'الجري الاستشفائي (Recovery) 🫶',
+            body: `هدفه: تنشيط الدم بدون إجهاد.\n\nشكل التمرين: 20–40 دقيقة جري خفيف جدًا (RPE 2–3) + 5 دقايق إطالة.\n\nمتى؟ بعد يوم سرعات/لونج رن أو بعد ضغط شغل.`
+        },
+        interval: {
+            title: 'الانترفال (Intervals) ⚡',
+            body: `هدفه: سرعة + VO2max.\n\nمثال بسيط: 10 دقائق إحماء → 6×(1 دقيقة سريع + 1 دقيقة سهل) → 8 دقائق تهدئة.\n\nملاحظة: السرعة تكون "مجهود" مش "تهور".`
+        },
+        long: {
+            title: 'اللونج رن (Long Run) 🛣️',
+            body: `هدفه: بناء التحمل والاقتصاد.\n\nشكل التمرين: 60–120 دقيقة على وتيرة مريحة.\n\nنصيحة: اقسمه 3 أجزاء (سهل / ثابت / سهل) وحافظ على سوائل.`
+        },
+        tempo: {
+            title: 'التمبو (Tempo) 🔥',
+            body: `هدفه: رفع العتبة اللاهوائية.\n\nمثال: 10 دقائق إحماء → 15–25 دقيقة تمبو → 8 دقائق تهدئة.\n\nإحساسه: "مجهود ثابت" تقدر تتكلم كلمتين وتكمل.`
+        },
+        all: {
+            title: 'مكتبة التمارين 🏃‍♂️',
+            body: 'اختار نوع تمرين من الكروت… وهتلاقي شرح سريع + مثال جاهز.'
+        }
+    };
+
+    const it = items[type] || items.all;
+    titleEl.innerText = it.title;
+    bodyEl.innerText = it.body;
+    modal.style.display = 'flex';
+}
+
+
+// ==================== Hall of Fame (V3.3) ====================
+
+async function loadHallOfFame() {
+    const listEl = document.getElementById('hall-of-fame-list');
+    if (!listEl) return;
+
+    listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>';
+
+    try {
+        const runners = await fetchTopRunners();
+        const top5 = (runners || []).slice(0, 5);
+        if (!top5.length) {
+            listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">لا توجد بيانات كافية</div>';
+            return;
+        }
+
+        const rows = top5.map((u, idx) => {
+            const rank = idx + 1;
+            const avatar = (u.avatarIcon || getUserAvatar(u) || '🏃');
+            const name = u.name || 'عضو';
+            const region = u.region || '';
+            const dist = (u.totalDist || 0).toFixed(1);
+            return `
+                <div class="hof-row" onclick="viewUserProfile('${u.uid || ''}')">
+                    <div class="hof-rank">${rank}</div>
+                    <div class="hof-avatar">${avatar}</div>
+                    <div class="hof-main">
+                        <div class="hof-name">${name}</div>
+                        <div class="hof-meta">${region}</div>
+                    </div>
+                    <div class="hof-dist">${dist} كم</div>
+                </div>
+            `;
+        }).join('');
+
+        listEl.innerHTML = rows;
+    } catch (e) {
+        console.error(e);
+        listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">تعذر تحميل لوحة الشرف</div>';
+    }
 }

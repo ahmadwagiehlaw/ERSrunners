@@ -1,6 +1,6 @@
 {
-  "name": "ERS Runners",
-  "short_name": "ERS",
+  "name": "ERS Runners v4",
+  "short_name": "ERS v4",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#111827",
