@@ -57,10 +57,10 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     position: sticky; 
     top: 0; 
     z-index: 1000; 
-    background: rgba(17, 24, 39, 0.6); 
+    background: rgba(17, 24, 39, 0.88); 
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
     padding-top: calc(15px + env(safe-area-inset-top)); 
     padding-bottom: 15px;
     padding-left: 20px;
@@ -2635,23 +2635,2062 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .club-actions{ display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
 .club-actions .btn{ flex:1; min-width:150px; }
 
-.social-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
-.social-card{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:14px;
-  border-radius:16px;
-  background:rgba(255,255,255,0.04);
-  border:1px solid rgba(255,255,255,0.08);
-  cursor:pointer;
-}
-.soc-ico{ font-size:22px; color:#fff; opacity:0.95; }
-.soc-text{ flex:1; }
-.soc-title{ font-weight:900; color:#fff; font-size:13px; }
-.soc-sub{ font-size:11px; color:#9ca3af; margin-top:2px; }
-.soc-go{ color:#9ca3af; }
+/* =========================================
+   تحديث شبكة التواصل (3 أزرار متجاورة)
+   ========================================= */
 
+.social-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 أعمدة متساوية */
+    gap: 8px; /* مسافات بينية صغيرة */
+    padding: 5px 0;
+}
+
+.social-card {
+    display: flex;
+    flex-direction: column; /* الأيقونة فوق والنص تحت */
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    
+    background: rgba(255, 255, 255, 0.03); /* خلفية زجاجية */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 100px;
+}
+
+.social-card:active {
+    transform: scale(0.96);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* تنسيق الأيقونات داخل الكروت */
+.soc-ico {
+    font-size: 24px;
+    margin-bottom: 8px;
+    color: #fff;
+    /* دائرة خلفية للأيقونة */
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.05);
+}
+
+/* النصوص */
+.soc-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 2px;
+}
+
+.soc-sub {
+    font-size: 9px;
+    color: #9ca3af;
+    display: none; /* إخفاء الوصف الفرعي لتوفير المساحة */
+}
+
+/* ألوان خاصة لكل منصة */
+/* فيسبوك */
+.social-card.fb-card .soc-ico { color: #1877F2; background: rgba(24, 119, 242, 0.15); }
+.social-card.fb-card:hover { border-color: #1877F2; }
+
+/* واتس آب */
+.social-card.wa-card .soc-ico { color: #25D366; background: rgba(37, 211, 102, 0.15); }
+.social-card.wa-card:hover { border-color: #25D366; }
+
+/* إخفاء سهم الانتقال لأنه لا يوجد مساحة */
+.soc-go { display: none; }
 @media (max-width: 420px){
   .social-grid{ grid-template-columns:1fr; }
 }
+
+/* ==================== Coach Daily & Weekly (V3.5) ==================== */
+
+.mini-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  color:#dbeafe;
+  background:rgba(59,130,246,0.18);
+  border:1px solid rgba(59,130,246,0.35);
+}
+
+.daily-workout-card,
+.weekly-challenge-card{
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-workout-card:before{
+  content:'';
+  position:absolute;
+  top:-60px;
+  left:-60px;
+  width:160px;
+  height:160px;
+  background: radial-gradient(circle, rgba(245,158,11,0.25), transparent 60%);
+  filter: blur(0px);
+  pointer-events:none;
+}
+.weekly-challenge-card:before{
+  content:'';
+  position:absolute;
+  top:-60px;
+  right:-60px;
+  width:180px;
+  height:180px;
+  background: radial-gradient(circle, rgba(16,185,129,0.20), transparent 60%);
+  pointer-events:none;
+}
+
+.dw-head, .wc-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+  position:relative;
+  z-index:2;
+}
+.dw-badge, .wc-badge{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.dw-emoji, .wc-emoji{
+  width:38px;
+  height:38px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+  background:rgba(255,255,255,0.10);
+  border:1px solid rgba(255,255,255,0.12);
+}
+.dw-title, .wc-title{
+  font-size:14px;
+  color:#fff;
+  font-weight:800;
+  line-height:1.2;
+}
+.dw-meta, .wc-meta{
+  font-size:11px;
+  color:#9ca3af;
+  margin-top:4px;
+}
+.dw-notes, .wc-notes{
+  font-size:12px;
+  color:#e5e7eb;
+  line-height:1.6;
+  margin:0;
+  position:relative;
+  z-index:2;
+}
+.dw-actions, .wc-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  position:relative;
+  z-index:2;
+}
+.dw-actions .btn, .wc-actions .btn{ flex:1; }
+
+/* Admin Coach Week grid */
+.coach-week-grid{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.coach-week-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+}
+.coach-week-row span{
+  font-size:12px;
+  color:#e5e7eb;
+  min-width:70px;
+}
+
+#coach-workouts-list .workout-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.15);
+  margin-bottom:8px;
+}
+#coach-workouts-list .wr-left{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+#coach-workouts-list .wr-title{
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+}
+#coach-workouts-list .wr-sub{
+  color:#9ca3af;
+  font-size:10px;
+}
+#coach-workouts-list .wr-actions{
+  display:flex;
+  gap:6px;
+}
+#coach-workouts-list .wr-actions button{
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:11px;
+}
+
+
+
+/* Coach Plan action highlight */
+#coach-plan-action.plan-active{ border-color: rgba(34,197,94,0.35); box-shadow: 0 12px 30px rgba(34,197,94,0.12); }
+#coach-plan-action.plan-active .c-icon{ background: rgba(34,197,94,0.15); }
+#coach-plan-action.plan-active .c-cta{ color:#22c55e; }
+
+
+/* ===== Coach Zone vA (Cleaner) ===== */
+.plan-hero-card{
+  margin-top:14px;
+  padding:14px;
+  border-radius:18px;
+  background: radial-gradient(120% 140% at 20% 10%, rgba(16,185,129,0.18) 0%, rgba(17,24,39,0.0) 55%),
+              linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border:1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  overflow:hidden;
+}
+.plan-hero-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.plan-hero-badge{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.plan-hero-big{
+  font-size:30px;
+  font-weight:900;
+  letter-spacing:1px;
+  line-height:1;
+}
+.plan-hero-sub{
+  color:#9ca3af;
+  font-size:12px;
+  margin-top:4px;
+}
+.plan-hero-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  background:rgba(0,0,0,0.22);
+  border:1px solid rgba(255,255,255,0.10);
+  color:#e5e7eb;
+}
+.plan-hero-body{
+  margin-top:12px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.plan-today-box{
+  padding:12px;
+  border-radius:16px;
+  background:rgba(0,0,0,0.18);
+  border:1px solid rgba(255,255,255,0.08);
+}
+.plan-source-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  color:#93c5fd;
+  margin-bottom:8px;
+}
+.plan-today-title{
+  font-weight:800;
+  margin-bottom:4px;
+}
+.plan-today-meta{
+  font-size:12px;
+  color:#9ca3af;
+}
+.plan-hero-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.plan-hero-actions .btn{
+  flex:1;
+  min-width:140px;
+}
+
+.mini-note{
+  margin-top:8px;
+  font-size:11px;
+  color:#9ca3af;
+}
+
+.modal-close-x{
+  position:absolute;
+  left:10px;
+  top:10px;
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(0,0,0,0.25);
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+}
+
+.coach-note{margin-top:8px;font-size:12px;line-height:1.7;color:#e5e7eb;opacity:0.95;}
+
+/* Admin Coach Folding */
+.adm-fold{
+  border:1px solid rgba(255,255,255,0.10);
+  border-radius:16px;
+  background:rgba(255,255,255,0.03);
+  overflow:hidden;
+}
+.adm-sum{
+  list-style:none;
+  cursor:pointer;
+  padding:12px 14px;
+  font-weight:800;
+  font-size:12px;
+  color:#e5e7eb;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.adm-fold[open] .adm-sum{
+  border-bottom:1px solid rgba(255,255,255,0.08);
+}
+.adm-sum::-webkit-details-marker{display:none;}
+.adm-fold .admin-panel-box{border:none; background:transparent; box-shadow:none; padding:12px 14px;}
+
+
+
+/* === Coach Brain v1: mini controls === */
+.coach-mini-btn{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.06);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:transform .15s ease, background .15s ease;
+}
+.coach-mini-btn:hover{ transform:translateY(-1px); background:rgba(255,255,255,0.10); }
+
+/* === Weekly Awards (Club) === */
+.weekly-awards-row{
+  margin:10px 0 12px;
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap:10px;
+}
+.award-badge{
+  border:1px solid rgba(255,255,255,0.10);
+  background:rgba(255,255,255,0.05);
+  border-radius:16px;
+  padding:10px 10px;
+  text-align:right;
+  color:#fff;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  transition:transform .15s ease, background .15s ease;
+}
+.award-badge:hover{ transform:translateY(-1px); background:rgba(255,255,255,0.08); }
+.award-emoji{ font-size:18px; }
+.award-title{ font-size:12px; font-weight:700; }
+.award-sub{ font-size:10px; color:#9ca3af; }
+
+/* === Speed radar modal content === */
+.speed-stat{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px;
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  background:rgba(255,255,255,0.04);
+  margin-bottom:10px;
+}
+.speed-stat b{ font-size:12px; }
+.speed-stat span{ font-size:12px; color:#d1d5db; text-align:left; }
+.speed-card{
+  border:1px solid rgba(255,255,255,0.10);
+  border-radius:16px;
+  padding:12px;
+  background:rgba(255,255,255,0.05);
+}
+.speed-card h4{ margin:0 0 6px; font-size:13px; }
+.speed-card p{ margin:0; font-size:12px; color:#d1d5db; line-height:1.6; }
+
+
+/* === Coach Layout Enhancements (v3.7) === */
+.coach-duo-grid{
+    display:grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 14px;
+}
+@media (min-width: 860px){
+    .coach-duo-grid{ grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+
+#plan-hero, #team-workout-section{ height: 100%; }
+
+#plan-hero .plan-hero-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+
+#team-workout-section .coach-section-title{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.coach-mode-pill.neutral{
+    background: rgba(148, 163, 184, 0.10);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    color: #e5e7eb;
+}
+.coach-mode-pill.good{
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.22);
+    color: #34d399;
+}
+.coach-mode-pill.warn{
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    color: #fbbf24;
+}
+
+/* Weekly awards badges */
+/* =========================================
+   تصميم لوحة الشرف الأسبوعية (معدني فخم مع لمعة)
+   ========================================= */
+
+/* الحاوية الرئيسية: 3 أعمدة */
+.weekly-awards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px; /* زيادة المسافة قليلاً */
+    margin-bottom: 25px;
+    padding: 5px;
+}
+
+/* تصميم البطاقة الأساسي - خلفية معدنية داكنة */
+.weekly-award-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    /* تدرج لوني معدني هادئ */
+    background: linear-gradient(145deg, #2a2a2a, #1c1c1c);
+    /* حدود خارجية ناعمة جداً */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    /* ظل داخلي خفيف يعطي عمقاً */
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 8px rgba(0,0,0,0.3);
+    border-radius: 15px;
+    padding: 18px 8px;
+    text-align: center;
+    position: relative;
+    overflow: hidden; /* مهم جداً لتأثير اللمعة */
+    transition: all 0.3s ease;
+    min-height: 135px;
+}
+
+/* تأثير اللمعة المتحركة (Sheen Effect) */
+.weekly-award-card::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 20%;
+    height: 200%;
+    opacity: 0;
+    transform: rotate(35deg);
+    /* شريط أبيض شفاف مائل يمر فوق البطاقة */
+    background: linear-gradient(to right, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.15) 75%, 
+        rgba(255, 255, 255, 0) 100%);
+    transition: opacity 0.5s ease, left 0.7s ease; /* حركة ناعمة */
+    pointer-events: none; /* لضمان عدم تأثيره على النقرات */
+}
+
+/* تفعيل اللمعة عند التمرير */
+.weekly-award-card:hover::after {
+    opacity: 1;
+    left: 120%; /* يتحرك الشريط من اليسار إلى أقصى اليمين */
+}
+
+/* تأثير الضغط */
+.weekly-award-card:active {
+    transform: scale(0.98);
+    background: linear-gradient(145deg, #1c1c1c, #2a2a2a); /* عكس التدرج عند الضغط */
+}
+
+/* الأيقونة - كبيرة ولكن بتوهج ناعم */
+.wa-icon {
+    font-size: 42px; /* تصغير طفيف للحجم */
+    line-height: 1;
+    margin-bottom: 10px;
+    /* ظل ناعم جداً يرفع الأيقونة عن الخلفية */
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    transition: transform 0.3s ease;
+}
+
+.weekly-award-card:hover .wa-icon {
+    transform: translateY(-3px); /* حركة بسيطة للأعلى عند التمرير */
+}
+
+/* حاوية النصوص */
+.wa-content {
+    margin-bottom: auto;
+}
+
+/* العناوين بألوان راقية (غير فجة) */
+/* اللون الافتراضي ذهبي هادئ */
+.wa-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #d4af37; /* ذهبي معدني (ليس أصفر فاقع) */
+    margin-bottom: 3px;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* العنوان الفرعي */
+.wa-sub {
+    font-size: 9px;
+    color: #aaa; /* رمادي فاتح */
+    white-space: nowrap;
+}
+
+/* مكان اسم الفائز */
+.wa-winner-name {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.15); /* خط فاصل خفيف */
+    width: 85%;
+    font-size: 10px;
+    color: #e0e0e0;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+
+/* === تخصيص الألوان لكل بطاقة (ألوان هادئة) === */
+
+/* الأطول نفساً (ذهبي/برونزي) */
+.weekly-award-card.wa-distance:hover { border-color: #d4af37; }
+
+/* الأسرع عدواً (أزرق سماوي هادئ) */
+.weekly-award-card.wa-speed .wa-title { color: #4dd0e1; } /* أزرق هادئ */
+.weekly-award-card.wa-speed:hover { border-color: #4dd0e1; }
+.weekly-award-card.wa-speed .wa-winner-name { color: #b2ebf2; }
+
+/* الأكثر التزاماً (برتقالي محروق/نحاسي) */
+.weekly-award-card.wa-consistency .wa-title { color: #ff8a65; } /* برتقالي نحاسي */
+.weekly-award-card.wa-consistency:hover { border-color: #ff8a65; }
+.weekly-award-card.wa-consistency .wa-winner-name { color: #ffccbc; }
+
+/* Catalog modal cards */
+.catalog-grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+@media (max-width: 520px){
+    .catalog-grid{ grid-template-columns: 1fr; }
+}
+.catalog-card{
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 14px 12px;
+    text-align: right;
+    color: var(--text);
+    cursor: pointer;
+    transition: 0.18s ease;
+}
+.catalog-card:hover{
+    transform: translateY(-2px);
+    border-color: rgba(99,102,241,0.35);
+}
+.catalog-card-title{ font-weight: 800; font-size: 13px; line-height: 1.35; }
+.catalog-card-sub{ color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+.catalog-body-text{
+    color: var(--text);
+    line-height: 1.7;
+    white-space: normal;
+}
+
+/* Toggle rows in preferences */
+.toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding: 10px 0;
+    border-bottom: 1px dashed rgba(255,255,255,0.08);
+}
+.toggle-row:last-child{ border-bottom: none; }
+
+
+
+/* ===================== V4 Coach Home (Compact Hero + Sticky Tabs) ===================== */
+.coach-hero-v4{
+  background: rgba(17,24,39,0.72);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  padding: 14px 14px 10px;
+  margin-bottom: 12px;
+  backdrop-filter: blur(10px);
+}
+.coach-hero-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.coach-hero-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+.coach-avatar-v4{
+  width:42px; height:42px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.coach-hero-text{ min-width:0; }
+.coach-greeting{ font-weight:800; font-size:14px; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.coach-hero-sub{ font-size:11px; color: rgba(255,255,255,0.70); margin-top:2px; }
+.coach-hero-actions{ display:flex; gap:8px; }
+.hero-icon-btn{
+  width:38px; height:38px; border-radius:14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+.hero-icon-btn:active{ transform: scale(0.98); }
+
+.coach-hero-stats{
+  display:flex; gap:10px; margin-top:10px;
+}
+.hero-stat{
+  flex:1;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 14px;
+  padding: 8px 10px;
+  display:flex; flex-direction:column; align-items:flex-start;
+}
+.hero-stat span{ font-weight:900; font-size:14px; color:#fff; letter-spacing:0.2px; }
+.hero-stat small{ font-size:10px; color: rgba(255,255,255,0.70); margin-top:2px; }
+
+.coach-tabs-nav{
+  position: sticky; top: 8px; z-index: 50;
+  display:flex; gap:8px;
+  background: rgba(17,24,39,0.55);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 6px;
+  margin-bottom: 12px;
+}
+.coach-tab-btn{
+  flex:1;
+  border: 1px solid transparent;
+  background: transparent;
+  color: rgba(255,255,255,0.78);
+  padding: 10px 8px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.coach-tab-btn.active{
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.14);
+  color:#fff;
+}
+.coach-home-tab{ display:none; animation: coachTabIn .18s ease-out; }
+.coach-home-tab.active{ display:block; }
+@keyframes coachTabIn { from{ transform: translateY(6px); opacity:0 } to{ transform: translateY(0); opacity:1 } }
+
+.coach-top-actions{ display:flex; align-items:center; gap:8px; }
+.coach-speed-btn{
+  width:34px; height:34px; border-radius:12px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+}
+.plan-tools-grid{ display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+.tool-card{
+  display:flex; align-items:center; gap:10px;
+  background: rgba(17,24,39,0.62);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 12px;
+}
+.tool-ico{
+  width:40px; height:40px; border-radius:14px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  display:flex; align-items:center; justify-content:center;
+  color:#fff;
+}
+.tool-meta{ flex:1; min-width:0; }
+.tool-title{ font-weight:900; font-size:13px; color:#fff; }
+.tool-sub{ font-size:11px; color: rgba(255,255,255,0.70); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tool-card i.ri-arrow-left-s-line, .tool-card i.ri-external-link-line{ color: rgba(255,255,255,0.65); font-size:18px; }
+
+.basic-lib-card, .weekly-challenge-card{
+  background: rgba(17,24,39,0.62);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 16px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+/* XT Badge */
+.xt-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  background: rgba(245,158,11,0.14);
+  border: 1px solid rgba(245,158,11,0.28);
+  color: #fbbf24;
+  margin-right: 6px;
+}
+
+
+/* =========================================
+   تحسينات الواجهة (UI Polish V2)
+   ========================================= */
+
+/* 1. توحيد الخطوط في كل مكان (هام جداً) */
+button, input, select, textarea, .tab-item, .coach-tab-btn {
+    font-family: 'Tajawal', sans-serif !important;
+}
+
+/* 2. تصميم تبويبات الكوتش (شكل الكبسولة العصرية) */
+.coach-tabs-nav {
+    background: rgba(0,0,0,0.2);
+    padding: 6px;
+    border-radius: 50px; /* شكل بيضاوي */
+    display: flex;
+    gap: 5px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.coach-tab-btn {
+    flex: 1;
+    border-radius: 40px;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: #9ca3af;
+    background: transparent;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.coach-tab-btn.active {
+    background: var(--primary); /* اللون الأخضر المميز */
+    color: #000; /* نص أسود للتباين */
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* 3. كارت الخطة البطل (Plan Hero) - تضخيم وتجميل */
+.plan-hero {
+    background: linear-gradient(135deg, #1f2937, #111827);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 25px 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* الرقم الضخم (10K) */
+.plan-hero-big {
+    font-size: 56px !important; /* حجم ضخم */
+    font-weight: 900 !important;
+    line-height: 1;
+    margin-bottom: 5px;
+    /* تأثير النص المتدرج */
+    background: linear-gradient(to right, #fff, #9ca3af);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -2px;
+}
+
+/* الأزرار الجديدة (Action Buttons) */
+/* =========================================
+   أزرار زجاجية لامعة (Glossy Compact Buttons)
+   ========================================= *//* =========================================
+   تحسينات الزجاج الواقعي وتنسيق الكارت الجديد
+   ========================================= */
+
+/* 1. الأزرار الزجاجية الواقعية (Real Frosted Glass) */
+.plan-actions-grid {
+    display: flex;
+    flex-direction: row !important;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-glossy {
+    flex: 1;
+    position: relative;
+    padding: 10px 5px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600; /* تقليل سماكة الخط قليلاً */
+    text-align: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+
+    /* سر الزجاج الواقعي: خلفية شفافة جداً + تغبيش قوي */
+    background: rgba(255, 255, 255, 0.03); 
+    backdrop-filter: blur(12px) saturate(110%); /* تغبيش مع تشبع لوني خفيف */
+    -webkit-backdrop-filter: blur(12px) saturate(110%);
+    
+    /* حدود ناعمة جداً وغير لامعة */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    /* ظل ناعم للعمق بدلاً من اللمعان */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: #e5e7eb; /* لون نص فاتح هادئ */
+}
+
+/* تأثير الضغط الهادئ */
+.btn-glossy:active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.01);
+}
+
+/* الزر الأساسي (لمسة خضراء زجاجية) */
+.btn-glossy.primary {
+    /* تدرج دائري خفيف جداً من الأعلى */
+    background: radial-gradient(circle at top, rgba(16, 185, 129, 0.15) 0%, rgba(255, 255, 255, 0.03) 70%);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #34d399; /* أخضر فاتح مضيء */
+    /* توهج للنص فقط */
+    text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+.btn-glossy.primary:hover {
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+/* 2. تنسيق الروابط في الأعلى (تعديل وإلغاء) */
+/* الحاوية الجديدة في أعلى اليمين */
+.plan-top-actions {
+    display: flex;
+    flex-direction: column; /* تحت بعض */
+    align-items: flex-end; /* محاذاة لليسار (لأن الاتجاه RTL) */
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.link-mini {
+    font-size: 10px !important; /* تصغير الخط */
+    color: #6b7280;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 5px; /* مساحة للضغط */
+    border-radius: 4px;
+    transition: all 0.2s;
+    opacity: 0.7; /* شفافية افتراضية */
+}
+.link-mini i { font-size: 11px; }
+.link-mini:hover { color: #fff; opacity: 1; background: rgba(255,255,255,0.05); }
+.link-mini.danger:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+/* روابط التحكم الصغيرة (تعديل / إلغاء) */
+.plan-controls-mini {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+}
+
+.link-mini {
+    font-size: 11px;
+    color: #6b7280;
+    text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.link-mini:hover { color: #fff; }
+.link-mini.danger:hover { color: #ef4444; }
+
+
+/* 4. تمرين الفريق (Glassmorphism) - إطار شفاف */
+.team-workout-card {
+    background: rgba(255, 255, 255, 0.03) !important; /* خلفية شفافة جداً */
+    backdrop-filter: blur(10px); /* تغبيش الخلفية */
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* لمسة جمالية: خط ملون خفيف بجانب تمرين الفريق */
+.team-workout-card::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--accent); /* لون مميز (بنفسجي مثلاً) */
+    opacity: 0.8;
+}
+
+
+
+
+/* =========================================
+   الفواصل الزجاجية للأقسام (Glass Panels)
+   ========================================= */
+
+.glass-panel {
+    /* خلفية شفافة جداً */
+    background: rgba(255, 255, 255, 0.02);
+    
+    /* الإطار الخفيف الشفاف الذي طلبته */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    
+    /* تدوير الحواف */
+    border-radius: 20px;
+    
+    /* مسافات داخلية وخارجية */
+    padding: 20px 15px;
+    margin-bottom: 25px; /* المسافة الفاصلة بين كل قسم والآخر */
+    
+    /* تأثير خفيف */
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+}
+
+/* تحسين شكل العناوين داخل البانل */
+.glass-panel h4 {
+    margin-top: 0 !important; /* إلغاء الهوامش القديمة */
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(255,255,255,0.1); /* خط فاصل تحت العنوان */
+}
+
+
+
+
+/* --- Admin scroll & fold fixes (2026-01 refactor) --- */
+#view-admin { overflow-y: auto; }
+.admin-content-section { overflow-y: auto; max-height: calc(100vh - 220px); }
+.admin-content-section details { overflow: visible; }
+.admin-content-section details[open] .panel-body { max-height: none; overflow: visible; }
+
+
+/* ==================== Coach Admin Sub-Tabs (New Design) ==================== */
+
+/* حاوية أزرار التبويب الفرعية */
+.coach-sub-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow-x: auto; /* للسماح بالتمرير في الشاشات الصغيرة */
+    white-space: nowrap;
+}
+
+/* زر التبويب الفرعي */
+.coach-sub-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Tajawal', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+/* حالة التبويب النشط */
+.coach-sub-btn.active {
+    background: var(--primary);
+    color: #000;
+    font-weight: 800;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.coach-sub-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+/* محتوى الأقسام */
+.coach-sub-section {
+    display: none; /* مخفي افتراضياً */
+    animation: fadeIn 0.3s ease;
+}
+
+.coach-sub-section.active {
+    display: block; /* ظاهر عند التنشيط */
+}
+
+/* تحسين شكل الصناديق لتأخذ المساحة كاملة */
+.coach-sub-section .admin-panel-box {
+    height: auto; /* السماح للطول بالتمدد */
+    min-height: 300px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(31, 41, 55, 0.4);
+}
+
+
+/* ==================== زر زجاجي متوهج (تحدي الأسبوع) ==================== */
+.btn-glass-glow {
+    width: 100%;
+    padding: 14px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    
+    /* تأثير الزجاج */
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    
+    /* التوهج */
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2), inset 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+.btn-glass-glow:hover {
+    transform: translateY(-2px) scale(1.02);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 25px rgba(16, 185, 129, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.1);
+}
+
+.btn-glass-glow i {
+    font-size: 20px;
+    color: var(--primary); /* اللون الأخضر */
+    filter: drop-shadow(0 0 5px var(--primary));
+}
+
+
+/* ==================== V5.4 Ultimate Plan Card (Neon Blue) ==================== */
+
+/* ==================== V5.5 Elegant Plan Card ==================== */
+
+.plan-hero {
+    /* خلفية داكنة جداً مع لمسة زرقاء خفيفة جداً */
+    background: linear-gradient(135deg, rgba(17, 24, 39, 1) 0%, rgba(30, 58, 138, 0.15) 100%);
+    
+    /* إطار ناعم جداً */
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 24px;
+    padding: 20px;
+    margin-bottom: 25px;
+    position: relative;
+    overflow: hidden;
+    
+    /* توهج خفيف جداً وهادئ */
+    box-shadow: 0 0 30px rgba(37, 99, 235, 0.05);
+}
+
+/* العلامة المائية الشفافة */
+.plan-hero::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%; /* في المنتصف تماماً */
+    transform: translate(-50%, -50%);
+    width: 140px;
+    height: 140px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'%3E%3Cpath d='M12 2C14.2 2 16 3.8 16 6C16 8.2 14.2 10 12 10C9.8 10 8 8.2 8 6C8 3.8 9.8 2 12 2ZM12 12C15.5 12 21 13.5 21 16V19C21 20.1 20.1 21 19 21H5C3.9 21 3 20.1 3 19V16C3 13.5 8.5 12 12 12ZM12 14C9.5 14 6.8 14.9 5.6 16H18.4C17.2 14.9 14.5 14 12 14Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    opacity: 0.04; /* شفافية عالية جداً عشان متزغللش العين */
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* الصف العلوي: العنوان يمين والأزرار يسار */
+.plan-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+/* حاوية الأزرار العلوية (تعديل وحذف) */
+.plan-top-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* زر أيقونة دائري صغير وأنيق */
+.btn-icon-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-circle:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-icon-circle.danger:hover {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* زر التسجيل الكبير في الأسفل */
+.btn-glass-record{
+  border: 1px solid rgba(59,130,246,0.35) !important;
+  background: linear-gradient(135deg, rgba(59,130,246,0.22), rgba(59,130,246,0.08)) !important;
+  color: #eaf2ff !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glass-record::after{
+  content:"";
+  position:absolute;
+  top:-60%;
+  left:-40%;
+  width:60%;
+  height:220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.22), rgba(255,255,255,0.00));
+  opacity: 0.9;
+  animation: ersShine 3.2s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes ersShine{
+  0%{ transform: translateX(-140%) rotate(18deg); opacity:0.0; }
+  25%{ opacity:0.65; }
+  50%{ transform: translateX(260%) rotate(18deg); opacity:0.15; }
+  100%{ transform: translateX(260%) rotate(18deg); opacity:0.0; }
+}
+.btn-glass-record:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(59,130,246,0.30), 0 14px 30px rgba(0,0,0,0.30);
+}
+
+/* --- أضف هذا الكود في ملف style.css --- */
+
+/* تنسيق الأزرار العلوية في كارت الخطة */
+.btn-glass-rect {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e5e7eb;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.btn-glass-rect:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.btn-glass-rect.danger {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.btn-glass-rect.danger:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+}
+
+
+/* ==================== ERS Blue Glass Theme (Plan / Schedule / Log) ==================== */
+/* Base blue glass card */
+.ers-blue-glass {
+  background: radial-gradient(120% 140% at 18% 12%, rgba(59,130,246,0.22) 0%, rgba(17,24,39,0.00) 55%),
+              linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+  backdrop-filter: blur(10px);
+}
+
+/* Plan hero card: move from green accent to blue accent */
+.plan-hero-card{
+  background: radial-gradient(120% 140% at 18% 12%, rgba(59,130,246,0.22) 0%, rgba(17,24,39,0.00) 55%),
+              linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+}
+
+/* Create plan card inside plan-hero (when no active plan) */
+.plan-create-card{
+  padding: 18px;
+  border-radius: 18px;
+  text-align: center;
+  overflow: hidden;
+}
+.plan-create-title{
+  margin:0 0 6px 0;
+  font-size:16px;
+  color:#fff;
+}
+.plan-create-sub{
+  font-size:12px;
+  color:#9ca3af;
+  margin:0 0 14px 0;
+}
+
+
+/* Apply blue glass to specific modals without affecting all modals */
+#modal-my-plan .modal-box,
+#modal-log .modal-box{
+  background: radial-gradient(140% 160% at 18% 12%, rgba(59,130,246,0.20) 0%, rgba(17,24,39,0.00) 60%),
+              linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 18px 50px rgba(0,0,0,0.40);
+}
+
+
+.btn-glass-record {
+    margin-top: 14px;
+    width: 100%;                 /* مش 100% */
+    min-width: 72%;
+    max-width: 92%;
+    padding: 12px 18px;
+    border-radius: 999px;        /* Oval */
+    cursor: pointer;
+    display: inline-flex;        /* مش flex */
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* توسيط الزر داخل كارت الخطة */
+.plan-hero-card .btn-glass-record{
+    margin-left: auto;
+    margin-right: auto;
+    display: flex;               /* داخل الكارت خليها flex عشان span يتوسّط */
+}
+
+/* تكبير الخط شوية */
+.btn-glass-record span{ font-size: 14px; }
+
+/* ==================== End ERS Blue Glass Theme ==================== */
+
+/* ==================== Fix modal close X position (Top-Left) ==================== */
+.modal-head{
+  position: relative;
+  padding-left: 48px;   /* مساحة للزر يسار */
+  padding-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* العنوان يتوسّط */
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.modal-close{
+  position: absolute;
+  left: 10px;           /* ✅ أقصى اليسار */
+  top: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.modal-close i{ font-size: 18px; }
+
+/* ==================== End Fix ==================== */
+
+/* ==================== Weekly challenge polish ==================== */
+.weekly-challenge-card{
+  border-radius: 20px;
+  padding: 18px;
+  background: radial-gradient(120% 140% at 18% 12%, rgba(59,130,246,0.18) 0%, rgba(17,24,39,0.00) 55%),
+              linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+/* لو فيه صف أزرار */
+.weekly-challenge-card .challenge-actions,
+.weekly-challenge-card .actions,
+.weekly-challenge-card .btn-row{
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+/* ستايل عام لأي زر جوّا كارت التحدي */
+.weekly-challenge-card button,
+.weekly-challenge-card .btn{
+  flex: 1;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-weight: 800;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+/* زر أساسي مميز (نفترض غالبًا آخر زر هو الأساسي مثل "تفاصيل التحدي") */
+.weekly-challenge-card .challenge-actions button:last-child,
+.weekly-challenge-card .actions button:last-child,
+.weekly-challenge-card .btn-row button:last-child{
+  background: linear-gradient(135deg, rgba(59,130,246,0.32), rgba(59,130,246,0.12));
+  border-color: rgba(59,130,246,0.35);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.28);
+}
+
+.weekly-challenge-card button:hover,
+.weekly-challenge-card .btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.30);
+}
+/* ==================== End Weekly challenge polish ==================== */
+
+
+/* ==================== Coach Workout Hero Card ==================== */
+.coach-workout-card{
+  border-radius: 22px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: radial-gradient(120% 140% at 18% 12%, rgba(59,130,246,0.22) 0%, rgba(17,24,39,0.00) 55%),
+              linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
+  box-shadow: 0 18px 55px rgba(0,0,0,0.40);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transform: translateZ(0);
+}
+
+.coach-workout-card::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  background: radial-gradient(600px 220px at 10% 0%, rgba(255,255,255,0.10), rgba(255,255,255,0.00) 60%);
+  opacity: .9;
+  pointer-events:none;
+}
+
+.coach-workout-card:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 22px 70px rgba(0,0,0,0.48);
+}
+
+/* Media (الصورة الكبيرة) */
+.cw-media{
+  position: relative;
+  height: 140px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.45) 100%),
+    radial-gradient(120% 140% at 18% 12%, rgba(59,130,246,0.28) 0%, rgba(17,24,39,0.00) 55%),
+    linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  overflow:hidden;
+}
+
+/* لو فيه صورة، نركبها كطبقة */
+.cw-media.has-img::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-image: var(--cw-img);
+  background-size: cover;
+  background-position: center;
+  transform: scale(1.02);
+  filter: saturate(1.1) contrast(1.05);
+  opacity: 0.85;
+}
+
+/* لمعة زجاج خفيفة تمر */
+.cw-media::before{
+  content:"";
+  position:absolute;
+  top:-60%;
+  left:-40%;
+  width:60%;
+  height:220%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, rgba(255,255,255,0.00), rgba(255,255,255,0.20), rgba(255,255,255,0.00));
+  animation: cwShine 3.6s ease-in-out infinite;
+  opacity: .85;
+  pointer-events:none;
+}
+@keyframes cwShine{
+  0%{ transform: translateX(-140%) rotate(18deg); opacity:0.0; }
+  25%{ opacity:0.55; }
+  55%{ transform: translateX(260%) rotate(18deg); opacity:0.15; }
+  100%{ transform: translateX(260%) rotate(18deg); opacity:0.0; }
+}
+
+/* محتوى الكارت */
+.cw-body{
+  padding: 14px 14px 16px;
+}
+
+.cw-top{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.cw-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size: 11px;
+  color:#dbeafe;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(59,130,246,0.28);
+  background: rgba(59,130,246,0.10);
+}
+
+.cw-title{
+  margin: 8px 0 4px;
+  font-size: 14px;
+  font-weight: 900;
+  color:#fff;
+  line-height: 1.35;
+}
+
+.cw-sub{
+  font-size: 12px;
+  color:#d1d5db;
+  line-height: 1.6;
+}
+
+/* Actions */
+.cw-actions{
+  display:flex;
+  gap:10px;
+  margin-top: 12px;
+}
+.cw-actions .btn{
+  flex:1;
+  border-radius: 16px;
+  padding: 12px 14px;
+  font-weight: 900;
+}
+
+/* زر "تكبير الصورة" فوق الميديا */
+.cw-zoom{
+  position:absolute;
+  left: 12px;
+  top: 12px;
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.25);
+  color:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  z-index: 5;
+}
+.cw-zoom:hover{ background: rgba(0,0,0,0.35); }
+/* ==================== End Coach Workout Hero Card ==================== */
+
+
+/* Coach workout badge inside activity log */
+.badge-coach-run{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  margin-inline-start:10px;
+  border:1px solid rgba(34,211,238,0.35);
+  background: rgba(34,211,238,0.10);
+  color:#dbeafe;
+}
+.badge-coach-run i{ font-size:13px; }
+
+/* ==================== GPS Optional Logging (Safe UI) ==================== */
+.gps-log-panel{
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 16px;
+  padding: 12px;
+  margin: 10px 0 14px;
+}
+.gps-log-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:6px;
+}
+.gps-log-title{
+  font-weight:800;
+  font-size:12px;
+  color:#e5e7eb;
+}
+.gps-log-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:900;
+  border:1px solid rgba(59,130,246,0.35);
+  background: rgba(59,130,246,0.12);
+  color:#dbeafe;
+}
+.gps-log-sub{
+  font-size:11px;
+  color:#9ca3af;
+  line-height:1.6;
+}
+.gps-log-actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.gps-live-grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:10px;
+  margin-top:12px;
+}
+.gps-live-item{
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  border-radius: 16px;
+  padding: 12px;
+  text-align:center;
+}
+.gps-live-val{
+  font-size:22px;
+  font-weight:900;
+  color:#fff;
+  line-height:1.2;
+}
+.gps-live-lbl{
+  font-size:11px;
+  color:#9ca3af;
+  margin-top:4px;
+}
+.gps-meta-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  margin-top:10px;
+  font-size:12px;
+  color:#9ca3af;
+}
+
+/* ==================== Glass Onboarding Styling ==================== */
+
+/* 1. الخلفية والطبقة العلوية */
+.glass-onb-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; /* خلفية سوداء صريحة لإبراز الزجاج */
+    z-index: 9999;
+    display: none; /* مخفي افتراضياً */
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* 2. الكرات المضيئة (Ambient Glow) */
+.glow-blob {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.6;
+    animation: blobFloat 10s infinite alternate;
+}
+.blob-1 { top: -50px; left: -50px; background: #10b981; } /* أخضر ERS */
+.blob-2 { bottom: -50px; right: -50px; background: #3b82f6; } /* أزرق */
+
+@keyframes blobFloat {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(20px, 40px) scale(1.1); }
+}
+
+/* 3. الكارت الزجاجي نفسه */
+.glass-card {
+    position: relative;
+    width: 90%;
+    max-width: 380px;
+    background: rgba(255, 255, 255, 0.05); /* شفافية عالية */
+    backdrop-filter: blur(20px) saturate(180%); /* التغبيش الزجاجي */
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.15); /* حدود ناعمة */
+    border-top: 1px solid rgba(255, 255, 255, 0.3); /* إضاءة علوية */
+    border-radius: 24px;
+    padding: 40px 25px 30px 25px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    animation: cardPopUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes cardPopUp {
+    from { opacity: 0; transform: scale(0.8) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 4. محتوى الشرائح */
+.glass-slide {
+    display: none;
+    animation: fadeSlideGlass 0.5s ease;
+}
+.glass-slide.active { display: block; }
+
+@keyframes fadeSlideGlass {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+.icon-3d {
+    font-size: 60px;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3)); /* ظل للأيقونة */
+    animation: iconBounce 2s infinite ease-in-out;
+}
+@keyframes iconBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.glass-slide h3 {
+    font-size: 24px;
+    color: #fff;
+    margin-bottom: 10px;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.glass-slide p {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+/* 5. التحكم والأزرار */
+.glass-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.dots-wrapper {
+    display: flex;
+    gap: 8px;
+    background: rgba(0,0,0,0.2);
+    padding: 8px 12px;
+    border-radius: 20px;
+}
+
+.glass-dot {
+    width: 8px;
+    height: 8px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-dot.active {
+    background: #10b981;
+    width: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px #10b981;
+}
+
+.glass-btn-primary {
+    width: 100%;
+    padding: 16px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+    transition: transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.glass-btn-primary:active { transform: scale(0.98); }
+
+.skip-btn {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.5);
+    font-size: 12px;
+    cursor: pointer;
+}
+/* إضافات على الستايل السابق */
+
+/* كرة ثالثة للإضاءة */
+.blob-3 { top: 40%; left: 40%; width: 200px; height: 200px; background: #8b5cf6; animation-delay: -5s; opacity: 0.4; }
+
+/* تنسيق خيار عدم الظهور */
+.dont-show-box {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
+.dont-show-box:hover { opacity: 1; }
+
+.custom-checkbox {
+    width: 20px; height: 20px;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.2);
+}
+
+.dont-show-box span {
+    font-size: 12px;
+    color: #d1d5db;
+    user-select: none;
+}
+
+/* تحسينات للكارت عشان يستوعب المحتوى */
+.full-height-card {
+    padding-bottom: 20px; /* مساحة للـ checkbox */
+}
+
+/* ==================== Premium Install Slide Styling ==================== */
+
+.install-card-glass {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* زر الأندرويد الفخم */
+.btn-install-glitch {
+    position: relative;
+    width: 100%;
+    background: linear-gradient(135deg, #10b981 0%, #064e3b 100%); /* تدريج أخضر اللوجو */
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    border-radius: 16px;
+    padding: 15px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-install-glitch:active {
+    transform: scale(0.97);
+}
+
+.btn-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    position: relative;
+    z-index: 2;
+}
+
+.btn-content i {
+    font-size: 32px;
+    color: #fff;
+}
+
+.btn-texts {
+    text-align: right; /* اتجاه عربي */
+    display: flex;
+    flex-direction: column;
+}
+
+.btn-title {
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.btn-sub {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 11px;
+}
+
+/* تأثير اللمعة المتحركة على الزر */
+.btn-glow {
+    position: absolute;
+    top: 0; left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transform: skewX(-20deg);
+    animation: shineBtn 3s infinite;
+}
+
+@keyframes shineBtn {
+    0% { left: -100%; }
+    20% { left: 200%; }
+    100% { left: 200%; }
+}
+
+/* كارت الأيفون الزجاجي */
+.ios-glass-tip {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px;
+    border-radius: 12px;
+}
+
+.ios-icon {
+    font-size: 24px;
+    color: #fff;
+}
+
+.ios-text {
+    font-size: 12px;
+    color: #d1d5db;
+    line-height: 1.5;
+    text-align: right;
+    flex: 1;
+}
+
+.glass-badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+}
+
+.gradient-text {
+    background: linear-gradient(to right, #fff, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.bounce-anim {
+    animation: bounceSlow 3s infinite ease-in-out;
+}
+
+@keyframes bounceSlow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+
+/* ==================== Egyptian Flag Glass Theme 🇪🇬 ==================== */
+
+/* 1. تعديل الإضاءات الخلفية (Blobs) */
+.blob-1 { 
+    top: -50px; left: -50px; 
+    background: #ef4444; /* أحمر */
+    opacity: 0.5;
+} 
+.blob-2 { 
+    bottom: -50px; right: -50px; 
+    background: #2563eb; /* أزرق */
+    opacity: 0.5;
+}
+.blob-3 { 
+    top: 40%; left: 40%; width: 200px; height: 200px; 
+    background: #ffffff; /* أبيض لإعطاء عمق */
+    animation-delay: -5s; 
+    opacity: 0.2; 
+}
+
+/* 2. تعديل النصوص الملونة */
+.gradient-text {
+    /* تدرج من الأحمر للأبيض */
+    background: linear-gradient(to right, #ffffff, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 3. تعديل زر التحميل (الأحمر القوي) */
+.btn-install-glitch.red-theme {
+    /* تدرج أحمر فخم */
+    background: linear-gradient(135deg, #dc2626 0%, #7f1d1d 100%);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+}
+
+/* لمعة الزر */
+.btn-glow {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+}
+
+/* 4. تعديل أدوات التحكم (النقاط والزر التالي) */
+
+/* النقطة النشطة (أحمر) */
+.glass-dot.active {
+    background: #ef4444;
+    box-shadow: 0 0 10px #ef4444;
+}
+
+/* زر "التالي" (أزرق للتمييز عن زر التحميل الأحمر) */
+.glass-btn-primary {
+    /* تدرج أزرق قوي */
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+    border: none; /* إزالة الحدود القديمة */
+}
+
+/* 5. تعديل الـ Checkbox (أحمر عند التفعيل) */
+.dont-show-box.active .custom-checkbox {
+    background: #ef4444 !important;
+    border-color: #ef4444 !important;
+}
+
+/* --- باقي التنسيقات الزجاجية الأساسية كما هي --- */
+/* تأكد من وجود باقي كلاسات glass-card, glass-slide, etc. من الكود السابق */

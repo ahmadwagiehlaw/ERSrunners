@@ -1,0 +1,26 @@
+{
+  "app": "ERS Runners",
+  "version": "4.1.0",
+  "cache": "ers-cache-v4.1.0",
+  "assets": [
+    "./",
+    "./index.html",
+    "./style.css",
+    "./electric-blue.css",
+    "./manifest.json",
+    "./icon.png",
+    "./ers-logo.png",
+    "./js/config.js",
+    "./js/state.js",
+    "./js/utils.js",
+    "./js/auth.js",
+    "./js/ui.js",
+    "./js/coach.js",
+    "./js/activities.js",
+    "./js/challenges.js",
+    "./js/admin.js",
+    "./js/main.js",
+    "./app.js"
+  ],
+  "notes": "Static cache manifest for troubleshooting / versioning. The real Service Worker is service-worker.js."
+}
