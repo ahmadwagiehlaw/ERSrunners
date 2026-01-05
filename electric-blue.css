@@ -1,0 +1,16 @@
+/* Electric Blue Theme (optional) */
+:root{
+  --primary:#3b82f6;
+  --primary-glow:rgba(59,130,246,0.35);
+  --accent:#60a5fa;
+  --bg-dark:#0b1220;
+  --bg-card:#0f172a;
+  --border:rgba(255,255,255,0.10);
+}
+
+:root{
+  --panel-bg: rgba(59,130,246,0.08);
+  --panel-bg-2: rgba(59,130,246,0.10);
+  --panel-border: rgba(147,197,253,0.22);
+  --panel-border-soft: rgba(147,197,253,0.18);
+}

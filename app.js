@@ -17,6 +17,7 @@ let currentUser = null;
 let userData = {};
 let isSignupMode = false;
 let editingRunId = null;
+let editingOldType = 'Run';
 let editingOldDist = 0;
 let allUsersCache = [];
 let deferredPrompt;
@@ -104,27 +105,24 @@ function showToast(message, type = 'success') {
 // ==================== V1.4 Admin Logic ====================
 
 function switchAdminTab(tabName) {
-    // 1. تحديث أزرار التبويب (إزالة التنشيط من الكل)
+    // 1) Activate correct tab button (data-tab driven)
     const tabs = document.querySelectorAll('.admin-tab');
-    tabs.forEach(t => t.classList.remove('active'));
+    tabs.forEach(t => {
+        const key = t.dataset.tab || '';
+        t.classList.toggle('active', key === tabName);
+    });
 
-    // 2. تنشيط الزر الصحيح يدوياً بناءً على الاسم
-    // (الترتيب: 0:overview, 1:inspector, 2:studio, 3:users)
-    if (tabName === 'overview' && tabs[0]) tabs[0].classList.add('active');
-    if (tabName === 'inspector' && tabs[1]) tabs[1].classList.add('active');
-    if (tabName === 'studio' && tabs[2]) tabs[2].classList.add('active');
-    if (tabName === 'users' && tabs[3]) tabs[3].classList.add('active');
-
-    // 3. تحديث المحتوى
+    // 2) Show correct content section
     document.querySelectorAll('.admin-content-section').forEach(s => s.classList.remove('active'));
     const content = document.getElementById('admin-' + tabName);
-    if(content) content.classList.add('active');
+    if (content) content.classList.add('active');
 
-    // 4. تحميل البيانات حسب التبويب
-    if(tabName === 'overview') loadAdminStats();
-    if(tabName === 'inspector') loadAdminRuns();
-    if(tabName === 'studio') loadAdminChallengesList();
-    if(tabName === 'users') loadAllUsersTable();
+    // 3) Lazy-load per tab
+    if (tabName === 'overview') loadAdminStats();
+    if (tabName === 'inspector') loadAdminRuns();
+    if (tabName === 'studio') loadAdminChallengesList();
+    if (tabName === 'coach') loadCoachAdmin();
+    if (tabName === 'users') loadAllUsersTable();
 }
 async function loadAdminStats() {
     // 1. حساب التواريخ
@@ -319,7 +317,11 @@ async function handleAuth() {
 }
 
 function logout() {
-    if(confirm("تسجيل خروج؟")) { auth.signOut(); window.location.reload(); }
+    if(confirm("تسجيل خروج؟")) {
+        try{ if(typeof _resetCoachFeed === 'function') _resetCoachFeed(); }catch(e){}
+        auth.signOut();
+        window.location.reload();
+    }
 }
 
 // مراقب الدخول (تم دمج المنطق هنا وحذف التكرار)
@@ -436,8 +438,11 @@ function updateUI() {
                 streakCount.innerText = myStreak + " يوم";
             } else {
                 streakEl.style.display = 'none';
-            }
+            renderCoachHeroStats(); 
+}
         }
+
+        
 // ... باقي الكود كما هو ...
        // ... داخل updateUI ...
       const profileAvatar = document.getElementById('userMainAvatar'); // التصحيح
@@ -486,6 +491,7 @@ function updateUI() {
         renderBadges();
         calculatePersonalBests(); // (V2.2)
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
+        if(typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
 
         // زر الأدمن
         const adminBtn = document.getElementById('btn-admin-entry');
@@ -628,6 +634,73 @@ function renderBadges() {
     grid.innerHTML = html;
 }
 
+
+// ==================== V4.0 Helpers (Coach Tabs + Cross Training) ====================
+const ERS_CORE_TYPES = ['Run','Walk','Race'];
+const ERS_XT_TYPES = ['Bike','Cardio','Strength','Yoga'];
+
+window.openExternal = function(url){
+  try { window.open(url, '_blank', 'noopener'); } catch(e){ location.href = url; }
+};
+
+window.setCoachHomeTab = function(tab){
+  const tabs = ['today','plan','community'];
+  tabs.forEach(t=>{
+    const pane = document.getElementById('coach-home-tab-'+t);
+    if(pane) pane.classList.toggle('active', t===tab);
+  });
+  document.querySelectorAll('.coach-tab-btn').forEach(btn=>{
+    btn.classList.toggle('active', btn.getAttribute('data-tab')===tab);
+  });
+  
+  
+  // === [تعديل: تحميل بيانات المجتمع عند فتح التبويب] ===
+  if (tab === 'today') {
+      // تحميل تمرين الفريق
+      renderTeamWorkout(); 
+      // تحميل التحدي الأسبوعي (لأنه أصبح في تبويب يومك)
+      if (typeof loadWeeklyChallenge === 'function') loadWeeklyChallenge();
+  }
+  
+
+   // ==============================================
+
+  try{ localStorage.setItem('ers_coach_home_tab', tab); }catch(e){}
+};
+
+function setupLogTypeUI(){
+  const typeSel = document.getElementById('log-type');
+  const distWrap = document.getElementById('log-dist')?.closest('.input-wrap');
+  const distInput = document.getElementById('log-dist');
+  const timeInput = document.getElementById('log-time');
+
+  function apply(){
+    const t = typeSel ? typeSel.value : 'Run';
+    const isCore = _ersIsCoreType(t);
+
+    if(distWrap){
+      distWrap.style.display = isCore ? '' : 'none';
+    }
+    if(distInput){
+      distInput.required = isCore;
+      if(!isCore && !distInput.value) distInput.value = '';
+    }
+    if(timeInput){
+      timeInput.required = true;
+    }
+
+    const modalTitle = document.querySelector('#modal-log h3');
+    if(modalTitle){
+      modalTitle.textContent = isCore ? 'تسجيل نشاط 🏃‍♂️' : 'تسجيل نشاط (Cross Training) 🧩';
+    }
+  }
+
+  if(typeSel){
+    typeSel.addEventListener('change', apply);
+    apply();
+  }
+}
+
 // ==================== V8.0 Pro Coach Engine (Training Planner) 🧠 ====================
 // ==================== V9.0 Mastermind Coach Engine 🧠 ====================
 
@@ -721,56 +794,261 @@ async function resetActivePlan(btnElement) {
 function updateCoachAdvice() {
     const msgEl = document.getElementById('coach-message');
     const labelEl = document.querySelector('.coach-label');
-    
     if(!msgEl) return;
 
-    // 1. البيانات الأساسية
     const name = (userData.name || "يا بطل").split(' ')[0];
-    const hasPlan = userData.activePlan && userData.activePlan.status === 'active';
-    
-    // إعداد النص الافتراضي
-    let title = "نصيحة الكوتش";
-    let message = `يا ${name}، الاستمرارية هي سر النجاح. لا تتوقف!`;
+    const hasPlan = userData?.activePlan && userData.activePlan.status === 'active';
 
-    // 2. إذا كان هناك خطة نشطة، الكوتش يتابعها
-    if (hasPlan) {
-        const plan = userData.activePlan;
-        const startDate = new Date(plan.startDate);
-        const dayNum = Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24)) + 1;
-        const weekNum = Math.ceil(dayNum / 7);
-        
-        title = `الأسبوع ${weekNum} - اليوم ${dayNum % 7 || 7}`;
-        message = `أهلاً كابتن ${name}! إحنا ماشيين على خطة الـ <b>${plan.target}</b>. <br>ركز في تمرين النهاردة ومستني أشوف العلامة الخضراء! ✅`;
+    // العنوان ثابت لتقليل اللخبطة
+    if(labelEl) labelEl.innerText = "قرار اليوم";
+
+    // ملاحظة قصيرة "تلمس" المستخدم — بدون أزرار هنا لتقليل الزحمة
+    let note = '';
+    try{
+        if(hasPlan){
+            const s = getPlanTodaySession(userData.activePlan);
+            note = s?.isRunDay
+                ? `يا ${name}… النهارده من خطتك. خلّيك ثابت واشتغل على الجودة بهدوء.`
+                : `يا ${name}… يوم خفيف من الخطة. الاستشفاء جزء من التدريب مش راحة وخلاص.`;
+        }else{
+            const runs = window._ersRunsCache || [];
+            const d = computeDecisionFromRuns(runs);
+            note = `يا ${name}… ${d.why}`;
+        }
+    }catch(e){
+        note = `يا ${name}… الاستمرارية هي سر النجاح.`;
     }
 
-    // 3. تجهيز الأزرار (لاحظ التعديل في onclick)
-    let actionBtn = '';
-    
-    if (hasPlan) {
-        actionBtn = `
-        <button onclick="openMyPlan()" class="btn-plan-action">
-            <i class="ri-map-2-line"></i> متابعة تنفيذ خطة الجري
-        </button>
-        <button onclick="resetActivePlan(this)" class="btn-plan-reset">
-            <i class="ri-refresh-line"></i> إلغاء الخطة والبدء من جديد
-        </button>`;
-    } else {
-        actionBtn = `
-        <button onclick="openPlanWizard()" class="btn-plan-action">
-            <i class="ri-magic-line"></i> صمم لي خطة تدريب
-        </button>`;
-    }
+    msgEl.innerHTML = `<div class="coach-note">🧠 ${note}</div>`;
 
-    // 4. العرض
-    labelEl.innerText = title;
-    msgEl.innerHTML = message + actionBtn;
-
-    // 5. تحديث قرار اليوم (Coach V2)
+    // تحديث قرار اليوم (Coach V2)
     if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI();
+
+    // تحديث كارت الخطة/البدء (Plan Hero)
+    if (typeof renderPlanHero === 'function') renderPlanHero();
+}
+
+
+function openBasicLibrary(){
+    // المكتبة الأساسية مرجع — نفتحها في مودال واحد
+    try{ openRunCatalog('all'); }catch(e){}
+}
+
+function _formatPlanTarget(target){
+    if(!target) return '';
+    const t = String(target).toLowerCase();
+    if(t.includes('21') || t.includes('half')) return '21K';
+    if(t.includes('10')) return '10K';
+    if(t.includes('5')) return '5K';
+    // fallback numeric
+    return String(target).toUpperCase();
+}
+
+function renderPlanHero(){
+    const box = document.getElementById('plan-hero');
+    if(!box) return;
+
+    const name = (userData.name || "يا بطل").split(' ')[0];
+    const hasPlan = userData?.activePlan && userData.activePlan.status === 'active';
+
+    if(!hasPlan){
+        // ... (كود حالة عدم وجود خطة - يبقى كما هو) ...
+        box.innerHTML = `... (نفس كود الحالة السابقة) ...`;
+        // (اختصاراً للمساحة، إذا لم يكن لديك الكود السابق اخبرني لأكتبه كاملاً)
+        // سأفترض أنك ستبقي الجزء الأول كما هو وتركز على جزء الـ else
+        // ...
+        return;
+    }
+
+    // === التعديل هنا فقط (حالة وجود خطة) ===
+    const plan = userData.activePlan;
+    const targetBig = _formatPlanTarget(plan.target || plan.goal || '10k');
+    const startDate = new Date(plan.startDate);
+    const dayNum = Math.floor((new Date() - startDate) / (1000 * 60 * 60 * 24)) + 1;
+    const weekNum = Math.max(1, Math.ceil(dayNum / 7));
+    const dayInWeek = ((dayNum - 1) % 7) + 1;
+
+    const s = getPlanTodaySession(plan);
+    const todayTitle = s?.title || 'تمرين اليوم';
+    const todayMeta = s?.sub || 'تابع الخطة لمعرفة تفاصيل التمرين.';
+
+    box.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+                <div class="plan-hero-big" style="margin-bottom:0; line-height:0.9;">${targetBig}</div>
+                <div style="color:#9ca3af; font-size:11px; font-weight:bold; margin-top:4px;">
+                    الأسبوع ${weekNum} • يوم ${dayInWeek}
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+                <span class="plan-hero-chip" style="background:rgba(16,185,129,0.1); color:#10b981; padding:3px 8px; border-radius:6px; font-size:9px; margin-bottom:5px;">نشطة ✅</span>
+                
+                <div class="plan-top-actions">
+                    <button class="link-mini" onclick="openPlanWizard()">
+                        <i class="ri-edit-2-line"></i> تعديل
+                    </button>
+                    <button class="link-mini danger" onclick="resetActivePlan(this)">
+                        <i class="ri-close-circle-line"></i> إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:15px;">
+            <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:10px; border-right:2px solid ${s.mode === 'recovery' ? '#10b981' : 'var(--primary)'};">
+                <div style="font-size:9px; color:#9ca3af;">تمرين اليوم:</div>
+                <div style="font-size:14px; font-weight:bold; color:#fff;">${_escapeHtml(todayTitle)}</div>
+                <div style="font-size:11px; color:#d1d5db; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${_escapeHtml(todayMeta)}</div>
+            </div>
+
+            <div class="plan-actions-grid">
+                <button class="btn-glossy primary" onclick="openMyPlan()">
+                    <i class="ri-map-2-line"></i> الجدول
+                </button>
+                <button class="btn-glossy secondary" onclick="openLogFromCoach('${String(todayTitle).replace(/'/g,"&#39;")}')">
+                    <i class="ri-check-line"></i> تم التنفيذ
+                </button>
+            </div>
+            </div>
+    `;
 }
 
 // ==================== Coach V2: Decision Engine (Safe / Non-breaking) ====================
 window._ersRunsCache = window._ersRunsCache || [];
+
+// === Coach Brain v1 helpers (pace / classification / prefs) ===
+const ERS_PACE_RUN_MAX = 10.5;   // min/km and faster => Run
+const ERS_PACE_WALK_MIN = 10.75; // above this is usually Walk
+const ERS_MIN_DIST_FOR_SPEED = 5; // km
+
+function _ersPace(distKm, timeMin){
+    const d = parseFloat(distKm||0);
+    const t = parseFloat(timeMin||0);
+    if(!d || !t) return null;
+    return t / d; // min per km
+}
+function _ersFormatPace(p){
+    if(p === null || p === undefined || !isFinite(p)) return '—';
+    const mm = Math.floor(p);
+    const ss = Math.round((p - mm)*60);
+    return `${mm}:${String(ss).padStart(2,'0')} د/كم`;
+}
+function _ersAutoKind(selectedType, pace){
+    // Race always treated as Run
+    const t = String(selectedType||'').toLowerCase();
+    if(t === 'race') return 'Run';
+    if(pace === null || pace === undefined || !isFinite(pace)) return (t === 'walk' ? 'Walk' : 'Run');
+    return (pace <= ERS_PACE_RUN_MAX ? 'Run' : 'Walk');
+}
+function _ersInferChallengeActivityKind(ch){
+    // explicit
+    const explicit = ch?.rules?.activityKind;
+    if(explicit === 'Run' || explicit === 'Walk' || explicit === 'Any') return explicit;
+    const title = String(ch?.title || ch?.name || '').toLowerCase();
+    if(title.includes('مشي') || title.includes('walk') || title.includes('steps')) return 'Walk';
+    if(ch?.type === 'speed') return 'Run';
+    if(title.includes('جري') || title.includes('run') || title.includes('race') || title.includes('ماراثون') || title.includes('half')) return 'Run';
+    return 'Any';
+}
+function _ersEligibleForChallenge(ch, effectiveKind){
+    const kind = _ersInferChallengeActivityKind(ch);
+    if(kind === 'Any') return true;
+    return String(effectiveKind||'') === kind;
+}
+function _ersLoadPrefs(){
+    try{
+        const raw = localStorage.getItem('ers_prefs');
+        return raw ? JSON.parse(raw) : {};
+    }catch(e){ return {}; }
+}
+function _ersSavePrefs(prefs){
+    try{ localStorage.setItem('ers_prefs', JSON.stringify(prefs||{})); }catch(e){}
+}
+function getUserPref(key, fallback){
+    const prefs = (userData && userData.prefs) ? userData.prefs : _ersLoadPrefs();
+    if(prefs && Object.prototype.hasOwnProperty.call(prefs, key)) return prefs[key];
+    return fallback;
+}
+async function setUserPref(key, value){
+    const prefs = Object.assign({}, _ersLoadPrefs(), (userData?.prefs||{}), { [key]: value });
+    _ersSavePrefs(prefs);
+    if(userData) userData.prefs = prefs;
+    try{
+        if(db && auth?.currentUser){
+            await db.collection('users').doc(auth.currentUser.uid).set({ prefs }, { merge:true });
+        }
+    }catch(e){}
+    try{ applyUserPrefsToUI(); }catch(e){}
+}
+function applyUserPrefsToUI(){
+    const hideTeam = !!getUserPref('hideTeamWorkout', false);
+    const hideWeekly = !!getUserPref('hideWeeklyChallenge', false);
+    const hideLib = !!getUserPref('hideBasicLibrary', false);
+    const hideSpeed = !!getUserPref('hideSpeedRadar', false);
+
+    const teamEl = document.getElementById('team-workout-section');
+    const weeklyEl = document.getElementById('weekly-challenge-section');
+    const libEl = document.getElementById('basic-library-section');
+    const speedBtn = document.getElementById('coach-speed-btn');
+
+    if(teamEl) teamEl.style.display = hideTeam ? 'none' : '';
+    if(weeklyEl) weeklyEl.style.display = hideWeekly ? 'none' : '';
+    if(libEl) libEl.style.display = hideLib ? 'none' : '';
+
+    if(speedBtn && hideSpeed) speedBtn.style.display = 'none';
+}
+
+function openCoachPreferences(){
+    const modal = document.getElementById('modal-coach-prefs');
+    if(!modal) return;
+
+    // Fill UI from prefs
+    const setChk = (id, val) => { const el=document.getElementById(id); if(el) el.checked = !!val; };
+    setChk('pref-hide-team', getUserPref('hideTeamWorkout', false));
+    setChk('pref-hide-weekly', getUserPref('hideWeeklyChallenge', false));
+    setChk('pref-hide-lib', getUserPref('hideBasicLibrary', false));
+    setChk('pref-hide-speed', getUserPref('hideSpeedRadar', false));
+    setChk('pref-disable-comments', getUserPref('disableComments', false));
+
+    const focusSel = document.getElementById('pref-goal-focus');
+    if(focusSel) focusSel.value = getUserPref('goalFocus', 'general');
+
+    modal.style.display = 'flex';
+}
+
+async function saveCoachPreferences(){
+    try{
+        const getChk = (id) => { const el=document.getElementById(id); return !!(el && el.checked); };
+
+        setUserPref('hideTeamWorkout', getChk('pref-hide-team'));
+        setUserPref('hideWeeklyChallenge', getChk('pref-hide-weekly'));
+        setUserPref('hideBasicLibrary', getChk('pref-hide-lib'));
+        setUserPref('hideSpeedRadar', getChk('pref-hide-speed'));
+        setUserPref('disableComments', getChk('pref-disable-comments'));
+
+        const focusSel = document.getElementById('pref-goal-focus');
+        const focus = focusSel ? (focusSel.value || 'general') : 'general';
+        setUserPref('goalFocus', focus);
+
+        // Persist to Firestore (merge)
+        if(currentUser && db){
+            await db.collection('users').doc(currentUser.uid).set({
+                uiPrefs: userData.uiPrefs || {}
+            }, {merge:true});
+        }
+
+        applyUserPrefsToUI();
+        showToast("تم حفظ تفضيلاتك ✅", "success");
+        closeModal('modal-coach-prefs');
+        updateUI();
+    }catch(e){
+        console.error(e);
+        showToast("تعذر حفظ التفضيلات", "error");
+    }
+}
+
+
 
 function openExternal(url){
     if(!url) return;
@@ -825,60 +1103,94 @@ function getPlanTodaySession(plan){
 
 function computeDecisionFromRuns(runs){
     const now = new Date();
-    const msDay = 1000*60*60*24;
-    const last = runs && runs.length ? runs[0] : null;
-    const lastDate = last && last.timestamp ? last.timestamp.toDate() : null;
+    const msDay = 24*3600*1000;
+
+    const sorted = (runs||[]).slice().sort((a,b)=>{
+        const ta = (a.timestamp ? a.timestamp.toDate() : new Date(a.date||0)).getTime();
+        const tb = (b.timestamp ? b.timestamp.toDate() : new Date(b.date||0)).getTime();
+        return tb-ta;
+    });
+
+    const last = sorted[0] || null;
+    const lastDate = last ? (last.timestamp ? last.timestamp.toDate() : new Date(last.date||now)) : null;
     const daysSince = lastDate ? Math.floor((now - lastDate)/msDay) : 999;
 
-    // last 7 days
-    const last7 = (runs||[]).filter(r => {
-        const d = r.timestamp ? r.timestamp.toDate() : null;
-        return d && (now - d) <= (7*msDay);
+    const lastDist = last ? (parseFloat(last.dist)||0) : 0;
+    const lastTime = last ? (parseFloat(last.time)||0) : 0;
+    const lastPace = last ? (last.pace || _ersPace(lastDist, lastTime) || 0) : 0;
+    const lastKind = last ? (last.autoKind || _ersAutoKind(last.type||'Run', lastPace)) : 'Run';
+
+    // آخر 7 أيام
+    const since7 = new Date(now.getTime()-7*msDay);
+    const weekRuns = sorted.filter(r=>{
+        const d = r.timestamp ? r.timestamp.toDate() : new Date(r.date||0);
+        return d >= since7;
     });
-    const total7 = last7.reduce((acc, r) => acc + (parseFloat(r.dist)||0), 0);
-    const count7 = last7.length;
 
-    // قواعد بسيطة قوية
-    if (daysSince >= 7) {
-        return {
-            mode: 'discipline',
-            title: 'عودة ذكية 👟',
-            sub: '20–30 دقيقة جري سهل جدًا + 5 دقايق إطالة.',
-            why: 'بقينا بعيد شوية… هنرجع بثبات مش بعنف.'
-        };
-    }
-    if (daysSince >= 4) {
-        return {
-            mode: 'discipline',
-            title: 'إعادة تشغيل 🔁',
-            sub: '15–25 دقيقة جري خفيف/مشي سريع + تنفّس منتظم.',
-            why: 'انقطاع بسيط… المهم نكسر الكسل ونرجع للروتين.'
-        };
-    }
-    if (last && (parseFloat(last.dist)||0) >= 15 && daysSince <= 1) {
-        return {
-            mode: 'recovery',
-            title: 'استشفاء إلزامي 🧊',
-            sub: 'مشي 20–30 دقيقة أو جري خفيف جدًا (RPE 2–3).',
-            why: 'آخر جرية كانت تقيلة… النهارده بنصلّح مش بنهدم.'
-        };
-    }
-    if (count7 >= 5 || total7 >= 35) {
-        return {
-            mode: 'recovery',
-            title: 'يوم خفيف بذكاء 🫶',
-            sub: '25–40 دقيقة جري سهل + إطالات قصيرة.',
-            why: `آخر 7 أيام: ${count7} نشاط / ${total7.toFixed(1)} كم… حافظ على الاستمرارية بدون ضغط.`
-        };
+    const weekDist = weekRuns.reduce((s,r)=>s+(parseFloat(r.dist)||0),0);
+    // V4 Hero quick stats
+    try{
+      const wEl = document.getElementById('hero-week-dist');
+      if(wEl) wEl.textContent = (weekDist||0).toFixed(1);
+      const mEl = document.getElementById('hero-month-dist');
+      if(mEl) mEl.textContent = (userData?.monthDist || 0).toFixed(1);
+      const sEl = document.getElementById('hero-streak');
+      if(sEl) sEl.textContent = String(userData?.currentStreak || 0);
+      const gEl = document.getElementById('coach-greeting');
+      if(gEl){
+        const h = (new Date()).getHours();
+        const name = (userData?.name || 'يا كابتن').split(' ')[0];
+        const greet = (h < 12) ? 'صباح الخير' : (h < 17 ? 'مساء الخير' : 'مساء النور');
+        gEl.textContent = `${greet} يا ${name} 👋`;
+      }
+    }catch(e){}
+
+    const weekHard = weekRuns.filter(r=>{
+        const d = parseFloat(r.dist)||0;
+        const t = parseFloat(r.time)||0;
+        const p = r.pace || _ersPace(d,t) || 0;
+        return (d >= 10) || (p>0 && p <= 5.3);
+    }).length;
+
+    // قرار اليوم (Coach Brain v1)
+    let title = "قرار الكوتش اليوم 🧠";
+    let summary = "";
+    let tone = "neutral";
+    let actionKey = "easy"; // for UI hints
+
+    if (!last) {
+        title = "نبدأ صح 👟";
+        summary = "مفيش نشاط مسجل لسه… النهارده نعمل 20–30 دقيقة جري/مشي خفيف + 5 دقايق إطالة. أهم حاجة نفتح الباب.";
+        tone = "good";
+        actionKey = "start";
+    } else if (daysSince >= 4) {
+        title = "رجعنا للمسار 💚";
+        summary = `آخر نشاط من ${daysSince} أيام… هنرجّع الإيقاع بهدوء: 25–35 دقيقة سهل (RPE 2–3) + مشي دقيقتين في النص لو احتجت.`;
+        tone = "warn";
+        actionKey = "return";
+    } else if (lastKind === 'Run' && (lastDist >= 10 || (lastPace>0 && lastPace<=5.3))) {
+        title = "استشفاء ذكي 🫶";
+        summary = "أمس/آخر مرة كان فيها شغل تقيل… النهارده جسمك محتاج يوم سهل: 20–40 دقيقة Recovery أو راحة نشطة + Mobility.";
+        tone = "good";
+        actionKey = "recovery";
+    } else if (weekHard >= 2) {
+        title = "توازن الأسبوع ⚖️";
+        summary = "الأسبوع فيه مجهود عالي كفاية… خلينا النهارده سهل عشان نطلع أقوى في الجلسة الجاية.";
+        tone = "neutral";
+        actionKey = "easy";
+    } else if (weekDist < 8) {
+        title = "نزوّد الاستمرارية 🔥";
+        summary = "إجمالي الأسبوع قليل… النهارده 30–45 دقيقة سهل + 4×20 ثانية سترایدز خفيفة (اختياري).";
+        tone = "good";
+        actionKey = "build";
+    } else {
+        title = "يوم شغل مُتحكَّم فيه 💪";
+        summary = "لو حاسس نفسك كويس: 10 دقايق إحماء → 6×(1 دقيقة أسرع + 1 دقيقة سهل) → تهدئة. لو مش جاهز… خليه Easy.";
+        tone = "neutral";
+        actionKey = "quality";
     }
 
-    // افتراضي: جودة بسيطة
-    return {
-        mode: 'build',
-        title: 'تمرين بناء 🧱',
-        sub: '10 دقائق إحماء → 6×(1 دقيقة أسرع + 1 دقيقة سهل) → 8 دقائق تهدئة.',
-        why: 'هنزود الجودة تدريجيًا… من غير تهور.'
-    };
+    return { title, summary, tone, actionKey, weekDist: weekDist.toFixed(1), weekHard };
 }
 
 function updateCoachDecisionUI(runsOverride){
@@ -903,13 +1215,842 @@ function updateCoachDecisionUI(runsOverride){
     // 2) من واقع آخر النشاطات
     const runs = runsOverride || window._ersRunsCache || [];
     const d = computeDecisionFromRuns(runs);
-    pill.className = `coach-mode-pill ${d.mode}`;
-    pill.textContent = d.mode === 'recovery' ? 'Recovery' : (d.mode === 'discipline' ? 'Discipline' : (d.mode === 'push' ? 'Push' : 'Build'));
+    const tone = d.tone || 'neutral';
+    pill.className = `coach-mode-pill ${tone}`;
+    pill.textContent = (tone==='good') ? 'Stable' : (tone==='warn' ? 'Reset' : 'Focus');
     tEl.textContent = d.title;
-    sEl.textContent = `${d.sub} • ${d.why}`;
+    const w = (d.weekDist != null) ? ` • أسبوعك: ${d.weekDist} كم` : '';
+    sEl.textContent = `${d.summary}${w}`;
 }
 //========================================================
 // دوال مساعدة للعرض
+// ==================== Coach Center: Daily Workout + Weekly Challenge (V3.5) ====================
+
+let _coachFeedReady = false;
+let _coachDailyWorkout = null;
+let _coachWeeklyChallenge = null;
+let _coachUnsubs = { override:null, schedule:null, workout:null, challenge:null, myChallenge:null };
+
+function _ersDateKey(d=new Date()){
+    const z = new Date(d);
+    const y = z.getFullYear();
+    const m = String(z.getMonth()+1).padStart(2,'0');
+    const day = String(z.getDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
+}
+function _ersDayKey(d=new Date()){
+    const map = ['sun','mon','tue','wed','thu','fri','sat'];
+    return map[d.getDay()];
+}
+
+function setupCoachFeedOnce(){
+    if(_coachFeedReady) return;
+    if(!db || !currentUser) return;
+    _coachFeedReady = true;
+    setupCoachFeed();
+}
+
+function setupCoachFeed(){
+    try{
+        const dateKey = _ersDateKey(new Date());
+
+        // override for "today" (coach can publish a special workout)
+        if(_coachUnsubs.override) _coachUnsubs.override();
+        _coachUnsubs.override = db.collection('coachOverrides').doc(dateKey)
+            .onSnapshot(() => loadCoachDailyWorkout());
+
+        // weekly schedule (fallback if no override)
+        if(!_coachUnsubs.schedule){
+            _coachUnsubs.schedule = db.collection('coachConfig').doc('weeklySchedule')
+                .onSnapshot(() => loadCoachDailyWorkout());
+        }
+
+        // weekly challenge (global)
+        if(!_coachUnsubs.challenge){
+            _coachUnsubs.challenge = db.collection('coachConfig').doc('weeklyChallenge')
+                .onSnapshot(() => loadCoachWeeklyChallenge());
+        }
+
+        // my completion status (per user)
+        if(!_coachUnsubs.myChallenge){
+            _coachUnsubs.myChallenge = db.collection('users').doc(currentUser.uid)
+                .collection('coachWeekly').doc('current')
+                .onSnapshot(() => loadCoachWeeklyChallenge());
+        }
+
+        loadCoachDailyWorkout();
+        loadCoachWeeklyChallenge();
+    }catch(e){
+        console.error(e);
+    }
+}
+
+function _resetCoachFeed(){
+    _coachFeedReady = false;
+    Object.keys(_coachUnsubs).forEach(k=>{
+        if(typeof _coachUnsubs[k] === 'function') _coachUnsubs[k]();
+        _coachUnsubs[k] = null;
+    });
+    _coachDailyWorkout = null;
+    _coachWeeklyChallenge = null;
+}
+
+/* -------------------- Daily Workout -------------------- */
+
+async function loadCoachDailyWorkout(){
+    const card = document.getElementById('coach-daily-card');
+    if(!card) return;
+    if(!db) return;
+
+    const dateKey = _ersDateKey(new Date());
+    const dayKey = _ersDayKey(new Date());
+
+    let workoutId = null;
+    let source = 'weekly';
+
+    try{
+        const ov = await db.collection('coachOverrides').doc(dateKey).get();
+        if(ov.exists && ov.data()?.workoutId){
+            workoutId = ov.data().workoutId;
+            source = 'override';
+        }else{
+            const sched = await db.collection('coachConfig').doc('weeklySchedule').get();
+            if(sched.exists){
+                workoutId = sched.data()?.[dayKey] || null;
+                source = 'weekly';
+            }
+        }
+
+        if(workoutId){
+            // subscribe to workout live updates (edit from admin)
+            if(_coachUnsubs.workout) _coachUnsubs.workout();
+            _coachUnsubs.workout = db.collection('coachWorkouts').doc(workoutId)
+                .onSnapshot(snap=>{
+                    if(!snap.exists) return;
+                    _coachDailyWorkout = { id:snap.id, ...snap.data(), _source: source };
+                    renderCoachDailyCard();
+                });
+        }else{
+            _coachDailyWorkout = _getFallbackWorkout(dayKey);
+            _coachDailyWorkout._source = 'fallback';
+            renderCoachDailyCard();
+        }
+
+        const pill = document.getElementById('coach-daily-pill');
+        if(pill){
+            pill.style.display = 'inline-flex';
+            pill.innerText = (source === 'override') ? 'مُحدث اليوم ✨' : 'من جدول الأسبوع ♻️';
+        }
+    }catch(e){
+        console.error(e);
+        card.innerHTML = `<div style="text-align:center; color:#ef4444;">تعذر تحميل جرية اليوم.</div>`;
+    }
+}
+
+function _getFallbackWorkout(dayKey){
+    const defaults = {
+        sat: { emoji:'🫁', title:'استشفائي أو راحة', type:'recovery', load:'20–35 دقيقة', rpe:'2–3', structure:'Warmup: 5 دقائق مشي/جري خفيف\nMain: جري سهل جدًا\nCooldown: إطالة 8 دقائق', notes:'خفّفها… الهدف إنك تقوم تاني بكرة.' },
+        sun: { emoji:'🏔️', title:'تمرين هيلز', type:'hills', load:'30–45 دقيقة', rpe:'6–7', structure:'Warmup: 10 دقائق\nMain: 6×(40ث صعود + 70ث نزول)\nCooldown: 8 دقائق', notes:'الصعود قوي بس قصير… والنزول مرن.' },
+        mon: { emoji:'🧘‍♂️', title:'موبيلتي / يوجا', type:'mobility', load:'20–30 دقيقة', rpe:'1–2', structure:'Mobility: كاحل + فخذ + حوض\nYoga: تنفّس + إطالات', notes:'ده مش رفاهية… ده صيانة.' },
+        tue: { emoji:'⚡', title:'انترفال', type:'intervals', load:'35–55 دقيقة', rpe:'7–8', structure:'Warmup: 10 دقائق\nMain: 8×(1د سريع + 1د سهل)\nCooldown: 8 دقائق', notes:'سرعاتك "متحكم فيها" مش سباق.' },
+        wed: { emoji:'🎲', title:'فارتلك أو استشفائي', type:'fartlek', load:'25–45 دقيقة', rpe:'4–6', structure:'Warmup: 10 دقائق\nMain: 10×(1د أسرع + 1د سهل)\nCooldown: 6 دقائق', notes:'إلعبها… وانهى وأنت قادر تزود.' },
+        thu: { emoji:'🏋️', title:'كروس تريننج', type:'strength', load:'25–40 دقيقة', rpe:'4–6', structure:'Strength: سكوات خفيف + كور\nأو: عجلة/سباحة/إليبتكال', notes:'قوة = حماية للركبة + سرعة أسرع.' },
+        fri: { emoji:'🐢', title:'لونج رن', type:'long', load:'60–90 دقيقة', rpe:'3–5', structure:'Warmup: 8 دقائق\nMain: جري ثابت\nCooldown: 6 دقائق + سوائل', notes:'خليها "مريحة"… اللونج يبنيك.' }
+    };
+    return defaults[dayKey] || defaults.sun;
+}
+
+function renderCoachDailyCard(){
+    const card = document.getElementById('coach-daily-card');
+    if(!card) return;
+
+    const w = _coachDailyWorkout;
+    if(!w){
+        card.innerHTML = `<div class="loader-placeholder">جاري تجهيز جرية اليوم…</div>`;
+        return;
+    }
+
+    const emoji = w.emoji || '🔥';
+    const title = w.title || w.name || 'جرية اليوم';
+    const load = w.load || w.distance || '';
+    const rpe = w.rpe ? `RPE ${w.rpe}` : '';
+    const hasYT = !!_toYouTubeEmbed(w.youtubeUrl || w.youtube);
+
+    card.innerHTML = `
+        <div class="dw-head">
+            <div class="dw-badge">
+                <div class="dw-emoji">${emoji}</div>
+                <div>
+                    <div class="dw-title">${title}</div>
+                    <div class="dw-meta">${load}${(load && rpe) ? ' • ' : ''}${rpe}${hasYT ? ' • 🎥 فيديو' : ''}</div>
+                </div>
+            </div>
+            <div class="chip" style="opacity:0.9;" onclick="openDailyWorkoutModal(); event.stopPropagation();"><i class="ri-information-line"></i> التفاصيل</div>
+        </div>
+        <p class="dw-notes">${(w.notes || 'جاهز؟ نفّذها وارجع قولّي!').replace(/\n/g,'<br>')}</p>
+        <div class="dw-actions">
+            <button class="btn btn-primary" onclick="openLogFromCoach('${title.replace(/'/g,"&#39;")}'); event.stopPropagation();"><i class="ri-run-line"></i> سجل بعد ما تخلص</button>
+            <button class="btn btn-ghost" onclick="openDailyWorkoutModal(); event.stopPropagation();"><i class="ri-map-2-line"></i> خطة التمرين</button>
+        </div>
+    `;
+}
+
+function openDailyWorkoutModal(){
+    const w = _coachDailyWorkout;
+    if(!w) return;
+
+    const titleEl = document.getElementById('daily-modal-title');
+    const bodyEl = document.getElementById('daily-modal-body');
+    if(titleEl) titleEl.innerText = `${w.emoji || '🔥'} ${w.title || w.name || 'جرية اليوم'}`;
+
+    const embed = _toYouTubeEmbed(w.youtubeUrl || w.youtube);
+    const structure = (w.structure || '').trim();
+    const notes = (w.notes || '').trim();
+    const load = w.load || '';
+    const rpe = w.rpe ? `RPE ${w.rpe}` : '';
+
+    let html = '';
+    html += `<div style="margin-bottom:10px; color:#9ca3af; font-size:12px;">${load}${(load && rpe) ? ' • ' : ''}${rpe}</div>`;
+
+    if(structure){
+        html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; white-space:pre-wrap; line-height:1.7; color:#e5e7eb; font-size:12px;">${_escapeHtml(structure)}</div>`;
+    }else{
+        html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; color:#e5e7eb; font-size:12px;">ابدأ بإحماء 8–10 دقائق… ثم نفّذ الجزء الرئيسي… وأنهِ بتهدئة وإطالة.</div>`;
+    }
+
+    if(notes){
+        html += `<div style="margin-top:10px; font-size:12px; color:#dbeafe; line-height:1.7;"><b>كلمة الكوتش:</b> ${_escapeHtml(notes)}</div>`;
+    }
+
+    if(embed){
+        html += `<div style="margin-top:12px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.10);">
+                    <iframe src="${embed}" style="width:100%; aspect-ratio:16/9; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                 </div>`;
+        html += `<div style="margin-top:6px; font-size:11px; color:#9ca3af;">لو الفيديو مفيد… احفظه وكرره. ✅</div>`;
+    }
+
+    if(bodyEl) bodyEl.innerHTML = html;
+    document.getElementById('modal-daily-workout').style.display = 'flex';
+}
+
+function _escapeHtml(str){
+    return (str||'')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+}
+
+function _toYouTubeEmbed(url){
+    if(!url) return null;
+    try{
+        const u = new URL(url);
+        let id = '';
+        if(u.hostname.includes('youtu.be')){
+            id = u.pathname.replace('/','').trim();
+        }else if(u.hostname.includes('youtube.com')){
+            if(u.pathname.startsWith('/watch')) id = u.searchParams.get('v') || '';
+            if(u.pathname.startsWith('/shorts/')) id = u.pathname.split('/')[2] || '';
+            if(u.pathname.startsWith('/embed/')) id = u.pathname.split('/')[2] || '';
+        }
+        if(!id) return null;
+        return `https://www.youtube-nocookie.com/embed/${id}`;
+    }catch(e){
+        return null;
+    }
+}
+
+function openLogFromCoach(suggestedType){
+    // يفتح Modal تسجيل نشاط (بدون لمس الداتا القديمة)
+    try{
+        openNewRun(); // <--- تم التعديل من openLog() إلى openNewRun()
+        const t = document.getElementById('log-type');
+        if(t && suggestedType){
+            // هنا يمكن إضافة منطق لاحقاً لتحديد النوع تلقائياً
+        }
+    }catch(e){
+        console.error(e);
+    }
+}
+/* -------------------- Weekly Challenge -------------------- */
+
+async function loadCoachWeeklyChallenge(){
+    const card = document.getElementById('coach-weekly-card');
+    if(!card || !db || !currentUser) return;
+
+    try{
+        const snap = await db.collection('coachConfig').doc('weeklyChallenge').get();
+        if(!snap.exists){
+            _coachWeeklyChallenge = null;
+            card.innerHTML = `<div style="text-align:center; color:#9ca3af;">لا يوجد تحدي أسبوعي منشور حالياً.</div>`;
+            return;
+        }
+        _coachWeeklyChallenge = { id:snap.id, ...snap.data() };
+
+        const mine = await db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').get();
+        const completed = mine.exists && !!mine.data()?.completed;
+        renderCoachWeeklyCard(completed, mine.exists ? mine.data() : null);
+    }catch(e){
+        console.error(e);
+        card.innerHTML = `<div style="text-align:center; color:#ef4444;">تعذر تحميل تحدي الأسبوع.</div>`;
+    }
+}
+
+function renderCoachWeeklyCard(completed, mineData){
+    const card = document.getElementById('coach-weekly-card');
+    if(!card) return;
+
+    const ch = _coachWeeklyChallenge;
+    if(!ch){
+        card.innerHTML = `<div style="text-align:center; color:#9ca3af;">لا يوجد تحدي أسبوعي منشور حالياً.</div>`;
+        return;
+    }
+
+    const emoji = ch.emoji || '🏁';
+    const title = ch.title || 'تحدي الأسبوع';
+    const desc = (ch.desc || ch.description || '').trim() || 'ابدأ… وخد صورة إثبات.';
+    const requireImg = (ch.requireImage !== false);
+    const status = completed ? 'مكتمل ✅' : (requireImg ? 'محتاج إثبات 📸' : 'جاهز للتنفيذ 🚀');
+
+    const meta = document.getElementById('coach-weekly-meta');
+    if(meta){
+        meta.style.display = 'inline';
+        meta.innerText = status;
+    }
+
+    card.innerHTML = `
+        <div class="wc-head">
+            <div class="wc-badge">
+                <div class="wc-emoji">${emoji}</div>
+                <div>
+                    <div class="wc-title">${title}</div>
+                    <div class="wc-meta">${status}</div>
+                </div>
+            </div>
+            <div class="chip" onclick="openWeeklyChallengeModal(); event.stopPropagation();"><i class="ri-eye-line"></i> عرض</div>
+        </div>
+        <p class="wc-notes">${_escapeHtml(desc).replace(/\n/g,'<br>')}</p>
+        <div class="wc-actions">
+            <button class="btn btn-primary" onclick="openWeeklyChallengeModal(); event.stopPropagation();" ${completed ? 'disabled style="opacity:.6;"' : ''}>
+                ${completed ? 'تم ✅' : 'تفاصيل التحدي'}
+            </button>
+            <button class="btn btn-ghost" onclick="shareWeeklyText(); event.stopPropagation();"><i class="ri-share-line"></i> مشاركة</button>
+        </div>
+    `;
+}
+
+function openWeeklyChallengeModal(){
+    const ch = _coachWeeklyChallenge;
+    if(!ch) return;
+
+    const titleEl = document.getElementById('weekly-modal-title');
+    const bodyEl = document.getElementById('weekly-modal-body');
+    if(titleEl) titleEl.innerText = `${ch.emoji || '🏁'} ${ch.title || 'تحدي الأسبوع'}`;
+
+    const requireImg = (ch.requireImage !== false);
+    const desc = (ch.desc || ch.description || '').trim();
+
+    let html = '';
+    html += `<div style="color:#9ca3af; font-size:12px; margin-bottom:10px;">${requireImg ? '📸 يتطلب صورة إثبات' : '✅ بدون صورة إثبات'}</div>`;
+    html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; white-space:pre-wrap; line-height:1.7; color:#e5e7eb; font-size:12px;">${_escapeHtml(desc || 'اكتب تفاصيل التحدي من لوحة الكوتش.')}</div>`;
+
+    bodyEl.innerHTML = html;
+
+    // update button availability
+    db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').get().then(mine=>{
+        const completed = mine.exists && !!mine.data()?.completed;
+        const btn = document.getElementById('weekly-complete-btn');
+        if(btn){
+            btn.disabled = completed;
+            btn.style.opacity = completed ? 0.6 : 1;
+            btn.innerText = completed ? 'مكتمل ✅' : 'أكملت التحدي ✅';
+        }
+    });
+
+    document.getElementById('modal-weekly-challenge').style.display = 'flex';
+}
+
+function openWeeklyProof(){
+    const ch = _coachWeeklyChallenge;
+    if(!ch) return;
+
+    // reset proof UI
+    const status = document.getElementById('weekly-upload-status');
+    const prev = document.getElementById('weekly-img-preview');
+    const hid = document.getElementById('weekly-uploaded-img-url');
+    const note = document.getElementById('weekly-proof-note');
+    if(status) status.innerText = '';
+    if(prev){ prev.style.display = 'none'; prev.src = ''; }
+    if(hid) hid.value = '';
+    if(note) note.value = '';
+
+    document.getElementById('modal-weekly-proof').style.display = 'flex';
+}
+
+async function saveWeeklyProof(){
+    const ch = _coachWeeklyChallenge;
+    if(!ch || !db || !currentUser) return;
+
+    const requireImg = (ch.requireImage !== false);
+    const imgUrl = document.getElementById('weekly-uploaded-img-url')?.value || '';
+    const note = document.getElementById('weekly-proof-note')?.value || '';
+
+    if(requireImg && !imgUrl){
+        showToast('لازم ترفع صورة إثبات 📸');
+        return;
+    }
+
+    try{
+        await db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').set({
+            completed: true,
+            photoUrl: imgUrl || null,
+            note: note || null,
+            challengeTitle: ch.title || null,
+            challengeEmoji: ch.emoji || null,
+            completedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        closeModal('modal-weekly-proof');
+        showToast('مبروك! التحدي اتسجل ✅');
+        loadCoachWeeklyChallenge();
+    }catch(e){
+        console.error(e);
+        showToast('حصل خطأ… حاول تاني');
+    }
+}
+
+function shareWeeklyText(){
+    const ch = _coachWeeklyChallenge;
+    if(!ch) return;
+
+    const title = ch.title || 'تحدي الأسبوع';
+    const desc = (ch.desc || ch.description || '').trim();
+    const msg = `🏁 ${title}\n\n${desc}\n\n#ERS #EgyRunnerSquad`;
+
+    if(navigator.share){
+        navigator.share({ title: title, text: msg }).catch(()=>{});
+    }else{
+        try{
+            navigator.clipboard.writeText(msg);
+            showToast('تم نسخ نص التحدي ✅');
+        }catch(e){
+            alert(msg);
+        }
+    }
+}
+
+/* Weekly proof upload (ImgBB) */
+async function uploadWeeklyProofToImgBB(){
+    const fileInput = document.getElementById('weekly-img-file');
+    const status = document.getElementById('weekly-upload-status');
+    const preview = document.getElementById('weekly-img-preview');
+    const hidden = document.getElementById('weekly-uploaded-img-url');
+    const saveBtn = document.getElementById('weekly-save-proof-btn');
+
+    if(!fileInput || !fileInput.files || !fileInput.files[0]) return;
+
+    const file = fileInput.files[0];
+    if(saveBtn) saveBtn.disabled = true;
+    if(status) status.innerText = 'جاري رفع الصورة...';
+
+    try{
+        const apiKey = IMG_BB_KEY;
+        if(!apiKey) throw new Error('IMG_BB_KEY missing');
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method:'POST', body: formData });
+        const json = await res.json();
+        if(!json || !json.success) throw new Error('upload failed');
+
+        const url = json.data.url;
+        if(hidden) hidden.value = url;
+
+        if(preview){
+            preview.src = url;
+            preview.style.display = 'block';
+        }
+        if(status) status.innerText = 'تم رفع الصورة ✅';
+    }catch(e){
+        console.error(e);
+        if(status) status.innerText = 'فشل رفع الصورة ❌';
+    }finally{
+        if(saveBtn) saveBtn.disabled = false;
+    }
+}
+
+/* -------------------- Admin Coach Panel -------------------- */
+
+async function loadCoachAdmin(){
+    if(!(userData && userData.isAdmin===true) || !db) return;
+
+    // set default date to today
+    const dateEl = document.getElementById('coach-ov-date');
+    if(dateEl && !dateEl.value) dateEl.value = _ersDateKey(new Date());
+
+    await adminEnsureCoachSeed();
+    await adminLoadCoachWorkoutsIntoSelects();
+    await adminLoadScheduleAndChallenge();
+    await adminRenderWorkoutsList();
+}
+
+async function adminEnsureCoachSeed(){
+    try{
+        const snap = await db.collection('coachWorkouts').limit(1).get();
+        if(!snap.empty) return; // already has workouts
+
+        const hint = document.getElementById('coach-week-hint');
+        if(hint) hint.innerText = 'جاري إنشاء مكتبة افتراضية أول مرة…';
+
+        const presets = [
+            { emoji:'🫁', title:'Recovery Run', type:'recovery', load:'20–35 دقيقة', rpe:'2–3', structure:'Warmup: 5 دقائق\nMain: جري سهل جدًا\nCooldown: إطالة 8 دقائق', notes:'استشفاء… عايزك تخلص وأنت مبسوط.' },
+            { emoji:'🏔️', title:'Hills Session', type:'hills', load:'30–45 دقيقة', rpe:'6–7', structure:'Warmup: 10 دقائق\nMain: 6×(40ث صعود + 70ث نزول)\nCooldown: 8 دقائق', notes:'الصعود قوي قصير… والنزول مرن.' },
+            { emoji:'🧘‍♂️', title:'Mobility / Yoga', type:'mobility', load:'20–30 دقيقة', rpe:'1–2', structure:'Mobility: كاحل + حوض + فخذ\nYoga: 10 دقائق تنفّس + إطالات', notes:'ده يوم الصيانة.' },
+            { emoji:'⚡', title:'Intervals 1:1', type:'intervals', load:'35–55 دقيقة', rpe:'7–8', structure:'Warmup: 10 دقائق\nMain: 8×(1د سريع + 1د سهل)\nCooldown: 8 دقائق', notes:'سرعاتك متحكم فيها.' },
+            { emoji:'🎲', title:'Fartlek Play', type:'fartlek', load:'25–45 دقيقة', rpe:'4–6', structure:'Warmup: 10 دقائق\nMain: 10×(1د أسرع + 1د سهل)\nCooldown: 6 دقائق', notes:'إلعبها… وانهى وأنت قادر تزود.' },
+            { emoji:'🏋️', title:'Cross / Strength', type:'strength', load:'25–40 دقيقة', rpe:'4–6', structure:'Strength: سكوات خفيف + كور\nأو: عجلة/سباحة', notes:'قوة = حماية للركبة.' },
+            { emoji:'🐢', title:'Long Run', type:'long', load:'60–90 دقيقة', rpe:'3–5', structure:'Warmup: 8 دقائق\nMain: جري ثابت\nCooldown: 6 دقائق + سوائل', notes:'اللونج يبنيك… بهدوء.' },
+        ];
+
+        const ids = {};
+        for(const p of presets){
+            const docRef = await db.collection('coachWorkouts').add({
+                ...p,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            // map by type for schedule
+            if(!ids[p.type]) ids[p.type] = docRef.id;
+            // special for recovery etc
+            if(p.title === 'Long Run') ids.long = docRef.id;
+        }
+
+        // default weekly schedule: sat recovery, sun hills, mon mobility, tue intervals, wed fartlek, thu strength, fri long
+        await db.collection('coachConfig').doc('weeklySchedule').set({
+            sat: ids.recovery || null,
+            sun: ids.hills || null,
+            mon: ids.mobility || null,
+            tue: ids.intervals || null,
+            wed: ids.fartlek || null,
+            thu: ids.strength || null,
+            fri: ids.long || null,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        await db.collection('coachConfig').doc('weeklyChallenge').set({
+            emoji:'🏁',
+            title:'تحدي الأسبوع: 3 أيام متتالية',
+            desc:'سجّل 3 أنشطة (جري/مشي) خلال 3 أيام متتالية… وخد صورة إثبات في اليوم الأخير 💪',
+            requireImage:true,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        if(hint) hint.innerText = 'تم إنشاء مكتبة افتراضية ✅ (تقدر تعدّلها أو تضيف براحتك).';
+    }catch(e){
+        console.error(e);
+    }
+}
+
+async function adminLoadCoachWorkoutsIntoSelects(){
+    const selects = [
+        document.getElementById('coach-ov-workout'),
+        document.getElementById('wk-sat'), document.getElementById('wk-sun'), document.getElementById('wk-mon'),
+        document.getElementById('wk-tue'), document.getElementById('wk-wed'), document.getElementById('wk-thu'),
+        document.getElementById('wk-fri')
+    ].filter(Boolean);
+
+    if(!selects.length) return;
+
+    const snap = await db.collection('coachWorkouts').orderBy('updatedAt','desc').get();
+    const opts = [];
+    snap.forEach(d=>{
+        const data = d.data() || {};
+        const label = `${data.emoji || '🔥'} ${data.title || data.name || 'Workout'} • ${data.type || ''}`;
+        opts.push({ id:d.id, label });
+    });
+
+    const html = ['<option value="">— اختر —</option>']
+        .concat(opts.map(o=>`<option value="${o.id}">${o.label}</option>`))
+        .join('');
+
+    selects.forEach(s=>{
+        const val = s.value;
+        s.innerHTML = html;
+        if(val) s.value = val;
+    });
+
+    window._coachWorkoutsAdmin = opts;
+}
+
+async function adminLoadScheduleAndChallenge(){
+    // schedule
+    const sched = await db.collection('coachConfig').doc('weeklySchedule').get();
+    if(sched.exists){
+        const d = sched.data() || {};
+        const map = { sat:'wk-sat', sun:'wk-sun', mon:'wk-mon', tue:'wk-tue', wed:'wk-wed', thu:'wk-thu', fri:'wk-fri' };
+        Object.entries(map).forEach(([k,id])=>{
+            const el = document.getElementById(id);
+            if(el && d[k]) el.value = d[k];
+        });
+    }
+
+    // weekly challenge
+    const ch = await db.collection('coachConfig').doc('weeklyChallenge').get();
+    if(ch.exists){
+        const d = ch.data() || {};
+        const e = document.getElementById('coach-ch-emoji');
+        const t = document.getElementById('coach-ch-title');
+        const ds = document.getElementById('coach-ch-desc');
+        const r = document.getElementById('coach-ch-require-img');
+        if(e) e.value = d.emoji || '🏁';
+        if(t) t.value = d.title || '';
+        if(ds) ds.value = d.desc || d.description || '';
+        if(r) r.checked = (d.requireImage !== false);
+    }
+
+    // override hint
+    const dateEl = document.getElementById('coach-ov-date');
+    const hint = document.getElementById('coach-ov-hint');
+    if(dateEl && hint){
+        const dateKey = dateEl.value || _ersDateKey(new Date());
+        const ov = await db.collection('coachOverrides').doc(dateKey).get();
+        if(ov.exists){
+            hint.innerText = `يوجد تعيين خاص لهذا اليوم ✅`;
+        }else{
+            hint.innerText = `لا يوجد تعيين خاص… سيستخدم جدول الأسبوع ♻️`;
+        }
+    }
+}
+
+async function adminRenderWorkoutsList(){
+    const box = document.getElementById('coach-workouts-list');
+    if(!box || !db) return;
+
+    const snap = await db.collection('coachWorkouts').orderBy('updatedAt','desc').limit(50).get();
+    if(snap.empty){
+        box.innerHTML = `<div style="text-align:center; color:#9ca3af; padding:16px;">لا توجد تمرينات بعد.</div>`;
+        return;
+    }
+
+    let html = '';
+    snap.forEach(doc=>{
+        const w = doc.data() || {};
+        const title = (w.title || w.name || 'Workout');
+        const sub = `${w.type || ''}${w.load ? ' • ' + w.load : ''}${w.rpe ? ' • RPE ' + w.rpe : ''}${(w.youtubeUrl||w.youtube)?' • 🎥':''}`;
+        html += `
+            <div class="workout-row">
+                <div class="wr-left">
+                    <div class="wr-title">${_escapeHtml((w.emoji||'🔥') + ' ' + title)}</div>
+                    <div class="wr-sub">${_escapeHtml(sub)}</div>
+                </div>
+                <div class="wr-actions">
+                    <button class="btn btn-ghost" onclick="adminEditWorkout('${doc.id}')"><i class="ri-edit-line"></i></button>
+                    <button class="btn btn-ghost" onclick="adminDeleteWorkout('${doc.id}')"><i class="ri-delete-bin-6-line"></i></button>
+                </div>
+            </div>
+        `;
+    });
+
+    box.innerHTML = html;
+}
+
+async function adminCreateWorkout(){
+    try{
+        const title = document.getElementById('cw-title')?.value?.trim();
+        const type = document.getElementById('cw-type')?.value?.trim() || 'recovery';
+        const load = document.getElementById('cw-load')?.value?.trim() || '';
+        const rpe = document.getElementById('cw-rpe')?.value?.trim() || '';
+        const structure = document.getElementById('cw-structure')?.value?.trim() || '';
+        const notes = document.getElementById('cw-notes')?.value?.trim() || '';
+        const youtubeUrl = document.getElementById('cw-youtube')?.value?.trim() || '';
+
+        if(!title){
+            showToast('اكتب اسم التمرين');
+            return;
+        }
+
+        await db.collection('coachWorkouts').add({
+            emoji: _guessEmoji(type),
+            title, type, load, rpe, structure, notes,
+            youtubeUrl: youtubeUrl || null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // reset a few fields
+        document.getElementById('cw-title').value = '';
+        document.getElementById('cw-load').value = '';
+        document.getElementById('cw-rpe').value = '';
+        document.getElementById('cw-structure').value = '';
+        document.getElementById('cw-notes').value = '';
+        document.getElementById('cw-youtube').value = '';
+
+        showToast('تم إضافة التمرين ✅');
+        await adminLoadCoachWorkoutsIntoSelects();
+        await adminRenderWorkoutsList();
+    }catch(e){
+        console.error(e);
+        showToast('حصل خطأ…');
+    }
+}
+
+function _guessEmoji(type){
+    const map = { recovery:'🫁', hills:'🏔️', intervals:'⚡', fartlek:'🎲', tempo:'🔥', long:'🐢', strength:'🏋️', mobility:'🧘‍♂️' };
+    return map[type] || '🔥';
+}
+
+async function adminDeleteWorkout(id){
+    if(!id) return;
+    if(!confirm('حذف التمرين؟')) return;
+    try{
+        await db.collection('coachWorkouts').doc(id).delete();
+        showToast('اتحذف ✅');
+        await adminLoadCoachWorkoutsIntoSelects();
+        await adminRenderWorkoutsList();
+    }catch(e){
+        console.error(e);
+        showToast('تعذر الحذف');
+    }
+}
+
+async function adminEditWorkout(id){
+    if(!id) return;
+    try{
+        const snap = await db.collection('coachWorkouts').doc(id).get();
+        if(!snap.exists) return;
+        const w = snap.data() || {};
+
+        const newTitle = prompt('اسم التمرين:', w.title || '');
+        if(newTitle === null) return;
+
+        const newLoad = prompt('المدة/المسافة (نص):', w.load || '');
+        if(newLoad === null) return;
+
+        const newRpe = prompt('RPE:', w.rpe || '');
+        if(newRpe === null) return;
+
+        const newNotes = prompt('تعليمات الكوتش (مختصر):', w.notes || '');
+        if(newNotes === null) return;
+
+        const newYT = prompt('رابط يوتيوب (اختياري):', w.youtubeUrl || '');
+        if(newYT === null) return;
+
+        await db.collection('coachWorkouts').doc(id).set({
+            title: (newTitle||'').trim(),
+            load: (newLoad||'').trim(),
+            rpe: (newRpe||'').trim(),
+            notes: (newNotes||'').trim(),
+            youtubeUrl: (newYT||'').trim() || null,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        showToast('تم التحديث ✅');
+        await adminLoadCoachWorkoutsIntoSelects();
+        await adminRenderWorkoutsList();
+    }catch(e){
+        console.error(e);
+        showToast('تعذر التعديل');
+    }
+}
+
+async function adminPublishDailyOverride(){
+    if(!(userData && userData.isAdmin===true) || !db) return;
+    const dateKey = document.getElementById('coach-ov-date')?.value || _ersDateKey(new Date());
+    const workoutId = document.getElementById('coach-ov-workout')?.value || '';
+    const hint = document.getElementById('coach-ov-hint');
+
+    if(!workoutId){
+        showToast('اختر تمرين');
+        return;
+    }
+
+    try{
+        await db.collection('coachOverrides').doc(dateKey).set({
+            workoutId,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        if(hint) hint.innerText = 'تم النشر ✅ (الناس هتشوفه فوراً)';
+        showToast('نشرنا تمرين اليوم ✅');
+    }catch(e){
+        console.error(e);
+        showToast('تعذر النشر');
+    }
+}
+
+async function adminClearDailyOverride(){
+    if(!(userData && userData.isAdmin===true) || !db) return;
+    const dateKey = document.getElementById('coach-ov-date')?.value || _ersDateKey(new Date());
+    const hint = document.getElementById('coach-ov-hint');
+
+    try{
+        await db.collection('coachOverrides').doc(dateKey).delete();
+        if(hint) hint.innerText = 'تم المسح ✅ سيستخدم جدول الأسبوع ♻️';
+        showToast('تم مسح التعيين');
+    }catch(e){
+        console.error(e);
+        showToast('تعذر المسح');
+    }
+}
+
+async function adminSaveWeeklySchedule(){
+    if(!(userData && userData.isAdmin===true) || !db) return;
+
+    const get = (id)=> document.getElementById(id)?.value || '';
+    const data = {
+        sat: get('wk-sat'),
+        sun: get('wk-sun'),
+        mon: get('wk-mon'),
+        tue: get('wk-tue'),
+        wed: get('wk-wed'),
+        thu: get('wk-thu'),
+        fri: get('wk-fri'),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try{
+        await db.collection('coachConfig').doc('weeklySchedule').set(data, { merge:true });
+        const hint = document.getElementById('coach-week-hint');
+        if(hint) hint.innerText = 'تم حفظ جدول الأسبوع ✅';
+        showToast('اتحفظ ✅');
+    }catch(e){
+        console.error(e);
+        showToast('تعذر الحفظ');
+    }
+}
+
+async function adminPublishWeeklyChallenge(){
+    if(!(userData && userData.isAdmin===true) || !db) return;
+
+    const emoji = document.getElementById('coach-ch-emoji')?.value?.trim() || '🏁';
+    const title = document.getElementById('coach-ch-title')?.value?.trim() || '';
+    const desc = document.getElementById('coach-ch-desc')?.value?.trim() || '';
+    const requireImage = document.getElementById('coach-ch-require-img')?.checked ?? true;
+
+    if(!title || !desc){
+        showToast('اكتب العنوان والوصف');
+        return;
+    }
+
+    try{
+        await db.collection('coachConfig').doc('weeklyChallenge').set({
+            emoji, title, desc, requireImage,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge:true });
+
+        const hint = document.getElementById('coach-ch-hint');
+        if(hint) hint.innerText = 'تم نشر تحدي الأسبوع ✅';
+        showToast('نشرنا التحدي 🚀');
+    }catch(e){
+        console.error(e);
+        showToast('تعذر النشر');
+    }
+}
+
+
+
 function getDayName(d) {
     const days = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
     return days[d];
@@ -954,15 +2095,17 @@ function openNewRun() {
 
 // ==================== 2. تعديل نشاط موجود (إظهار البيانات) ====================
 // لاحظ: قمت بإضافة (img) في الأقواس لاستلام الصورة
-window.editRun = function(id, dist, time, type, link, img) {
+window.editRun = function(id, dist, time, type, link, img, xtDist) {
     // 1. وضع بيانات التعديل
     editingRunId = id;
     editingOldDist = dist;
+    editingOldType = type || 'Run';
 
     // 2. تعبئة الحقول
-    document.getElementById('log-dist').value = dist;
+    document.getElementById('log-dist').value = _ersIsCoreType(type) ? dist : (xtDist || '');
     document.getElementById('log-time').value = time;
     document.getElementById('log-type').value = type;
+    try{ document.getElementById('log-type').dispatchEvent(new Event('change')); }catch(e){}
     document.getElementById('log-link').value = link || '';
     document.getElementById('save-run-btn').innerText = "تعديل النشاط";
 
@@ -1171,19 +2314,19 @@ function loadActivityLog() {
                   let recordLabel = ''; 
 
                   // أ) هل هي الأطول مسافة؟ (الذهبي)
-                  if (r.dist === maxDist && maxDist > 5) {
+                  if (_ersIsCoreType(r.type) && r.dist === maxDist && maxDist > 5) {
                       iconClass = 'ri-trophy-fill';
                       typeClass = 'record-gold';
                       recordLabel = '<span style="font-size:9px; color:#f59e0b; margin-right:5px;">(الأطول)</span>';
                   } 
                   // ب) هل هي الأسرع؟ (الأحمر) - بشرط تكون جري وليست مشي
-                  else if (currentPace === bestPace && r.dist >= 1 && r.type === 'Run') {
+                  else if (_ersIsCoreType(r.type) && currentPace === bestPace && r.dist >= 1 && r.type === 'Run') {
                       iconClass = 'ri-flashlight-fill'; 
                       typeClass = 'record-fire';
                       recordLabel = '<span style="font-size:9px; color:#ef4444; margin-right:5px;">(الأسرع)</span>';
                   }
                   // ج) هل هي الأطول زمناً؟ (البنفسجي)
-                  else if (r.time === maxTime && maxTime > 30) {
+                  else if (_ersIsCoreType(r.type) && r.time === maxTime && maxTime > 30) {
                       iconClass = 'ri-hourglass-fill';
                       typeClass = 'record-time';
                       recordLabel = '<span style="font-size:9px; color:#a78bfa; margin-right:5px;">(تحمل)</span>';
@@ -1197,12 +2340,11 @@ function loadActivityLog() {
 
                       <div class="log-details">
                           <div class="log-main-stat">
-                              ${formatNumber(r.dist)} <span class="log-unit">كم</span>
-                              ${recordLabel}
+                              ${(_ersIsCoreType(r.type) ? `${formatNumber(r.dist)} <span class="log-unit">كم</span> ${recordLabel}` : `<span class="xt-badge">XT</span> <span class="log-unit">${r.type || 'Cross'}</span>`)}
                           </div>
                           <div class="log-sub-stat">
                               <span><i class="ri-calendar-line"></i> ${dayNum} ${dayName}</span>
-                              <span><i class="ri-timer-flash-line"></i> ${paceDisplay} د/كم</span>
+                              ${(_ersIsCoreType(r.type) ? `<span><i class="ri-timer-flash-line"></i> ${paceDisplay} د/كم</span>` : `<span><i class="ri-time-line"></i> ${r.time || 0} دقيقة</span>`)}
                           </div>
                       </div>
 
@@ -1211,7 +2353,7 @@ function loadActivityLog() {
                               <i class="ri-share-forward-line"></i>
                           </button>
                           
-                          <button class="btn-icon-action" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}', '${r.img || ''}')">
+                          <button class="btn-icon-action" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}', '${r.img || ''}', ${r.xtDist || 0})">
                               <i class="ri-pencil-line"></i>
                           </button>
                           
@@ -1241,7 +2383,7 @@ async function deleteRun(id, dist) {
         await db.collection('users').doc(uid).collection('runs').doc(id).delete();
         await db.collection('users').doc(uid).update({
             totalDist: firebase.firestore.FieldValue.increment(-dist),
-            totalRuns: firebase.firestore.FieldValue.increment(-1),
+            totalRuns: firebase.firestore.FieldValue.increment(-(_ersIsCoreType(runData.type) ? 1 : 0)),
             monthDist: firebase.firestore.FieldValue.increment(-dist)
         });
 
@@ -1408,10 +2550,11 @@ async function loadRegionBattle() {
         
         // 1. الحسابات (القوة = المسافة ÷ العدد)
         allUsersCache.forEach(user => {
-            if(user.region && user.monthDist > 0) { // استبعاد الخاملين
+            const monthRun = (user.monthRunDist != null ? user.monthRunDist : (user.monthDist || 0));
+            if(user.region && monthRun > 0) { // استبعاد الخاملين
                 let gov = user.region;
                 if (!govStats[gov]) govStats[gov] = { name: gov, dist: 0, players: 0 };
-                govStats[gov].dist += user.monthDist;
+                govStats[gov].dist += monthRun;
                 govStats[gov].players += 1;
             }
         });
@@ -1508,7 +2651,7 @@ function loadGlobalFeed() {
         list.innerHTML = getSkeletonHTML('feed');
     }
 
-    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(20).onSnapshot(snap => {
+    db.collection('activity_feed').orderBy('timestamp', 'desc').limit(10).onSnapshot(snap => {
         let html = '';
         if(snap.empty) { 
             list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>'; 
@@ -1553,10 +2696,7 @@ function loadGlobalFeed() {
                         <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
                     </button>
 
-                    <button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;">
-                        <i class="ri-chat-3-line"></i>
-                        <span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span>
-                    </button>
+                    ${p.commentsDisabled ? `<span class="feed-compact-meta" style="margin-right:8px; color:#9ca3af;"><i class="ri-lock-line"></i> التعليقات مغلقة</span>` : `<button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid}')" style="margin-right:8px;"><i class="ri-chat-3-line"></i><span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span></button>`}
 
                     <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
                 </div>
@@ -1640,13 +2780,14 @@ async function detectSuspiciousActivity() {
         const dist = parseFloat(run.dist);
         const time = parseFloat(run.time);
         const pace = dist > 0 ? time / dist : 0;
-        
-        const isTooFast = pace < 2.5 && dist > 1; 
-        const isTooFar = dist > 45; 
+        const kind = run.autoKind || _ersAutoKind(run.type || run.activityType || 'Run', pace);
+        const isTooFast = pace < 2.5 && dist > 1;
+        const isTooFar = dist > 45;
+        const isWalkLikeRun = ((run.type === 'Run' || run.type === 'Race') && kind === 'Walk' && dist >= 2);
 
-        if (isTooFast || isTooFar) {
+        if (isTooFast || isTooFar || isWalkLikeRun) {
             suspiciousCount++;
-            const reason = isTooFast ? `🚀 سرعة (${pace.toFixed(1)} د/كم)` : `🗺️ مسافة (${dist} كم)`;
+            const reason = isTooFast ? `🚀 سرعة (${pace.toFixed(1)} د/كم)` : (isTooFar ? `🗺️ مسافة (${dist} كم)` : `🚶‍♂️ مشي متسجل كجري (${pace.toFixed(1)} د/كم)`);
           
             html += `
             <div class="alert-card">
@@ -1704,7 +2845,7 @@ async function adminForceDelete(feedId, userId, runDist) {
             // خصم المسافة من إجمالي المستخدم
             await db.collection('users').doc(userId).update({
                 totalDist: firebase.firestore.FieldValue.increment(-runDist),
-                totalRuns: firebase.firestore.FieldValue.increment(-1),
+                totalRuns: firebase.firestore.FieldValue.increment(-(_ersIsCoreType(runData.type) ? 1 : 0)),
                 monthDist: firebase.firestore.FieldValue.increment(-runDist)
             });
         }
@@ -1829,6 +2970,153 @@ function loadChart(mode, btnElement) {
 // ==================== 10. Utils & Listeners ====================
 function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+
+// ==================== Coach Brain v1: Speed Radar ====================
+function _ersGetRecentRunsForSpeed(){
+  const runs = (window._ersRunsCache || []).slice().filter(r=>{
+    const kind = r.autoKind || _ersAutoKind(r.type, _ersPace(r.dist, r.time));
+    return kind === 'Run' && (parseFloat(r.dist)||0) > 0 && (parseFloat(r.time)||0) > 0;
+  });
+  return runs;
+}
+function _ersComputeSpeedStats(runs){
+  const now = new Date();
+  const msDay = 1000*60*60*24;
+  const inDays = (r,days)=>{
+    const d = r.timestamp ? (r.timestamp.toDate ? r.timestamp.toDate() : new Date(r.timestamp)) : null;
+    return d && (now - d) <= days*msDay;
+  };
+  const agg = (arr)=>{
+    let dist=0, time=0, count=0, bestPace=null;
+    arr.forEach(r=>{
+      const d=parseFloat(r.dist)||0, t=parseFloat(r.time)||0;
+      const p=_ersPace(d,t);
+      if(d>0 && t>0 && p){
+        dist+=d; time+=t; count++;
+        if(bestPace===null || p<bestPace) bestPace=p;
+      }
+    });
+    const avgPace = dist>0 ? (time/dist) : null;
+    return {dist,time,count,avgPace,bestPace};
+  };
+  return {
+    last7: agg(runs.filter(r=>inDays(r,7))),
+    last14: agg(runs.filter(r=>inDays(r,14)))
+  };
+}
+function _ersSpeedWorkoutSuggestion(stats){
+  const focus = String(getUserPref('focusGoal','fitness')).toLowerCase();
+  const note = (focus==='weightloss' || focus==='fitness')
+    ? 'تنويه: لو هدفك لياقة/خسارة وزن… السرعة مش أولوية. الأهم الاستمرارية والمسافة.'
+    : 'هدفك أداء/سرعة… هنشتغل بذكاء بدون ضغط مبالغ فيه.';
+  const basePace = stats?.last14?.avgPace || stats?.last7?.avgPace;
+  const p = (basePace && isFinite(basePace)) ? basePace : null;
+
+  let suggestion = {title:'⚡ تمرين سرعة خفيف', details:'إحماء 10د + 6×(1د سريع / 1د سهل) + تهدئة 8د.', tip:'السريع "قابل للتحكم"… مش سباق.', safety:'لو في ألم/إرهاق عالي: حوله لجري سهل 20–30د.'};
+  if(p && p < 6.5){
+    suggestion = {title:'⚡ Speed Builder', details:'إحماء 12د + 8×(400م سريع / 200م سهل) + تهدئة 10د.', tip:'ركز على تكنيك وخفة…', safety:'يوم استشفاء بعدها.'};
+  }else if(p && p < 8.5){
+    suggestion = {title:'⚡ Intervals ذكية', details:'إحماء 10د + 5×(2د سريع / 2د سهل) + تهدئة 8د.', tip:'السريع حوالي 15–25ث أسرع من بيسك السهل.', safety:'لو بعد لونج رن… خليه فارتلك خفيف.'};
+  }
+  return {note, suggestion};
+}
+function openSpeedRadar(){
+  const body=document.getElementById('speed-radar-body');
+  if(!body) return;
+  const runs=_ersGetRecentRunsForSpeed();
+  const btn=document.getElementById('coach-speed-btn');
+  if(btn) btn.style.display = (!getUserPref('hideSpeedRadar', false) && runs.length>=2) ? 'flex' : 'none';
+  const stats=_ersComputeSpeedStats(runs);
+  const last7=stats.last7, last14=stats.last14;
+  const pack=_ersSpeedWorkoutSuggestion(stats);
+  body.innerHTML = `
+    <div class="speed-stat"><b>متوسط بيس 7 أيام</b><span>${_ersFormatPace(last7.avgPace)} • ${last7.dist.toFixed(1)} كم • ${last7.count} نشاط</span></div>
+    <div class="speed-stat"><b>أفضل بيس (14 يوم)</b><span>${_ersFormatPace(last14.bestPace)} • ${last14.dist.toFixed(1)} كم</span></div>
+    <div class="speed-card">
+      <h4>${pack.suggestion.title}</h4>
+      <p><b>الخطة:</b> ${pack.suggestion.details}</p>
+      <p style="margin-top:8px;"><b>Tip:</b> ${pack.suggestion.tip}</p>
+      <p style="margin-top:8px; color:#9ca3af;">${pack.note}</p>
+      <p style="margin-top:8px; color:#9ca3af;">${pack.suggestion.safety}</p>
+    </div>
+  `;
+  openModal('modal-speed-radar');
+}
+
+// ==================== Weekly Awards (Top 3) ====================
+function _ersWeekRangeSat(d=new Date()){
+  const z=new Date(d); z.setHours(0,0,0,0);
+  const day=z.getDay(); // 0 Sun..6 Sat
+  const offset=(day+1)%7;
+  const start=new Date(z); start.setDate(z.getDate()-offset);
+  const end=new Date(start); end.setDate(start.getDate()+7);
+  return {start,end};
+}
+function _ersFormatDateShort(d){ return `${d.getDate()}/${d.getMonth()+1}`; }
+async function _ersFetchFeedSince(dateObj, limit=1500){
+  if(!db) return [];
+  const items=[];
+  const snap=await db.collection('activity_feed').where('timestamp','>=',dateObj).orderBy('timestamp','desc').limit(limit).get();
+  snap.forEach(doc=>items.push(Object.assign({id:doc.id}, doc.data()||{})));
+  return items;
+}
+async function openWeeklyAwards(category){
+  const titleEl=document.getElementById('weekly-awards-title');
+  const rangeEl=document.getElementById('weekly-awards-range');
+  const bodyEl=document.getElementById('weekly-awards-body');
+  if(!titleEl||!rangeEl||!bodyEl) return;
+  const mapTitle={distance:'تكريم: الأطول نفسًا 🫁', speed:'تكريم: الأسرع عدوًا ⚡', consistency:'تكريم: الأكثر تحمّلًا 🛡️'};
+  titleEl.textContent = mapTitle[category] || 'لوحة تكريم الأسبوع';
+  const {start,end}=_ersWeekRangeSat(new Date());
+  rangeEl.textContent = `الأسبوع: ${_ersFormatDateShort(start)} → ${_ersFormatDateShort(new Date(end-1))}`;
+  bodyEl.innerHTML='<div style="text-align:center; padding:10px; color:#9ca3af;">جاري التحميل…</div>';
+  openModal('modal-weekly-awards');
+  try{
+    const feed=await _ersFetchFeedSince(start, 1500);
+    const week=feed.filter(it=>{
+      const d=it.timestamp?it.timestamp.toDate():null;
+      return d && d>=start && d<end;
+    });
+    const per={};
+    week.forEach(it=>{
+      const uid=it.uid||it.userId;
+      if(!uid) return;
+      const dist=parseFloat(it.dist)||0, time=parseFloat(it.time)||0;
+      const pace=it.pace || _ersPace(dist,time);
+      const autoKind=it.autoKind || _ersAutoKind(it.type, pace);
+      if(autoKind!=='Run') return;
+      if(!per[uid]) per[uid]={uid,name:it.userName||'عضو',dist:0,time:0,count:0,days:{}};
+      per[uid].dist+=dist; per[uid].time+=time; per[uid].count+=1;
+      try{ const dd = it.timestamp?it.timestamp.toDate():null; if(dd){ const k=_ersDateKey(dd); per[uid].days[k]=true; } }catch(e){}
+    });
+    let arr=Object.values(per);
+    if(category==='distance'){ arr.sort((a,b)=>b.dist-a.dist); arr=arr.slice(0,3); }
+    else if(category==='speed'){
+      arr=arr.filter(u=>u.dist>=ERS_MIN_DIST_FOR_SPEED);
+      arr.forEach(u=>u.avgPace = u.dist>0 ? (u.time/u.dist) : null);
+      arr.sort((a,b)=>(a.avgPace||999)-(b.avgPace||999));
+      arr=arr.slice(0,3);
+    }else if(category==='consistency'){
+      arr.forEach(u=>u.daysActive = u.days ? Object.keys(u.days).length : 0);
+      const eligible = arr.filter(u=>u.daysActive>=5);
+      const pool = eligible.length ? eligible : arr;
+      pool.sort((a,b)=> (b.daysActive||0) - (a.daysActive||0));
+      arr = pool.slice(0,3);
+    }
+    else { arr.sort((a,b)=>b.dist-a.dist); arr=arr.slice(0,3); }
+    if(!arr.length){ bodyEl.innerHTML='<div style="text-align:center; padding:10px; color:#9ca3af;">لا توجد بيانات كافية هذا الأسبوع</div>'; return; }
+    bodyEl.innerHTML = `<div class="hof-list">${arr.map((u,idx)=>{ const metric = category==='speed'?_ersFormatPace(u.avgPace):(category==='consistency'?`${(u.daysActive??(u.days?Object.keys(u.days).length:0))} أيام`:`${u.dist.toFixed(1)} كم`); return `
+      <div class="hof-row" onclick="viewUserProfile('${u.uid}')">
+        <div class="hof-rank">#${idx+1}</div>
+        <div class="hof-main"><div class="hof-name">${u.name}</div><div class="hof-meta">${metric}</div></div>
+        <div class="hof-action"><i class="ri-arrow-left-s-line"></i></div>
+      </div>`; }).join('')}</div>`;
+  }catch(e){
+    bodyEl.innerHTML='<div style="text-align:center; padding:10px; color:#ef4444;">حدث خطأ في التحميل</div>';
+  }
+}
+
 function openSettingsModal() { document.getElementById('modal-settings').style.display='flex'; }
 function showNotifications() { document.getElementById('modal-notifications').style.display='flex'; document.getElementById('notif-dot').classList.remove('active'); loadNotifications(); }
 
@@ -1862,7 +3150,7 @@ function switchView(viewId) {
         if (typeof renderPlanCard === 'function') renderPlanCard();
         if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI();
     }
-    if (viewId === 'club' && typeof loadHallOfFame === 'function') loadHallOfFame();
+// if (viewId === 'club' && typeof loadHallOfFame === 'function') loadHallOfFame(); // تم النقل لصفحة الكوتش
 }
 
 // Keyboard shortcut for header name (accessibility)
@@ -2094,6 +3382,7 @@ async function saveProfileChanges() {
         
         // 🔥 تحديث رسالة الكوتش فوراً بناءً على الاختيار الجديد
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
+        if(typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
 
     } catch (e) { 
         console.error(e);
@@ -2182,7 +3471,7 @@ let allChallengesCache = [];
 
 
 // تحميل وعرض التحديات (Fixed V6.2)
-function loadActiveChallenges() {
+async function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
     const mini = document.getElementById('my-active-challenges'); 
     
@@ -2694,20 +3983,29 @@ function toggleChallengeInputs() {
 
 
 async function submitRun() {
-    if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
     
+    if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+
     const btn = document.getElementById('save-run-btn');
-    const dist = parseFloat(document.getElementById('log-dist').value);
+    const distInputRaw = parseFloat(document.getElementById('log-dist').value);
     const time = parseFloat(document.getElementById('log-time').value);
     const type = document.getElementById('log-type').value;
     const link = document.getElementById('log-link').value;
     const dateInput = document.getElementById('log-date').value;
     const imgUrlInput = document.getElementById('uploaded-img-url');
 
-    if (!dist || !time) return showToast("البيانات ناقصة!", "error");
-    if (dist <= 0 || time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
-    
-    // تعطيل الزر لمنع التكرار
+    const isCore = _ersIsCoreType(type);
+    const xtDist = (!isCore && distInputRaw && distInputRaw > 0) ? distInputRaw : 0;
+    const dist = isCore ? (distInputRaw || 0) : 0; // ✅ XT لا يؤثر على التحديات/الإحصائيات
+
+    if (!time) return showToast("البيانات ناقصة!", "error");
+    if (time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
+
+    if (isCore) {
+      if (!dist) return showToast("البيانات ناقصة!", "error");
+      if (dist <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
+    }
+// تعطيل الزر لمنع التكرار
     if(btn) { 
         btn.innerText = "جاري الحفظ..."; 
         btn.disabled = true; 
@@ -2720,15 +4018,20 @@ async function submitRun() {
         
         // 1. منطق التعديل (Edit Mode)
         if (editingRunId) {
-            const distDiff = dist - editingOldDist; 
+            const oldIsCore = _ersIsCoreType(editingOldType);
+            const oldDistForStats = oldIsCore ? (editingOldDist || 0) : 0;
+            const newDistForStats = isCore ? dist : 0;
+            const distDiff = newDistForStats - oldDistForStats;
+            const runDiff = (isCore ? 1 : 0) - (oldIsCore ? 1 : 0); 
             
             await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update({ 
-                dist, time, type, link, 
+                dist: (isCore ? dist : 0), time, type, link, xtDist: (isCore ? 0 : xtDist),
                 img: imgUrlInput.value 
             }); 
 
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(distDiff),
+                totalRuns: firebase.firestore.FieldValue.increment(runDiff),
                 monthDist: firebase.firestore.FieldValue.increment(distDiff)
             }, { merge: true });
 
@@ -2759,14 +4062,26 @@ async function submitRun() {
         } else {
             // 2. منطق الإضافة الجديدة (New Run)
             const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-            const streakInfo = updateStreakLogic(selectedDate);
+            const streakInfo = isCore ? updateStreakLogic(selectedDate) : { streak: (userData.currentStreak || 0), lastDate: (userData.lastRunDate || null) };
             const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
             let newMonthDist = (userData.monthDist || 0) + dist;
             
             // تصفير الشهر إذا دخلنا شهر جديد
             if(userData.lastMonthKey !== currentMonthKey) { newMonthDist = dist; }
 
-            const runData = { dist, time, type, link, date: selectedDate.toISOString(), timestamp, img: imgUrlInput.value };
+            const pace = _ersPace(dist, time) || 0;
+            const autoKind = _ersAutoKind(type, pace);
+            const slowAsWalk = (autoKind === 'Walk' && (type === 'Run' || type === 'Race'));
+            // Run/Walk split for fairness (doesn't break old data)
+            let newMonthRunDist = (userData.monthRunDist || 0) + (autoKind==='Run' ? dist : 0);
+            let newMonthWalkDist = (userData.monthWalkDist || 0) + (autoKind==='Walk' ? dist : 0);
+            if(userData.lastMonthKey !== currentMonthKey) {
+                newMonthRunDist = (autoKind==='Run' ? dist : 0);
+                newMonthWalkDist = (autoKind==='Walk' ? dist : 0);
+            }
+            const commentsDisabled = !!getUserPref('disableComments', false);
+
+            const runData = { dist: (isCore ? dist : 0), xtDist: (isCore ? 0 : xtDist), time, type, pace, autoKind, slowAsWalk, timestamp, img: imgUrlInput.value, commentsDisabled };
             
             // الحفظ في المجموعات
             await db.collection('users').doc(uid).collection('runs').add(runData);
@@ -2777,8 +4092,12 @@ async function submitRun() {
             // تحديث إجماليات المستخدم
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(dist),
-                totalRuns: firebase.firestore.FieldValue.increment(1),
-                monthDist: newMonthDist, 
+                totalRuns: firebase.firestore.FieldValue.increment(isCore ? 1 : 0),
+                totalRunDist: firebase.firestore.FieldValue.increment(autoKind==='Run' ? dist : 0),
+                totalWalkDist: firebase.firestore.FieldValue.increment(autoKind==='Walk' ? dist : 0),
+                monthDist: newMonthDist,
+                monthRunDist: newMonthRunDist,
+                monthWalkDist: newMonthWalkDist,
                 lastMonthKey: currentMonthKey,
                 currentStreak: streakInfo.streak,
                 lastRunDate: streakInfo.lastDate
@@ -2787,11 +4106,13 @@ async function submitRun() {
             // تحديث التحديات
             const activeCh = await db.collection('challenges').where('active', '==', true).get();
             const batch = db.batch();
-            const currentPace = dist > 0 ? time / dist : 0; 
+            const currentPace = pace; 
 
             activeCh.forEach(doc => {
                 const ch = doc.data();
                 const rules = ch.rules || {};
+                // Run/Walk fairness gate
+                if(!_ersEligibleForChallenge(ch, autoKind)) return;
 
                 // شروط الرفض
                 if (rules.requireImg && !imgUrlInput.value) return; 
@@ -2799,7 +4120,7 @@ async function submitRun() {
 
                 const participantRef = doc.ref.collection('participants').doc(uid);
                 let incrementValue = (ch.type === 'frequency') ? 1 : dist;
-                let isSpeedSuccess = (ch.type === 'speed' && currentPace <= ch.target && dist >= 1);
+                let isSpeedSuccess = (ch.type === 'speed' && autoKind==='Run' && currentPace <= ch.target && dist >= 1);
 
                 if (ch.type === 'speed') {
                     if (isSpeedSuccess) {
@@ -2812,12 +4133,16 @@ async function submitRun() {
             await batch.commit();
 
             // تحديث البيانات المحلية
-            userData.totalDist += dist; 
-            userData.totalRuns += 1; 
+            userData.totalDist = (userData.totalDist||0) + dist;
+            userData.totalRuns = (userData.totalRuns||0) + 1;
+            userData.totalRunDist = (userData.totalRunDist||0) + (autoKind==='Run' ? dist : 0);
+            userData.totalWalkDist = (userData.totalWalkDist||0) + (autoKind==='Walk' ? dist : 0);
             userData.monthDist = newMonthDist;
+            userData.monthRunDist = newMonthRunDist;
+            userData.monthWalkDist = newMonthWalkDist;
             
             checkNewBadges(dist, time, selectedDate);
-            setTimeout(() => { showRunAnalysis(dist, time, type); }, 300);
+            setTimeout(() => { showRunAnalysis(dist, time, autoKind, pace); }, 300);
         }     
 
         // إغلاق وتنظيف
@@ -3444,70 +4769,71 @@ async function confirmPlan() {
 }
 // ==================== V12.0 Run Analysis Engine (Coach Feedback) ====================
 
-function showRunAnalysis(dist, time, type) {
-    const pace = dist > 0 ? (time / dist) : 0;
-    const name = (userData.name || "يا بطل").split(' ')[0];
-    
-    let title = "تم يا بطل! ✅";
+function showRunAnalysis(dist, time, kind = 'Run', paceOverride = null) {
+    const pace = paceOverride ?? (dist > 0 ? (time / dist) : 0);
+    const firstName = ((userData && userData.name) ? userData.name : "يا بطل").split(' ')[0];
+
+    const goalFocus = getUserPref('goalFocus', 'general'); // speed | endurance | weight | general
+
+    let title = "تم يا بطل ✅";
     let msg = "";
     let score = "جيد";
-    
-    // 1. تحليل الأداء (Logic)
-    
-    // حالة 1: جرية طويلة (Long Run)
-    if (dist >= 10) {
-        title = "وحش المسافات 🦁";
-        msg = `الله عليك يا ${name}! ${dist} كم مسافة محترمة جداً. النفس الطويل ده هو اللي بيبني أبطال المارثون.`;
-        score = "Legend";
-    } 
-    // حالة 2: سرعة عالية (Fast Pace - أقل من 5 دقايق للكيلو)
-    else if (pace > 0 && pace < 5.0 && type === 'Run') {
-        title = "صاروخ أرض جو 🚀";
-        msg = `إيه السرعة دي! بيس ${pace.toFixed(1)} ده مستوى عالي. حافظ على السرعة دي، أنت في الطريق للقمة.`;
-        score = "Speedster";
-    }
-    // حالة 3: جرية خفيفة/قصيرة
-    else if (dist < 3) {
-        title = "بداية موفقة 🌱";
-        msg = `عاش الاستمرارية. حتى المسافات القصيرة بتفرق في اللياقة. المهم إنك نزلت ومكسلتش!`;
-        score = "Active";
-    }
-    // حالة 4: مشي
-    else if (type === 'Walk') {
-        title = "نشاط وحيوية 🚶";
-        msg = `المشي رياضة ممتازة لحرق الدهون وتصفية الذهن. استمر يا كوتش!`;
+
+    const paceTxt = pace > 0 ? _ersFormatPace(pace) : "-";
+
+    // تصنيف سريع
+    const walkLike = (kind === 'Run' && pace >= ERS_PACE_WALK_MIN); // جري بسرعة مشي تقريباً
+
+    if (kind === 'Walk') {
+        title = "نشاط محسوب 🚶";
+        msg = `عاش يا ${firstName}… المشي ده مفيد للوزن وللاستشفاء.`;
         score = "Steady";
-    }
-    // حالة افتراضية
-    else {
-        title = "تمرين ممتاز 💪";
-        msg = `مجهود رائع يا ${name}. كل خطوة بتقربك من هدفك. ريح جسمك كويس واشرب مية كتير.`;
+    } else if (dist >= 12) {
+        title = "وحش المسافات 🦁";
+        msg = `الله عليك يا ${firstName}! ${dist.toFixed(1)} كم… نفس طويل محترم.`;
+        score = "Legend";
+    } else if (pace > 0 && pace <= 5.0 && dist >= 3) {
+        title = "سرعة عالية 🚀";
+        msg = `بيس ${paceTxt} ممتاز… بس ركّز إن السرعة تكون "متحكم فيها" مش تهور.`;
+        score = "Speedster";
+    } else if (dist < 3) {
+        title = "خطوة ممتازة 🌱";
+        msg = `حتى المسافات القصيرة بتفرق… المهم الاستمرارية.`;
+        score = "Active";
+    } else {
+        title = "تمرين نظيف 💪";
+        msg = `شغل محترم يا ${firstName}.`;
         score = "Strong";
     }
 
-    // 2. مقارنة بالخطة (إذا وجدت)
-    if (userData.activePlan && userData.activePlan.status === 'active') {
-        msg += `<br><br><span style="color:var(--primary); font-size:12px;">✅ تم تسجيل هذا التمرين ضمن خطة الـ ${userData.activePlan.target}.</span>`;
+    // ملاحظة مهمة لو "جري" لكن بيسه بيس مشي
+    if (walkLike) {
+        msg += `<br><br><span style="color:#f59e0b; font-size:12px;">تنبيه لطيف: التمرين اتسجل "جري" لكن بيسه قريب من المشي (${paceTxt}). لو كان مشي فعلاً… سجّله Walk عشان العدالة في التحديات. ✅</span>`;
     }
 
-    // 3. عرض البيانات في المودال
+    // توجيه حسب هدف المستخدم
+    if (goalFocus === 'speed') {
+        msg += `<br><br><span style="color:var(--primary); font-size:12px;">🎯 هدفك: تحسين السرعة — شوف "رادار السرعات" من زر ⚡ عشان نديك توصية دقيقة.</span>`;
+    } else if (goalFocus === 'weight' || goalFocus === 'general') {
+        msg += `<br><br><span style="color:#9ca3af; font-size:12px;">ملاحظة: لو هدفك وزن/لياقة… المسافة والاستمرارية أهم من السرعة.</span>`;
+    }
+
+    // مقارنة بالخطة الشخصية (إن وجدت)
+    if (userData && userData.activePlan && userData.activePlan.status === 'active') {
+        msg += `<br><br><span style="color:var(--primary); font-size:12px;">✅ اتسجل ضمن خطة الـ ${userData.activePlan.target}.</span>`;
+    }
+
     document.getElementById('feedback-title').innerText = title;
     document.getElementById('feedback-msg').innerHTML = msg;
-    
-    document.getElementById('fb-pace').innerText = pace > 0 ? pace.toFixed(1) : '-';
+
+    document.getElementById('fb-pace').innerText = pace > 0 ? paceTxt : '-';
     document.getElementById('fb-score').innerText = score;
-    
-    // حساب تقريبي للكالوري (الوزن المتوسط 70 * المسافة)
+
+    // تقدير مبسط للسعرات
     document.getElementById('fb-cal').innerText = (dist * 60).toFixed(0);
 
-    // إظهار المودال
     document.getElementById('modal-run-feedback').style.display = 'flex';
-    
-    // تشغيل صوت تشجيعي (اختياري)
-    // playSuccessSound(); 
 }
-
-
 
 // دالة للأدمن فقط: سحب إنجاز
 async function adminRevokeBadge(targetUid, badgeId) {
@@ -3809,76 +5135,16 @@ async function loadGovernorateLeague() {
 
 // ==================== Coach Zone UI Helpers (V3.3) ====================
 
-function renderPlanCard() {
-    const emptyEl = document.getElementById('plan-empty');
-    const weekEl = document.getElementById('plan-week');
-    if (!emptyEl || !weekEl) return;
 
-    const plan = userData?.activePlan;
-    const hasPlan = plan && plan.status === 'active';
-
-    if (!hasPlan) {
-        emptyEl.style.display = 'block';
-        weekEl.innerHTML = '';
-        return;
-    }
-
-    emptyEl.style.display = 'none';
-
-    // حساب اليوم داخل الخطة
-    const startDate = new Date(plan.startDate);
-    const today = new Date();
-    startDate.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-    const diffDays = Math.floor((today - startDate) / (1000*60*60*24));
-    const dayNum = diffDays + 1;
-    const weekNum = Math.max(1, Math.ceil(dayNum / 7));
-    const dayInWeek = ((dayNum - 1) % 7) + 1; // 1..7
-
-    // توزيع أيام الجري
-    const daysCount = parseInt(plan.daysPerWeek) || 3;
-    let runDays = [];
-    if(daysCount === 3) runDays = [1, 3, 5];
-    else if(daysCount === 4) runDays = [1, 2, 4, 6];
-    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
-    else runDays = [1, 2, 3, 4, 5, 6];
-
-    const isRunDay = runDays.includes(dayInWeek);
-    let title = 'راحة واستشفاء 🧘‍♂️';
-    let sub = 'مشي خفيف + إطالة 8–10 دقايق.';
-
-    if (isRunDay) {
-        const targetNum = parseFloat(plan.target);
-        const baseDist = (Number.isFinite(targetNum) ? (targetNum / daysCount) : 4);
-
-        if (dayInWeek === runDays[0]) {
-            title = `جري مريح (Easy)`;
-            sub = `${(baseDist).toFixed(1)} كم • تنفّس مريح.`;
-        } else if (dayInWeek === runDays[runDays.length-1]) {
-            title = `لونج رن (Long)`;
-            sub = `${(baseDist * 1.2).toFixed(1)} كم • ثابت وبهدوء.`;
-        } else {
-            title = `تمرين جودة (Speed/Tempo)`;
-            sub = `${(baseDist * 0.8).toFixed(1)} كم • ركّز على الإيقاع.`;
-        }
-    }
-
-    weekEl.innerHTML = `
-        <div class="plan-week">
-            <div class="plan-item">
-                <div class="pi-day">الأسبوع ${weekNum}</div>
-                <div class="pi-main">
-                    <div class="pi-title">${title}</div>
-                    <div class="pi-sub">${sub}</div>
-                </div>
-                <button class="chip" onclick="openMyPlan()"><i class="ri-map-2-line"></i> التفاصيل</button>
-            </div>
-        </div>
-    `;
+function renderPlanCard(){
+    // Backward-compat: old home card removed in v3.6
+    if(typeof renderPlanHero === 'function') renderPlanHero();
 }
 
 
+
 // ==================== Run Catalog (V3.3) ====================
+
 
 function openRunCatalog(type) {
     const titleEl = document.getElementById('catalog-title');
@@ -3889,29 +5155,116 @@ function openRunCatalog(type) {
     const items = {
         recovery: {
             title: 'الجري الاستشفائي (Recovery) 🫶',
-            body: `هدفه: تنشيط الدم بدون إجهاد.\n\nشكل التمرين: 20–40 دقيقة جري خفيف جدًا (RPE 2–3) + 5 دقايق إطالة.\n\nمتى؟ بعد يوم سرعات/لونج رن أو بعد ضغط شغل.`
+            body: `هدفه: تنشيط الدم بدون إجهاد.
+
+شكل التمرين: 20–40 دقيقة جري خفيف جدًا (RPE 2–3) + 5 دقايق إطالة.
+
+متى؟ بعد يوم سرعات/لونج رن أو بعد ضغط شغل.`
         },
-        interval: {
-            title: 'الانترفال (Intervals) ⚡',
-            body: `هدفه: سرعة + VO2max.\n\nمثال بسيط: 10 دقائق إحماء → 6×(1 دقيقة سريع + 1 دقيقة سهل) → 8 دقائق تهدئة.\n\nملاحظة: السرعة تكون "مجهود" مش "تهور".`
+        hills: {
+            title: 'الهيلز (Hills) ⛰️',
+            body: `هدفه: قوة + اقتصاد في الجري.
+
+مثال (كوبري/تريدميل): 10 دقايق إحماء → 8×(30–45 ثانية صعود قوي + نزول هادي) → 8 دقايق تهدئة.
+
+مهم: حافظ على شكل الجسم، وماتكسرش نزول بعنف.`
         },
-        long: {
-            title: 'اللونج رن (Long Run) 🛣️',
-            body: `هدفه: بناء التحمل والاقتصاد.\n\nشكل التمرين: 60–120 دقيقة على وتيرة مريحة.\n\nنصيحة: اقسمه 3 أجزاء (سهل / ثابت / سهل) وحافظ على سوائل.`
+        intervals: {
+            title: 'الإنترفال/السرعات (Intervals) ⚡',
+            body: `هدفه: سرعة و VO2max.
+
+مثال: 12 دقيقة إحماء → 6×(400م سريع + 200م سهل) أو 5×(2 دقيقة سريع + 2 دقيقة سهل) → تهدئة.
+
+متى؟ يوم واحد/أسبوع كبداية.`
+        },
+        longrun: {
+            title: 'اللونج رن (Long Run) 🦁',
+            body: `هدفه: أساس التحمل + التحضير للسباقات.
+
+مثال: 60–120 دقيقة جري سهل (RPE 3–4).
+
+مفتاحه: "سهل وبس"… السرعة هنا مش الهدف.`
+        },
+        easy: {
+            title: 'الجري السهل (Easy) 🌿',
+            body: `هدفه: بناء حجم أسبوعي بدون إرهاق.
+
+مثال: 30–50 دقيقة على نفس مريح (تقدر تتكلم).
+
+ممتاز كتمرين بين الشغل التقيل.`
+        },
+        fartlek: {
+            title: 'الفارتلك (Fartlek) 🎲',
+            body: `هدفه: لعب سرعات بدون ضغط حسابات.
+
+مثال: 10 دقايق إحماء → 10×(1 دقيقة أسرع + 1 دقيقة سهل) أو "سرّع بين أعمدة النور" → 8 دقايق تهدئة.
+
+ممتاز للأيام اللي مش عايز فيها انترفال رسمي.`
         },
         tempo: {
             title: 'التمبو (Tempo) 🔥',
-            body: `هدفه: رفع العتبة اللاهوائية.\n\nمثال: 10 دقائق إحماء → 15–25 دقيقة تمبو → 8 دقائق تهدئة.\n\nإحساسه: "مجهود ثابت" تقدر تتكلم كلمتين وتكمل.`
+            body: `هدفه: رفع العتبة اللاهوائية.
+
+مثال: 10 دقائق إحماء → 15–25 دقيقة تمبو → 8 دقائق تهدئة.
+
+إحساسه: "مجهود ثابت" تقدر تتكلم كلمات قصيرة.`
         },
-        all: {
-            title: 'مكتبة التمارين 🏃‍♂️',
-            body: 'اختار نوع تمرين من الكروت… وهتلاقي شرح سريع + مثال جاهز.'
+        strides: {
+            title: 'السترایدز (Strides) 🧠',
+            body: `هدفه: تنشيط السرعة مع إجهاد قليل.
+
+مثال: بعد جري سهل → 6–10×(20 ثانية أسرع + 60 ثانية سهل).
+
+ممتاز قبل السباق أو لتحسين الشكل.`
+        },
+        mobility: {
+            title: 'موبيلتي/يوجا (Mobility) 🧘',
+            body: `هدفه: مرونة + وقاية من الإصابات.
+
+مثال: 10–20 دقيقة (Hip / Ankle / Hamstrings) + تنفّس.
+
+مناسب لأيام الراحة أو بعد اللونج.`
+        },
+        crosstrain: {
+            title: 'كروس تريننج (Cross-Training) 🚴',
+            body: `هدفه: لياقة بدون ضغط على الركبة.
+
+خيارات: عجلة / سباحة / إليبتيكال 25–45 دقيقة.
+
+لو بتتعافى من إصابة… ده ذهب.`
         }
     };
 
-    const it = items[type] || items.all;
-    titleEl.innerText = it.title;
-    bodyEl.innerText = it.body;
+    const keys = Object.keys(items);
+
+    // وضع المكتبة كاملة (Cards)
+    if (type === 'all' || !items[type]) {
+        titleEl.innerText = 'مكتبة التمارين الأساسية 📚';
+        bodyEl.innerHTML = `
+            <div class="catalog-grid">
+                ${keys.map(k=>`
+                    <button class="catalog-card" onclick="openRunCatalog('${k}')">
+                        <div class="catalog-card-title">${items[k].title}</div>
+                        <div class="catalog-card-sub">افتح التفاصيل 👈</div>
+                    </button>
+                `).join('')}
+            </div>
+            <div class="mini-note" style="margin-top:10px;">دي مكتبة مرجعية… تمرين الفريق اليوم بيظهر فوق كـ (جرية اليوم).</div>
+        `;
+        modal.style.display = 'flex';
+        return;
+    }
+
+    // وضع تمرين واحد بتفاصيله
+    const item = items[type];
+    titleEl.innerText = item.title;
+    bodyEl.innerHTML = `
+        <div class="catalog-body-text">${(item.body||'').replace(/\n/g,'<br>')}</div>
+        <div style="margin-top:14px; display:flex; gap:10px;">
+            <button class="btn-secondary" onclick="openRunCatalog('all')">⬅️ رجوع للمكتبة</button>
+            <button class="btn-primary" onclick="closeModal('modal-catalog')">تم</button>
+        </div>
+    `;
     modal.style.display = 'flex';
 }
 
@@ -3957,3 +5310,48 @@ async function loadHallOfFame() {
         listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">تعذر تحميل لوحة الشرف</div>';
     }
 }
+
+document.addEventListener('DOMContentLoaded', ()=>{ setupCoachHomeTabs(); setupLogTypeUI(); });
+
+
+// === دالة تحديث بيانات الكوتش (الهيرو) ===
+function renderCoachHeroStats() {
+    // 1. التأكد من وجود العناصر
+    const weekEl = document.getElementById('hero-week-dist');
+    const monthEl = document.getElementById('hero-month-dist');
+    const streakEl = document.getElementById('hero-streak');
+    const greetEl = document.getElementById('coach-greeting');
+    
+    if (!weekEl || !currentUser) return;
+
+    // 2. حساب مسافة آخر 7 أيام
+    const now = new Date();
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(now.getDate() - 7);
+    
+    // استخدام الكاش الموجود للجريات
+    const runs = window._ersRunsCache || [];
+    const weekDist = runs
+        .filter(r => {
+            const d = r.timestamp ? r.timestamp.toDate() : new Date(r.date);
+            return d >= oneWeekAgo;
+        })
+        .reduce((sum, r) => sum + (parseFloat(r.dist) || 0), 0);
+
+    // 3. تحديث الأرقام في الشاشة
+    weekEl.innerText = weekDist.toFixed(1);
+    monthEl.innerText = (userData.monthDist || 0).toFixed(1);
+    streakEl.innerText = userData.currentStreak || 0;
+
+    // 4. تحديث التحية
+    if (greetEl) {
+        const h = new Date().getHours();
+        const name = (userData.name || "يا كابتن").split(' ')[0];
+        let timeGreet = "صباح الخير";
+        if (h >= 12 && h < 17) timeGreet = "مساء الخير";
+        if (h >= 17) timeGreet = "مساء النور";
+        
+        greetEl.innerText = `${timeGreet} يا ${name} 👋`;
+    }
+}
+

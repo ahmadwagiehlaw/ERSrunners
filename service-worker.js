@@ -1,13 +1,24 @@
-// ERS Runners - Service Worker (V2.4)
-const CACHE_NAME = 'ers-runners-v1.3.2-stable'; // تحديث رقم النسخة
+// ERS Runners - Service Worker (V4.1.0)
+const CACHE_NAME = 'ers-cache-v4.1.0'; // تحديث رقم النسخة // تحديث رقم النسخة
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
-  './app.js',
+  './electric-blue.css',
   './manifest.json',
   './icon.png',
-  './ers-logo.png'
+  './ers-logo.png',
+  './js/config.js',
+  './js/state.js',
+  './js/utils.js',
+  './js/auth.js',
+  './js/ui.js',
+  './js/coach.js',
+  './js/activities.js',
+  './js/challenges.js',
+  './js/admin.js',
+  './js/main.js',
+  './app.js',
 ];
 
 // 1. التثبيت (Install)
