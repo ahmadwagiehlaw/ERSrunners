@@ -1909,3 +1909,49 @@ function computeHeroStatsFromRuns(runs){
     };
 }
  
+
+// ==================== Team Workout Mirror to Home (Today Tab) ====================
+(function mirrorTeamWorkoutToHome(){
+  function cloneOrUpdate(){
+    const srcCard = document.getElementById('team-workout');
+    const target = document.getElementById('team-workout-container');
+    if (!srcCard || !target) return;
+
+    // امسح أي نسخة قديمة
+    const old = document.getElementById('team-workout-mirror');
+    if (old) old.remove();
+
+    // اعمل clone للكارت بالكامل
+    const clone = srcCard.cloneNode(true);
+    clone.id = 'team-workout-mirror';
+
+    // مهم: IDs داخل النسخة لازم تتغير عشان مايحصلش تضارب
+    const body = clone.querySelector('#team-workout-body');
+    if (body) body.id = 'team-workout-body-mirror';
+
+    // صلّح زر التفاصيل داخل النسخة
+    const link = clone.querySelector('.link-text');
+    if (link) {
+      link.setAttribute('onclick', 'openTeamWorkoutDetails()');
+    }
+
+    target.appendChild(clone);
+  }
+
+  // أول تحميل
+  document.addEventListener('DOMContentLoaded', () => {
+    cloneOrUpdate();
+
+    // راقب تغييرات محتوى الجدول الأصلي عشان نحدّث النسخة تلقائيًا
+    const srcBody = document.getElementById('team-workout-body');
+    if (!srcBody) return;
+
+    const obs = new MutationObserver(() => {
+      const mirrorBody = document.getElementById('team-workout-body-mirror');
+      if (mirrorBody) mirrorBody.innerHTML = srcBody.innerHTML;
+    });
+
+    obs.observe(srcBody, { childList: true, subtree: true });
+  });
+})();
+// ==================== V12.0 Plan Activation ====================

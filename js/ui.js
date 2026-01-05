@@ -1541,3 +1541,40 @@ if (coachCtx && coachCtx.requireImage && (!imgUrlInput || !imgUrlInput.value)) {
 }
 
 
+// ==================== Team Workout: Details Fix ====================
+window.openTeamWorkoutDetails = function () {
+  // داخل صفحة الكوتش نفسها: نروح لتبويب "plan"
+  if (typeof setCoachHomeTab === 'function') {
+    setCoachHomeTab('plan');
+    setTimeout(() => {
+      const el = document.getElementById('team-workout');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 150);
+    return;
+  }
+
+  // fallback: لو التبويبات مش متاحة لأي سبب
+  console.warn('setCoachHomeTab is not defined');
+};
+
+// ===== Plan Segments (Coach Plan Tab) =====
+window.setPlanSegment = function(seg){
+  // buttons
+  document.querySelectorAll('.plan-seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.planseg === seg);
+  });
+
+  // views
+  document.querySelectorAll('.plan-seg-view').forEach(v=>{
+    v.classList.toggle('active', v.id === `plan-seg-${seg}`);
+  });
+};
+
+// Toggle show/hide schedule body
+window.toggleTeamWorkout = function(){
+  const body = document.getElementById('team-workout-body');
+  if(!body) return;
+  const isHidden = body.style.display === 'none';
+  body.style.display = isHidden ? 'block' : 'none';
+};
+// ==================== V5.0 Active Challenges Loading & Rendering ====================

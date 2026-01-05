@@ -130,7 +130,7 @@
   <!-- Sticky Tabs -->
   <div id="coach-tabs-nav" class="coach-tabs-nav">
     <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
-    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
+    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 المكتبة</button>
     <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
   </div>
 
@@ -165,15 +165,73 @@
   </div>
 
 <div id="coach-home-tab-plan" class="coach-home-tab">
-    
-    <div id="team-workout" class="team-workout-card" style="margin-top: 0; margin-bottom: 20px;">
-        <div class="section-title-row">
-            <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
-            <span class="link-text" onclick="switchView('team')">تفاصيل</span>
-        </div>
-        <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
-        <div id="team-workout-body" class="team-workout-body"></div>
+
+  <!-- Plan Header (Glass) -->
+  <div class="plan-header glass-panel">
+    <div class="plan-header-left">
+      <div class="plan-badge">📚 المكتبة</div>
+      <div class="plan-title">اختار تمرينك… وخلي الأسبوع منظم</div>
+      <div class="plan-sub">هنا هتلاقي جدول الفريق + أدوات الكوتش + مكتبة التمارين.</div>
     </div>
+
+    <div class="plan-header-actions">
+      <button class="plan-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش">
+        <i class="ri-sliders-4-line"></i>
+      </button>
+      <button class="plan-icon-btn" onclick="openExternal('https://www.skimble.com/workouts/created')" title="Workout Trainers">
+        <i class="ri-external-link-line"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Segmented Tabs داخل التبويب نفسه (مش تبويبات الصفحة) -->
+  <div class="plan-seg glass-panel" role="tablist" aria-label="Plan Sections">
+    <button class="plan-seg-btn active" data-planseg="schedule" onclick="setPlanSegment('schedule')">
+      👥 جدول الفريق
+    </button>
+    <button class="plan-seg-btn" data-planseg="tools" onclick="setPlanSegment('tools')">
+      🧰 أدوات
+    </button>
+    <button class="plan-seg-btn" data-planseg="library" onclick="setPlanSegment('library')">
+      📖 المكتبة
+    </button>
+  </div>
+
+  <!-- ========== Segment: Schedule ========== -->
+  <section id="plan-seg-schedule" class="plan-seg-view active">
+
+    <div id="team-workout" class="team-workout-card glass-panel" style="margin-top: 0; margin-bottom: 14px;">
+      <div class="section-title-row" style="margin-top:0;">
+        <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
+
+        <!-- بدل "تفاصيل" اللي كانت بتودي لفاضي -->
+        <div class="section-actions">
+          <button class="link-chip" type="button" onclick="toggleTeamWorkout()" title="إظهار/إخفاء الجدول">
+            <i class="ri-layout-grid-line"></i> عرض
+          </button>
+        </div>
+      </div>
+
+      <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
+
+      <!-- مهم: سيبه بنفس الـ ID -->
+      <div id="team-workout-body" class="team-workout-body"></div>
+
+      <!-- لو حابب CTA لطيف (مش شرط) -->
+      <div class="team-workout-footer">
+        <button class="btn-glass" type="button" onclick="setCoachHomeTab('today')">
+          🎯 ارجع لقرارات اليوم
+        </button>
+        <button class="btn-glass" type="button" onclick="openBasicLibrary()">
+          📚 افتح المكتبة الأساسية
+        </button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ========== Segment: Tools ========== -->
+  <section id="plan-seg-tools" class="plan-seg-view">
 
     <div class="plan-tools-grid">
       <div class="tool-card" onclick="openCoachPreferences()">
@@ -204,13 +262,29 @@
       </div>
     </div>
 
-    <div id="basic-library-section" class="basic-lib-card">
-      <div class="section-title-row">
+  </section>
+
+  <!-- ========== Segment: Library ========== -->
+  <section id="plan-seg-library" class="plan-seg-view">
+
+    <div id="basic-library-section" class="basic-lib-card glass-panel">
+      <div class="section-title-row" style="margin-top:0;">
         <h4>المكتبة الأساسية 📚</h4>
         <span class="link-text" onclick="openBasicLibrary()">افتح</span>
       </div>
       <div class="mini-note">المكتبة دي مرجع… مش قرار. قرارات اليوم في تبويب "يومك" 👆</div>
+
+      <!-- لمسة UX بسيطة -->
+      <div class="library-quick">
+        <button class="pill" type="button" onclick="openRunCatalog('easy')">🌿 Easy</button>
+        <button class="pill" type="button" onclick="openRunCatalog('intervals')">⚡ Intervals</button>
+        <button class="pill" type="button" onclick="openRunCatalog('longrun')">🦁 Long Run</button>
+        <button class="pill" type="button" onclick="openRunCatalog('recovery')">🫶 Recovery</button>
+      </div>
     </div>
+
+  </section>
+
 </div>
 
 <div id="coach-home-tab-community" class="coach-home-tab">
@@ -1273,7 +1347,7 @@
     </div>
 <div id="modal-catalog" class="modal-overlay">
     <div class="modal-box">
-        <h3 id="catalog-title">مكتبة التمارين</h3>
+        <h3 id="catalog-title">المكتبة</h3>
         <div id="catalog-body" style="font-size:13px; line-height:1.8; color:#e5e7eb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:12px; margin-top:12px;"></div>
         <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px;">تمام</button>
     </div>

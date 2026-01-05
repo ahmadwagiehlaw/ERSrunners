@@ -4236,4 +4236,401 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
 .badge-coach-run i{ font-size:13px; }
 
 
- 
+ /* --- Log Modal Tabs (Glassy) --- */
+.log-tabs {
+    display: flex;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+
+.tab-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* --- GPS Map Inside Modal --- */
+.gps-overlay-stats {
+    position: absolute;
+    bottom: 10px; left: 10px; right: 10px;
+    background: rgba(17, 24, 39, 0.85);
+    backdrop-filter: blur(8px);
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    justify-content: space-around;
+    z-index: 999; /* فوق الخريطة */
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.gps-overlay-stats div {
+    display: flex; flex-direction: column; align-items: center;
+}
+.gps-overlay-stats span { font-size: 10px; color: #9ca3af; }
+.gps-overlay-stats strong { font-size: 18px; color: #fff; line-height: 1.2; }
+/* ==================== Improved Image Upload Box ==================== */
+
+.upload-zone {
+    position: relative;
+    height: 140px; /* ارتفاع ثابت للمربع */
+    width: 100%;
+    border: 2px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+.upload-zone:hover {
+    border-color: var(--accent);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+/* محتوى المربع (الأيقونة والنص) */
+.upload-placeholder {
+    text-align: center;
+    pointer-events: none; /* عشان الضغط يجي عالبوكس نفسه */
+    transition: opacity 0.2s;
+}
+
+.upload-placeholder i {
+    font-size: 32px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.upload-placeholder span {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* الصورة عند الرفع */
+.upload-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 14px;
+    display: none; /* مخفية في البداية */
+    z-index: 5;
+}
+
+/* حالة التحميل (Loading) */
+.upload-loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 12px;
+    z-index: 10;
+    display: none;
+    backdrop-filter: blur(2px);
+}
+
+/* --- Compact Form Inputs --- */
+.compact-input {
+    height: 40px !important; /* ارتفاع ملموم */
+    padding: 0 10px !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    background: rgba(0,0,0,0.3) !important;
+}
+
+/* --- Magic Upload Box --- */
+.upload-magic-box {
+    position: relative;
+    height: 100px; /* نفس ارتفاع الحقول تقريباً */
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* تأثير الحركة (Breathing Glow) */
+.upload-magic-box {
+    animation: border-pulse 3s infinite;
+}
+
+@keyframes border-pulse {
+    0% { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 0 rgba(59,130,246,0); }
+    50% { border-color: var(--accent); box-shadow: 0 0 8px rgba(59,130,246,0.2); }
+    100% { border-color: rgba(255,255,255,0.2); box-shadow: 0 0 0 rgba(59,130,246,0); }
+}
+
+.magic-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #9ca3af;
+    font-size: 12px;
+    z-index: 2;
+}
+
+.magic-icon {
+    font-size: 16px;
+    color: var(--accent);
+}
+
+/* عند التحويم */
+.upload-magic-box:active {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(0.98);
+}
+
+/* معاينة الصورة داخل الزر */
+.magic-preview {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    opacity: 0.6; /* شفافة قليلاً ليرى المستخدم أنها قابلة للتغيير */
+    z-index: 1;
+}
+
+/* iOS Glass Tabs for Coach Home */
+.coach-tabs-nav{
+  position: sticky; /* لو هي ثابتة عندك */
+  top: 0;           /* أو سيبها حسب تصميمك */
+  z-index: 50;
+
+  display: flex;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 18px;
+
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.coach-tabs-nav .coach-tab-btn{
+  flex: 1;
+  border: 0;
+  outline: 0;
+  cursor: pointer;
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  background: transparent;
+  color: rgba(255,255,255,0.75);
+
+  font-size: 13px;
+  font-weight: 700;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+
+  transition: transform 0.12s ease, background 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+/* Hover لطيف */
+.coach-tabs-nav .coach-tab-btn:hover{
+  background: rgba(255,255,255,0.06);
+}
+
+/* Active = زجاج أوضح + Depth */
+.coach-tabs-nav .coach-tab-btn.active{
+  color: #fff;
+  background: rgba(255,255,255,0.18);
+
+  box-shadow:
+    0 10px 22px rgba(0,0,0,0.28),
+    inset 0 0 0 1px rgba(255,255,255,0.22);
+}
+
+/* Press effect (iOS feel) */
+.coach-tabs-nav .coach-tab-btn:active{
+  transform: scale(0.98);
+}
+
+
+
+/* ===== Plan Tab Upgrade (iOS Glass) ===== */
+.plan-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:18px;
+  margin-bottom:12px;
+}
+
+.plan-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.12);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+}
+
+.plan-title{
+  margin-top:8px;
+  color:#fff;
+  font-size:14px;
+  font-weight:900;
+}
+
+.plan-sub{
+  margin-top:6px;
+  color: rgba(255,255,255,0.65);
+  font-size:11px;
+  line-height:1.5;
+}
+
+.plan-header-actions{
+  display:flex;
+  gap:8px;
+}
+
+.plan-icon-btn{
+  width:40px;
+  height:40px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+
+.plan-icon-btn:active{ transform: scale(0.98); }
+
+/* Segmented control */
+.plan-seg{
+  display:flex;
+  gap:8px;
+  padding:6px;
+  border-radius:18px;
+  margin-bottom:12px;
+}
+
+.plan-seg-btn{
+  flex:1;
+  border:0;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  padding:10px 10px;
+  border-radius:14px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+  transition: background .2s ease, box-shadow .2s ease, color .2s ease, transform .12s ease;
+}
+
+.plan-seg-btn:hover{ background: rgba(255,255,255,0.06); }
+.plan-seg-btn:active{ transform: scale(0.985); }
+
+.plan-seg-btn.active{
+  color:#fff;
+  background: rgba(255,255,255,0.18);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.22);
+}
+
+/* Segment views */
+.plan-seg-view{ display:none; }
+.plan-seg-view.active{ display:block; }
+
+/* Team workout footer buttons */
+.team-workout-footer{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+
+.btn-glass{
+  flex:1;
+  border:1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+  font-size:12px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.btn-glass:active{ transform: scale(0.985); }
+
+.link-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+/* Library quick pills */
+.library-quick{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.library-quick .pill{
+  border:1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color:#fff;
+  border-radius:999px;
+  padding:8px 10px;
+  font-size:11px;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.library-quick .pill:active{ transform: scale(0.985); }
