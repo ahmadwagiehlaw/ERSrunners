@@ -409,7 +409,7 @@ function updateGlassUI(index) {
 // 🔥 دالة فتح رابط التحميل الخارجي 🔥
 function openExternalDownload() {
     // ضع رابط الـ OneDrive الخاص بك هنا بين علامات التنصيص 👇
-    const oneDriveLink = "https://1drv.ms/u/c/68bc25c4969fc669/IQATqO26UJujSYvsuOwhdbN6AWt7LVpGdo6MtlwAWjXldPA?e=gBIjuL"; 
+    const oneDriveLink = "https://github.com/ahmadwagiehlaw/ERSrunners/releases/download/v2.0/ERSRunners.apk"; 
     
     if(oneDriveLink && oneDriveLink.includes("http")) {
         // فتح الرابط في نافذة جديدة
