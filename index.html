@@ -907,58 +907,104 @@
     </div>
     
     <div id="modal-log" class="modal-overlay">
-        <div class="modal-box">
-            <h3>تسجيل نشاط 🏃‍♂️</h3>
-            <div class="input-wrap" style="margin-bottom:15px;">
-                <label>توقيت الجري</label>
-                <input type="datetime-local" id="log-date" style="font-size:14px; direction:ltr;">
-            </div>
-            <div class="input-row">
-                <div class="input-wrap"><label>المسافة (كم)</label><input type="number" id="log-dist" step="0.1" inputmode="decimal"></div>
-                <div class="input-wrap"><label>الزمن (دقائق)</label><input type="number" id="log-time" inputmode="numeric"></div>
-            </div>
-            <select id="log-type" class="full-select">
-                <option value="Run">جري (Run)</option>
-                <option value="Walk">مشي (Walk)</option>
-                <option value="Race">سباق (Race)</option>
-                <option value="Bike">عجل (Bike) — XT</option>
-                <option value="Cardio">كارديو / HIIT — XT</option>
-                <option value="Strength">مقاومة (Strength) — XT</option>
-                <option value="Yoga">يوجا / مرونة — XT</option>
-    </select>
-            
+  <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden;">
+    
+    <div class="modal-head" style="padding: 15px 20px 0; background:transparent; z-index:10; position:relative;">
+        <h3 id="log-modal-title" style="margin:0;">تسجيل نشاط 🏃‍♂️</h3>
+        <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
+    </div>
 
-            <div class="input-wrap" style="margin-top:10px; margin-bottom:15px;">
-                <label>رابط إثبات (Strava/Nike) - اختياري لنسخ بيانات الجرية</label>
-                <input type="url" id="log-link" placeholder="الرابط هنا (https://...)" style="font-size:12px;">
-            </div>
-
-<div class="input-group" style="margin-top: 20px; margin-bottom: 20px;">
-                <div class="upload-zone-wrapper">
-                    
-                    <input type="file" id="log-img-file" accept="image/*" hidden onchange="uploadImageToImgBB()">
-                    <input type="hidden" id="uploaded-img-url">
-
-                    <label for="log-img-file" class="upload-trigger-label">
-                        <div class="upload-icon-container">
-                            <i class="ri-image-add-line"></i>
-                        </div>
-                        <div class="upload-text-content">
-                            <span class="upload-main-text">اضغط هنا لإرفاق صورة</span>
-                            <span class="upload-sub-text">إثبات النشاط (سيلفي / ساعة) 📸</span>
-                        </div>
-                    </label>
-
-                    <div id="upload-status" class="upload-status-msg"></div>
-                    <img id="img-preview" class="stylish-preview" alt="معاينة الصورة">
-                </div>
-            </div>
-            <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()">حفظ النشاط</button>
-            <button class="btn btn-text" onclick="closeModal('modal-log')" style="margin-top:10px;">إلغاء</button>
+    <div style="padding: 10px 20px; position:relative; z-index:10;">
+        <div class="log-tabs">
+            <button class="tab-btn active" onclick="switchLogTab('gps')" id="tab-btn-gps">
+                <i class="ri-map-pin-2-fill"></i> تتبع GPS
+            </button>
+            <button class="tab-btn" onclick="switchLogTab('manual')" id="tab-btn-manual">
+                <i class="ri-edit-box-line"></i> يدوي
+            </button>
         </div>
     </div>
 
-    <div id="modal-avatar" class="modal-overlay">
+    <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
+        
+        <div id="view-gps" style="display:block;">
+            <div id="gps-map-container" style="height:250px; width:100%; border-radius:16px; margin-bottom:15px; position:relative; overflow:hidden; border:1px solid var(--border);">
+                <div id="gps-map" style="width:100%; height:100%;"></div>
+                <div class="gps-overlay-stats">
+                    <div>
+                        <span>المسافة</span>
+                        <strong id="live-gps-dist">0.00</strong> <small>km</small>
+                    </div>
+                    <div>
+                        <span>الزمن</span>
+                        <strong id="live-gps-time" style="color:var(--accent);">00:00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button id="btn-start-gps" onclick="toggleGPSLog()" class="btn btn-primary" style="flex:2; height:50px; font-size:16px;">
+                    ابدأ <i class="ri-play-fill"></i>
+                </button>
+                <button id="btn-finish-gps" onclick="finishGPSLog()" class="btn" style="flex:1; background:#ef4444; color:#fff; display:none;">
+                    إنهاء
+                </button>
+            </div>
+            <div style="text-align:center; font-size:10px; color:#6b7280; margin-top:8px;">
+                ⚠️ اترك الشاشة مفتوحة لضمان دقة التتبع
+            </div>
+        </div>
+
+<div id="view-manual" style="display:none; padding-top:10px;">
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+        <div>
+            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">التاريخ</label>
+            <input type="date" id="log-date" class="input-box compact-input">
+        </div>
+        <div>
+            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">النوع</label>
+            <select id="log-type" class="input-box compact-input">
+                <option value="Run">جري (Run)</option>
+                <option value="Walk">مشي (Walk)</option>
+                <option value="Cycling">عجل (Bike)</option>
+                <option value="Swimming">سباحة (Swim)</option>
+                <option value="Core">تمارين (Gym/Core)</option>
+            </select>
+        </div>
+        <div>
+            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">المسافة (km)</label>
+            <input type="number" id="log-dist" class="input-box compact-input" placeholder="0.00" step="0.01">
+        </div>
+        <div>
+            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">الزمن (دقيقة)</label>
+            <input type="number" id="log-time" class="input-box compact-input" placeholder="00">
+        </div>
+    </div>
+
+    <div style="margin-top: 4px;">
+        <label style="font-size:10px; color:#9ca3af; margin-right:4px;">صورة النشاط (مطلوب)</label>
+        
+        <div class="upload-magic-box" onclick="document.getElementById('log-img-file').click()">
+            <div class="magic-content">
+                <i class="ri-camera-lens-fill magic-icon"></i>
+                <span id="upload-text-hint">اضغط لإرفاق صورة</span>
+            </div>
+            <img id="img-preview" class="magic-preview" style="display:none;">
+        </div>
+
+        <input type="hidden" id="uploaded-img-url">
+        <input type="file" id="log-img-file" accept="image/*" style="display:none" onchange="uploadImageToImgBB(this)">
+        <div id="upload-status" style="font-size:10px; text-align:center; height:14px; margin-top:2px;"></div>
+    </div>
+
+    <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()" style="width:100%; margin-top:12px; height:48px;">
+        حفظ النشاط
+    </button>
+</div>
+
+
+<div id="modal-avatar" class="modal-overlay">
         <div class="modal-box">
             <h3>اختر هويتك 🥸</h3>
             <label style="font-size:12px; color:#9ca3af;">اختر أفاتار أو ارفع صورة لتظهر في الصفحة الرئيسية</label>
