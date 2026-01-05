@@ -1667,58 +1667,109 @@ function openRunCatalog(type) {
 
 
 // ==================== Hall of Fame (V3.3) ====================
-
+// ==================== Hall of Fame (RUNS COLLECTION - SAFE) ====================
 async function loadHallOfFame() {
     const listEl = document.getElementById('hall-of-fame-list');
     if (!listEl) return;
 
-    listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>';
+    listEl.innerHTML =
+        '<div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>';
 
     try {
-        const runners = await fetchTopRunners();
-        const top5 = (runners || []).slice(0, 5);
-        if (!top5.length) {
-            listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">لا توجد بيانات كافية</div>';
+        const usersSnap = await db.collection('users').get();
+        const ranking = [];
+
+        for (const userDoc of usersSnap.docs) {
+            const user = userDoc.data();
+
+            // 🔹 جلب الجريات الحقيقية
+            const runsSnap = await db
+                .collection('users')
+                .doc(userDoc.id)
+                .collection('runs')
+                .get();
+
+            let totalRunDist = 0;
+
+            runsSnap.forEach(runDoc => {
+                const run = runDoc.data();
+                const dist = Number(run.dist || run.distance || 0);
+                if (dist > 0) totalRunDist += dist;
+            });
+
+            if (totalRunDist > 0) {
+                ranking.push({
+                    uid: userDoc.id,
+                    name: user.name || 'عضو',
+                    region: user.region || '',
+                    gender: user.gender,
+                    totalRunDist
+                });
+            }
+        }
+
+        if (ranking.length === 0) {
+            listEl.innerHTML =
+                '<div style="text-align:center; padding:10px; color:#6b7280;">لا توجد جريات مسجلة</div>';
             return;
         }
 
-        const rows = top5.map((u, idx) => {
-            const rank = idx + 1;
-            const avatar = (u.avatarIcon || getUserAvatar(u) || '🏃');
-            const name = u.name || 'عضو';
-            const region = u.region || '';
-            const dist = (u.totalDist || 0).toFixed(1);
-            return `
-                <div class="hof-row" onclick="viewUserProfile('${u.uid || ''}')">
-                    <div class="hof-rank">${rank}</div>
-                    <div class="hof-avatar">${avatar}</div>
-                    <div class="hof-main">
-                        <div class="hof-name">${name}</div>
-                        <div class="hof-meta">${region}</div>
-                    </div>
-                    <div class="hof-dist">${dist} كم</div>
-                </div>
-            `;
-        }).join('');
+        ranking.sort((a, b) => b.totalRunDist - a.totalRunDist);
 
-        listEl.innerHTML = rows;
+        listEl.innerHTML = ranking
+            .slice(0, 5)
+            .map((u, idx) => `
+                <div class="hof-row" onclick="viewUserProfile('${u.uid}')">
+                    <div class="hof-rank">${idx + 1}</div>
+                    <div class="hof-avatar">${getUserAvatar(u)}</div>
+                    <div class="hof-main">
+                        <div class="hof-name">${u.name}</div>
+                        <div class="hof-meta">${u.region}</div>
+                    </div>
+                    <div class="hof-dist">${u.totalRunDist.toFixed(1)} كم</div>
+                </div>
+            `)
+            .join('');
+
     } catch (e) {
         console.error(e);
-        listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">تعذر تحميل لوحة الشرف</div>';
+        listEl.innerHTML =
+            '<div style="text-align:center; padding:10px; color:#ef4444;">خطأ في تحميل الترتيب</div>';
     }
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{ setupCoachHomeTabs(); setupLogTypeUI(); });
+
+
+// ==================== Coach Home Tabs (V3.3) ====================
 
 document.addEventListener('DOMContentLoaded', ()=>{
+
     setupCoachHomeTabs();
     setupLogTypeUI();
+
     // Initial render for coach hero stats (may be updated again once runs load)
-    try{ renderCoachHeroStats(); }catch(e){}
+    try { 
+        renderCoachHeroStats(); 
+    } catch(e) {}
 });
 
+
+//============= Re-render coach hero stats whenever runs cache updates
 // Re-render coach hero stats whenever runs cache updates
-window.addEventListener('ers:runs-updated', ()=>{ try{ renderCoachHeroStats(); }catch(e){} });
+window.addEventListener('ers:runs-updated', () => {
+    try {
+        renderCoachHeroStats();
+    } catch (e) {}
+
+    // ✅ هنا المكان الصح
+    try {
+        if (typeof loadHallOfFame === 'function') {
+            loadHallOfFame();
+        }
+    } catch (e) {
+        console.error('Hall of Fame error:', e);
+    }
+});
 
 
 // === دالة تحديث بيانات الكوتش (الهيرو) ===

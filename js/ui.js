@@ -1539,3 +1539,5 @@ if (coachCtx && coachCtx.requireImage && (!imgUrlInput || !imgUrlInput.value)) {
         }
     }
 }
+
+
