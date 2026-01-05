@@ -344,3 +344,114 @@ function openImageViewer(url){
   openModal('modal-image-viewer');
 }
 window.openImageViewer = openImageViewer;
+
+
+
+
+
+
+
+
+/* ==================== Glass Onboarding Logic V6 (External Link) ==================== */
+
+let glassStepIndex = 0;
+const glassTotalSteps = 7; 
+let dontShowAgain = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const permanentlyHidden = localStorage.getItem('ers_hide_onboarding_forever');
+    if (!permanentlyHidden) {
+        setTimeout(() => {
+            const modal = document.getElementById('modal-onboarding');
+            if(modal) {
+                modal.style.display = 'flex';
+                updateGlassUI(0);
+            }
+        }, 800);
+    }
+});
+
+function nextGlassStep() {
+    if (glassStepIndex < glassTotalSteps - 1) {
+        glassStepIndex++;
+        updateGlassUI(glassStepIndex);
+    } else {
+        closeOnboarding(true); 
+    }
+}
+
+function updateGlassUI(index) {
+    const slides = document.querySelectorAll('.glass-slide');
+    const dots = document.querySelectorAll('.glass-dot');
+    const btn = document.getElementById('glass-next-btn');
+
+    slides.forEach((s, i) => {
+        s.classList.remove('active');
+        if(i === index) s.classList.add('active');
+    });
+
+    dots.forEach((d, i) => {
+        d.classList.remove('active');
+        if(i === index) d.classList.add('active');
+    });
+
+    if (index === glassTotalSteps - 1) {
+        btn.innerHTML = 'إنهاء الجولة ✅';
+        btn.style.background = 'rgba(255,255,255,0.1)'; 
+        btn.style.border = '1px solid rgba(255,255,255,0.2)';
+    } else {
+        btn.innerHTML = 'التالي <i class="ri-arrow-left-line"></i>';
+        btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        btn.style.border = 'none';
+    }
+}
+
+// 🔥 دالة فتح رابط التحميل الخارجي 🔥
+function openExternalDownload() {
+    // ضع رابط الـ OneDrive الخاص بك هنا بين علامات التنصيص 👇
+    const oneDriveLink = "https://1drv.ms/u/c/68bc25c4969fc669/IQATqO26UJujSYvsuOwhdbN6AWt7LVpGdo6MtlwAWjXldPA?e=gBIjuL"; 
+    
+    if(oneDriveLink && oneDriveLink.includes("http")) {
+        // فتح الرابط في نافذة جديدة
+        window.open(oneDriveLink, '_blank');
+        showToast("جاري فتح صفحة التحميل... 🚀", "success");
+    } else {
+        showToast("عفواً، الرابط غير متوفر حالياً", "error");
+    }
+}
+
+function toggleDontShow() {
+    dontShowAgain = !dontShowAgain;
+    const checkIcon = document.getElementById('dont-show-check');
+    const box = document.querySelector('.custom-checkbox');
+    
+    if(dontShowAgain) {
+        checkIcon.style.display = 'block';
+        box.style.background = '#10b981';
+        box.style.borderColor = '#10b981';
+    } else {
+        checkIcon.style.display = 'none';
+        box.style.background = 'rgba(0,0,0,0.2)';
+        box.style.borderColor = 'rgba(255,255,255,0.5)';
+    }
+}
+
+function closeOnboarding(fromFinishBtn) {
+    const modal = document.getElementById('modal-onboarding');
+    
+    if (dontShowAgain) {
+        localStorage.setItem('ers_hide_onboarding_forever', 'true');
+        if(fromFinishBtn) showToast("تم الحفظ. لن تظهر الجولة مرة أخرى 👍", "success");
+    }
+
+    modal.querySelector('.glass-card').style.transform = 'scale(0.9) translateY(20px)';
+    modal.querySelector('.glass-card').style.opacity = '0';
+    
+    setTimeout(() => {
+        modal.style.display = 'none';
+        modal.querySelector('.glass-card').style.transform = 'none';
+        modal.querySelector('.glass-card').style.opacity = '1';
+        glassStepIndex = 0;
+        updateGlassUI(0);
+    }, 300);
+}

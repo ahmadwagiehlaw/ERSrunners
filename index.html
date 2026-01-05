@@ -1650,5 +1650,107 @@
   </div>
 </div>
 
+
+
+<div id="modal-onboarding" class="glass-onb-overlay">
+    <div class="glow-blob blob-1"></div>
+    <div class="glow-blob blob-2"></div>
+    <div class="glow-blob blob-3"></div>
+
+    <div class="glass-card full-height-card">
+        <button class="skip-btn" onclick="closeOnboarding(false)">إغلاق</button>
+
+        <div class="onb-slider-container">
+            
+            <div class="glass-slide active">
+                <div class="icon-3d bounce-anim">📲</div>
+                <h3 class="gradient-text">حمل التطبيق الرسمي</h3>
+                <p>عشان تستمتع بكل المزايا (GPS دقيق، إشعارات، سرعة)، نزل النسخة الأصلية دلوقتي.</p>
+                
+                <div class="install-card-glass">
+<button class="btn-install-glitch red-theme" onclick="openExternalDownload()">                        <div class="btn-content">
+                            <i class="ri-android-fill"></i>
+                            <div class="btn-texts">
+                                <span class="btn-title">تحميل للأندرويد (APK)</span>
+                                <span class="btn-sub">رابط مباشر (OneDrive)</span>
+                            </div>
+                        </div>
+                        <div class="btn-glow"></div>
+                    </button>
+                    
+                    <div class="ios-glass-tip">
+                        <div class="ios-icon"><i class="ri-apple-fill"></i></div>
+                        <div class="ios-text">
+                            للأيفون: اضغط <span class="glass-badge">Share</span> ثم اختر <span class="glass-badge">Add to Home Screen</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-slide">
+                <div class="icon-3d">🎧</div>
+                <h3>مدربك الشخصي</h3>
+                <p>خطة أسبوعية، مكتبة تمارين، وكوتش صوتي (Spotify Podcast) معاك خطوة بخطوة.</p>
+            </div>
+
+            <div class="glass-slide">
+                <div class="icon-3d">🤖</div>
+                <h3>رادار السرعة والـ AI</h3>
+                <p>تكنولوجيا تتابع سرعتك لحظياً، ورقابة بالذكاء الاصطناعي لضمان النزاهة.</p>
+            </div>
+
+            <div class="glass-slide">
+                <div class="icon-3d">🔥</div>
+                <h3>التحديات والأهداف</h3>
+                <p>حط هدف شهري، شارك في "تحدي الأسبوع"، ونافس في دوري المحافظات (Squads).</p>
+            </div>
+
+            <div class="glass-slide">
+                <div class="icon-3d">🏆</div>
+                <h3>لوحات الشرف</h3>
+                <p>قوائم للمتميزين، وتكريم شهري في قاعة المشاهير (Hall of Fame).</p>
+            </div>
+
+            <div class="glass-slide">
+                <div class="icon-3d">🎖️</div>
+                <h3>إنجازاتك وسجلك</h3>
+                <p>بادجات نادرة، أرقام قياسية، تحليل لأدائك، ومشاركة صور احترافية.</p>
+            </div>
+            
+             <div class="glass-slide">
+                <div class="icon-3d">⚙️</div>
+                <h3>تحكم وشفافية</h3>
+                <p>تحكم كامل في الإعدادات، وساهم في مجتمع نظيف بالإبلاغ عن المخالفات.</p>
+            </div>
+
+        </div>
+
+        <div class="glass-controls">
+            <div class="dots-wrapper">
+                <span class="glass-dot active"></span>
+                <span class="glass-dot"></span>
+                <span class="glass-dot"></span>
+                <span class="glass-dot"></span>
+                <span class="glass-dot"></span>
+                <span class="glass-dot"></span>
+                <span class="glass-dot"></span>
+            </div>
+            
+            <button id="glass-next-btn" class="glass-btn-primary" onclick="nextGlassStep()">
+                التالي <i class="ri-arrow-left-line"></i>
+            </button>
+
+            <div class="dont-show-box" onclick="toggleDontShow()">
+                <div class="custom-checkbox">
+                    <i class="ri-check-line" id="dont-show-check" style="display:none;"></i>
+                </div>
+                <span>لا تظهر هذه الجولة مرة أخرى</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
 </body>
 </html>
