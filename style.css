@@ -52,6 +52,80 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .btn-text { background: transparent; color: var(--text-muted); font-size: 13px; }
 .btn-outline-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
 
+
+/* Auth screen update تطوير صفحة الدخول والتسجيل */
+/* ================= AUTH SCREEN ================= */
+
+#auth-screen {
+    background:
+        radial-gradient(circle at top, rgba(34,197,186,0.12), transparent 40%),
+        linear-gradient(180deg, #0b1220, #020617);
+}
+
+/* صندوق الدخول */
+.auth-box {
+    background: linear-gradient(
+        180deg,
+        rgba(15,23,42,0.92),
+        rgba(2,6,23,0.92)
+    );
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+        0 30px 70px rgba(0,0,0,0.65),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+
+    padding: 35px 28px;
+    max-width: 420px;
+    width: 100%;
+}
+
+/* اللوجو */
+.auth-logo {
+    width: 140px;
+    max-width: 70%;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 8px 25px rgba(0,0,0,0.6));
+}
+
+/* السطر التعريفي */
+.auth-tagline {
+    font-size: 13px;
+    color: #9ca3af;
+    margin-bottom: 25px;
+}
+
+/* Inputs */
+.auth-box input,
+.auth-box select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 14px;
+    color: #fff;
+    padding: 14px;
+}
+
+.auth-box input::placeholder {
+    color: #6b7280;
+}
+
+/* زر الدخول */
+.auth-box .btn-primary {
+    background: linear-gradient(135deg, #14b8a6, #22c55e);
+    border-radius: 16px;
+    font-size: 16px;
+    box-shadow: 0 12px 30px rgba(20,184,166,0.45);
+}
+
+/* زر التسجيل */
+.auth-box .btn-text {
+    color: #9ca3af;
+}
+/* ==================== End Auth Screen ==================== */
 /* ==================== Premium Glass Header ==================== */
 .glass-header {
     position: sticky; 
@@ -218,17 +292,42 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 
 /* Bottom Nav */
 .bottom-nav {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: rgba(17, 24, 39, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid var(--border);
-    display: flex; justify-content: space-around;
-    padding: 12px 0 25px 0;
-    z-index: 900;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch; /* ⭐ مهم */
+
+    height: 72px; /* ⭐ الحل الأساسي */
+    padding: 0;   /* ⭐ شيل أي padding */
+
+    z-index: 1200;
+
+    background: linear-gradient(
+        180deg,
+        rgba(17, 24, 39, 0.85),
+        rgba(2, 6, 23, 0.95)
+    );
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-top: 1px solid rgba(255,255,255,0.08);
 }
-.nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: #6b7280; font-size: 10px; cursor: pointer; transition: 0.2s; }
-.nav-item i { font-size: 24px; }
-.nav-item.active { color: var(--primary); transform: translateY(-3px); }
+.nav-item {
+    flex: 1; /* ⭐ مهم لتوزيع العناصر بالتساوي */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    transition: color 0.2s;
+}
 
 /* Modals */
 .modal-overlay {
@@ -4423,3 +4522,170 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
     z-index: 1;
 }
 
+/* ==================== Dark Glass Tabs (MATCH DESIGN) ==================== */
+.glass-tabs {
+    display: flex;
+    gap: 8px;
+    padding: 6px;
+    margin: 14px 0 18px;
+
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.glass-tab {
+    flex: 1;
+    padding: 12px 0;
+
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+
+    color: #cbd5e1; /* رمادي فاتح */
+    background: transparent;
+
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+/* hover بسيط */
+.glass-tab:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+/* Active – نفس اللي في الصورة */
+.glass-tab.active {
+    background: rgba(255,255,255,0.14);
+    color: #ffffff;
+
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.25),
+        0 6px 14px rgba(0,0,0,0.4);
+}
+.glass-tabs {
+    position: relative;
+    z-index: 50;
+}
+
+.frosted-modal {
+    background: linear-gradient(
+        180deg,
+        rgba(20, 30, 45, 0.92),
+        rgba(15, 23, 35, 0.92)
+    );
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+
+    box-shadow:
+        0 25px 60px rgba(0,0,0,0.6),
+        inset 0 1px 0 rgba(255,255,255,0.04);
+
+    color: #fff;
+}
+
+
+.log-row-compact.editing {
+  border: 1px dashed rgba(59,130,246,0.4);
+  background: rgba(30,58,138,0.15);
+}
+
+.inline-input,
+.inline-select {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 12px;
+}
+
+.inline-check {
+  font-size: 10px;
+  color: #fbbf24;
+}
+
+
+
+
+
+/* ==================== الادمن المراقب ==================== */
+.run-details-box {
+  margin: 5px 15px 15px;
+}
+
+.run-details-inner {
+  background: rgba(15,23,42,0.6);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.run-details-inner div {
+  margin-bottom: 6px;
+}
+
+.run-details-inner .warn {
+  margin-top: 8px;
+  color: #fbbf24;
+}
+
+.run-details-inner .info {
+  margin-top: 8px;
+  color: #38bdf8;
+}
+
+/* ================= BOTTOM NAV – PREMIUM ================= */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+
+    padding: 8px 10px 12px;
+    z-index: 1200;
+
+    background: linear-gradient(
+        180deg,
+        rgba(17, 24, 39, 0.85),
+        rgba(2, 6, 23, 0.95)
+    );
+
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+  
+
+
+.nav-item i {
+    font-size: 20px;
+    transition: color 0.2s;
+}
+
+.nav-item.active i {
+    color: var(--primary);
+}
+
+/* TAP FEEDBACK */
+.nav-item:active {
+    transform: scale(0.96);
+}
+
+
+/* ==================== End الادمن المراقب ==================== */

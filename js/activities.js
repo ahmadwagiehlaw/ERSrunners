@@ -10,9 +10,8 @@ function openNewRun() {
     editingRunId = null;
     editingOldDist = 0;
     
-    // إعادة التبويب للافتراضي (GPS)
-    switchLogTab('gps');
-    
+    // إعادة التبويب للافتراضي (اليدوي)
+switchLogTab('manual');
     // تنظيف الحقول اليدوية
     document.getElementById('log-dist').value = '';
     document.getElementById('log-time').value = '';
@@ -27,13 +26,14 @@ function openNewRun() {
     if (dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
 
     // فتح المودال
-    openModal('modal-log');
+openModal('modal-log');
 
     // تهيئة الخريطة (إذا كنا في تبويب GPS)
     setTimeout(() => {
         initInternalMap();
     }, 500);
 }
+// ✅ لا نهيّئ الخريطة إلا لو المستخدم راح لتبويب GPS بنفسه
 
 // 2. التبديل بين التبويبات
 function switchLogTab(tabName) {
@@ -205,14 +205,14 @@ function calcCrow(lat1, lon1, lat2, lon2) {
 }
 // ==================== 2. تعديل نشاط موجود (إظهار البيانات) ====================
 // لاحظ: قمت بإضافة (img) في الأقواس لاستلام الصورة
-window.editRun = function(id, dist, time, type, link, img, xtDist) {
+window.editRun = function(id, dist, time, type, link, img) {
     // 1. وضع بيانات التعديل
     editingRunId = id;
     editingOldDist = dist;
     editingOldType = type || 'Run';
 
     // 2. تعبئة الحقول
-    document.getElementById('log-dist').value = _ersIsCoreType(type) ? dist : (xtDist || '');
+document.getElementById('log-dist').value = dist;
     document.getElementById('log-time').value = time;
     document.getElementById('log-type').value = type;
     try{ document.getElementById('log-type').dispatchEvent(new Event('change')); }catch(e){}
@@ -304,6 +304,7 @@ async function openChallengeDetails(chId) {
             const p = doc.data();
             const rank = index + 1;
             const isMe = (currentUser && doc.id === currentUser.uid);
+            
             
             // تصحيح الأرقام لمنع خطأ NaN
             let safeProgress = Number(p.progress) || 0;
@@ -625,3 +626,5 @@ function updateStreakLogic(newRunDate) {
     }
 }
 
+
+window.renderActivityLog = renderActivityLog;

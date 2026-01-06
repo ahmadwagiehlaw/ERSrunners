@@ -344,3 +344,18 @@ function openImageViewer(url){
   openModal('modal-image-viewer');
 }
 window.openImageViewer = openImageViewer;
+
+//===================== تبويب الصفحة الرئيسية للمدرب ====================
+function switchHomeTab(tab, el) {
+    // tabs
+    document.querySelectorAll('.glass-tab')
+        .forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+
+    // content
+    document.querySelectorAll('.coach-home-tab')
+        .forEach(c => c.classList.remove('active'));
+
+    const target = document.getElementById('coach-home-tab-' + tab);
+    if (target) target.classList.add('active');
+}

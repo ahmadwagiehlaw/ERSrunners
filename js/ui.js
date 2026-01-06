@@ -792,22 +792,6 @@ async function deleteFullAccount() {
     } catch (e) { alert("خطأ: " + e.message); }
 }
 
-// Fix Stats
-async function fixMyStats() {
-    if(!confirm("إعادة حساب العدادات؟")) return;
-    const btn = document.getElementById('fix-btn'); if(btn) btn.innerText = "...";
-    try {
-        const uid = currentUser.uid;
-        const snap = await db.collection('users').doc(uid).collection('runs').get();
-        let tDist = 0, tRuns = 0;
-        snap.forEach(d => { tDist += parseFloat(d.data().dist)||0; tRuns++; });
-        tDist = Math.round(tDist*100)/100;
-        await db.collection('users').doc(uid).update({ totalDist: tDist, totalRuns: tRuns, monthDist: tDist });
-        userData.totalDist = tDist; userData.totalRuns = tRuns; userData.monthDist = tDist;
-        updateUI(); alert(`تم التصحيح: ${tDist} كم`);
-    } catch(e) { alert("خطأ"); } finally { if(btn) btn.innerText = "إصلاح"; }
-}
-
 // Share Logic
 function generateShareCard(dist, time, dateStr) {
     document.getElementById('share-name').innerText = userData.name;
@@ -1484,4 +1468,8 @@ async function submitRun() {
             btn.style.opacity = "1";
         }
     }
+}
+// ====================Load Observer Runs for Admins
+if (tab === 'observer' && userData.isAdmin) {
+  loadObserverRuns();
 }
