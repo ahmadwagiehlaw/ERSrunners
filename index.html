@@ -127,15 +127,21 @@
     </div>
   </div>
 
-  <!-- Sticky Tabs -->
-  <div id="coach-tabs-nav" class="coach-tabs-nav">
-    <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
-    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
-    <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
-  </div>
 
-  
-  <!-- Tabs Content -->
+  <!-- Sticky Tabs -->
+<div class="glass-tabs">
+    <div class="glass-tab active" onclick="switchHomeTab('today', this)">
+        ⏱ يومك
+    </div>
+    <div class="glass-tab" onclick="switchHomeTab('plan', this)">
+        📚 مكتبة التمارين
+    </div>
+    <div class="glass-tab" onclick="switchHomeTab('community', this)">
+        🏆 ترتيبك
+    </div>
+</div>
+
+<!-- Tabs Content -->
   <div id="coach-home-tab-today" class="coach-home-tab active">
      
 <div class="coach-card">
