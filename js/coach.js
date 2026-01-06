@@ -287,7 +287,7 @@ function renderPlanHero(planData) {
         <div class="plan-create-card ers-blue-glass">
             <h3 class="plan-create-title">🎯 هدفك القادم؟</h3>
             <p class="plan-create-sub">ابدأ رحلة تدريبية احترافية الآن.</p>
-            <button class="btn btn-primary" onclick="openModal('modal-plan-wizard')">
+            <button class="btn btn-glossy.record" onclick="openModal('modal-plan-wizard')">
                 إنشاء خطة جديدة
             </button>
         </div>

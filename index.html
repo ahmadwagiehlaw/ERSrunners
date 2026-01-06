@@ -130,7 +130,7 @@
   <!-- Sticky Tabs -->
   <div id="coach-tabs-nav" class="coach-tabs-nav">
     <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
-    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 المكتبة</button>
+    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
     <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
   </div>
 
@@ -165,73 +165,15 @@
   </div>
 
 <div id="coach-home-tab-plan" class="coach-home-tab">
-
-  <!-- Plan Header (Glass) -->
-  <div class="plan-header glass-panel">
-    <div class="plan-header-left">
-      <div class="plan-badge">📚 المكتبة</div>
-      <div class="plan-title">اختار تمرينك… وخلي الأسبوع منظم</div>
-      <div class="plan-sub">هنا هتلاقي جدول الفريق + أدوات الكوتش + مكتبة التمارين.</div>
-    </div>
-
-    <div class="plan-header-actions">
-      <button class="plan-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش">
-        <i class="ri-sliders-4-line"></i>
-      </button>
-      <button class="plan-icon-btn" onclick="openExternal('https://www.skimble.com/workouts/created')" title="Workout Trainers">
-        <i class="ri-external-link-line"></i>
-      </button>
-    </div>
-  </div>
-
-  <!-- Segmented Tabs داخل التبويب نفسه (مش تبويبات الصفحة) -->
-  <div class="plan-seg glass-panel" role="tablist" aria-label="Plan Sections">
-    <button class="plan-seg-btn active" data-planseg="schedule" onclick="setPlanSegment('schedule')">
-      👥 جدول الفريق
-    </button>
-    <button class="plan-seg-btn" data-planseg="tools" onclick="setPlanSegment('tools')">
-      🧰 أدوات
-    </button>
-    <button class="plan-seg-btn" data-planseg="library" onclick="setPlanSegment('library')">
-      📖 المكتبة
-    </button>
-  </div>
-
-  <!-- ========== Segment: Schedule ========== -->
-  <section id="plan-seg-schedule" class="plan-seg-view active">
-
-    <div id="team-workout" class="team-workout-card glass-panel" style="margin-top: 0; margin-bottom: 14px;">
-      <div class="section-title-row" style="margin-top:0;">
-        <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
-
-        <!-- بدل "تفاصيل" اللي كانت بتودي لفاضي -->
-        <div class="section-actions">
-          <button class="link-chip" type="button" onclick="toggleTeamWorkout()" title="إظهار/إخفاء الجدول">
-            <i class="ri-layout-grid-line"></i> عرض
-          </button>
+    
+    <div id="team-workout" class="team-workout-card" style="margin-top: 0; margin-bottom: 20px;">
+        <div class="section-title-row">
+            <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
+            <span class="link-text" onclick="switchView('team')">تفاصيل</span>
         </div>
-      </div>
-
-      <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
-
-      <!-- مهم: سيبه بنفس الـ ID -->
-      <div id="team-workout-body" class="team-workout-body"></div>
-
-      <!-- لو حابب CTA لطيف (مش شرط) -->
-      <div class="team-workout-footer">
-        <button class="btn-glass" type="button" onclick="setCoachHomeTab('today')">
-          🎯 ارجع لقرارات اليوم
-        </button>
-        <button class="btn-glass" type="button" onclick="openBasicLibrary()">
-          📚 افتح المكتبة الأساسية
-        </button>
-      </div>
+        <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
+        <div id="team-workout-body" class="team-workout-body"></div>
     </div>
-
-  </section>
-
-  <!-- ========== Segment: Tools ========== -->
-  <section id="plan-seg-tools" class="plan-seg-view">
 
     <div class="plan-tools-grid">
       <div class="tool-card" onclick="openCoachPreferences()">
@@ -262,29 +204,13 @@
       </div>
     </div>
 
-  </section>
-
-  <!-- ========== Segment: Library ========== -->
-  <section id="plan-seg-library" class="plan-seg-view">
-
-    <div id="basic-library-section" class="basic-lib-card glass-panel">
-      <div class="section-title-row" style="margin-top:0;">
+    <div id="basic-library-section" class="basic-lib-card">
+      <div class="section-title-row">
         <h4>المكتبة الأساسية 📚</h4>
         <span class="link-text" onclick="openBasicLibrary()">افتح</span>
       </div>
       <div class="mini-note">المكتبة دي مرجع… مش قرار. قرارات اليوم في تبويب "يومك" 👆</div>
-
-      <!-- لمسة UX بسيطة -->
-      <div class="library-quick">
-        <button class="pill" type="button" onclick="openRunCatalog('easy')">🌿 Easy</button>
-        <button class="pill" type="button" onclick="openRunCatalog('intervals')">⚡ Intervals</button>
-        <button class="pill" type="button" onclick="openRunCatalog('longrun')">🦁 Long Run</button>
-        <button class="pill" type="button" onclick="openRunCatalog('recovery')">🫶 Recovery</button>
-      </div>
     </div>
-
-  </section>
-
 </div>
 
 <div id="coach-home-tab-community" class="coach-home-tab">
@@ -293,7 +219,7 @@
 
     <div class="glass-panel">
         <div class="section-title-row" style="margin-top:0;">
-            <h4>🏆 لوحة الشرف الأسبوعية 🏆️</h4>
+            <h4>لوحة الشرف الأسبوعية 🏆</h4>
             </div>
         
         <div class="weekly-awards-grid">
@@ -325,7 +251,8 @@
 
     <div class="glass-panel">
         <div class="section-title-row" style="margin-top:0;">
-            <h4>🏆️ الترتيب العام  (Hall of Fame)🏆️</h4>
+            <h4>الترتيب العام (Hall of Fame)</h4>
+            <span class="link-text" onclick="switchView('challenges')">الكامل</span>
         </div>
         <div id="hall-of-fame-list" class="hof-grid">
             <div class="empty-state-mini">جاري التحميل...</div>
@@ -334,7 +261,7 @@
 
 
     <div class="glass-panel" style="border-color: rgba(59, 130, 246, 0.3);"> <div class="section-title-row" style="margin-top:0;">
-            <h4>🔥 تحدياتي النشطة 🔥 </h4>
+            <h4>تحدياتي النشطة 🔥</h4>
             <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
         </div>
         <div id="my-active-challenges" class="mini-challenges-scroll">
@@ -343,9 +270,6 @@
     </div>
 
 </div></section>
-
-
-
 
             <section id="view-challenges" class="view">
                     <div class="tabs-nav">
@@ -368,9 +292,6 @@
     <div id="challenges-list" class="challenges-grid"></div>
  </div>
 
-
-
- 
                 <div id="tab-leaderboard" class="tab-content">
                     <div class="team-goal-card">
                         <div class="team-title">إجمالي جري الفريق (الشهر)</div>
@@ -412,6 +333,8 @@
                     <div id="region-battle-list"></div>
                 </div>
             </section>
+
+
 
         <section id="view-admin" class="view">
                 <div class="section-title-row">
@@ -769,7 +692,7 @@
 
                     <div class="club-actions">
                         <button class="btn btn-primary" onclick="openExternal('https://open.spotify.com/show/4cYIPTsFZa3cBIyHLTgcui?si=32e30d34dc1a41d7')">
-                            <i class="ri-spotify-fill"></i> Spotify
+                            <i class="ri-spotify-fill"></i> افتح على Spotify
                         </button>
                         <button class="btn btn-ghost" onclick="openExternal('https://podcasts.apple.com/us/podcast/running-cast-egypt/id1800972032')">
                             <i class="ri-apple-fill"></i> Apple Podcasts
@@ -934,7 +857,6 @@
                 </button>
             </section>
         </main>
-
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="switchView('home')"><i class="ri-brain-line"></i><span>الكوتش</span></div>
             <div class="nav-item" onclick="switchView('profile')"><i class="ri-dashboard-3-line"></i><span>بياناتي</span></div>
@@ -984,18 +906,28 @@
 
     <div style="padding: 10px 20px; position:relative; z-index:10;">
         <div class="log-tabs">
-            <button class="tab-btn active" onclick="switchLogTab('gps')" id="tab-btn-gps">
-                <i class="ri-map-pin-2-fill"></i> تتبع GPS
-            </button>
-            <button class="tab-btn" onclick="switchLogTab('manual')" id="tab-btn-manual">
-                <i class="ri-edit-box-line"></i> يدوي
-            </button>
+            <button class="tab-btn active" onclick="switchLogTab('manual')" id="tab-btn-manual">
+    <i class="ri-edit-box-line"></i> يدوي
+</button>
+
+            <button class="tab-btn" onclick="switchLogTab('gps')" id="tab-btn-gps">
+    <i class="ri-map-pin-2-fill"></i> تتبع GPS
+</button>
+
         </div>
     </div>
 
     <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
         
-        <div id="view-gps" style="display:block;">
+
+        <div id="view-gps" style="display:none;">
+
+
+                     <div style="text-align:center; font-size:16px ; color:#f0f1f3; margin-top:10px;">
+                ⚠️ ..يفضل الإدخال اليدوي لعدم استهلاك البطارية لانك يجب أن تترك الشاشة مفتوحة لضمان دقة التتبع
+            </div>
+<P> </P>
+
             <div id="gps-map-container" style="height:250px; width:100%; border-radius:16px; margin-bottom:15px; position:relative; overflow:hidden; border:1px solid var(--border);">
                 <div id="gps-map" style="width:100%; height:100%;"></div>
                 <div class="gps-overlay-stats">
@@ -1018,12 +950,10 @@
                     إنهاء
                 </button>
             </div>
-            <div style="text-align:center; font-size:10px; color:#6b7280; margin-top:8px;">
-                ⚠️ اترك الشاشة مفتوحة لضمان دقة التتبع
-            </div>
+           
         </div>
 
-<div id="view-manual" style="display:none; padding-top:10px;">
+<div id="view-manual" style="display:block; padding-top:10px;">
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <div>
@@ -1035,9 +965,6 @@
             <select id="log-type" class="input-box compact-input">
                 <option value="Run">جري (Run)</option>
                 <option value="Walk">مشي (Walk)</option>
-                <option value="Cycling">عجل (Bike)</option>
-                <option value="Swimming">سباحة (Swim)</option>
-                <option value="Core">تمارين (Gym/Core)</option>
             </select>
         </div>
         <div>
@@ -1074,50 +1001,6 @@
     </div>
   </div>
 </div>
-        <div id="view-manual" style="display:none; padding:15px;">
-            <div style="text-align:center; margin-bottom:15px;">
-                <h3 style="margin:0; font-size:16px;">توثيق النشاط 📝</h3>
-                <p style="font-size:12px; color:#9ca3af;">أدخل البيانات بدقة</p>
-            </div>
-
-            <label class="input-label">نوع النشاط</label>
-            <select id="log-type" class="input-box" style="margin-bottom:12px;">
-                <option value="Run">جري (Run)</option>
-                <option value="Walk">مشي (Walk)</option>
-                <option value="Cycling">دراجة (Cycling)</option>
-                <option value="Swimming">سباحة (Swimming)</option>
-                <option value="Core">تمارين قوة (Core/Gym)</option>
-            </select>
-
-            <div style="display:flex; gap:10px; margin-bottom:12px;">
-                <div style="flex:1;">
-                    <label class="input-label">المسافة (كم)</label>
-                    <input type="number" id="log-dist" class="input-box" step="0.01" placeholder="0.00">
-                </div>
-                <div style="flex:1;">
-                    <label class="input-label">الزمن (دقائق)</label>
-                    <input type="number" id="log-time" class="input-box" placeholder="0">
-                </div>
-            </div>
-
-            <label class="input-label">التاريخ</label>
-            <input type="date" id="log-date" class="input-box" style="margin-bottom:12px;">
-
-            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px; border:1px solid var(--border); margin-bottom:15px;">
-                <label class="input-label" style="margin-bottom:8px;">صورة النشاط (إجباري للكوتش)</label>
-                <input type="file" id="log-img-file" accept="image/*" class="input-box" onchange="uploadRunImage(this)" style="padding:8px;">
-                <input type="hidden" id="uploaded-img-url">
-                <div id="upload-status" style="font-size:11px; margin-top:4px;"></div>
-                <img id="img-preview" src="" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-top:8px; display:none;">
-            </div>
-
-            <label class="input-label">رابط (Strava/فيديو) - اختياري</label>
-            <input type="url" id="log-link" class="input-box" placeholder="https://..." style="margin-bottom:20px;">
-
-    </div>
-  </div>
-</div>
-  
 
     <div id="modal-avatar" class="modal-overlay">
         <div class="modal-box">
@@ -1143,10 +1026,6 @@
                 <button class="setting-item" onclick="forceUpdateApp()">
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
                     <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
-                </button>
-                <button id="fix-btn" class="setting-item" onclick="fixMyStats()">
-                    <div class="setting-icon"><i class="ri-tools-line"></i></div>
-                    <div class="setting-text"><span>إصلاح العدادات (المسافات)</span><small>اضغط هنا لو الأرقام خاطئة</small></div>
                 </button>
                 <div class="setting-item" id="btn-admin-entry" onclick="openAdminAuth()" style="display:none; border-color:var(--accent);">
                     <div class="setting-icon" style="color:var(--accent);"><i class="ri-admin-line"></i></div>
@@ -1195,6 +1074,7 @@
         </div>
     </div>
 
+   
    
 <div id="modal-edit-profile" class="modal-overlay">
         <div class="modal-box">
@@ -1347,7 +1227,7 @@
     </div>
 <div id="modal-catalog" class="modal-overlay">
     <div class="modal-box">
-        <h3 id="catalog-title">المكتبة</h3>
+        <h3 id="catalog-title">مكتبة التمارين</h3>
         <div id="catalog-body" style="font-size:13px; line-height:1.8; color:#e5e7eb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:12px; margin-top:12px;"></div>
         <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px;">تمام</button>
     </div>
@@ -1488,6 +1368,7 @@
 <script src="js/config.js"></script>
 <script src="js/state.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/regions.js"></script> <!-- 👈 هنا -->
 <script src="js/ui.js"></script>
 <script src="js/coach.js"></script>
 <script src="js/activities.js"></script>

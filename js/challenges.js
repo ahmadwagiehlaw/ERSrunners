@@ -243,85 +243,113 @@ async function loadRegionBattle() {
 var allChallengesCache = window.allChallengesCache || (window.allChallengesCache = []);
 
 
-// تحميل وعرض التحديات (Fixed V6.2)
+// تحميل وعرض التحديات (Stable & Safe)
 async function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
     const mini = document.getElementById('my-active-challenges'); 
     
-    if(!list) return;
-    
-    // عرض الهيكل العظمي فقط إذا كانت القائمة فارغة تماماً
-    if(allChallengesCache.length === 0) {
+    if (!list) return;
+
+    // Skeleton loading
+    if (allChallengesCache.length === 0) {
         list.innerHTML = getSkeletonHTML('challenges');
     }
 
-    db.collection('challenges')
-      .where('active', '==', true)
-      .get()
-      .then(async snap => {
-        if(snap.empty) { 
-            list.innerHTML = "<div class='empty-state-fun'><span class='fun-icon'>👻</span><div class='fun-title'>مفيش تحديات</div></div>"; 
-            if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
-            return; 
+    try {
+        const snap = await db.collection('challenges')
+            .where('active', '==', true)
+            .get();
+
+        if (snap.empty) {
+            list.innerHTML = `
+              <div class='empty-state-fun'>
+                <span class='fun-icon'>👻</span>
+                <div class='fun-title'>مفيش تحديات</div>
+              </div>`;
+            if (mini) mini.innerHTML = "<div class='empty-state-mini'>لا تحديات</div>";
+            return;
         }
 
-        allChallengesCache = []; // تصفير الكاش
+        allChallengesCache = [];
         let miniHtml = '';
 
-        for(const doc of snap.docs) {
+        for (const doc of snap.docs) {
             const ch = doc.data();
-            let isJoined = false, progress = 0, completed = false;
-            
-            if(currentUser) {
-                const p = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(p.exists) { 
-                    const pData = p.data();
-                    isJoined = true; 
-                    progress = pData.progress || 0; 
+            let isJoined = false;
+            let progress = 0;
+            let completed = false;
+
+            // قراءة حالة المستخدم فقط (بدون حساب أو كتابة)
+            if (currentUser) {
+                const pSnap = await doc.ref
+                    .collection('participants')
+                    .doc(currentUser.uid)
+                    .get();
+
+                if (pSnap.exists) {
+                    const pData = pSnap.data();
+                    isJoined = true;
+                    progress = Number(pData.progress) || 0;
                     completed = pData.completed === true;
                 }
             }
-            
-            allChallengesCache.push({ id: doc.id, ...ch, isJoined, progress, completed });
 
-            // تجميع المصغرات للصفحة الرئيسية
+            allChallengesCache.push({
+                id: doc.id,
+                ...ch,
+                isJoined,
+                progress,
+                completed
+            });
+
+            // Mini cards في الصفحة الرئيسية
             if (isJoined && mini) {
+                const safeTarget = ch.target > 0 ? ch.target : 1;
                 let perc = 0;
-                // حماية من القسمة على صفر
-                const safeTarget = ch.target > 0 ? ch.target : 1; 
-                
-                if (ch.type === 'speed') perc = completed ? 100 : 0;
-                else perc = Math.min((progress / safeTarget) * 100, 100);
 
-                // 🔥 التعديل هنا: عند الضغط، نذهب لصفحة التحديات ونفتح تبويب التحديات النشطة
+                if (ch.type === 'speed') {
+                    perc = completed ? 100 : 0;
+                } else {
+                    perc = Math.min((progress / safeTarget) * 100, 100);
+                }
+
                 miniHtml += `
-                <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" style="cursor:pointer; border-left: 3px solid ${completed?'#10b981':'var(--accent)'}">
+                <div class="mini-challenge-card"
+                     onclick="switchView('challenges'); setTab('active-challenges');"
+                     style="cursor:pointer; border-left: 3px solid ${completed ? '#10b981' : 'var(--accent)'}">
+                    
                     <div class="mini-ch-title">${ch.title}</div>
+
                     <div class="mini-ch-progress">
-                        <div class="mini-ch-fill" style="width:${perc}%; background:${completed?'#10b981':'var(--primary)'}"></div>
+                        <div class="mini-ch-fill"
+                             style="width:${perc}%; background:${completed ? '#10b981' : 'var(--primary)'}">
+                        </div>
                     </div>
+
                     <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
-                        <span>${ch.type === 'speed' ? (completed?'نجحت!':'حاول') : Math.floor(progress)}</span>
+                        <span>${ch.type === 'speed' ? (completed ? 'نجحت!' : 'حاول') : Math.floor(progress)}</span>
                         <span>${ch.target}</span>
                     </div>
                 </div>`;
             }
         }
 
-        // 🔥 الإصلاح هنا: إعادة تعيين الفلتر وتحديث العرض فوراً
-        currentChallengeFilter = 'all'; 
-        
-        // تنشيط زر "الكل" بصرياً
+        // إعادة ضبط الفلتر
+        currentChallengeFilter = 'all';
         document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-        const allBtn = document.querySelector('.filter-pill:first-child'); 
-        if(allBtn) allBtn.classList.add('active');
+        const allBtn = document.querySelector('.filter-pill:first-child');
+        if (allBtn) allBtn.classList.add('active');
 
-        renderChallenges(); // رسم القائمة فوراً
+        renderChallenges();
 
         if (mini) {
             mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
         }
-    });
+
+    } catch (e) {
+        console.error("loadActiveChallenges error:", e);
+        showToast("حصل خطأ أثناء تحميل التحديات", "error");
+    }
 }
 
 var currentReportFeedId = window.currentReportFeedId || null;
@@ -796,49 +824,56 @@ async function openChallengeDetails(chId) {
 
 // 1. دالة الانضمام للتحدي (لزر قبول التحدي)
 async function joinChallenge(chId) {
-    if(!currentUser) return showToast("يجب تسجيل الدخول", "error");
-    
-    const btn = event.target;
-    const originalText = btn.innerText;
-    btn.innerText = "...";
-    btn.disabled = true;
+    if (!currentUser) return showToast("يجب تسجيل الدخول", "error");
+
+    const btn = (typeof event !== 'undefined' && event?.target) ? event.target : null;
+    const originalText = btn ? btn.innerText : "";
+    if (btn) { btn.innerText = "..."; btn.disabled = true; }
 
     try {
-        // إضافة المستخدم لقائمة المشاركين
-        await db.collection('challenges').doc(chId).collection('participants').doc(currentUser.uid).set({
-            name: userData.name,
-            photoUrl: userData.photoUrl || null,
-            progress: 0,
-            completed: false,
-            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+        const uid = currentUser.uid;
+        const chRef = db.collection('challenges').doc(chId);
+        const pRef = chRef.collection('participants').doc(uid);
+
+        const result = await db.runTransaction(async (tx) => {
+            const pSnap = await tx.get(pRef);
+            if (pSnap.exists) {
+                // already joined -> لا تصفير progress ولا زيادة participantsCount
+                return { already: true };
+            }
+
+            tx.set(pRef, {
+                name: userData.name,
+                photoUrl: userData.photoUrl || null,
+                progress: 0,
+                completed: false,
+                joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            tx.update(chRef, {
+                participantsCount: firebase.firestore.FieldValue.increment(1)
+            });
+
+            return { already: false };
         });
 
-        // زيادة عداد المشاركين
-        await db.collection('challenges').doc(chId).update({
-            participantsCount: firebase.firestore.FieldValue.increment(1)
-        });
-
-        // تحديث الكاش المحلي فوراً (لأداء أسرع)
+        // تحديث الكاش المحلي
         const chIndex = allChallengesCache.findIndex(c => c.id === chId);
-        if(chIndex > -1) {
-            allChallengesCache[chIndex].isJoined = true;
-        }
+        if (chIndex > -1) allChallengesCache[chIndex].isJoined = true;
 
-        showToast("تم الانضمام للتحدي! 🚀", "success");
-        
-        // إعادة رسم التحديات لتحديث حالة الزر
-        renderChallenges('all'); 
-        
-        // تحديث القوائم الأخرى
-        loadActiveChallenges(); 
+        showToast(result.already ? "أنت بالفعل مشترك ✅" : "تم الانضمام للتحدي! 🚀", "success");
 
-    } catch(e) {
+        renderChallenges('all');
+        loadActiveChallenges();
+
+    } catch (e) {
         console.error(e);
         showToast("حدث خطأ في الانضمام", "error");
-        btn.innerText = originalText;
-        btn.disabled = false;
+    } finally {
+        if (btn) { btn.innerText = originalText || "انضم"; btn.disabled = false; }
     }
 }
+
 
 // 2. دالة حذف التحدي (لزر الحذف في الأدمن وفي الكروت)
 async function deleteChallenge(id) {
@@ -1667,109 +1702,58 @@ function openRunCatalog(type) {
 
 
 // ==================== Hall of Fame (V3.3) ====================
-// ==================== Hall of Fame (RUNS COLLECTION - SAFE) ====================
+
 async function loadHallOfFame() {
     const listEl = document.getElementById('hall-of-fame-list');
     if (!listEl) return;
 
-    listEl.innerHTML =
-        '<div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>';
+    listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>';
 
     try {
-        const usersSnap = await db.collection('users').get();
-        const ranking = [];
-
-        for (const userDoc of usersSnap.docs) {
-            const user = userDoc.data();
-
-            // 🔹 جلب الجريات الحقيقية
-            const runsSnap = await db
-                .collection('users')
-                .doc(userDoc.id)
-                .collection('runs')
-                .get();
-
-            let totalRunDist = 0;
-
-            runsSnap.forEach(runDoc => {
-                const run = runDoc.data();
-                const dist = Number(run.dist || run.distance || 0);
-                if (dist > 0) totalRunDist += dist;
-            });
-
-            if (totalRunDist > 0) {
-                ranking.push({
-                    uid: userDoc.id,
-                    name: user.name || 'عضو',
-                    region: user.region || '',
-                    gender: user.gender,
-                    totalRunDist
-                });
-            }
-        }
-
-        if (ranking.length === 0) {
-            listEl.innerHTML =
-                '<div style="text-align:center; padding:10px; color:#6b7280;">لا توجد جريات مسجلة</div>';
+        const runners = await fetchTopRunners();
+        const top5 = (runners || []).slice(0, 5);
+        if (!top5.length) {
+            listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">لا توجد بيانات كافية</div>';
             return;
         }
 
-        ranking.sort((a, b) => b.totalRunDist - a.totalRunDist);
-
-        listEl.innerHTML = ranking
-            .slice(0, 5)
-            .map((u, idx) => `
-                <div class="hof-row" onclick="viewUserProfile('${u.uid}')">
-                    <div class="hof-rank">${idx + 1}</div>
-                    <div class="hof-avatar">${getUserAvatar(u)}</div>
+        const rows = top5.map((u, idx) => {
+            const rank = idx + 1;
+            const avatar = (u.avatarIcon || getUserAvatar(u) || '🏃');
+            const name = u.name || 'عضو';
+            const region = u.region || '';
+            const dist = (u.totalDist || 0).toFixed(1);
+            return `
+                <div class="hof-row" onclick="viewUserProfile('${u.uid || ''}')">
+                    <div class="hof-rank">${rank}</div>
+                    <div class="hof-avatar">${avatar}</div>
                     <div class="hof-main">
-                        <div class="hof-name">${u.name}</div>
-                        <div class="hof-meta">${u.region}</div>
+                        <div class="hof-name">${name}</div>
+                        <div class="hof-meta">${region}</div>
                     </div>
-                    <div class="hof-dist">${u.totalRunDist.toFixed(1)} كم</div>
+                    <div class="hof-dist">${dist} كم</div>
                 </div>
-            `)
-            .join('');
+            `;
+        }).join('');
 
+        listEl.innerHTML = rows;
     } catch (e) {
         console.error(e);
-        listEl.innerHTML =
-            '<div style="text-align:center; padding:10px; color:#ef4444;">خطأ في تحميل الترتيب</div>';
+        listEl.innerHTML = '<div style="text-align:center; padding:10px; color:#6b7280;">تعذر تحميل لوحة الشرف</div>';
     }
 }
 
-
-
-// ==================== Coach Home Tabs (V3.3) ====================
+document.addEventListener('DOMContentLoaded', ()=>{ setupCoachHomeTabs(); setupLogTypeUI(); });
 
 document.addEventListener('DOMContentLoaded', ()=>{
-
     setupCoachHomeTabs();
     setupLogTypeUI();
-
     // Initial render for coach hero stats (may be updated again once runs load)
-    try { 
-        renderCoachHeroStats(); 
-    } catch(e) {}
+    try{ renderCoachHeroStats(); }catch(e){}
 });
 
-
-//============= Re-render coach hero stats whenever runs cache updates
 // Re-render coach hero stats whenever runs cache updates
-window.addEventListener('ers:runs-updated', () => {
-    try {
-        renderCoachHeroStats();
-    } catch (e) {}
-
-    // ✅ هنا المكان الصح
-    try {
-        if (typeof loadHallOfFame === 'function') {
-            loadHallOfFame();
-        }
-    } catch (e) {
-        console.error('Hall of Fame error:', e);
-    }
-});
+window.addEventListener('ers:runs-updated', ()=>{ try{ renderCoachHeroStats(); }catch(e){} });
 
 
 // === دالة تحديث بيانات الكوتش (الهيرو) ===
@@ -1909,49 +1893,3 @@ function computeHeroStatsFromRuns(runs){
     };
 }
  
-
-// ==================== Team Workout Mirror to Home (Today Tab) ====================
-(function mirrorTeamWorkoutToHome(){
-  function cloneOrUpdate(){
-    const srcCard = document.getElementById('team-workout');
-    const target = document.getElementById('team-workout-container');
-    if (!srcCard || !target) return;
-
-    // امسح أي نسخة قديمة
-    const old = document.getElementById('team-workout-mirror');
-    if (old) old.remove();
-
-    // اعمل clone للكارت بالكامل
-    const clone = srcCard.cloneNode(true);
-    clone.id = 'team-workout-mirror';
-
-    // مهم: IDs داخل النسخة لازم تتغير عشان مايحصلش تضارب
-    const body = clone.querySelector('#team-workout-body');
-    if (body) body.id = 'team-workout-body-mirror';
-
-    // صلّح زر التفاصيل داخل النسخة
-    const link = clone.querySelector('.link-text');
-    if (link) {
-      link.setAttribute('onclick', 'openTeamWorkoutDetails()');
-    }
-
-    target.appendChild(clone);
-  }
-
-  // أول تحميل
-  document.addEventListener('DOMContentLoaded', () => {
-    cloneOrUpdate();
-
-    // راقب تغييرات محتوى الجدول الأصلي عشان نحدّث النسخة تلقائيًا
-    const srcBody = document.getElementById('team-workout-body');
-    if (!srcBody) return;
-
-    const obs = new MutationObserver(() => {
-      const mirrorBody = document.getElementById('team-workout-body-mirror');
-      if (mirrorBody) mirrorBody.innerHTML = srcBody.innerHTML;
-    });
-
-    obs.observe(srcBody, { childList: true, subtree: true });
-  });
-})();
-// ==================== V12.0 Plan Activation ====================

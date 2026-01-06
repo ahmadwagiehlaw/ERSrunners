@@ -344,5 +344,3 @@ function openImageViewer(url){
   openModal('modal-image-viewer');
 }
 window.openImageViewer = openImageViewer;
-
-

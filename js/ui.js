@@ -1362,74 +1362,67 @@ function toggleChallengeInputs() {
 
 
 async function submitRun() {
-    
-    
-    if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+
+    if (!navigator.onLine) {
+        return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+    }
 
     const btn = document.getElementById('save-run-btn');
-    const distInputRaw = parseFloat(document.getElementById('log-dist').value);
+
+    const dist = parseFloat(document.getElementById('log-dist').value);
     const time = parseFloat(document.getElementById('log-time').value);
     const type = document.getElementById('log-type').value;
-    const link = document.getElementById('log-link').value;
     const dateInput = document.getElementById('log-date').value;
     const imgUrlInput = document.getElementById('uploaded-img-url');
 
-    const isCore = _ersIsCoreType(type);
-    const xtDist = (!isCore && distInputRaw && distInputRaw > 0) ? distInputRaw : 0;
-    const dist = isCore ? (distInputRaw || 0) : 0; // ✅ XT لا يؤثر على التحديات/الإحصائيات
-
-    if (!time) return showToast("البيانات ناقصة!", "error");
-    if (time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
-
-    if (isCore) {
-      if (!dist) return showToast("البيانات ناقصة!", "error");
-      if (dist <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
+    // ===== Validation بسيط وواضح =====
+    if (!dist || dist <= 0) {
+        return showToast("المسافة غير صحيحة", "error");
     }
 
-    // Coach workout logging: require proof image
-const coachCtx = window._ersCoachLogCtx || null;
-if (coachCtx && coachCtx.requireImage && (!imgUrlInput || !imgUrlInput.value)) {
-  return showToast("لازم ترفق صورة إثبات لتمرين الكوتش 📸", "error");
-}
+    if (!time || time <= 0) {
+        return showToast("الوقت غير صحيح", "error");
+    }
 
-    // تعطيل الزر لمنع التكرار
-    if(btn) { 
-        btn.innerText = "جاري الحفظ..."; 
-        btn.disabled = true; 
+    if (!['Run', 'Walk'].includes(type)) {
+        return showToast("نوع النشاط غير مدعوم حاليًا", "error");
+    }
+
+    // ===== تعطيل الزر =====
+    if (btn) {
+        btn.innerText = "جاري الحفظ...";
+        btn.disabled = true;
         btn.style.opacity = "0.7";
     }
 
     try {
         const uid = currentUser.uid;
         const selectedDate = new Date(dateInput);
-        
-        // 1. منطق التعديل (Edit Mode)
+        const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+        const currentMonthKey = selectedDate.toISOString().slice(0, 7);
+
+        const isRun = (type === 'Run');
+
+        /* ===============================
+           EDIT MODE
+        =============================== */
         if (editingRunId) {
-            const oldIsCore = _ersIsCoreType(editingOldType);
-            const oldDistForStats = oldIsCore ? (editingOldDist || 0) : 0;
-            const newDistForStats = isCore ? dist : 0;
-            const distDiff = newDistForStats - oldDistForStats;
-            const runDiff = (isCore ? 1 : 0) - (oldIsCore ? 1 : 0); 
 
-            const updatePayload = { 
-                dist: (isCore ? dist : 0),
-                time,
-                type,
-                link,
-                xtDist: (isCore ? 0 : xtDist),
-                img: imgUrlInput.value
-            };
+            const oldWasRun = (editingOldType === 'Run');
+            const distDiff = (isRun ? dist : 0) - (oldWasRun ? editingOldDist : 0);
+            const runDiff = (isRun ? 1 : 0) - (oldWasRun ? 1 : 0);
 
-            // ✅ لو التعديل ده تم من "نفّذ التمرين" نعلّم الجرية كتمرينة كوتش
-            if (coachCtx) {
-                updatePayload.coachWorkout = true;
-                updatePayload.coachWorkoutId = coachCtx.workoutId || null;
-                updatePayload.coachWorkoutTitle = coachCtx.title || null;
-                updatePayload.coachWorkoutEmoji = coachCtx.emoji || null;
-                updatePayload.coachWorkoutDateKey = coachCtx.dateKey || null;
-            }
-
-            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update(updatePayload);
+            await db.collection('users')
+                .doc(uid)
+                .collection('runs')
+                .doc(editingRunId)
+                .update({
+                    dist,
+                    time,
+                    type,
+                    timestamp,
+                    img: imgUrlInput?.value || null
+                });
 
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(distDiff),
@@ -1437,144 +1430,58 @@ if (coachCtx && coachCtx.requireImage && (!imgUrlInput || !imgUrlInput.value)) {
                 monthDist: firebase.firestore.FieldValue.increment(distDiff)
             }, { merge: true });
 
-            // إعادة فحص التحديات بأثر رجعي عند إضافة صورة
-            if (imgUrlInput.value) { 
-                 const activeCh = await db.collection('challenges').where('active', '==', true).get();
-                 const batch = db.batch();
-                 let updatedCount = 0;
-
-                 activeCh.forEach(doc => {
-                    const ch = doc.data();
-                    const rules = ch.rules || {};
-                    if (rules.requireImg && dist >= (rules.minDistPerRun || 0)) {
-                        const participantRef = doc.ref.collection('participants').doc(uid);
-                        batch.set(participantRef, { completed: true }, { merge: true });
-                        updatedCount++;
-                    }
-                 });
-                 if(updatedCount > 0) await batch.commit();
-            }
-
             showToast("تم التعديل بنجاح ✅", "success");
             editingRunId = null;
 
         } else {
-            // 2. منطق الإضافة الجديدة (New Run)
-            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-            const streakInfo = isCore ? updateStreakLogic(selectedDate) : { currentStreak: (userData.currentStreak || 0), lastDate: (userData.lastRunDate || null) };
-            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
-            let newMonthDist = (userData.monthDist || 0) + dist;
 
-            // باقي منطقك كما هو...
-            const pace = (dist > 0) ? (time / dist) : 0;
-            const autoKind = _ersAutoKind(type, pace);
-            const slowAsWalk = !!(autoKind === 'Walk');
+            /* ===============================
+               NEW RUN
+            =============================== */
 
-            // احترام تعطيل التعليقات
-            const commentsDisabled = !!getUserPref('disableComments', false);
-
-            const coachCtx2 = window._ersCoachLogCtx || null;
             const runData = {
-              dist: (isCore ? dist : 0),
-              xtDist: (isCore ? 0 : xtDist),
-              time,
-              type,
-              pace,
-              autoKind,
-              slowAsWalk,
-              timestamp,
-              img: imgUrlInput.value,
-              commentsDisabled,
-
-              // coach workout marker (for motivation + filtering)
-              coachWorkout: !!coachCtx2,
-              coachWorkoutId: coachCtx2?.workoutId || null,
-              coachWorkoutTitle: coachCtx2?.title || null,
-              coachWorkoutEmoji: coachCtx2?.emoji || null,
-              coachWorkoutDateKey: coachCtx2?.dateKey || null
+                dist,
+                time,
+                type,
+                timestamp,
+                img: imgUrlInput?.value || null
             };
 
             await db.collection('users').doc(uid).collection('runs').add(runData);
+
             await db.collection('activity_feed').add({
-               uid: uid, userName: userData.name, userRegion: userData.region, ...runData, likes: []
+                uid,
+                userName: userData.name,
+                userRegion: userData.region,
+                ...runData,
+                likes: []
             });
 
-            // تحديث إجماليات المستخدم (كما هو عندك)
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(dist),
-                totalRuns: firebase.firestore.FieldValue.increment(isCore ? 1 : 0),
-                totalRunDist: firebase.firestore.FieldValue.increment(autoKind==='Run' ? dist : 0),
-                totalWalkDist: firebase.firestore.FieldValue.increment(autoKind==='Walk' ? dist : 0),
-                monthDist: newMonthDist,
-                lastMonthKey: currentMonthKey,
-                currentStreak: streakInfo.currentStreak,
-                lastRunDate: streakInfo.lastDate || timestamp
-            }, { merge: true });
+            // الحسابات تدخل للجري فقط
+            if (isRun) {
+                await db.collection('users').doc(uid).set({
+                    totalDist: firebase.firestore.FieldValue.increment(dist),
+                    totalRuns: firebase.firestore.FieldValue.increment(1),
+                    monthDist: firebase.firestore.FieldValue.increment(dist),
+                    lastMonthKey: currentMonthKey,
+                    lastRunDate: timestamp
+                }, { merge: true });
+            }
 
             showToast("تم حفظ النشاط ✅", "success");
         }
 
-        // تحليلك/مكافآتك كما هي...
-        checkNewBadges(dist, time, selectedDate);
-        setTimeout(() => { showRunAnalysis(dist, time, autoKind, pace); }, 300);
-
         // إغلاق وتنظيف
         closeModal('modal-log');
-
-        // reset coach logging context + modal title
-        if(window._ersCoachLogCtx){
-          window._ersCoachLogCtx = null;
-          const h = document.querySelector('#modal-log h3');
-          if(h) h.innerText = 'تسجيل نشاط 🏃‍♂️';
-        }
 
     } catch (e) {
         console.error(e);
         showToast("حصل خطأ أثناء الحفظ", "error");
     } finally {
-        if(btn) { 
-            btn.innerText = "حفظ النشاط"; 
-            btn.disabled = false; 
+        if (btn) {
+            btn.innerText = "حفظ النشاط";
+            btn.disabled = false;
             btn.style.opacity = "1";
         }
     }
 }
-
-
-// ==================== Team Workout: Details Fix ====================
-window.openTeamWorkoutDetails = function () {
-  // داخل صفحة الكوتش نفسها: نروح لتبويب "plan"
-  if (typeof setCoachHomeTab === 'function') {
-    setCoachHomeTab('plan');
-    setTimeout(() => {
-      const el = document.getElementById('team-workout');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 150);
-    return;
-  }
-
-  // fallback: لو التبويبات مش متاحة لأي سبب
-  console.warn('setCoachHomeTab is not defined');
-};
-
-// ===== Plan Segments (Coach Plan Tab) =====
-window.setPlanSegment = function(seg){
-  // buttons
-  document.querySelectorAll('.plan-seg-btn').forEach(b=>{
-    b.classList.toggle('active', b.dataset.planseg === seg);
-  });
-
-  // views
-  document.querySelectorAll('.plan-seg-view').forEach(v=>{
-    v.classList.toggle('active', v.id === `plan-seg-${seg}`);
-  });
-};
-
-// Toggle show/hide schedule body
-window.toggleTeamWorkout = function(){
-  const body = document.getElementById('team-workout-body');
-  if(!body) return;
-  const isHidden = body.style.display === 'none';
-  body.style.display = isHidden ? 'block' : 'none';
-};
-// ==================== V5.0 Active Challenges Loading & Rendering ====================

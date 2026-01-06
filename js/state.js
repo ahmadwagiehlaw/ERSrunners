@@ -33,9 +33,7 @@ function initApp() {
     listenForNotifications();
     loadChart('week'); // استخدام الشارت الجديد
     initNetworkMonitor();
-if (typeof checkSharedData === "function") {
-  checkSharedData();
-}
+    checkSharedData();
 
     // ✅ مهم: فعل نظام الكوتش بعد الدخول
     try {
