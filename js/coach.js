@@ -928,10 +928,10 @@ container.innerHTML = `
       <div class="cw-sub">${_escapeHtml((w.notes || '').trim() || 'اضغط التفاصيل وشوف خطة التمرين خطوة بخطوة.')}</div>
 
 <div class="cw-actions">
-  <button class="btn btn-glossy-record" onclick="event.stopPropagation(); openCoachWorkoutLog();">
+  <button class="btn btn-primary" onclick="event.stopPropagation(); openCoachWorkoutLog();">
     <i class="ri-whistle-line"></i> نفّذ التمرين
   </button>
-  <button class="btn btn-glossy" onclick="event.stopPropagation(); openDailyWorkoutModal();">التفاصيل</button>
+  <button class="btn btn-ghost" onclick="event.stopPropagation(); openDailyWorkoutModal();">التفاصيل</button>
 </div>
 `;
 }

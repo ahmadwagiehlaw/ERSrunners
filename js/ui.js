@@ -1469,7 +1469,4 @@ async function submitRun() {
         }
     }
 }
-// ====================Load Observer Runs for Admins
-if (tab === 'observer' && userData.isAdmin) {
-  loadObserverRuns();
-}
+

@@ -33,10 +33,10 @@
 
     <div id="auth-screen" class="full-screen-overlay">
         <div class="auth-box">
-<div class="logo-area">
-    <img src="ers-logo.png" alt="ERS Runners Logo" class="auth-logo">
-    <p class="auth-tagline">منصة العدائين المحترفين</p>
-</div>
+            <div class="logo-area">
+                <h1>ERS <span class="accent-text">RUNNERS</span></h1>
+                <p>منصة العدائين المحترفين</p>
+            </div>
             
             <div class="form-group">
                 <input type="email" id="email" placeholder="البريد الإلكتروني">
@@ -128,17 +128,12 @@
   </div>
 
   <!-- Sticky Tabs -->
-<div class="glass-tabs">
-    <div class="glass-tab active" onclick="switchHomeTab('today', this)">
-        ⏱ يومك
-    </div>
-    <div class="glass-tab" onclick="switchHomeTab('plan', this)">
-        📚 المكتبة
-    </div>
-    <div class="glass-tab" onclick="switchHomeTab('community', this)">
-        🏆 ترتيبك
-    </div>
-</div>
+  <div id="coach-tabs-nav" class="coach-tabs-nav">
+    <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
+    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
+    <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
+  </div>
+
   
   <!-- Tabs Content -->
   <div id="coach-home-tab-today" class="coach-home-tab active">
@@ -352,8 +347,6 @@
                 <div class="admin-tabs-wrapper">
                     <div class="admin-tab active" data-tab="overview" onclick="switchAdminTab('overview')">نظرة عامة</div>
                     <div class="admin-tab" data-tab="inspector" onclick="switchAdminTab('inspector')">المراقب</div>
-                    <div id="observer-runs-list"></div>
-
                     <div class="admin-tab" data-tab="studio" onclick="switchAdminTab('studio')">التحديات</div>
                     <div class="admin-tab" data-tab="coach" onclick="switchAdminTab('coach')">الكوتش</div>
                     <div class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">الأعضاء</div>
@@ -800,11 +793,11 @@
                 </div>
 
 <div class="cw-actions">
-    <button class="btn btn-glossy-active" onclick="openNewRun()" style="width:100%; height:50px; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
+    <button class="btn btn-primary" onclick="openNewRun()" style="width:100%; height:50px; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
         <i class="ri-run-line"></i> ابدأ تمرينك
     </button>
 </div>
-<p></p>
+
                 <div class="goal-card" onclick="setPersonalGoal()">
                     <div class="goal-info">
                         <span class="goal-title">هدفي الشهري 🎯</span>
@@ -864,28 +857,15 @@
                 </button>
             </section>
         </main>
-<nav class="bottom-nav">
-    <div class="nav-item active" onclick="switchView('home')">
-        <i class="ri-brain-line"></i>
-        <span>الكوتش</span>
-    </div>
 
-    <div class="nav-item" onclick="switchView('challenges')">
-        <i class="ri-trophy-line"></i>
-        <span>الأرينا</span>
-    </div>
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="switchView('home')"><i class="ri-brain-line"></i><span>الكوتش</span></div>
+            <div class="nav-item" onclick="switchView('club')"><i class="ri-run-line"></i><span>الفريق</span></div>
+            <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>الأرينا</span></div>
+                   <div class="nav-item" onclick="switchView('profile')"><i class="ri-dashboard-3-line"></i><span>بياناتي</span></div>
 
-    <div class="nav-item" onclick="switchView('club')">
-        <i class="ri-run-line"></i>
-        <span>الفريق</span>
+        </nav>
     </div>
-
-    <div class="nav-item" onclick="switchView('profile')">
-        <i class="ri-dashboard-3-line"></i>
-        <span>بياناتي</span>
-    </div>
-</nav>
-
 
 
     <div id="modal-run-feedback" class="modal-overlay" style="z-index: 4000;">
@@ -928,28 +908,18 @@
 
     <div style="padding: 10px 20px; position:relative; z-index:10;">
         <div class="log-tabs">
-            <button class="tab-btn active" onclick="switchLogTab('manual')" id="tab-btn-manual">
-    <i class="ri-edit-box-line"></i> يدوي
-</button>
-
-            <button class="tab-btn" onclick="switchLogTab('gps')" id="tab-btn-gps">
-    <i class="ri-map-pin-2-fill"></i> تتبع GPS
-</button>
-
+            <button class="tab-btn active" onclick="switchLogTab('gps')" id="tab-btn-gps">
+                <i class="ri-map-pin-2-fill"></i> تتبع GPS
+            </button>
+            <button class="tab-btn" onclick="switchLogTab('manual')" id="tab-btn-manual">
+                <i class="ri-edit-box-line"></i> يدوي
+            </button>
         </div>
     </div>
 
     <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
         
-
-        <div id="view-gps" style="display:none;">
-
-
-                     <div style="text-align:center; font-size:16px ; color:#f0f1f3; margin-top:10px;">
-                ⚠️ ..يفضل الإدخال اليدوي لعدم استهلاك البطارية لانك يجب أن تترك الشاشة مفتوحة لضمان دقة التتبع
-            </div>
-<P> </P>
-
+        <div id="view-gps" style="display:block;">
             <div id="gps-map-container" style="height:250px; width:100%; border-radius:16px; margin-bottom:15px; position:relative; overflow:hidden; border:1px solid var(--border);">
                 <div id="gps-map" style="width:100%; height:100%;"></div>
                 <div class="gps-overlay-stats">
@@ -972,10 +942,12 @@
                     إنهاء
                 </button>
             </div>
-           
+            <div style="text-align:center; font-size:10px; color:#6b7280; margin-top:8px;">
+                ⚠️ اترك الشاشة مفتوحة لضمان دقة التتبع
+            </div>
         </div>
 
-<div id="view-manual" style="display:block; padding-top:10px;">
+<div id="view-manual" style="display:none; padding-top:10px;">
     
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
         <div>
@@ -987,6 +959,9 @@
             <select id="log-type" class="input-box compact-input">
                 <option value="Run">جري (Run)</option>
                 <option value="Walk">مشي (Walk)</option>
+                <option value="Cycling">عجل (Bike)</option>
+                <option value="Swimming">سباحة (Swim)</option>
+                <option value="Core">تمارين (Gym/Core)</option>
             </select>
         </div>
         <div>
@@ -1019,9 +994,54 @@
         حفظ النشاط
     </button>
 </div>
+
     </div>
   </div>
 </div>
+        <div id="view-manual" style="display:none; padding:15px;">
+            <div style="text-align:center; margin-bottom:15px;">
+                <h3 style="margin:0; font-size:16px;">توثيق النشاط 📝</h3>
+                <p style="font-size:12px; color:#9ca3af;">أدخل البيانات بدقة</p>
+            </div>
+
+            <label class="input-label">نوع النشاط</label>
+            <select id="log-type" class="input-box" style="margin-bottom:12px;">
+                <option value="Run">جري (Run)</option>
+                <option value="Walk">مشي (Walk)</option>
+                <option value="Cycling">دراجة (Cycling)</option>
+                <option value="Swimming">سباحة (Swimming)</option>
+                <option value="Core">تمارين قوة (Core/Gym)</option>
+            </select>
+
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <div style="flex:1;">
+                    <label class="input-label">المسافة (كم)</label>
+                    <input type="number" id="log-dist" class="input-box" step="0.01" placeholder="0.00">
+                </div>
+                <div style="flex:1;">
+                    <label class="input-label">الزمن (دقائق)</label>
+                    <input type="number" id="log-time" class="input-box" placeholder="0">
+                </div>
+            </div>
+
+            <label class="input-label">التاريخ</label>
+            <input type="date" id="log-date" class="input-box" style="margin-bottom:12px;">
+
+            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px; border:1px solid var(--border); margin-bottom:15px;">
+                <label class="input-label" style="margin-bottom:8px;">صورة النشاط (إجباري للكوتش)</label>
+                <input type="file" id="log-img-file" accept="image/*" class="input-box" onchange="uploadRunImage(this)" style="padding:8px;">
+                <input type="hidden" id="uploaded-img-url">
+                <div id="upload-status" style="font-size:11px; margin-top:4px;"></div>
+                <img id="img-preview" src="" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-top:8px; display:none;">
+            </div>
+
+            <label class="input-label">رابط (Strava/فيديو) - اختياري</label>
+            <input type="url" id="log-link" class="input-box" placeholder="https://..." style="margin-bottom:20px;">
+
+    </div>
+  </div>
+</div>
+  
 
     <div id="modal-avatar" class="modal-overlay">
         <div class="modal-box">
@@ -1048,6 +1068,7 @@
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
                     <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
                 </button>
+
                 <div class="setting-item" id="btn-admin-entry" onclick="openAdminAuth()" style="display:none; border-color:var(--accent);">
                     <div class="setting-icon" style="color:var(--accent);"><i class="ri-admin-line"></i></div>
                     <div class="setting-text"><span style="color:var(--accent);">لوحة المشرفين</span><small>تحكم كامل بالتطبيق</small></div>
@@ -1095,7 +1116,6 @@
         </div>
     </div>
 
-   
    
 <div id="modal-edit-profile" class="modal-overlay">
         <div class="modal-box">
@@ -1389,7 +1409,6 @@
 <script src="js/config.js"></script>
 <script src="js/state.js"></script>
 <script src="js/utils.js"></script>
-<script src="js/regions.js"></script> <!-- 👈 هنا -->
 <script src="js/ui.js"></script>
 <script src="js/coach.js"></script>
 <script src="js/activities.js"></script>
@@ -1450,10 +1469,9 @@
 
 
     <div id="modal-plan-wizard" class="modal-overlay">
-<div class="modal-box frosted-modal" style="text-align:center; position:relative; overflow:hidden;">
+        <div class="modal-box" style="text-align:center; position:relative; overflow:hidden;">
 <button class="modal-close-x" onclick="closeModal('modal-plan-wizard')" aria-label="إغلاق">✕</button>            
             <div id="wizard-step-input">
-            
                 <div class="wizard-icon">🤖</div>
                 <h3 style="margin-bottom:5px;">مصمم الخطط الذكي</h3>
                 <p style="font-size:12px; color:#9ca3af; margin-bottom:20px;">أجب على الأسئلة لأصمم لك جدولاً مخصصاً لا يقهر!</p>

@@ -1,6 +1,5 @@
 /* ERS Core: Global state */
 
-
 // Global cursor/state for feed pagination
 let globalFeedLastDoc = null;
 let globalFeedHasMore = true;
@@ -17,12 +16,7 @@ let allUsersCache = [];
 let deferredPrompt;
 let isLiking = false; // Debounce variable
 let currentChallengeFilter = 'all'; // 🔥 هذا السطر مهم جداً ليعرف التطبيق البداية
-// ============
-adminContext = {
-  userId: null,
-  runId: null,
-  source: null // members | observer | challenges
-}
+
 
 // ==================== 2. Initialization ====================
 function initApp() {
