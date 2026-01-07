@@ -1343,6 +1343,29 @@
     </div>
 </div>
 
+<div id="modal-update-app" class="modal-overlay" style="z-index: 9999; backdrop-filter: blur(8px);">
+    <div class="glass-update-card">
+        <div class="update-icon-glow">
+            <i class="ri-rocket-2-fill"></i>
+        </div>
+        
+        <h3 class="update-title">تحديث جديد متاح! 🚀</h3>
+        <p class="update-version">إصدار <span id="new-version-num">V3.5</span></p>
+        
+        <div class="update-changelog">
+            <p style="margin-bottom:5px; color:#f59e0b; font-weight:bold;">ما الجديد؟</p>
+            <ul id="update-notes-list">
+                </ul>
+        </div>
+
+        <button onclick="applyAppUpdate()" class="btn-update-action">
+            تحديث الآن <i class="ri-refresh-line"></i>
+        </button>
+        
+        <div onclick="closeModal('modal-update-app')" class="btn-update-later">تحديث لاحقاً</div>
+    </div>
+</div>
+
 
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>

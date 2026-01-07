@@ -1,5 +1,27 @@
 /* ERS Core: Global state */
 
+
+/* ==================== 🛠️ APP VERSION CONTROL ==================== */
+// عدل البيانات دي كل ما ترفع تحديث جديد
+const APP_VERSION = "V2.1.0"; 
+const APP_CHANGELOG = [
+    "🏆 إضافة دوري المحافظات الجديد (ERS League)",
+    "💎 تحسين تصميم النافبار (Crystal Glass)",
+    "⚡ تحسين سرعة التطبيق وإصلاح الأخطاء",
+    "🏃‍♂️ إمكانية عرض سجل أبطال الشهر"
+];
+
+// دالة التشغيل
+function initUpdateCheck() {
+    // 1. كتابة البيانات في المودال
+    document.getElementById('new-version-num').innerText = APP_VERSION;
+    const list = document.getElementById('update-notes-list');
+    if(list) {
+        list.innerHTML = APP_CHANGELOG.map(note => `<li>${note}</li>`).join('');
+    }
+}
+
+// ==================== 🗃️ Global State Variables ====================
 // Global cursor/state for feed pagination
 let globalFeedLastDoc = null;
 let globalFeedHasMore = true;

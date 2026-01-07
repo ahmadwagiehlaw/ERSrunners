@@ -359,3 +359,54 @@ function switchHomeTab(tab, el) {
     const target = document.getElementById('coach-home-tab-' + tab);
     if (target) target.classList.add('active');
 }
+
+
+
+
+// ==================== 🔄 PWA AUTO UPDATE LOGIC ====================
+
+let newWorker; // لتخزين الوركر الجديد بعد التحديث ليظهر المودال الخاص بالتحديث التلقائي
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            
+            // تهيئة بيانات المودال
+            initUpdateCheck();
+
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    // لو الحالة بقت installed وفيه controller حالي (يعني دي مش أول مرة يفتح الموقع)
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // 🔥 هنا نظهر المودال الزجاجي
+                        openModal('modal-update-app');
+                    }
+                });
+            });
+        });
+
+        // التعامل مع حالة "تم التحديث"
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            window.location.reload();
+            refreshing = true;
+        });
+    }
+}
+
+// دالة زرار "تحديث الآن"
+function applyAppUpdate() {
+    if (newWorker) {
+        // إرسال أمر للوركر عشان يتخطى الانتظار ويفعل نفسه
+        newWorker.postMessage({ action: 'skipWaiting' });
+    } else {
+        // لو مفيش وركر (مجرد احتياط)
+        window.location.reload();
+    }
+}
+
+// استدعاء التسجيل عند بدء التطبيق
+window.addEventListener('load', registerServiceWorker);
+// ==================== End PWA AUTO UPDATE LOGIC ====================
