@@ -28,6 +28,7 @@ function initApp() {
 
     updateUI();
     loadActivityLog();
+    
     loadActiveChallenges(); 
     loadGlobalFeed();
     listenForNotifications();

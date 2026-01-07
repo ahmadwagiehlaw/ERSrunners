@@ -2302,65 +2302,6 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     font-size: 14px;
 }
 
-/* ==================== أنيميشن دوري المحافظات (Game Mode) ==================== */
-
-/* 1. بانر الشرح (Tutorial) */
-.battle-tutorial {
-    background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
-    border: 1px dashed rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 12px;
-    color: #9ca3af;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-}
-.battle-tutorial span { color: #fff; font-weight: bold; }
-
-/* 2. كارت المحافظة */
-.gov-game-card {
-    background: var(--bg-card);
-    border-radius: 16px;
-    padding: 12px 16px;
-    margin-bottom: 12px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.05);
-    transform: translateY(20px);
-    opacity: 0;
-    animation: slideUpFade 0.5s forwards; /* أنيميشن الظهور */
-}
-
-/* 3. شريط الطاقة (Power Bar) */
-.power-track {
-    position: absolute; bottom: 0; left: 0; width: 100%; height: 4px;
-    background: rgba(255,255,255,0.05);
-}
-.power-fill {
-    height: 100%; width: 0%; /* تبدأ من صفر */
-    transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1); /* حركة ناعمة جداً */
-    box-shadow: 0 0 10px currentColor; /* توهج */
-}
-
-/* 4. الإحصائيات */
-.stat-pill {
-    background: rgba(0,0,0,0.3);
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 10px;
-    color: #9ca3af;
-    display: flex; align-items: center; gap: 4px;
-}
-
-/* 5. أنيميشن الدخول للكروت */
-@keyframes slideUpFade {
-    to { transform: translateY(0); opacity: 1; }
-}
-
 
 /* ===================== Coach Zone + Club (V3.3) ===================== */
 .coach-zone-grid{
@@ -4462,80 +4403,108 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
 }
 
 
-/* ==================== Bottom Nav – Glass (Minimal / Elegant) ==================== */
-.bottom-nav{
-  position: fixed;
-  left: 14px;
-  right: 14px;
-  bottom: calc(10px + env(safe-area-inset-bottom));
-  height: 66px;
+/* ==================== THE FLOATING CRYSTAL NAV (Final) ==================== */
 
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.bottom-nav {
+    position: fixed;
+    bottom: 20px;
+    left: 15px;
+    right: 15px;
+    height: 75px;
+    
+    /* الخلفية: أسود ملكي عميق */
+    background: rgba(15, 20, 30, 0.9); 
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
 
-  padding: 8px 6px;
-  z-index: 1200;
+    /* الحواف والظل */
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
 
-  border-radius: 20px;
-  background: rgba(17,24,39,0.58);
-  border: 1px solid rgba(255,255,255,0.10);
-
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-
-  box-shadow:
-    0 10px 30px rgba(0,0,0,0.45),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-
-  overflow: hidden;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 15px;
+    z-index: 2000;
 }
 
-/* highlight soft line (very subtle) */
-.bottom-nav::before{
-  content:"";
-  position:absolute;
-  left: 12px;
-  right: 12px;
-  top: 7px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.22), transparent);
-  opacity: 0.65;
-  pointer-events:none;
+/* --- العنصر العادي (غير النشط) --- */
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.4); /* لون باهت هادي */
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* حركة ناعمة */
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
 }
 
-.nav-item{
-  flex: 1;
-  min-width: 0;
-  position: relative;
-
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap: 4px;
-
-  color: rgba(229,231,235,0.70);
-  font-size: 11px;
-  font-weight: 500; /* ✅ مش بولد */
-  cursor: pointer;
-
-  user-select:none;
-  -webkit-tap-highlight-color: transparent;
-
-  transition: transform .16s ease, color .2s ease, opacity .2s ease;
+.nav-item i {
+    font-size: 24px;
+    margin-bottom: 2px;
+    transition: 0.3s;
 }
 
-.nav-item i{
-  font-size: 20px;
-  line-height: 1;
-  opacity: 0.88;
-  transition: transform .16s ease, color .2s ease, opacity .2s ease;
+.nav-item span {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
 }
 
-.nav-item span{
-  font-size: 10px;
-  opacity: 0.90;
+/* --- 🔥 الحالة النشطة: الكريستالة (The Crystal) 🔥 --- */
+
+.nav-item.active {
+    /* 1. الخلفية: تدرج زجاجي أبيض شفاف */
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    
+    /* 2. الحدود: برواز أبيض خفيف كأنه حافة زجاج */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    
+    /* 3. الحركة والظلال */
+    transform: translateY(-25px) scale(1.1); /* يطير لفوق */
+    box-shadow: 
+        0 10px 20px rgba(0, 0, 0, 0.3), /* ظل عميق */
+        inset 0 0 15px rgba(255, 255, 255, 0.05); /* لمعة داخلية */
+    
+    /* 4. اللون */
+    color: #fff; /* الأيقونة تبقى أبيض ناصع */
+    backdrop-filter: blur(8px);
+}
+
+/* الأيقونة داخل الكريستالة */
+.nav-item.active i {
+    font-size: 26px;
+    margin-bottom: 0;
+    /* ظل خفيف للأيقونة نفسها عشان تبرز */
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+
+/* إخفاء النص عند النشاط */
+.nav-item.active span {
+    display: none;
+}
+
+/* --- تأثير الإضاءة تحت الزرار (Spotlight) --- */
+.nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; /* تحت الزرار بشوية */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 25px;
+    height: 6px;
+    
+    /* ضوء أبيض/سماوي هادي بدلاً من الأخضر */
+    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+    border-radius: 50%;
+    opacity: 0.8;
+    filter: blur(3px);
+    z-index: -1;
 }
 
 /* ✅ Safe visual re-order (keeps HTML order to avoid JS issues) */
@@ -4749,3 +4718,215 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
   box-shadow: 0 0 0 3px rgba(16,185,129,0.16);
 }
 /* ==================== End Coach Tabs ==================== */
+
+/* ==================== EMPIRE LEAGUE V9.0 (FINAL) ==================== */
+
+/* --- حاوية البوديوم --- */
+.podium-wrapper {
+    display: flex; align-items: flex-end; justify-content: center; gap: 10px;
+    height: 340px; /* زيادة الطول لاستيعاب الاسم */
+    margin-top: 60px; margin-bottom: 20px;
+    position: relative;
+    padding-bottom: 10px;
+}
+
+.p-column {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    width: 32%; position: relative; 
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.p-column:hover { transform: translateY(-5px); }
+
+/* --- تصميم العمود --- */
+.p-block {
+    width: 100%; border-radius: 12px 12px 0 0; position: relative;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+    padding-top: 45px; 
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    backdrop-filter: blur(5px);
+}
+/* ألوان الأعمدة */
+.p-1 .p-block { height: 170px; background: linear-gradient(180deg, rgba(245,158,11,0.95), rgba(180, 83, 9, 0.7)); border-top: 4px solid #fcd34d; }
+.p-2 .p-block { height: 140px; background: linear-gradient(180deg, rgba(156,163,175,0.95), rgba(75, 85, 99, 0.7)); border-top: 4px solid #e5e7eb; }
+.p-3 .p-block { height: 110px; background: linear-gradient(180deg, rgba(205,127,50,0.95), rgba(124, 45, 18, 0.7)); border-top: 4px solid #fdba74; }
+
+/* --- كارت البطل العائم (MVP) --- */
+.mvp-floating-card {
+    position: absolute; bottom: 100%; margin-bottom: -25px; 
+    display: flex; flex-direction: column; align-items: center; 
+    z-index: 20; width: 120%; /* مساحة أوسع للاسم */
+}
+
+.mvp-floating-card:hover {
+    transform: scale(1.05); /* تكبير بسيط عند الضغط */
+    cursor: pointer;
+}
+
+/* برواز الصورة */
+.mvp-avatar-frame {
+    width: 65px; height: 65px; border-radius: 50%; 
+    border: 3px solid #fff; box-shadow: 0 5px 20px rgba(0,0,0,0.6);
+    background: #1f2937; position: relative; z-index: 22;
+    overflow: hidden;
+}
+.p-1 .mvp-avatar-frame { width: 85px; height: 85px; border-color: #fcd34d; box-shadow: 0 0 25px rgba(245,158,11,0.7); }
+
+/* التاج */
+.mvp-crown {
+    position: absolute; top: -32px; font-size: 32px; z-index: 25;
+    animation: bounceCrown 2.5s infinite ease-in-out; 
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+}
+@keyframes bounceCrown { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+/* الاسم (التعديل الجديد: سطر منفصل وواضح) */
+.mvp-name-block {
+    margin-top: 8px; /* مسافة تحت الصورة */
+    background: rgba(0, 0, 0, 0.75);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    text-align: center;
+    max-width: 100%;
+    z-index: 25;
+}
+.mvp-name-text {
+    color: #fff; font-size: 11px; font-weight: bold; display: block;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.mvp-label {
+    display: block; font-size: 9px; color: var(--primary); margin-top: 2px;
+}
+
+/* --- بيانات المحافظة داخل العمود --- */
+.gov-info-block { text-align: center; color: #fff; position: relative; z-index: 5; }
+.gov-name-large { 
+    font-size: 15px; font-weight: 800; margin-bottom: 2px; 
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+.gov-score-large { 
+    font-size: 28px; font-weight: 900; line-height: 1; letter-spacing: -1px; 
+}
+.gov-sub-label { font-size: 9px; opacity: 0.8; font-weight: normal; }
+
+/* أيقونة خلفية باهتة */
+.gov-bg-icon {
+    position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+    font-size: 50px; opacity: 0.15; pointer-events: none; z-index: 1;
+}
+
+/* --- أزرار التحكم --- */
+.league-header {
+    background: linear-gradient(180deg, rgba(31, 41, 55, 0.8), transparent);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 16px; padding: 15px; text-align: center; margin-bottom: 20px;
+}
+.filter-controls {
+    display: flex; justify-content: center; gap: 8px; margin-bottom: 10px;
+}
+.f-btn {
+    padding: 8px 16px; border-radius: 20px; font-size: 11px; cursor: pointer; font-weight: bold;
+    background: rgba(255,255,255,0.03); color: #9ca3af; border: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+.f-btn.active {
+    background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: #10b981;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+/* --- القائمة السفلية --- */
+.gov-league-row {
+    background: #1f2937; padding: 12px; border-radius: 12px; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: space-between;
+    border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
+}
+
+
+
+/* ==================== Hero Modal Glass Effect ==================== */
+
+/* الكارت الزجاجي للحاوية */
+.hero-glass-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(12px); /* تأثير الزجاج */
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+}
+
+/* لمعة خفيفة على الزجاج */
+.hero-glass-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+}
+
+/* تصميم صف الجرية داخل الكارت */
+.hero-log-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: rgba(0, 0, 0, 0.2); /* خلفية داكنة لتباين النص */
+    padding: 10px 14px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: transform 0.2s;
+}
+.hero-log-row:hover {
+    background: rgba(0, 0, 0, 0.4);
+    transform: translateX(-3px);
+}
+
+/* سكرول بار شيك للقائمة */
+.hero-logs-scroll {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;
+    margin-top: 10px;
+}
+.hero-logs-scroll::-webkit-scrollbar { width: 4px; }
+.hero-logs-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+
+/* --- Force Horizontal Layout (No Stacking) --- */
+
+.social-grid {
+    display: flex !important;       /* استخدام Flexbox */
+    flex-wrap: nowrap !important;   /* يمنع العناصر من النزول لسطر جديد */
+    gap: 8px;                       /* مسافة صغيرة بين الكروت */
+    overflow-x: auto;               /* لو الشاشة صغيرة جداً يسمح بالسكرول بدل ما الشكل يبوظ */
+    width: 100%;
+}
+
+.social-card {
+    flex: 1;                        /* توزيع المساحة بالتساوي على الكروت */
+    min-width: 0;                   /* يسمح للكارت يصغر عشان يكفي الشاشة */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 10px 5px;              /* تقليل الحواشي الجانبية */
+    white-space: nowrap;            /* يمنع النص من الانقسام لسطرين */
+}
+
+/* تحسينات خاصة للموبايل فقط */
+@media (max-width: 480px) {
+    .soc-text {
+        overflow: hidden;
+        text-overflow: ellipsis;    /* لو النص طويل اوي يحط نقط ... */
+    }
+    
+    .soc-title {
+        font-size: 11px !important; /* تصغير الخط قليلاً */
+    }
+    
+    .soc-ico i {
+        font-size: 18px !important; /* تصغير الايقونة قليلاً */
+    }
+    
+    /* لو عندك كروت الموسيقى بتستخدم نفس الكلاس ده هيظبطها، لو كلاس مختلف ضيفه هنا */
+}
