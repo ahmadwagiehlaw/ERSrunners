@@ -3356,6 +3356,7 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
   color:#fff;
   display:flex; align-items:center; justify-content:center;
 }
+
 .plan-tools-grid{ display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
 .tool-card{
   display:flex; align-items:center; gap:10px;
@@ -4607,3 +4608,144 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
   .bottom-nav{ background: rgba(17,24,39,0.92); }
 }
 /* ==================== End Bottom Nav ==================== */
+
+
+/* ==================== Coach Sticky Tabs – Glass (Premium Minimal) ==================== */
+.coach-tabs-nav{
+  position: sticky;
+  /* يخليها تقف تحت الهيدر الزجاجي بدل ما تتخبي وراه */
+  top: calc(78px + env(safe-area-inset-top));
+  z-index: 120;
+
+  display:flex;
+  gap: 8px;
+
+  padding: 6px;
+  margin-bottom: 12px;
+
+  border-radius: 18px;
+  background: rgba(17,24,39,0.50);
+  border: 1px solid rgba(255,255,255,0.10);
+
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+
+  box-shadow:
+    0 10px 26px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+
+  overflow: hidden;
+}
+
+/* subtle highlight line */
+.coach-tabs-nav::before{
+  content:"";
+  position:absolute;
+  left: 12px;
+  right: 12px;
+  top: 7px;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent,
+    rgba(255,255,255,0.18),
+    transparent
+  );
+  opacity: 0.70;
+  pointer-events:none;
+}
+
+.coach-tab-btn{
+  flex: 1;
+  min-width: 0;
+  position: relative;
+
+  border: 1px solid transparent;
+  background: transparent;
+
+  color: rgba(229,231,235,0.78);
+  padding: 10px 10px;
+  border-radius: 14px;
+
+  font-size: 12px;
+  font-weight: 600; /* ✅ أخف (مش بولد تقيل) */
+  letter-spacing: 0.1px;
+
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .16s ease;
+}
+
+.coach-tab-btn:hover{
+  background: rgba(255,255,255,0.05);
+}
+
+.coach-tab-btn:active{
+  transform: scale(0.98);
+}
+
+/* Active: glass capsule + very subtle glow */
+.coach-tab-btn.active{
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.14);
+  color: rgba(255,255,255,0.95);
+
+  box-shadow:
+    0 8px 18px rgba(0,0,0,0.26),
+    0 0 14px rgba(16,185,129,0.12);
+}
+
+/* subtle shimmer over active tab */
+.coach-tab-btn.active::before{
+  content:"";
+  position:absolute;
+  top: 6px;
+  bottom: 6px;
+  left: -35%;
+  width: 32%;
+  border-radius: 12px;
+
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.00),
+    rgba(255,255,255,0.20),
+    rgba(255,255,255,0.00)
+  );
+
+  opacity: 0.55;
+  transform: skewX(-18deg);
+  animation: coachTabShimmer 3.8s ease-in-out infinite;
+  pointer-events:none;
+}
+
+/* tiny accent line (matches app primary) */
+.coach-tab-btn.active::after{
+  content:"";
+  position:absolute;
+  left: 22%;
+  right: 22%;
+  bottom: 7px;
+  height: 2px;
+  border-radius: 999px;
+
+  background: linear-gradient(90deg,
+    transparent,
+    var(--primary),
+    transparent
+  );
+  opacity: 0.55;
+  pointer-events:none;
+}
+
+@keyframes coachTabShimmer{
+  0%   { left: -35%; opacity: 0.0; }
+  18%  { opacity: 0.45; }
+  55%  { left: 110%; opacity: 0.18; }
+  100% { left: 110%; opacity: 0.0; }
+}
+
+.coach-tab-btn:focus-visible{
+  outline: none;
+  border-color: rgba(255,255,255,0.22);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.16);
+}
+/* ==================== End Coach Tabs ==================== */
