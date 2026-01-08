@@ -2018,13 +2018,13 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
         padding-right: 12px;
         padding-top: calc(10px + env(safe-area-inset-top));
         padding-bottom: 10px;
-        /* حل مشكلة الآيفون (Safe Area) */
+/* حل مشكلة الآيفون (Safe Area) */
     padding-top: env(safe-area-inset-top); 
     height: calc(80px + env(safe-area-inset-top));
     
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 5000;
 }
     }
 
@@ -5847,4 +5847,54 @@ body {
     align-items: center;
     gap: 3px;
     color: #fff;
+}
+
+
+/* تصميم زر رادار السرعة المطور */
+.coach-speed-btn {
+    width: 44px; /* تكبير الحجم */
+    height: 44px; /* تكبير الحجم */
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+/* إضافة تأثير النبض الكريستالي */
+.coach-speed-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    animation: radar-pulse 2s infinite;
+}
+
+/* حركة النبض */
+@keyframes radar-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(1.6);
+        opacity: 0;
+    }
+}
+
+/* تأثير عند الضغط */
+.coach-speed-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.coach-speed-btn i {
+    font-size: 22px; /* تكبير حجم الأيقونة */
 }
