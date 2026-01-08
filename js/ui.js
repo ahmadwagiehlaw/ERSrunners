@@ -1470,3 +1470,23 @@ async function submitRun() {
     }
 }
 
+// مثال (Pseudo-code) يضاف بعد حفظ الجرية بنجاح
+function checkNewBadges(user) {
+    let newBadges = [];
+    
+    // فحص المسافة الإجمالية
+    if (user.totalDist >= 100 && !user.badges.includes('dist_100k')) {
+        newBadges.push('dist_100k');
+    }
+    
+    // فحص السرعة
+    if (currentRunPace < 5.0 && !user.badges.includes('speed_rocket')) {
+        newBadges.push('speed_rocket');
+    }
+
+    if (newBadges.length > 0) {
+        // تحديث الداتابيز وإظهار احتفال
+        updateUserBadges(user.uid, newBadges);
+        showToast(`مبروك! حصلت على ${newBadges.length} وسام جديد 🏅`, "success");
+    }
+}

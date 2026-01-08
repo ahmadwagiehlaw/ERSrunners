@@ -223,21 +223,50 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
     display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px);
 }
 
+/* ==================== PREMIUM GLASS MODAL ==================== */
 .modal-box {
-    background: var(--bg-card);
+    /* 1. الخلفية الزجاجية الداكنة */
+    background: linear-gradient(145deg, rgba(20, 25, 35, 0.9), rgba(10, 15, 25, 0.95));
+    backdrop-filter: blur(20px);         /* التمويه الزجاجي */
+    -webkit-backdrop-filter: blur(20px); /* لدعم الآيفون */
+
+    /* 2. الأبعاد والتموضع (نفس منطقك القديم للموبايل) */
     width: 90%;
     max-width: 400px;
+    max-height: 85vh;       
+    overflow-y: auto;       
+    display: flex;          
+    flex-direction: column; 
+    position: relative;     
+
+    /* 3. الحدود والظلال (سر الفخامة) */
     padding: 25px;
-    border-radius: 20px;
-    border: 1px solid var(--border);
+    border-radius: 24px; /* زوايا أنعم */
+    border: 1px solid rgba(255, 255, 255, 0.08); /* حدود خفيفة */
+    border-top: 1px solid rgba(255, 255, 255, 0.15); /* لمعة من فوق */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); /* ظل عميق يرفع المودال */
     
-    /* 🔥 التعديلات الجديدة لحل مشكلة الموبايل 🔥 */
-    max-height: 85vh;       /* أقصى ارتفاع 85% من الشاشة */
-    overflow-y: auto;       /* تفعيل السكرول لو المحتوى طويل */
-    display: flex;          /* ترتيب العناصر */
-    flex-direction: column; /* فوق بعض */
-    position: relative;     /* لضمان ثبات التموضع */
+    /* 4. تحسين النص */
+    color: #fff;
 }
+
+/* 🔥 إضافة: تحسين شكل السكرول بار داخل المودال عشان يليق مع الزجاج */
+.modal-box::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-box::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    margin: 10px 0;
+    border-radius: 10px;
+}
+.modal-box::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+.modal-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
 /* Utilities */
 .error-msg { color: #ef4444; font-size: 12px; margin-top: 10px; text-align: center; }
 
@@ -5012,4 +5041,38 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
 @keyframes popUpBounce {
     from { opacity: 0; transform: scale(0.8); }
     to { opacity: 1; transform: scale(1); }
+}
+
+
+/* ==================== زر الإغلاق (X) في المكان الصح ==================== */
+
+/* تأكد إنك ضايف كلاس اسمه close-btn للعنصر اللي فيه علامة الاكس */
+.close-btn {
+    position: absolute; /* عشان يتحرر من النص ويتحرك براحته */
+    top: 20px;          /* مسافة من فوق */
+    left: 20px;         /* 🔥 هنا السر: يجبره يروح أقصى اليسار */
+    right: auto;        /* يلغي أي إعدادات قديمة لليمين */
+    
+    /* تجميل الزرار (دائري زجاجي) */
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 20px;
+    color: #9ca3af;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+    z-index: 100; /* عشان يبقى فوق أي محتوى */
+}
+
+/* تأثير عند اللمس/الماوس */
+.close-btn:hover {
+    background: rgba(239, 68, 68, 0.2); /* خلفية حمراء خفيفة */
+    color: #ef4444; /* الاكس يحمر */
+    transform: rotate(90deg); /* حركة دوران شيك */
+    border-color: rgba(239, 68, 68, 0.3);
 }

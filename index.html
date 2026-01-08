@@ -20,12 +20,10 @@
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
     
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <link rel="stylesheet" href="style.css">
-    <!-- Optional theme (disabled by default) -->
     <link rel="stylesheet" href="electric-blue.css" id="electric-blue-theme" disabled>
 </head>
 <body>
@@ -63,16 +61,16 @@
                 <div class="header-right">
                     <img src="ers-logo.png" class="brand-logo" alt="Logo"> 
                     <div class="user-greeting-box">
-    <div style="display:flex; align-items:center; gap:5px;">
-        <span class="hello-text">أهلاً يا كابتن 👋</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:8px;">
-        <h3 id="headerName" class="header-name" onclick="switchView('profile')" role="button" tabindex="0" style="margin:0;">...</h3>
-        <div id="streak-badge" class="streak-badge" style="display:none;">
-            <i class="ri-fire-fill"></i> <span id="streak-count">0</span>
-        </div>
-    </div>
-</div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <span class="hello-text">أهلاً يا كابتن 👋</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <h3 id="headerName" class="header-name" onclick="switchView('profile')" role="button" tabindex="0" style="margin:0;">...</h3>
+                            <div id="streak-badge" class="streak-badge" style="display:none;">
+                                <i class="ri-fire-fill"></i> <span id="streak-count">0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="header-actions">
                     <div class="icon-badge add-btn" onclick="openNewRun()"><i class="ri-add-line"></i></div>
@@ -92,205 +90,169 @@
         <main class="main-container">
             
             <section id="view-home" class="view active">
-
-  <!-- V4 Coach Hero (compact + always visible) -->
-  <div class="coach-hero-v4">
-    <div class="coach-hero-top">
-      <div class="coach-hero-left">
-
-        <div class="coach-avatar-v4">
-    <img src="coach.png" alt="Coach" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-        <div class="coach-hero-text">
-          <div id="coach-greeting" class="coach-greeting">أهلاً يا كابتن 👋</div>
-          <div class="coach-hero-sub">خلي قرارك واضح… والباقي علينا.</div>
-        </div>
-      </div>
-
-      <div class="coach-hero-actions">
-        <button class="hero-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش"><i class="ri-settings-3-line"></i></button>
-        <button class="hero-icon-btn" onclick="openExternal('https://www.skimble.com/workouts/created')" title="Workout Trainers (Skimble)"><i class="ri-external-link-line"></i></button>
-      </div>
-    </div>
-
-    <div class="coach-hero-stats">
-      <div class="hero-stat">
-        <span id="hero-week-dist">0.0</span><small>كم / 7 أيام</small>
-      </div>
-      <div class="hero-stat">
-        <span id="hero-month-dist">0.0</span><small>كم / شهر</small>
-      </div>
-      <div class="hero-stat">
-        <span id="hero-streak">0</span><small>ستريك</small>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sticky Tabs -->
-  <div id="coach-tabs-nav" class="coach-tabs-nav">
-    <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
-    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
-    <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
-  </div>
-
-  
-  <!-- Tabs Content -->
-  <div id="coach-home-tab-today" class="coach-home-tab active">
-     
-<div class="coach-card">
-       <div class="tip-icon" style="width: 50px; height: 50px; flex-shrink: 0; overflow: hidden; padding: 0; border: 2px solid var(--primary); border-radius: 50%; background-color: #fff;">
-          <img src="coach.png" alt="Coach" style="width: 100%; height: 100%; object-fit: cover; object-position: top center;">
-       </div>
-       <div class="coach-content">
-         <div class="coach-topline">
-           <span class="coach-label">قرار اليوم</span>
-           <div class="coach-top-actions">
-             <span id="coach-mode-pill" class="coach-mode-pill">...</span>
-             <button id="coach-speed-btn" class="coach-speed-btn" onclick="openSpeedRadar()" title="رادار السرعة"><i class="ri-speed-up-line"></i></button>
-           </div>
-         </div>
-         <div id="coach-command-title" class="coach-command-title">جاري التحميل...</div>
-         <div id="coach-command-sub" class="coach-command-sub">...</div>
-         <div id="coach-message" class="coach-message">...</div>
-       </div>
-    </div>
-
-    <div id="plan-hero" class="plan-hero" style="margin-bottom: 20px;"></div>
-
-    <div id="team-workout-container"></div>
-
-    <div id="weekly-challenge-section" class="weekly-challenge-card glass-panel" style="margin-top: 20px;"></div>
-
-  </div>
-
-<div id="coach-home-tab-plan" class="coach-home-tab">
-    
-    <div id="team-workout" class="team-workout-card" style="margin-top: 0; margin-bottom: 20px;">
-        <div class="section-title-row">
-            <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
-            <span class="link-text" onclick="switchView('team')">تفاصيل</span>
-        </div>
-        <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
-        <div id="team-workout-body" class="team-workout-body"></div>
-    </div>
-
-    <div class="plan-tools-grid">
-      <div class="tool-card" onclick="openCoachPreferences()">
-        <div class="tool-ico"><i class="ri-sliders-4-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">تفضيلات الكوتش</div>
-          <div class="tool-sub">اضبط أهدافك وإخفاء/إظهار أجزاء الصفحة</div>
-        </div>
-        <i class="ri-arrow-left-s-line"></i>
-      </div>
-
-      <div class="tool-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
-        <div class="tool-ico"><i class="ri-links-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">Workout Trainers</div>
-          <div class="tool-sub">تمارين إضافية من كوتش وجيه (Skimble)</div>
-        </div>
-        <i class="ri-external-link-line"></i>
-      </div>
-
-      <div class="tool-card" onclick="openBasicLibrary()">
-        <div class="tool-ico"><i class="ri-book-3-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">المكتبة الأساسية</div>
-          <div class="tool-sub">مرجع سريع للتمارين والمفاهيم</div>
-        </div>
-        <i class="ri-arrow-left-s-line"></i>
-      </div>
-    </div>
-
-    <div id="basic-library-section" class="basic-lib-card">
-      <div class="section-title-row">
-        <h4>المكتبة الأساسية 📚</h4>
-        <span class="link-text" onclick="openBasicLibrary()">افتح</span>
-      </div>
-      <div class="mini-note">المكتبة دي مرجع… مش قرار. قرارات اليوم في تبويب "يومك" 👆</div>
-    </div>
-</div>
-
-<div id="coach-home-tab-community" class="coach-home-tab">
-    
-
-
-    <div class="glass-panel">
-        <div class="section-title-row" style="margin-top:0;">
-            <h4>لوحة الشرف الأسبوعية 🏆</h4>
-            </div>
-        
-        <div class="weekly-awards-grid">
-            <button class="weekly-award-card wa-distance" onclick="openWeeklyAwards('distance')">
-                <div class="wa-icon">🦁</div>
-                <div class="wa-content">
-                    <div class="wa-title">الأطول نفسًا</div>
-                    <div class="wa-sub">أكثر مسافة</div>
+                <div class="coach-hero-v4">
+                    <div class="coach-hero-top">
+                        <div class="coach-hero-left">
+                            <div class="coach-avatar-v4">
+                                <img src="coach.png" alt="Coach" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                            <div class="coach-hero-text">
+                                <div id="coach-greeting" class="coach-greeting">أهلاً يا كابتن 👋</div>
+                                <div class="coach-hero-sub">خلي قرارك واضح… والباقي علينا.</div>
+                            </div>
+                        </div>
+                        <div class="coach-hero-actions">
+                            <button class="hero-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش"><i class="ri-settings-3-line"></i></button>
+                            <button class="hero-icon-btn" onclick="openExternal('https://www.skimble.com/workouts/created')" title="Workout Trainers (Skimble)"><i class="ri-external-link-line"></i></button>
+                        </div>
+                    </div>
+                    <div class="coach-hero-stats">
+                        <div class="hero-stat">
+                            <span id="hero-week-dist">0.0</span><small>كم / 7 أيام</small>
+                        </div>
+                        <div class="hero-stat">
+                            <span id="hero-month-dist">0.0</span><small>كم / شهر</small>
+                        </div>
+                        <div class="hero-stat">
+                            <span id="hero-streak">0</span><small>ستريك</small>
+                        </div>
+                    </div>
                 </div>
-            </button>
-            <button class="weekly-award-card wa-speed" onclick="openWeeklyAwards('speed')">
-                <div class="wa-icon">🚀</div>
-                <div class="wa-content">
-                    <div class="wa-title">الأسرع عدواً</div>
-                    <div class="wa-sub">أفضل بيس</div>
+
+                <div id="coach-tabs-nav" class="coach-tabs-nav">
+                    <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
+                    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
+                    <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
                 </div>
-                
-            </button>
-            <button class="weekly-award-card wa-consistency" onclick="openWeeklyAwards('consistency')">
-                <div class="wa-icon">🔥</div>
-                <div class="wa-content">
-                    <div class="wa-title">الأكثر التزامًا</div>
-                    <div class="wa-sub">5 أيام تمرين</div>
+
+                <div id="coach-home-tab-today" class="coach-home-tab active">
+                    <div class="coach-card">
+                        <div class="tip-icon" style="width: 50px; height: 50px; flex-shrink: 0; overflow: hidden; padding: 0; border: 2px solid var(--primary); border-radius: 50%; background-color: #fff;">
+                            <img src="coach.png" alt="Coach" style="width: 100%; height: 100%; object-fit: cover; object-position: top center;">
+                        </div>
+                        <div class="coach-content">
+                            <div class="coach-topline">
+                                <span class="coach-label">قرار اليوم</span>
+                                <div class="coach-top-actions">
+                                    <span id="coach-mode-pill" class="coach-mode-pill">...</span>
+                                    <button id="coach-speed-btn" class="coach-speed-btn" onclick="openSpeedRadar()" title="رادار السرعة"><i class="ri-speed-up-line"></i></button>
+                                </div>
+                            </div>
+                            <div id="coach-command-title" class="coach-command-title">جاري التحميل...</div>
+                            <div id="coach-command-sub" class="coach-command-sub">...</div>
+                            <div id="coach-message" class="coach-message">...</div>
+                        </div>
+                    </div>
+                    <div id="plan-hero" class="plan-hero" style="margin-bottom: 20px;"></div>
+                    <div id="team-workout-container"></div>
+                    <div id="weekly-challenge-section" class="weekly-challenge-card glass-panel" style="margin-top: 20px;"></div>
                 </div>
-             </button>
-        </div>
-    </div>
 
+                <div id="coach-home-tab-plan" class="coach-home-tab">
+                    <div id="team-workout" class="team-workout-card" style="margin-top: 0; margin-bottom: 20px;">
+                        <div class="section-title-row">
+                            <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
+                            <span class="link-text" onclick="switchView('team')">تفاصيل</span>
+                        </div>
+                        <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
+                        <div id="team-workout-body" class="team-workout-body"></div>
+                    </div>
+                    <div class="plan-tools-grid">
+                        <div class="tool-card" onclick="openCoachPreferences()">
+                            <div class="tool-ico"><i class="ri-sliders-4-line"></i></div>
+                            <div class="tool-meta">
+                                <div class="modal-box">تفضيلات الكوتش</div>
+                                <div class="tool-sub">اضبط أهدافك</div>
+                            </div>
+                            <i class="ri-arrow-left-s-line"></i>
+                        </div>
+                        <div class="tool-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
+                            <div class="tool-ico"><i class="ri-links-line"></i></div>
+                            <div class="tool-meta">
+                                <div class="tool-title">Workout Trainers</div>
+                                <div class="tool-sub">تمارين إضافية (Skimble)</div>
+                            </div>
+                            <i class="ri-external-link-line"></i>
+                        </div>
+                        <div class="tool-card" onclick="openBasicLibrary()">
+                            <div class="tool-ico"><i class="ri-book-3-line"></i></div>
+                            <div class="tool-meta">
+                                <div class="tool-title">المكتبة الأساسية</div>
+                                <div class="tool-sub">مرجع سريع للتمارين</div>
+                            </div>
+                            <i class="ri-arrow-left-s-line"></i>
+                        </div>
+                    </div>
+                    <div id="basic-library-section" class="basic-lib-card">
+                        <div class="section-title-row">
+                            <h4>المكتبة الأساسية 📚</h4>
+                            <span class="link-text" onclick="openBasicLibrary()">افتح</span>
+                        </div>
+                        <div class="mini-note">المكتبة دي مرجع… مش قرار. قرارات اليوم في تبويب "يومك" 👆</div>
+                    </div>
+                </div>
 
-    <div class="glass-panel">
-        <div class="section-title-row" style="margin-top:0;">
-            <h4>الترتيب العام (Hall of Fame)</h4>
-            <span class="link-text" onclick="switchView('challenges')">الكامل</span>
-        </div>
-        <div id="hall-of-fame-list" class="hof-grid">
-            <div class="empty-state-mini">جاري التحميل...</div>
-        </div>
-    </div>
+                <div id="coach-home-tab-community" class="coach-home-tab">
+                    <div class="glass-panel">
+                        <div class="section-title-row" style="margin-top:0;">
+                            <h4>لوحة الشرف الأسبوعية 🏆</h4>
+                        </div>
+                        <div class="weekly-awards-grid">
+                            <button class="weekly-award-card wa-distance" onclick="openWeeklyAwards('distance')">
+                                <div class="wa-icon">🦁</div>
+                                <div class="wa-content">
+                                    <div class="wa-title">الأطول نفسًا</div>
+                                    <div class="wa-sub">أكثر مسافة</div>
+                                </div>
+                            </button>
+                            <button class="weekly-award-card wa-speed" onclick="openWeeklyAwards('speed')">
+                                <div class="wa-icon">🚀</div>
+                                <div class="wa-content">
+                                    <div class="wa-title">الأسرع عدواً</div>
+                                    <div class="wa-sub">أفضل بيس</div>
+                                </div>
+                            </button>
+                            <button class="weekly-award-card wa-consistency" onclick="openWeeklyAwards('consistency')">
+                                <div class="wa-icon">🔥</div>
+                                <div class="wa-content">
+                                    <div class="wa-title">الأكثر التزامًا</div>
+                                    <div class="wa-sub">5 أيام تمرين</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
 
+                  
 
-    <div class="glass-panel" style="border-color: rgba(59, 130, 246, 0.3);"> <div class="section-title-row" style="margin-top:0;">
-            <h4>تحدياتي النشطة 🔥</h4>
-            <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
-        </div>
-        <div id="my-active-challenges" class="mini-challenges-scroll">
-            <div class="empty-state-mini">لا توجد تحديات حالياً</div>
-        </div>
-    </div>
-
-</div></section>
+                    <div class="glass-panel" style="border-color: rgba(59, 130, 246, 0.3);"> 
+                        <div class="section-title-row" style="margin-top:0;">
+                            <h4>تحدياتي النشطة 🔥</h4>
+                            <span class="link-text" onclick="switchView('challenges')">عرض الكل</span>
+                        </div>
+                        <div id="my-active-challenges" class="mini-challenges-scroll">
+                            <div class="empty-state-mini">لا توجد تحديات حالياً</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
 
             <section id="view-challenges" class="view">
-                    <div class="tabs-nav">
+                <div class="tabs-nav">
                     <div class="tab-item active" onclick="setTab('active-challenges')">التحديات والمهام</div>
                     <div class="tab-item" onclick="setTab('leaderboard')">لوحة الشرف</div>
-<div class="tab-item" onclick="setTab('squads'); loadRegionBattle('current')">دوري المحافظات</div>
+                    <div class="tab-item" onclick="setTab('squads'); loadRegionBattle('current')">دوري المحافظات</div>
                 </div>
 
-
-
                 <div id="tab-active-challenges" class="tab-content active">
-    
-    <div class="filter-scroll-container">
-        <button class="filter-pill active" onclick="setChallengeFilter('all', this)">الكل</button>
-        <button class="filter-pill" onclick="setChallengeFilter('joined', this)">مشارك✅</button>
-        <button class="filter-pill" onclick="setChallengeFilter('new', this)">جديدة 🆕</button>
-        <button class="filter-pill" onclick="setChallengeFilter('completed', this)">مكتملة 🏆</button>
-    </div>
-
-    <div id="challenges-list" class="challenges-grid"></div>
- </div>
+                    <div class="filter-scroll-container">
+                        <button class="filter-pill active" onclick="setChallengeFilter('all', this)">الكل</button>
+                        <button class="filter-pill" onclick="setChallengeFilter('joined', this)">مشارك✅</button>
+                        <button class="filter-pill" onclick="setChallengeFilter('new', this)">جديدة 🆕</button>
+                        <button class="filter-pill" onclick="setChallengeFilter('completed', this)">مكتملة 🏆</button>
+                    </div>
+                    <div id="challenges-list" class="challenges-grid"></div>
+                </div>
 
                 <div id="tab-leaderboard" class="tab-content">
                     <div class="team-goal-card">
@@ -304,14 +266,12 @@
                             <span>الهدف: 1000 كم</span>
                         </div>
                     </div>
-
                     <div class="podium-section">
                         <div class="podium-title">أبطال الشهر 👑</div>
                         <div id="podium-container" class="podium-container">
                             <div style="color:#6b7280; font-size:12px;">جاري تحميل الأبطال...</div>
                         </div>
                     </div>
-
                     <div class="leaderboard-controls">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <h4><i class="ri-list-check" style="color:var(--primary);"></i> القائمة الكاملة</h4>
@@ -334,9 +294,7 @@
                 </div>
             </section>
 
-
-
-        <section id="view-admin" class="view">
+            <section id="view-admin" class="view">
                 <div class="section-title-row">
                     <h4 style="display:flex; align-items:center; gap:5px;">
                         <i class="ri-command-fill" style="color:var(--primary);"></i> مركز القيادة
@@ -350,12 +308,10 @@
                     <div class="admin-tab" data-tab="studio" onclick="switchAdminTab('studio')">التحديات</div>
                     <div class="admin-tab" data-tab="coach" onclick="switchAdminTab('coach')">الكوتش</div>
                     <div class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">الأعضاء</div>
-</div>
+                </div>
 
                 <div id="admin-overview" class="admin-content-section active">
-                    
-                        
-                        <div class="stats-grid-4">
+                    <div class="stats-grid-4">
                         <div class="stat-card-mini">
                             <span class="stat-val-big" id="adm-live-now">0</span>
                             <span class="stat-lbl-mini"><span class="pulse-dot"></span> متواجدون الآن</span>
@@ -364,7 +320,7 @@
                             <span class="stat-val-big" id="adm-visitors-today">0</span>
                             <span class="stat-lbl-mini">زوار اليوم</span>
                         </div>
-                         <div class="stat-card-mini">
+                        <div class="stat-card-mini">
                             <span class="stat-val-big" id="adm-runs-today">0</span>
                             <span class="stat-lbl-mini">جريات اليوم</span>
                         </div>
@@ -375,7 +331,6 @@
                     </div>
 
                     <div class="live-dashboard-grid">
-                        
                         <div class="admin-panel-box">
                             <div class="panel-header">
                                 <h5><i class="ri-wifi-line" style="color:#10b981;"></i> نشطون الآن (آخر 15 دقيقة)</h5>
@@ -384,7 +339,6 @@
                                 <div class="loader-placeholder">جاري المسح...</div>
                             </div>
                         </div>
-
                         <div class="admin-panel-box">
                             <div class="panel-header">
                                 <h5><i class="ri-run-line" style="color:var(--accent);"></i> أحدث الجريات المضافة</h5>
@@ -393,7 +347,6 @@
                                 <div class="loader-placeholder">جاري الجلب...</div>
                             </div>
                         </div>
-
                     </div>
 
                     <div class="admin-card compact-alert" style="border-color:#ef4444; margin-top:15px;">
@@ -420,7 +373,6 @@
                         <h3 style="margin:0; color:#fff;">محرك التحديات V4 ⚙️</h3>
                         <p style="font-size:10px; color:#9ca3af; margin:5px 0 0 0;">صمم منافسات ذكية وممتعة</p>
                     </div>
-
                     <div class="form-group" style="gap:10px;">
                         <label class="input-lbl">نوع التحدي</label>
                         <select id="adv-ch-type" onchange="updateChallengeUI()" class="full-select">
@@ -428,9 +380,7 @@
                             <option value="frequency">🗓️ التزام (عدد مرات الجري)</option>
                             <option value="speed">⚡ سرعة قصوى (بيس محدد)</option>
                         </select>
-
                         <input type="text" id="adv-ch-title" placeholder="عنوان التحدي (مثال: تحدي رمضان 🌙)">
-                        
                         <div class="input-row">
                             <div class="input-wrap">
                                 <label id="lbl-target">الهدف (كم)</label>
@@ -441,12 +391,10 @@
                                 <input type="number" id="adv-ch-days" placeholder="30">
                             </div>
                         </div>
-
                         <div class="input-wrap">
                             <label>تاريخ البدء</label>
                             <input type="date" id="adv-ch-start">
                         </div>
-
                         <div class="advanced-rules-box">
                             <div class="rules-title" onclick="toggleRules()">
                                 <i class="ri-settings-5-line"></i> شروط خاصة (اختياري) ▼
@@ -456,212 +404,137 @@
                                     <label>أقل مسافة للجرية الواحدة (كم)</label>
                                     <input type="number" id="rule-min-dist" placeholder="مثال: 3 كم">
                                 </div>
-                                
-                                <label style="margin-top:10px; display:block; color:#f59e0b; font-size:11px;">⏰ وقت محدد (مثلاً قبل الإفطار)</label>
+                                <label style="margin-top:10px; display:block; color:#f59e0b; font-size:11px;">⏰ وقت محدد</label>
                                 <div class="input-row">
                                     <div class="input-wrap"><input type="number" id="rule-time-start" placeholder="من (الساعة 0-23)"></div>
                                     <div class="input-wrap"><input type="number" id="rule-time-end" placeholder="إلى (الساعة 0-23)"></div>
                                 </div>
-
                                 <div style="margin-top:10px; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:10px; border-radius:8px;">
                                     <input type="checkbox" id="rule-require-img" style="width:auto;">
                                     <label for="rule-require-img" style="margin:0; color:#fff; cursor:pointer;">⛔ رفض الجرية بدون صورة إثبات</label>
                                 </div>
                             </div>
                         </div>
-                        
-<div style="display:flex; gap:10px; margin-top:15px; align-items:center;">
-    <button id="btn-create-challenge" class="btn btn-primary" onclick="createGeniusChallenge()" style="flex:1;">إطلاق التحدي 🚀</button>
-    
-    <button id="btn-cancel-edit" class="btn btn-text" onclick="cancelEditMode()" style="display:none; color:#ef4444; border:1px solid #ef4444; border-radius:8px; padding:10px;">
-        إلغاء ❌
-    </button>
-</div>                    </div>
-
+                        <div style="display:flex; gap:10px; margin-top:15px; align-items:center;">
+                            <button id="btn-create-challenge" class="btn btn-primary" onclick="createGeniusChallenge()" style="flex:1;">إطلاق التحدي 🚀</button>
+                            <button id="btn-cancel-edit" class="btn btn-text" onclick="cancelEditMode()" style="display:none; color:#ef4444; border:1px solid #ef4444; border-radius:8px; padding:10px;">إلغاء ❌</button>
+                        </div>
+                    </div>
                     <div style="margin-top:30px;">
                         <h4 style="color:#fff; font-size:14px; margin-bottom:10px;">التحديات النشطة حالياً</h4>
-                        <div id="admin-active-challenges-list">
-                            </div>
+                        <div id="admin-active-challenges-list"></div>
                     </div>
                 </div>
 
                 <div id="admin-coach" class="admin-content-section">
-    <div class="studio-header" style="margin-top:0; margin-bottom: 15px;">
-        <h3 style="margin:0; color:#fff;">لوحة الكوتش 🔥</h3>
-        <p style="font-size:10px; color:#9ca3af; margin:5px 0 0 0;">إدارة التمارين والجداول والتحديات</p>
-    </div>
+                    <div class="studio-header" style="margin-top:0; margin-bottom: 15px;">
+                        <h3 style="margin:0; color:#fff;">لوحة الكوتش 🔥</h3>
+                        <p style="font-size:10px; color:#9ca3af; margin:5px 0 0 0;">إدارة التمارين والجداول والتحديات</p>
+                    </div>
+                    <div class="coach-sub-nav">
+                        <button class="coach-sub-btn active" onclick="switchCoachSubTab('daily')"><i class="ri-calendar-check-line"></i> جرية اليوم</button>
+                        <button class="coach-sub-btn" onclick="switchCoachSubTab('schedule')"><i class="ri-calendar-2-line"></i> الجدول الأسبوعي</button>
+                        <button class="coach-sub-btn" onclick="switchCoachSubTab('challenge')"><i class="ri-flag-line"></i> تحدي الأسبوع</button>
+                        <button class="coach-sub-btn" onclick="switchCoachSubTab('library')"><i class="ri-book-mark-line"></i> المكتبة</button>
+                    </div>
+                    
+                    <div id="c-sub-daily" class="coach-sub-section active">
+                        <div class="admin-panel-box" style="padding: 20px;">
+                            <h4 style="margin-top:0; color:var(--primary);">نشر تمرين استثنائي لليوم (Override)</h4>
+                            <div class="input-row" style="margin-top:10px;">
+                                <div class="input-wrap" style="flex:1;"><label>التاريخ</label><input type="date" id="coach-ov-date"></div>
+                                <div class="input-wrap" style="flex:2;"><label>اختر تمرين</label><select id="coach-ov-workout" class="full-select"></select></div>
+                            </div>
+                            <div style="display:flex; gap:8px; margin-top:20px;">
+                                <button class="btn btn-primary" onclick="adminPublishDailyOverride()" style="flex:1;">نشر للكابتن ✅</button>
+                                <button class="btn btn-ghost" onclick="adminClearDailyOverride()" style="flex:1; border:1px solid rgba(255,255,255,0.1);">مسح التعيين 🗑️</button>
+                            </div>
+                            <div id="coach-ov-hint" style="margin-top:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; font-size:12px; color:#9ca3af; text-align:center;"></div>
+                        </div>
+                    </div>
 
-    <div class="coach-sub-nav">
-        <button class="coach-sub-btn active" onclick="switchCoachSubTab('daily')">
-            <i class="ri-calendar-check-line"></i> جرية اليوم
-        </button>
-        <button class="coach-sub-btn" onclick="switchCoachSubTab('schedule')">
-            <i class="ri-calendar-2-line"></i> الجدول الأسبوعي
-        </button>
-        <button class="coach-sub-btn" onclick="switchCoachSubTab('challenge')">
-            <i class="ri-flag-line"></i> تحدي الأسبوع
-        </button>
-        <button class="coach-sub-btn" onclick="switchCoachSubTab('library')">
-            <i class="ri-book-mark-line"></i> المكتبة
-        </button>
-    </div>
+                    <div id="c-sub-schedule" class="coach-sub-section">
+                        <div class="admin-panel-box" style="padding: 20px;">
+                            <h4 style="margin-top:0; color:#fff;">الجدول الأسبوعي الثابت</h4>
+                            <div class="coach-week-grid" style="margin-top:10px; gap: 15px;">
+                                <div class="coach-week-row"><span>السبت</span><select id="wk-sat" class="full-select"></select></div>
+                                <div class="coach-week-row"><span>الأحد</span><select id="wk-sun" class="full-select"></select></div>
+                                <div class="coach-week-row"><span>الإثنين</span><select id="wk-mon" class="full-select"></select></div>
+                                <div class="coach-week-row"><span>الثلاثاء</span><select id="wk-tue" class="full-select"></select></div>
+                                <div class="coach-week-row"><span>الأربعاء</span><select id="wk-wed" class="full-select"></select></div>
+                                <div class="coach-week-row"><span>الخميس</span><select id="wk-thu" class="full-select"></select></div>
+                                <div class="coach-week-row"><span>الجمعة</span><select id="wk-fri" class="full-select"></select></div>
+                            </div>
+                            <button class="btn btn-primary" onclick="adminSaveWeeklySchedule()" style="margin-top:20px;">حفظ الجدول بالكامل 💾</button>
+                            <div id="coach-week-hint" style="margin-top:10px; font-size:11px; color:#9ca3af; text-align:center;"></div>
+                        </div>
+                    </div>
 
-    <div id="c-sub-daily" class="coach-sub-section active">
-        <div class="admin-panel-box" style="padding: 20px;">
-            <h4 style="margin-top:0; color:var(--primary);">نشر تمرين استثنائي لليوم (Override)</h4>
-            <p style="font-size:11px; color:#9ca3af; margin-bottom:15px;">هذا التمرين سيظهر في الصفحة الرئيسية لليوم المحدد بدلاً من الجدول التلقائي.</p>
-            
-            <div class="input-row" style="margin-top:10px;">
-                <div class="input-wrap" style="flex:1;">
-                    <label>التاريخ</label>
-                    <input type="date" id="coach-ov-date">
+                    <div id="c-sub-challenge" class="coach-sub-section">
+                        <div class="admin-panel-box" style="padding: 20px;">
+                            <h4 style="margin-top:0; color:var(--accent);">تحدي الأسبوع</h4>
+                            <div class="input-row" style="margin-top:15px;">
+                                <div class="input-wrap" style="flex:1;"><label>إيموجي</label><input type="text" id="coach-ch-emoji" placeholder="🏁"></div>
+                                <div class="input-wrap" style="flex:3;"><label>العنوان</label><input type="text" id="coach-ch-title" placeholder="مثال: تحدي 3 أيام"></div>
+                            </div>
+                            <div class="input-wrap" style="margin-top:10px;">
+                                <label>الوصف</label>
+                                <textarea id="coach-ch-desc" rows="4" placeholder="اكتب التفاصيل..." style="width:100%; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px;"></textarea>
+                            </div>
+                            <div style="margin-top:15px; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:12px; border-radius:10px;">
+                                <input type="checkbox" id="coach-ch-require-img" style="width:auto;" checked>
+                                <label for="coach-ch-require-img" style="margin:0; color:#fff; cursor:pointer; font-size:13px;">📸 يتطلب صورة إثبات</label>
+                            </div>
+                            <button class="btn btn-primary" onclick="adminPublishWeeklyChallenge()" style="margin-top:20px;">نشر تحدي الأسبوع 🚀</button>
+                            <div id="coach-ch-hint" style="margin-top:10px; font-size:11px; color:#9ca3af; text-align:center;"></div>
+                            
+                            <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:20px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                                    <h4 style="margin:0; font-size:14px; color:#fff; display:flex; align-items:center; gap:6px;">
+                                        🏆 أبطال التحدي الحالي <span id="ch-count-badge" class="squad-total-badge" style="font-size:10px;">0</span>
+                                    </h4>
+                                    <button class="btn-text" onclick="loadWeeklyChStats()" style="font-size:11px;"><i class="ri-refresh-line"></i> تحديث</button>
+                                </div>
+                                <div id="ch-participants-list" style="max-height: 200px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
+                                    <div class="loader-placeholder">اضغط تحديث لتحميل القائمة...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="c-sub-library" class="coach-sub-section">
+                        <div class="admin-panel-box" style="padding: 20px;">
+                            <h4 style="margin-top:0; color:#fff;">إضافة تمرين جديد للمكتبة</h4>
+                            <div class="input-row" style="margin-top:15px;">
+                                <div class="input-wrap" style="flex:2;"><label>اسم التمرين</label><input type="text" id="cw-title" placeholder="Intervals Ladder"></div>
+                                <div class="input-wrap" style="flex:1;"><label>النوع</label>
+                                    <select id="cw-type" class="full-select">
+                                        <option value="recovery">Recovery</option><option value="hills">Hills</option><option value="intervals">Intervals</option><option value="fartlek">Fartlek</option><option value="tempo">Tempo</option><option value="long">Long</option><option value="strength">Strength/Cross</option><option value="mobility">Mobility/Yoga</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="input-row">
+                                <div class="input-wrap" style="flex:1;"><label>المدة/المسافة</label><input type="text" id="cw-load" placeholder="مثال: 45–60 دقيقة"></div>
+                                <div class="input-wrap" style="flex:1;"><label>الشدة (RPE)</label><input type="text" id="cw-rpe" placeholder="3–4"></div>
+                            </div>
+                            <div class="input-wrap"><label>الهيكل</label><textarea id="cw-structure" rows="4" placeholder="Warmup: ... Main: ..." style="width:100%; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px;"></textarea></div>
+                            <div class="input-wrap" style="margin-top:10px;"><label>تعليمات الكوتش</label><textarea id="cw-notes" rows="2" placeholder="اكتب لمسة الكوتش…" style="width:100%; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px;"></textarea></div>
+                            <div class="input-wrap" style="margin-top:10px;"><label>رابط فيديو يوتيوب (اختياري)</label><input type="url" id="cw-youtube" placeholder="https://youtu.be/."></div>
+                            <div class="input-row" style="margin-top:10px;">
+                                <div class="input-wrap" style="flex:1;"><label>Emoji</label><input type="text" id="cw-emoji" placeholder="مثال: 🏔️ أو 🔥"></div>
+                                <div class="input-wrap" style="flex:2;"><label>رابط صورة</label><input type="url" id="cw-image" placeholder="https://.../workout.jpg"></div>
+                            </div>
+                            <div class="input-wrap" style="margin-top:10px;"><label>رابط (ابدأ التدريب)</label><input type="url" id="cw-starturl" placeholder="https://... (Strava/Nike)"></div>
+                            <button class="btn btn-primary" onclick="adminCreateWorkout()" style="margin-top:15px;">إضافة التمرين للمكتبة ➕</button>
+                            <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:15px;">
+                                <h4 style="color:#fff; font-size:13px; margin-bottom:15px;">التمارين المسجلة في المكتبة</h4>
+                                <div id="coach-workouts-list" class="panel-list-scroll" style="max-height:300px;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="input-wrap" style="flex:2;">
-                    <label>اختر تمرين من المكتبة</label>
-                    <select id="coach-ov-workout" class="full-select"></select>
-                </div>
-            </div>
-            <div style="display:flex; gap:8px; margin-top:20px;">
-                <button class="btn btn-primary" onclick="adminPublishDailyOverride()" style="flex:1;">نشر للكابتن ✅</button>
-                <button class="btn btn-ghost" onclick="adminClearDailyOverride()" style="flex:1; border:1px solid rgba(255,255,255,0.1);">مسح التعيين 🗑️</button>
-            </div>
-            <div id="coach-ov-hint" style="margin-top:15px; padding:10px; background:rgba(255,255,255,0.05); border-radius:8px; font-size:12px; color:#9ca3af; text-align:center;"></div>
-        </div>
-    </div>
 
-    <div id="c-sub-schedule" class="coach-sub-section">
-        <div class="admin-panel-box" style="padding: 20px;">
-            <h4 style="margin-top:0; color:#fff;">الجدول الأسبوعي الثابت</h4>
-            <p style="font-size:11px; color:#9ca3af; margin-bottom:15px;">هذا الجدول يتكرر تلقائياً كل أسبوع ما لم يتم تحديد تمرين خاص لليوم.</p>
-
-            <div class="coach-week-grid" style="margin-top:10px; gap: 15px;">
-                <div class="coach-week-row"><span>السبت</span><select id="wk-sat" class="full-select"></select></div>
-                <div class="coach-week-row"><span>الأحد</span><select id="wk-sun" class="full-select"></select></div>
-                <div class="coach-week-row"><span>الإثنين</span><select id="wk-mon" class="full-select"></select></div>
-                <div class="coach-week-row"><span>الثلاثاء</span><select id="wk-tue" class="full-select"></select></div>
-                <div class="coach-week-row"><span>الأربعاء</span><select id="wk-wed" class="full-select"></select></div>
-                <div class="coach-week-row"><span>الخميس</span><select id="wk-thu" class="full-select"></select></div>
-                <div class="coach-week-row"><span>الجمعة</span><select id="wk-fri" class="full-select"></select></div>
-            </div>
-            <button class="btn btn-primary" onclick="adminSaveWeeklySchedule()" style="margin-top:20px;">حفظ الجدول بالكامل 💾</button>
-            <div id="coach-week-hint" style="margin-top:10px; font-size:11px; color:#9ca3af; text-align:center;"></div>
-        </div>
-    </div>
-
-    <div id="c-sub-challenge" class="coach-sub-section">
-    <div class="admin-panel-box" style="padding: 20px;">
-        <h4 style="margin-top:0; color:var(--accent);">تحدي الأسبوع (Weekly Challenge)</h4>
-        
-        <div class="input-row" style="margin-top:15px;">
-            <div class="input-wrap" style="flex:1;">
-                <label>إيموجي</label>
-                <input type="text" id="coach-ch-emoji" placeholder="🏁">
-            </div>
-            <div class="input-wrap" style="flex:3;">
-                <label>العنوان</label>
-                <input type="text" id="coach-ch-title" placeholder="مثال: تحدي 3 أيام متتالية">
-            </div>
-        </div>
-        <div class="input-wrap" style="margin-top:10px;">
-            <label>الوصف / تعليمات الكوتش</label>
-            <textarea id="coach-ch-desc" rows="4" placeholder="اكتب التفاصيل هنا..." style="width:100%; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px;"></textarea>
-        </div>
-        <div style="margin-top:15px; display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.05); padding:12px; border-radius:10px;">
-            <input type="checkbox" id="coach-ch-require-img" style="width:auto;" checked>
-            <label for="coach-ch-require-img" style="margin:0; color:#fff; cursor:pointer; font-size:13px;">📸 يتطلب صورة إثبات</label>
-        </div>
-        <button class="btn btn-primary" onclick="adminPublishWeeklyChallenge()" style="margin-top:20px;">نشر تحدي الأسبوع 🚀</button>
-        <div id="coach-ch-hint" style="margin-top:10px; font-size:11px; color:#9ca3af; text-align:center;"></div>
-
-        <div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:20px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                <h4 style="margin:0; font-size:14px; color:#fff; display:flex; align-items:center; gap:6px;">
-                    🏆 أبطال التحدي الحالي <span id="ch-count-badge" class="squad-total-badge" style="font-size:10px;">0</span>
-                </h4>
-                <button class="btn-text" onclick="loadWeeklyChStats()" style="font-size:11px;"><i class="ri-refresh-line"></i> تحديث</button>
-            </div>
-            
-            <div id="ch-participants-list" style="max-height: 200px; overflow-y: auto; display:flex; flex-direction:column; gap:8px;">
-                <div class="loader-placeholder">اضغط تحديث لتحميل القائمة...</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-    <div id="c-sub-library" class="coach-sub-section">
-        <div class="admin-panel-box" style="padding: 20px;">
-            <h4 style="margin-top:0; color:#fff;">إضافة تمرين جديد للمكتبة</h4>
-            
-            <div class="input-row" style="margin-top:15px;">
-                <div class="input-wrap" style="flex:2;">
-                    <label>اسم التمرين</label>
-                    <input type="text" id="cw-title" placeholder="Intervals Ladder">
-                </div>
-                <div class="input-wrap" style="flex:1;">
-                    <label>النوع</label>
-                    <select id="cw-type" class="full-select">
-                        <option value="recovery">Recovery</option>
-                        <option value="hills">Hills</option>
-                        <option value="intervals">Intervals</option>
-                        <option value="fartlek">Fartlek</option>
-                        <option value="tempo">Tempo</option>
-                        <option value="long">Long</option>
-                        <option value="strength">Strength/Cross</option>
-                        <option value="mobility">Mobility/Yoga</option>
-                    </select>
-                </div>
-            </div>
-            <div class="input-row">
-                <div class="input-wrap" style="flex:1;">
-                    <label>المدة/المسافة (نص)</label>
-                    <input type="text" id="cw-load" placeholder="مثال: 45–60 دقيقة">
-                </div>
-                <div class="input-wrap" style="flex:1;">
-                    <label>الشدة (RPE)</label>
-                    <input type="text" id="cw-rpe" placeholder="3–4">
-                </div>
-            </div>
-            <div class="input-wrap">
-                <label>الهيكل (Warmup / Main / Cooldown)</label>
-                <textarea id="cw-structure" rows="4" placeholder="Warmup: ...&#10;Main: ...&#10;Cooldown: ..." style="width:100%; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px;"></textarea>
-            </div>
-            <div class="input-wrap" style="margin-top:10px;">
-                <label>تعليمات الكوتش (Tone)</label>
-                <textarea id="cw-notes" rows="2" placeholder="اكتب لمسة الكوتش…" style="width:100%; background:rgba(0,0,0,0.2); border:1px solid var(--border); color:#fff; padding:10px; border-radius:8px;"></textarea>
-            </div>
-<div class="input-wrap" style="margin-top:10px;">
-  <label>رابط فيديو يوتيوب (اختياري)</label>
-  <input type="url" id="cw-youtube" placeholder="https://youtu.be/.">
-</div>
-
-<div class="input-row" style="margin-top:10px;">
-  <div class="input-wrap" style="flex:1;">
-    <label>Emoji (اختياري)</label>
-    <input type="text" id="cw-emoji" placeholder="مثال: 🏔️ أو 🔥">
-  </div>
-  <div class="input-wrap" style="flex:2;">
-    <label>رابط صورة للتمرين (اختياري)</label>
-    <input type="url" id="cw-image" placeholder="https://.../workout.jpg">
-  </div>
-</div>
-
-<div class="input-wrap" style="margin-top:10px;">
-  <label>رابط (ابدأ التدريب) - اختياري</label>
-  <input type="url" id="cw-starturl" placeholder="https://... (Strava/Nike/صفحة تدريب)">
-</div>
-
-<button class="btn btn-primary" onclick="adminCreateWorkout()" style="margin-top:15px;">إضافة التمرين للمكتبة ➕</button>
-
-<div style="margin-top:30px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:15px;">
-                <h4 style="color:#fff; font-size:13px; margin-bottom:15px;">التمارين المسجلة في المكتبة</h4>
-                <div id="coach-workouts-list" class="panel-list-scroll" style="max-height:300px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div id="admin-users" class="admin-content-section">
+                <div id="admin-users" class="admin-content-section">
                     <div style="display:flex; gap:5px; margin-bottom:10px;">
                         <input type="text" id="admin-user-search" placeholder="بحث بالاسم..." style="padding:10px; font-size:12px;" oninput="searchUsers(this.value)">
                     </div>
@@ -673,7 +546,6 @@
                     </div>
                 </div>
             </section>
-
 
             <section id="view-club" class="view">
                 <div class="club-hero">
@@ -688,10 +560,9 @@
                         <h4>ERS Podcast</h4>
                         <span class="club-card-hint">شغّل الحلقة من جوّا التطبيق</span>
                     </div>
-                    <iframe class="spotify-embed" style="border-radius:14px" src="https://open.spotify.com/embed/show/4cYIPTsFZa3cBIyHLTgcui" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
-
+                    <iframe class="spotify-embed" style="border-radius:14px" src="https://open.spotify.com/embed/show/6y8K4G3Xy5K3Q3Z3X3X3X3?utm_source=generator" width="100%" height="152" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
                     <div class="club-actions">
-                        <button class="btn btn-primary" onclick="openExternal('https://open.spotify.com/show/4cYIPTsFZa3cBIyHLTgcui?si=32e30d34dc1a41d7')">
+                        <button class="btn btn-primary" onclick="openExternal('https://open.spotify.com/show/6y8K4G3Xy5K3Q3Z3X3X3X3')">
                             <i class="ri-spotify-fill"></i> Spotify
                         </button>
                         <button class="btn btn-ghost" onclick="openExternal('https://podcasts.apple.com/us/podcast/running-cast-egypt/id1800972032')">
@@ -700,38 +571,25 @@
                     </div>
                 </div>
 
-                <p></p>
-                
-<div class="glass-panel">
-    <div class="section-title-row" style="margin-top:0;">
-        <h4>تواصل معنا 💬</h4>
-    </div>
-    
-    <div class="social-grid">
-        <div class="social-card fb-card" onclick="openExternal('https://www.facebook.com/egyrunnerssquad/')">
-            <div class="soc-ico"><i class="ri-facebook-circle-fill"></i></div>
-            <div class="soc-text">
-                <div class="soc-title">صفحة الفريق</div>
-            </div>
-        </div>
-
-        <div class="social-card fb-card" onclick="openExternal('https://www.facebook.com/groups/egyrunners')">
-            <div class="soc-ico"><i class="ri-group-fill"></i></div>
-            <div class="soc-text">
-                <div class="soc-title">جروب ERS</div>
-            </div>
-        </div>
-
-        <div class="social-card wa-card" onclick="window.open('https://chat.whatsapp.com/GboDztAPHR65OVFHSFTRkp', '_blank')">
-            <div class="soc-ico"><i class="ri-whatsapp-fill"></i></div>
-            <div class="soc-text">
-                <div class="soc-title">واتس آب</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-                
+                <div class="glass-panel">
+                    <div class="section-title-row" style="margin-top:0;">
+                        <h4>تواصل معنا 💬</h4>
+                    </div>
+                    <div class="social-grid">
+                        <div class="social-card fb-card" onclick="openExternal('https://www.facebook.com/egyrunnerssquad/')">
+                            <div class="soc-ico"><i class="ri-facebook-circle-fill"></i></div>
+                            <div class="soc-text"><div class="soc-title">صفحة الفريق</div></div>
+                        </div>
+                        <div class="social-card fb-card" onclick="openExternal('https://www.facebook.com/groups/egyrunners')">
+                            <div class="soc-ico"><i class="ri-group-fill"></i></div>
+                            <div class="soc-text"><div class="soc-title">جروب ERS</div></div>
+                        </div>
+                        <div class="social-card wa-card" onclick="window.open('https://chat.whatsapp.com/GboDztAPHR65OVFHSFTRkp', '_blank')">
+                            <div class="soc-ico"><i class="ri-whatsapp-fill"></i></div>
+                            <div class="soc-text"><div class="soc-title">واتس آب</div></div>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="section-title-row" style="margin-top:22px;">
                     <h4>أخبار الفريق ⚡</h4>
@@ -739,9 +597,6 @@
                 <div id="global-feed-list" class="feed-list-compact">
                     <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
                 </div>
-
-
-
             </section>
 
             <section id="view-profile" class="view">
@@ -751,18 +606,15 @@
                             <div class="pro-avatar" id="userMainAvatar">🏃</div>
                             <div class="edit-badge"><i class="ri-camera-line"></i></div>
                         </div>
-                        
                         <div class="pro-info-box">
-<div class="pro-name-row">
-    <h2 id="profileName">...</h2>
-    <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
-    
-    <button onclick="openEditProfile()" class="btn-edit-profile-fancy">
-        <i class="ri-user-settings-line"></i>
-        <span>تعديل بياناتك</span>
-    </button>
-</div>                         
-                            
+                            <div class="pro-name-row">
+                                <h2 id="profileName">...</h2>
+                                <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
+                                <button onclick="openEditProfile()" class="btn-edit-profile-fancy">
+                                    <i class="ri-user-settings-line"></i>
+                                    <span>تعديل بياناتك</span>
+                                </button>
+                            </div>
                             <div class="pro-meta-row">
                                 <span id="profileRegion"><i class="ri-map-pin-line"></i> ...</span>
                                 <span class="dot-sep">•</span>
@@ -773,7 +625,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="pro-stats-strip">
                         <div class="p-strip-item">
                             <span class="p-strip-val" id="profileTotalDist">0</span>
@@ -792,12 +643,12 @@
                     </div>
                 </div>
 
-<div class="cw-actions">
-    <button class="btn btn-glossy-active" onclick="openNewRun()" style="width:100%; height:50px; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
-        <i class="ri-run-line"></i> ابدأ تمرينك
-    </button>
-</div>
-<p> </p>
+                <div class="cw-actions">
+                    <button class="btn btn-glossy-active" onclick="openNewRun()" style="width:100%; height:50px; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
+                        <i class="ri-run-line"></i> ابدأ تمرينك
+                    </button>
+                </div>
+                <p> </p>
                 <div class="goal-card" onclick="setPersonalGoal()">
                     <div class="goal-info">
                         <span class="goal-title">هدفي الشهري 🎯</span>
@@ -861,189 +712,89 @@
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="switchView('home')"><i class="ri-brain-line"></i><span>الكوتش</span></div>
              <div class="nav-item" onclick="switchView('profile')"><i class="ri-dashboard-3-line"></i><span>بياناتي</span></div>
-
             <div class="nav-item" onclick="switchView('club')"><i class="ri-run-line"></i><span>الفريق</span></div>
             <div class="nav-item" onclick="switchView('challenges')"><i class="ri-trophy-line"></i><span>الأرينا</span></div>
-
         </nav>
     </div>
 
-
     <div id="modal-run-feedback" class="modal-overlay" style="z-index: 4000;">
         <div class="modal-box" style="text-align:center; padding-top:40px; position:relative; overflow:visible;">
-            
             <div class="coach-feedback-avatar">
                 <div class="coach-img"></div>
                 <div class="coach-badge">👔</div>
             </div>
-
             <h2 id="feedback-title" style="margin:10px 0 5px 0; color:var(--primary);">تحليل الأداء ⚡</h2>
-            
             <div id="feedback-body" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin:15px 0; border:1px solid rgba(255,255,255,0.1);">
-                <p id="feedback-msg" style="font-size:14px; line-height:1.6; color:#e5e7eb; margin:0;">
-                    جاري تحليل الجرية...
-                </p>
+                <p id="feedback-msg" style="font-size:14px; line-height:1.6; color:#e5e7eb; margin:0;">جاري تحليل الجرية...</p>
             </div>
-
             <div class="feedback-stats">
                 <div><span id="fb-pace">0.0</span> <small>السرعة</small></div>
-                <div style="border-right:1px solid #444; border-left:1px solid #444;">
-                    <span id="fb-score">Excellent</span> <small>التقييم</small>
-                </div>
+                <div style="border-right:1px solid #444; border-left:1px solid #444;"><span id="fb-score">Excellent</span> <small>التقييم</small></div>
                 <div><span id="fb-cal">0</span> <small>كالوري</small></div>
             </div>
-
-            <button class="btn btn-primary" onclick="closeModal('modal-run-feedback')" style="margin-top:20px;">
-                شكراً يا كوتش 💪
-            </button>
+            <button class="btn btn-primary" onclick="closeModal('modal-run-feedback')" style="margin-top:20px;">شكراً يا كوتش 💪</button>
         </div>
     </div>
     
     <div id="modal-log" class="modal-overlay">
-  <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden;">
-    
-    <div class="modal-head" style="padding: 15px 20px 0; background:transparent; z-index:10; position:relative;">
-        <h3 id="log-modal-title" style="margin:0;">تسجيل نشاط 🏃‍♂️</h3>
-        <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
-    </div>
-
-    <div style="padding: 10px 20px; position:relative; z-index:10;">
-        <div class="log-tabs">
-            <button class="tab-btn active" onclick="switchLogTab('gps')" id="tab-btn-gps">
-                <i class="ri-map-pin-2-fill"></i> تتبع GPS
-            </button>
-            <button class="tab-btn" onclick="switchLogTab('manual')" id="tab-btn-manual">
-                <i class="ri-edit-box-line"></i> يدوي
-            </button>
+      <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden;">
+        <div class="modal-head" style="padding: 15px 20px 0; background:transparent; z-index:10; position:relative;">
+            <h3 id="log-modal-title" style="margin:0;">تسجيل نشاط 🏃‍♂️</h3>
+            <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
         </div>
-    </div>
-
-    <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
-        
-        <div id="view-gps" style="display:block;">
-            <div id="gps-map-container" style="height:250px; width:100%; border-radius:16px; margin-bottom:15px; position:relative; overflow:hidden; border:1px solid var(--border);">
-                <div id="gps-map" style="width:100%; height:100%;"></div>
-                <div class="gps-overlay-stats">
-                    <div>
-                        <span>المسافة</span>
-                        <strong id="live-gps-dist">0.00</strong> <small>km</small>
-                    </div>
-                    <div>
-                        <span>الزمن</span>
-                        <strong id="live-gps-time" style="color:var(--accent);">00:00</strong>
+        <div style="padding: 10px 20px; position:relative; z-index:10;">
+            <div class="log-tabs">
+                <button class="tab-btn active" onclick="switchLogTab('gps')" id="tab-btn-gps"><i class="ri-map-pin-2-fill"></i> تتبع GPS</button>
+                <button class="tab-btn" onclick="switchLogTab('manual')" id="tab-btn-manual"><i class="ri-edit-box-line"></i> يدوي</button>
+            </div>
+        </div>
+        <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
+            <div id="view-gps" style="display:block;">
+                <div id="gps-map-container" style="height:250px; width:100%; border-radius:16px; margin-bottom:15px; position:relative; overflow:hidden; border:1px solid var(--border);">
+                    <div id="gps-map" style="width:100%; height:100%;"></div>
+                    <div class="gps-overlay-stats">
+                        <div><span>المسافة</span><strong id="live-gps-dist">0.00</strong> <small>km</small></div>
+                        <div><span>الزمن</span><strong id="live-gps-time" style="color:var(--accent);">00:00</strong></div>
                     </div>
                 </div>
-            </div>
-
-            <div style="display:flex; gap:10px;">
-                <button id="btn-start-gps" onclick="toggleGPSLog()" class="btn btn-primary" style="flex:2; height:50px; font-size:16px;">
-                    ابدأ <i class="ri-play-fill"></i>
-                </button>
-                <button id="btn-finish-gps" onclick="finishGPSLog()" class="btn" style="flex:1; background:#ef4444; color:#fff; display:none;">
-                    إنهاء
-                </button>
-            </div>
-            <div style="text-align:center; font-size:10px; color:#6b7280; margin-top:8px;">
-                ⚠️ اترك الشاشة مفتوحة لضمان دقة التتبع
-            </div>
-        </div>
-
-<div id="view-manual" style="display:none; padding-top:10px;">
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">التاريخ</label>
-            <input type="date" id="log-date" class="input-box compact-input">
-        </div>
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">النوع</label>
-            <select id="log-type" class="input-box compact-input">
-                <option value="Run">جري (Run)</option>
-                <option value="Walk">مشي (Walk)</option>
-                <option value="Cycling">عجل (Bike)</option>
-                <option value="Swimming">سباحة (Swim)</option>
-                <option value="Core">تمارين (Gym/Core)</option>
-            </select>
-        </div>
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">المسافة (km)</label>
-            <input type="number" id="log-dist" class="input-box compact-input" placeholder="0.00" step="0.01">
-        </div>
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">الزمن (دقيقة)</label>
-            <input type="number" id="log-time" class="input-box compact-input" placeholder="00">
-        </div>
-    </div>
-
-    <div style="margin-top: 4px;">
-        <label style="font-size:10px; color:#9ca3af; margin-right:4px;">صورة النشاط (مطلوب)</label>
-        
-        <div class="upload-magic-box" onclick="document.getElementById('log-img-file').click()">
-            <div class="magic-content">
-                <i class="ri-camera-lens-fill magic-icon"></i>
-                <span id="upload-text-hint">اضغط لإرفاق صورة</span>
-            </div>
-            <img id="img-preview" class="magic-preview" style="display:none;">
-        </div>
-
-        <input type="hidden" id="uploaded-img-url">
-        <input type="file" id="log-img-file" accept="image/*" style="display:none" onchange="uploadImageToImgBB(this)">
-        <div id="upload-status" style="font-size:10px; text-align:center; height:14px; margin-top:2px;"></div>
-    </div>
-
-    <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()" style="width:100%; margin-top:12px; height:48px;">
-        حفظ النشاط
-    </button>
-</div>
-
-    </div>
-  </div>
-</div>
-        <div id="view-manual" style="display:none; padding:15px;">
-            <div style="text-align:center; margin-bottom:15px;">
-                <h3 style="margin:0; font-size:16px;">توثيق النشاط 📝</h3>
-                <p style="font-size:12px; color:#9ca3af;">أدخل البيانات بدقة</p>
-            </div>
-
-            <label class="input-label">نوع النشاط</label>
-            <select id="log-type" class="input-box" style="margin-bottom:12px;">
-                <option value="Run">جري (Run)</option>
-                <option value="Walk">مشي (Walk)</option>
-                <option value="Cycling">دراجة (Cycling)</option>
-                <option value="Swimming">سباحة (Swimming)</option>
-                <option value="Core">تمارين قوة (Core/Gym)</option>
-            </select>
-
-            <div style="display:flex; gap:10px; margin-bottom:12px;">
-                <div style="flex:1;">
-                    <label class="input-label">المسافة (كم)</label>
-                    <input type="number" id="log-dist" class="input-box" step="0.01" placeholder="0.00">
+                <div style="display:flex; gap:10px;">
+                    <button id="btn-start-gps" onclick="toggleGPSLog()" class="btn btn-primary" style="flex:2; height:50px; font-size:16px;">ابدأ <i class="ri-play-fill"></i></button>
+                    <button id="btn-finish-gps" onclick="finishGPSLog()" class="btn" style="flex:1; background:#ef4444; color:#fff; display:none;">إنهاء</button>
                 </div>
-                <div style="flex:1;">
-                    <label class="input-label">الزمن (دقائق)</label>
-                    <input type="number" id="log-time" class="input-box" placeholder="0">
+                <div style="text-align:center; font-size:10px; color:#6b7280; margin-top:8px;">⚠️ اترك الشاشة مفتوحة لضمان دقة التتبع</div>
+            </div>
+
+            <div id="view-manual" style="display:none; padding-top:10px;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                    <div><label style="font-size:10px; color:#9ca3af; margin-right:4px;">التاريخ</label><input type="date" id="log-date" class="input-box compact-input"></div>
+                    <div><label style="font-size:10px; color:#9ca3af; margin-right:4px;">النوع</label>
+                        <select id="log-type" class="input-box compact-input">
+                            <option value="Run">جري (Run)</option><option value="Walk">مشي (Walk)</option><option value="Cycling">عجل (Bike)</option><option value="Swimming">سباحة (Swim)</option><option value="Core">تمارين (Gym/Core)</option>
+                        </select>
+                    </div>
+                    <div><label style="font-size:10px; color:#9ca3af; margin-right:4px;">المسافة (km)</label><input type="number" id="log-dist" class="input-box compact-input" placeholder="0.00" step="0.01"></div>
+                    <div><label style="font-size:10px; color:#9ca3af; margin-right:4px;">الزمن (دقيقة)</label><input type="number" id="log-time" class="input-box compact-input" placeholder="00"></div>
                 </div>
+                <div style="margin-top: 4px;">
+                    <label style="font-size:10px; color:#9ca3af; margin-right:4px;">صورة النشاط (مطلوب)</label>
+                    <div class="upload-magic-box" onclick="document.getElementById('log-img-file').click()">
+                        <div class="magic-content">
+                            <i class="ri-camera-lens-fill magic-icon"></i>
+                            <span id="upload-text-hint">اضغط لإرفاق صورة</span>
+                        </div>
+                        <img id="img-preview" class="magic-preview" style="display:none;">
+                    </div>
+                    <input type="hidden" id="uploaded-img-url">
+                    <input type="file" id="log-img-file" accept="image/*" style="display:none" onchange="uploadImageToImgBB(this)">
+                    <div id="upload-status" style="font-size:10px; text-align:center; height:14px; margin-top:2px;"></div>
+                </div>
+                <input type="url" id="log-link" class="input-box" placeholder="رابط Strava (اختياري)" style="margin-top:10px;">
+                <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()" style="width:100%; margin-top:12px; height:48px;">حفظ النشاط</button>
             </div>
-
-            <label class="input-label">التاريخ</label>
-            <input type="date" id="log-date" class="input-box" style="margin-bottom:12px;">
-
-            <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px; border:1px solid var(--border); margin-bottom:15px;">
-                <label class="input-label" style="margin-bottom:8px;">صورة النشاط (إجباري للكوتش)</label>
-                <input type="file" id="log-img-file" accept="image/*" class="input-box" onchange="uploadRunImage(this)" style="padding:8px;">
-                <input type="hidden" id="uploaded-img-url">
-                <div id="upload-status" style="font-size:11px; margin-top:4px;"></div>
-                <img id="img-preview" src="" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-top:8px; display:none;">
-            </div>
-
-            <label class="input-label">رابط (Strava/فيديو) - اختياري</label>
-            <input type="url" id="log-link" class="input-box" placeholder="https://..." style="margin-bottom:20px;">
-
+        </div>
+      </div>
     </div>
-  </div>
-</div>
   
-
     <div id="modal-avatar" class="modal-overlay">
         <div class="modal-box">
             <h3>اختر هويتك 🥸</h3>
@@ -1069,7 +820,6 @@
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
                     <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
                 </button>
-
                 <div class="setting-item" id="btn-admin-entry" onclick="openAdminAuth()" style="display:none; border-color:var(--accent);">
                     <div class="setting-icon" style="color:var(--accent);"><i class="ri-admin-line"></i></div>
                     <div class="setting-text"><span style="color:var(--accent);">لوحة المشرفين</span><small>تحكم كامل بالتطبيق</small></div>
@@ -1087,23 +837,20 @@
         </div>
     </div>
     
-<div id="modal-set-goal" class="modal-overlay">
-    <div class="modal-box">
-        <h3 style="text-align:center; margin-bottom:10px;">تحدى نفسك هذا الشهر 💪</h3>
-        <p style="text-align:center; color:#9ca3af; font-size:12px; margin-bottom:20px;">حدد المسافة التي تطمح لقطعها خلال الشهر الحالي.</p>
-        
-        <div class="input-wrap">
-            <label>المسافة المستهدفة (كم)</label>
-            <input type="number" id="input-monthly-goal" placeholder="مثال: 50" style="text-align:center; font-size:20px; font-weight:bold; color:var(--primary);">
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button class="btn btn-primary" onclick="savePersonalGoal()">حفظ الهدف 🎯</button>
-            <button class="btn btn-text" onclick="closeModal('modal-set-goal')">إلغاء</button>
+    <div id="modal-set-goal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="text-align:center; margin-bottom:10px;">تحدى نفسك هذا الشهر 💪</h3>
+            <p style="text-align:center; color:#9ca3af; font-size:12px; margin-bottom:20px;">حدد المسافة التي تطمح لقطعها خلال الشهر الحالي.</p>
+            <div class="input-wrap">
+                <label>المسافة المستهدفة (كم)</label>
+                <input type="number" id="input-monthly-goal" placeholder="مثال: 50" style="text-align:center; font-size:20px; font-weight:bold; color:var(--primary);">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn btn-primary" onclick="savePersonalGoal()">حفظ الهدف 🎯</button>
+                <button class="btn btn-text" onclick="closeModal('modal-set-goal')">إلغاء</button>
+            </div>
         </div>
     </div>
-</div>
-
 
     <div id="modal-notifications" class="modal-overlay">
         <div class="modal-box">
@@ -1117,17 +864,14 @@
         </div>
     </div>
 
-   
-<div id="modal-edit-profile" class="modal-overlay">
+    <div id="modal-edit-profile" class="modal-overlay">
         <div class="modal-box">
             <h3>تعديل البيانات ✏️</h3>
-            
             <div class="form-group" style="margin-top:15px; gap:10px;">
                 <div class="input-wrap">
                     <label>الاسم</label>
                     <input type="text" id="edit-name">
                 </div>
-                
                 <div class="input-row" style="margin:0;">
                     <div class="input-wrap">
                         <label>المنطقة</label>
@@ -1140,40 +884,29 @@
                         <input type="number" id="edit-birthyear" placeholder="1995">
                     </div>
                 </div>
-
                 <div class="input-wrap" style="display:none;">
                     <select id="edit-gender"><option value="male">ذكر</option><option value="female">أنثى</option></select>
                 </div>
-
                 <div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1);">
                     <div style="font-size:12px; color:var(--primary); font-weight:bold; margin-bottom:10px; display:flex; align-items:center; gap:5px;">
                         <i class="ri-robot-2-line"></i> إعدادات الكوتش
                     </div>
-                    
                     <div class="input-row" style="margin:0;">
                         <div class="input-wrap">
                             <label style="color:#e5e7eb;">هدفك 🎯</label>
                             <select id="edit-goal">
-                                <option value="general">لياقة عامة</option>
-                                <option value="weight_loss">خسارة وزن 🔥</option>
-                                <option value="endurance">قوة تحمل 🐢</option>
-                                <option value="speed">سرعة قصوى ⚡</option>
+                                <option value="general">لياقة عامة</option><option value="weight_loss">خسارة وزن 🔥</option><option value="endurance">قوة تحمل 🐢</option><option value="speed">سرعة قصوى ⚡</option>
                             </select>
                         </div>
                         <div class="input-wrap">
                             <label style="color:#e5e7eb;">مستواك ⭐</label>
                             <select id="edit-level">
-                                <option value="beginner">مبتدئ</option>
-                                <option value="amateur">هاوي</option>
-                                <option value="pro">محترف</option>
-                                <option value="elite">نخبة</option>
+                                <option value="beginner">مبتدئ</option><option value="amateur">هاوي</option><option value="pro">محترف</option><option value="elite">نخبة</option>
                             </select>
                         </div>
                     </div>
                 </div>
-
             </div>
-            
             <button class="btn btn-primary" onclick="saveProfileChanges()" style="margin-top:20px;">حفظ التغييرات</button>
             <button class="btn btn-text" onclick="closeModal('modal-edit-profile')" style="margin-top:5px;">إلغاء</button>
         </div>
@@ -1191,10 +924,7 @@
             </div>
             <div id="capture-area" class="share-card-template">
                 <div class="share-bg-glow"></div>
-                <div class="share-logo-area">
-                    <img src="ers-logo.png" class="share-logo">
-                    <span>ERS RUNNERS</span>
-                </div>
+                <div class="share-logo-area"><img src="ers-logo.png" class="share-logo"><span>ERS RUNNERS</span></div>
                 <div class="share-content">
                     <div class="share-user">
                         <div class="share-avatar" id="share-avatar">🐣</div>
@@ -1231,8 +961,7 @@
         </div>
     </div>
 
-
-<div id="modal-view-plan" class="modal-overlay">
+    <div id="modal-view-plan" class="modal-overlay">
         <div class="modal-box" style="height: 85vh; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:10px;">
                 <div>
@@ -1241,13 +970,11 @@
                 </div>
                 <button onclick="closeModal('modal-view-plan')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
             </div>
-            
             <div id="plan-timeline-container" style="flex:1; overflow-y:auto; padding-left:5px;">
                 <div style="text-align:center; padding:20px; color:#6b7280;">جاري تحميل الجدول...</div>
             </div>
         </div>
     </div>
-
 
     <div id="modal-view-user" class="modal-overlay">
         <div class="modal-box">
@@ -1267,205 +994,135 @@
             </div>
         </div>
     </div>
-<div id="modal-catalog" class="modal-overlay">
-    <div class="modal-box">
-        <h3 id="catalog-title">مكتبة التمارين</h3>
-        <div id="catalog-body" style="font-size:13px; line-height:1.8; color:#e5e7eb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:12px; margin-top:12px;"></div>
-        <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px;">تمام</button>
-    </div>
-</div>
 
-
-<div id="modal-daily-workout" class="modal-overlay">
-    <div class="modal-box">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-            <h3 id="daily-modal-title" style="margin:0;">جرية اليوم 🔥</h3>
-            <div class="icon-badge" onclick="closeModal('modal-daily-workout')" style="cursor:pointer;"><i class="ri-close-line"></i></div>
+    <div id="modal-catalog" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="catalog-title">مكتبة التمارين</h3>
+            <div id="catalog-body" style="font-size:13px; line-height:1.8; color:#e5e7eb; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); padding:12px; border-radius:12px; margin-top:12px;"></div>
+            <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px;">تمام</button>
         </div>
-        <div id="daily-modal-body" style="margin-top:12px;"></div>
-        <button class="btn btn-text" onclick="closeModal('modal-daily-workout')" style="margin-top:12px;">إغلاق</button>
-    </div>
-</div>
-
-<div id="modal-weekly-challenge" class="modal-overlay">
-    <div class="modal-box">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-            <h3 id="weekly-modal-title" style="margin:0;">تحدي الأسبوع 🏁</h3>
-            <div class="icon-badge" onclick="closeModal('modal-weekly-challenge')" style="cursor:pointer;"><i class="ri-close-line"></i></div>
-        </div>
-        <div id="weekly-modal-body" style="margin-top:12px;"></div>
-        <div style="display:flex; gap:10px; margin-top:12px;">
-            <button id="weekly-complete-btn" class="btn btn-primary" onclick="openWeeklyProof()">أكملت التحدي ✅</button>
-            <button class="btn btn-ghost" onclick="shareWeeklyText()">مشاركة 📤</button>
-        </div>
-        <button class="btn btn-text" onclick="closeModal('modal-weekly-challenge')" style="margin-top:12px;">إغلاق</button>
-    </div>
-</div>
-
-<div id="modal-weekly-proof" class="modal-overlay">
-    <div class="modal-box">
-        <h3 style="margin-bottom:8px;">إثبات التحدي 📸</h3>
-        <p style="margin:0 0 12px 0; color:#9ca3af; font-size:12px;">ارفع صورة (سيلفي / ساعة / سكرين من Strava) لتأكيد التنفيذ.</p>
-
-        <div class="upload-zone-wrapper">
-            <input type="file" id="weekly-img-file" accept="image/*" hidden onchange="uploadWeeklyProofToImgBB()">
-            <input type="hidden" id="weekly-uploaded-img-url">
-            <label for="weekly-img-file" class="upload-trigger-label">
-                <div class="upload-icon-container"><i class="ri-image-add-line"></i></div>
-                <div class="upload-text-content">
-                    <span class="upload-main-text">اضغط هنا لإرفاق صورة</span>
-                    <span class="upload-sub-text">إثبات التحدي 📸</span>
-                </div>
-            </label>
-            <div id="weekly-upload-status" class="upload-status-msg"></div>
-            <img id="weekly-img-preview" class="stylish-preview" alt="معاينة الصورة">
-        </div>
-
-        <div class="input-wrap" style="margin-top:12px;">
-            <label>ملاحظة (اختياري)</label>
-            <input type="text" id="weekly-proof-note" placeholder="مثال: عملتها بعد الشغل 💪">
-        </div>
-
-        <button id="weekly-save-proof-btn" class="btn btn-primary" onclick="saveWeeklyProof()">تأكيد الإنجاز ✅</button>
-        <button class="btn btn-text" onclick="closeModal('modal-weekly-proof')" style="margin-top:10px;">إلغاء</button>
-    </div>
-</div>
-
-<div id="modal-bug-report" class="modal-overlay">
-    <div class="modal-box">
-        <h3>🐞 إبلاغ عن مشكلة</h3>
-        <p style="font-size:12px; color:#9ca3af; margin-bottom:15px;">واجهت مشكلة أو عندك اقتراح؟ اكتبلنا هنا.</p>
-        
-        <textarea id="bug-text" placeholder="اكتب التفاصيل هنا..." style="width:100%; height:100px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:12px; color:#fff; padding:10px; font-family:inherit;"></textarea>
-        
-        <button class="btn btn-primary" onclick="submitBug()" style="margin-top:15px;">إرسال</button>
-        <button class="btn btn-text" onclick="closeModal('modal-bug-report')">إغلاق</button>
-    </div>
-</div>
-
-<div id="modal-update-app" class="modal-overlay" style="z-index: 9999; backdrop-filter: blur(8px);">
-    <div class="glass-update-card">
-        <div class="update-icon-glow">
-            <i class="ri-rocket-2-fill"></i>
-        </div>
-        
-        <h3 class="update-title">تحديث جديد متاح! 🚀</h3>
-        <p class="update-version">إصدار <span id="new-version-num">V3.5</span></p>
-        
-        <div class="update-changelog">
-            <p style="margin-bottom:5px; color:#f59e0b; font-weight:bold;">ما الجديد؟</p>
-            <ul id="update-notes-list">
-                </ul>
-        </div>
-
-        <button onclick="applyAppUpdate()" class="btn-update-action">
-            تحديث الآن <i class="ri-refresh-line"></i>
-        </button>
-        
-        <div onclick="closeModal('modal-update-app')" class="btn-update-later">تحديث لاحقاً</div>
-    </div>
-</div>
-
-
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    
-<!-- Coach Preferences Modal -->
-<div id="modal-coach-prefs" class="modal-overlay">
-  <div class="modal-box" style="max-width:520px;">
-    <div class="modal-header">
-      <h3>تفضيلات الكوتش 🎛️</h3>
-      <button class="close-btn" onclick="closeModal('modal-coach-prefs')">×</button>
     </div>
 
-    <div class="modal-body">
-      <div class="form-group">
-        <label>هدفك الأساسي</label>
-        <select id="pref-goal-focus" class="styled-input">
-          <option value="general">لياقة عامة</option>
-          <option value="weight">خسارة وزن / صحة</option>
-          <option value="endurance">زيادة مسافة / تحمل</option>
-          <option value="speed">تحسين السرعة</option>
-        </select>
-        <div class="mini-note">لو اخترت "سرعة" هتستفيد أكتر من رادار السرعات ⚡</div>
-      </div>
+    <div id="modal-daily-workout" class="modal-overlay">
+        <div class="modal-box">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <h3 id="daily-modal-title" style="margin:0;">جرية اليوم 🔥</h3>
+                <div class="icon-badge" onclick="closeModal('modal-daily-workout')" style="cursor:pointer;"><i class="ri-close-line"></i></div>
+            </div>
+            <div id="daily-modal-body" style="margin-top:12px;"></div>
+            <button class="btn btn-text" onclick="closeModal('modal-daily-workout')" style="margin-top:12px;">إغلاق</button>
+        </div>
+    </div>
 
-      <div class="form-group">
-        <label>التحكم في الصفحة الرئيسية</label>
-        <div class="toggle-row">
-          <span>إخفاء تمرين الفريق</span>
-          <label class="switch"><input id="pref-hide-team" type="checkbox"><span class="slider"></span></label>
+    <div id="modal-weekly-challenge" class="modal-overlay">
+        <div class="modal-box">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                <h3 id="weekly-modal-title" style="margin:0;">تحدي الأسبوع 🏁</h3>
+                <div class="icon-badge" onclick="closeModal('modal-weekly-challenge')" style="cursor:pointer;"><i class="ri-close-line"></i></div>
+            </div>
+            <div id="weekly-modal-body" style="margin-top:12px;"></div>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+                <button id="weekly-complete-btn" class="btn btn-primary" onclick="openWeeklyProof()">أكملت التحدي ✅</button>
+                <button class="btn btn-ghost" onclick="shareWeeklyText()">مشاركة 📤</button>
+            </div>
+            <button class="btn btn-text" onclick="closeModal('modal-weekly-challenge')" style="margin-top:12px;">إغلاق</button>
         </div>
-        <div class="toggle-row">
-          <span>إخفاء تحدي الأسبوع</span>
-          <label class="switch"><input id="pref-hide-weekly" type="checkbox"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-row">
-          <span>إخفاء المكتبة الأساسية</span>
-          <label class="switch"><input id="pref-hide-lib" type="checkbox"><span class="slider"></span></label>
-        </div>
-        <div class="toggle-row">
-          <span>إخفاء رادار السرعات</span>
-          <label class="switch"><input id="pref-hide-speed" type="checkbox"><span class="slider"></span></label>
-        </div>
-      </div>
+    </div>
 
-      <div class="form-group">
-        <label>الخصوصية</label>
-        <div class="toggle-row">
-          <span>منع التعليقات على جرياتي</span>
-          <label class="switch"><input id="pref-disable-comments" type="checkbox"><span class="slider"></span></label>
+    <div id="modal-weekly-proof" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-bottom:8px;">إثبات التحدي 📸</h3>
+            <p style="margin:0 0 12px 0; color:#9ca3af; font-size:12px;">ارفع صورة (سيلفي / ساعة / سكرين من Strava) لتأكيد التنفيذ.</p>
+            <div class="upload-zone-wrapper">
+                <input type="file" id="weekly-img-file" accept="image/*" hidden onchange="uploadWeeklyProofToImgBB()">
+                <input type="hidden" id="weekly-uploaded-img-url">
+                <label for="weekly-img-file" class="upload-trigger-label">
+                    <div class="upload-icon-container"><i class="ri-image-add-line"></i></div>
+                    <div class="upload-text-content">
+                        <span class="upload-main-text">اضغط هنا لإرفاق صورة</span>
+                        <span class="upload-sub-text">إثبات التحدي 📸</span>
+                    </div>
+                </label>
+                <div id="weekly-upload-status" class="upload-status-msg"></div>
+                <img id="weekly-img-preview" class="stylish-preview" alt="معاينة الصورة">
+            </div>
+            <div class="input-wrap" style="margin-top:12px;">
+                <label>ملاحظة (اختياري)</label>
+                <input type="text" id="weekly-proof-note" placeholder="مثال: عملتها بعد الشغل 💪">
+            </div>
+            <button id="weekly-save-proof-btn" class="btn btn-primary" onclick="saveWeeklyProof()">تأكيد الإنجاز ✅</button>
+            <button class="btn btn-text" onclick="closeModal('modal-weekly-proof')" style="margin-top:10px;">إلغاء</button>
         </div>
-        <div class="mini-note">سيظهر بجوار النشاط "التعليقات مغلقة".</div>
+    </div>
+
+    <div id="modal-bug-report" class="modal-overlay">
+        <div class="modal-box">
+            <h3>🐞 إبلاغ عن مشكلة</h3>
+            <p style="font-size:12px; color:#9ca3af; margin-bottom:15px;">واجهت مشكلة أو عندك اقتراح؟ اكتبلنا هنا.</p>
+            <textarea id="bug-text" placeholder="اكتب التفاصيل هنا..." style="width:100%; height:100px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:12px; color:#fff; padding:10px; font-family:inherit;"></textarea>
+            <button class="btn btn-primary" onclick="submitBug()" style="margin-top:15px;">إرسال</button>
+            <button class="btn btn-text" onclick="closeModal('modal-bug-report')">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="modal-coach-prefs" class="modal-overlay">
+      <div class="modal-box" style="max-width:520px;">
+        <div class="modal-header">
+          <h3>تفضيلات الكوتش 🎛️</h3>
+          <button class="close-btn" onclick="closeModal('modal-coach-prefs')">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>هدفك الأساسي</label>
+            <select id="pref-goal-focus" class="styled-input">
+              <option value="general">لياقة عامة</option>
+              <option value="weight">خسارة وزن / صحة</option>
+              <option value="endurance">زيادة مسافة / تحمل</option>
+              <option value="speed">تحسين السرعة</option>
+            </select>
+            <div class="mini-note">لو اخترت "سرعة" هتستفيد أكتر من رادار السرعات ⚡</div>
+          </div>
+          <div class="form-group">
+            <label>التحكم في الصفحة الرئيسية</label>
+            <div class="toggle-row">
+              <span>إخفاء تمرين الفريق</span>
+              <label class="switch"><input id="pref-hide-team" type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span>إخفاء تحدي الأسبوع</span>
+              <label class="switch"><input id="pref-hide-weekly" type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span>إخفاء المكتبة الأساسية</span>
+              <label class="switch"><input id="pref-hide-lib" type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="toggle-row">
+              <span>إخفاء رادار السرعات</span>
+              <label class="switch"><input id="pref-hide-speed" type="checkbox"><span class="slider"></span></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>الخصوصية</label>
+            <div class="toggle-row">
+              <span>منع التعليقات على جرياتي</span>
+              <label class="switch"><input id="pref-disable-comments" type="checkbox"><span class="slider"></span></label>
+            </div>
+            <div class="mini-note">سيظهر بجوار النشاط "التعليقات مغلقة".</div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="saveCoachPreferences()">حفظ</button>
+        </div>
       </div>
     </div>
 
-    <div class="modal-actions">
-      <button class="btn-primary" onclick="saveCoachPreferences()">حفظ</button>
-    </div>
-  </div>
-</div>
-
-
-<script src="js/config.js"></script>
-<script src="js/state.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/coach.js"></script>
-<script src="js/activities.js"></script>
-<script src="js/challenges.js"></script>
-<script src="js/admin.js"></script>
-<script src="js/auth.js"></script>
-<script src="js/main.js"></script> 
-
-    <script>
-      // Avoid SW errors when opening the file locally (file:// => origin "null").
-      const isHttp = location.protocol === 'http:' || location.protocol === 'https:';
-      if (isHttp && 'serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .then((reg) => console.log('Service Worker Registered 🟢', reg.scope))
-            .catch((err) => console.log('Service Worker Error 🔴', err));
-        });
-      }
-    </script>
-    
-    <div id="toast-container" class="toast-container"></div>
-    
- 
     <div id="modal-challenge-details" class="modal-overlay">
         <div class="modal-box" style="height: 80vh; display:flex; flex-direction:column;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
                 <h3 id="ch-modal-title" style="margin:0; color:var(--accent);">تفاصيل التحدي</h3>
                 <button onclick="closeModal('modal-challenge-details')" style="background:none; border:none; color:#fff; font-size:20px;">✕</button>
             </div>
-            
-            <div id="ch-modal-header" class="team-goal-card" style="padding:15px; margin-bottom:15px; min-height:auto;">
-                </div>
-
+            <div id="ch-modal-header" class="team-goal-card" style="padding:15px; margin-bottom:15px; min-height:auto;"></div>
             <h4 style="font-size:12px; color:#9ca3af; margin-bottom:10px;">🏆 المتصدرون في هذا التحدي</h4>
             <div id="ch-leaderboard-list" class="comments-scroll-area">
                 <div class="loader-placeholder">جاري تحميل الأبطال...</div>
@@ -1477,7 +1134,6 @@
         <div class="modal-box">
             <h3 style="color:#ef4444;">🚨 إبلاغ عن مخالفة</h3>
             <p style="font-size:12px; color:#9ca3af; margin-bottom:15px;">ساعدنا في الحفاظ على نزاهة ترتيبك. سيقوم الأدمن بمراجعة هذا النشاط.</p>
-            
             <label class="input-lbl">سبب الإبلاغ:</label>
             <select id="report-reason" class="full-select">
                 <option value="fake_data">أرقام غير منطقية (سرعة/مسافة)</option>
@@ -1485,23 +1141,19 @@
                 <option value="duplicate">نشاط مكرر</option>
                 <option value="other">سبب آخر</option>
             </select>
-            
             <button class="btn btn-primary" style="background:#ef4444; margin-top:15px;" onclick="submitReport()">إرسال البلاغ</button>
             <button class="btn btn-text" onclick="closeModal('modal-report')">إلغاء</button>
         </div>
     </div>
 
-
     <div id="modal-plan-wizard" class="modal-overlay">
         <div class="modal-box" style="text-align:center; position:relative; overflow:hidden;">
-<button class="modal-close-x" onclick="closeModal('modal-plan-wizard')" aria-label="إغلاق">✕</button>            
+            <button class="modal-close-x" onclick="closeModal('modal-plan-wizard')" aria-label="إغلاق">✕</button>            
             <div id="wizard-step-input">
                 <div class="wizard-icon">🤖</div>
                 <h3 style="margin-bottom:5px;">مصمم الخطط الذكي</h3>
                 <p style="font-size:12px; color:#9ca3af; margin-bottom:20px;">أجب على الأسئلة لأصمم لك جدولاً مخصصاً لا يقهر!</p>
-
                 <div class="form-group" style="text-align:right; gap:15px; margin-top:0;">
-                    
                     <div class="input-wrap">
                         <label style="color:#e5e7eb;">كم يوم تقدر تتمرن أسبوعياً؟</label>
                         <div class="selection-grid">
@@ -1511,7 +1163,6 @@
                         </div>
                         <input type="hidden" id="plan-days">
                     </div>
-
                     <div class="input-wrap">
                         <label style="color:#e5e7eb;">ما هو هدفك القادم؟</label>
                         <div class="selection-grid">
@@ -1521,7 +1172,6 @@
                         </div>
                         <input type="hidden" id="plan-target">
                     </div>
-
                     <div class="input-wrap">
                         <label style="color:#e5e7eb;">مستواك الحالي؟</label>
                         <select id="plan-level" class="full-select" style="margin-bottom:0;">
@@ -1530,14 +1180,11 @@
                             <option value="advanced">محترف (عايز أكسر الرقم القياسي)</option>
                         </select>
                     </div>
-
                 </div>
-
                 <button class="btn btn-primary" onclick="startPlanGeneration()" style="margin-top:20px;">
                     <i class="ri-magic-line"></i> ابدأ تصميم الخطة
                 </button>
             </div>
-
             <div id="wizard-step-thinking" style="display:none; padding:40px 0;">
                 <div class="brain-loader">
                     <div class="brain-pulse"></div>
@@ -1548,7 +1195,6 @@
                     <div class="progress-line-fill" id="thinking-bar"></div>
                 </div>
             </div>
-
             <div id="wizard-step-result" style="display:none;">
                 <div style="font-size:60px;">🎉</div>
                 <h3>تم تجهيز خطتك!</h3>
@@ -1563,123 +1209,161 @@
                 </div>
                 <button class="btn btn-primary" onclick="confirmPlan()" style="margin-top:20px;">اعتماد الخطة والبدء 🚀</button>
             </div>
-
         </div>
     </div>
 
-
-<div id="modal-my-plan" class="modal-overlay">
-  <div class="modal-box">
-    <div class="modal-head">
-      <h3 style="margin:0;">جدول التدريب 📅</h3>
-      <button class="modal-close" onclick="closeModal('modal-my-plan')"><i class="ri-close-line"></i></button>
-    </div>
-    <div class="modal-body" style="padding: 15px;">
-        <div id="plan-details-content">
-            <p style="text-align:center; color:#9ca3af;">جاري تحميل الجدول...</p>
+    <div id="modal-my-plan" class="modal-overlay">
+      <div class="modal-box">
+        <div class="modal-head">
+          <h3 style="margin:0;">جدول التدريب 📅</h3>
+          <button class="modal-close" onclick="closeModal('modal-my-plan')"><i class="ri-close-line"></i></button>
         </div>
-        
-        <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
-             <p style="font-size:11px; color:#9ca3af; text-align:center;">
-                 نصيحة: يمكنك تعديل أيام الجري من الإعدادات أو حذف الخطة لإنشاء واحدة جديدة.
-             </p>
+        <div class="modal-body" style="padding: 15px;">
+            <div id="plan-details-content">
+                <p style="text-align:center; color:#9ca3af;">جاري تحميل الجدول...</p>
+            </div>
+            <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                 <p style="font-size:11px; color:#9ca3af; text-align:center;">
+                     نصيحة: يمكنك تعديل أيام الجري من الإعدادات أو حذف الخطة لإنشاء واحدة جديدة.
+                 </p>
+            </div>
         </div>
-    </div>
-  </div>
-</div>
-
-
-<div id="modal-speed-radar" class="modal-overlay">
-  <div class="modal-box" style="max-width:520px;">
-    <div class="modal-head">
-      <h3 style="margin:0;">رادار السرعة ⚡</h3>
-      <button class="modal-close" onclick="closeModal('modal-speed-radar')"><i class="ri-close-line"></i></button>
-    </div>
-    <div id="speed-radar-body" style="margin-top:12px;"></div>
-    <div style="margin-top:14px; display:flex; gap:8px;">
-      <button class="btn btn-ghost" onclick="closeModal('modal-speed-radar')" style="flex:1;">إغلاق</button>
-      <button class="btn btn-primary" onclick="openModal('modal-log'); closeModal('modal-speed-radar')" style="flex:1;">سجّل نشاط</button>
-    </div>
-  </div>
-</div>
-
-<div id="modal-weekly-awards" class="modal-overlay">
-  <div class="modal-box" style="max-width:520px;">
-    <div class="modal-head">
-      <div>
-        <h3 id="weekly-awards-title" style="margin:0;">لوحة تكريم الأسبوع</h3>
-        <div id="weekly-awards-range" style="font-size:11px; color:#9ca3af; margin-top:4px;"></div>
       </div>
-      <button class="modal-close" onclick="closeModal('modal-weekly-awards')"><i class="ri-close-line"></i></button>
     </div>
-    <div id="weekly-awards-body" style="margin-top:12px;"></div>
-    <button class="btn btn-ghost" onclick="closeModal('modal-weekly-awards')" style="width:100%; margin-top:14px;">إغلاق</button>
-  </div>
-</div>
 
-<div id="modal-image-viewer" class="modal-overlay">
-  <div class="modal-box" style="max-width:560px;">
-    <div class="modal-head">
-      <h3 style="margin:0;">صورة التمرين 🖼️</h3>
-      <button class="modal-close" onclick="closeModal('modal-image-viewer')"><i class="ri-close-line"></i></button>
+    <div id="modal-speed-radar" class="modal-overlay">
+      <div class="modal-box" style="max-width:520px;">
+        <div class="modal-head">
+          <h3 style="margin:0;">رادار السرعة ⚡</h3>
+          <button class="modal-close" onclick="closeModal('modal-speed-radar')"><i class="ri-close-line"></i></button>
+        </div>
+        <div id="speed-radar-body" style="margin-top:12px;"></div>
+        <div style="margin-top:14px; display:flex; gap:8px;">
+          <button class="btn btn-ghost" onclick="closeModal('modal-speed-radar')" style="flex:1;">إغلاق</button>
+          <button class="btn btn-primary" onclick="openModal('modal-log'); closeModal('modal-speed-radar')" style="flex:1;">سجّل نشاط</button>
+        </div>
+      </div>
     </div>
-    <div style="margin-top:12px; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.10); background:rgba(0,0,0,0.18);">
-      <img id="image-viewer-img" alt="workout" style="width:100%; display:block; object-fit:contain; max-height:70vh;">
-    </div>
-    <button class="btn btn-ghost" onclick="closeModal('modal-image-viewer')" style="width:100%; margin-top:12px;">إغلاق</button>
-  </div>
-</div>
 
-<div id="modal-gps-tracker" class="modal-overlay" style="z-index: 3000;">
-  <div class="modal-box" style="height: 90vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+    <div id="modal-weekly-awards" class="modal-overlay">
+      <div class="modal-box" style="max-width:520px;">
+        <div class="modal-head">
+          <div>
+            <h3 id="weekly-awards-title" style="margin:0;">لوحة تكريم الأسبوع</h3>
+            <div id="weekly-awards-range" style="font-size:11px; color:#9ca3af; margin-top:4px;"></div>
+          </div>
+          <button class="modal-close" onclick="closeModal('modal-weekly-awards')"><i class="ri-close-line"></i></button>
+        </div>
+        <div id="weekly-awards-body" style="margin-top:12px;"></div>
+        <button class="btn btn-ghost" onclick="closeModal('modal-weekly-awards')" style="width:100%; margin-top:14px;">إغلاق</button>
+      </div>
+    </div>
+
+    <div id="modal-image-viewer" class="modal-overlay">
+      <div class="modal-box" style="max-width:560px;">
+        <div class="modal-head">
+          <h3 style="margin:0;">صورة التمرين 🖼️</h3>
+          <button class="modal-close" onclick="closeModal('modal-image-viewer')"><i class="ri-close-line"></i></button>
+        </div>
+        <div style="margin-top:12px; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.10); background:rgba(0,0,0,0.18);">
+          <img id="image-viewer-img" alt="workout" style="width:100%; display:block; object-fit:contain; max-height:70vh;">
+        </div>
+        <button class="btn btn-ghost" onclick="closeModal('modal-image-viewer')" style="width:100%; margin-top:12px;">إغلاق</button>
+      </div>
+    </div>
+
+    <div id="modal-gps-tracker" class="modal-overlay" style="z-index: 3000;">
+      <div class="modal-box" style="height: 90vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+        <div id="gps-map" style="flex:1; width:100%; height:100%; z-index:1;"></div>
+        <div style="
+            position: absolute; 
+            bottom: 20px; left: 20px; right: 20px; 
+            background: rgba(17, 24, 39, 0.85); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px; 
+            padding: 20px; 
+            z-index: 1000;
+            display: flex; flex-direction: column; align-items: center;
+        ">
+            <div style="display:flex; justify-content:space-around; width:100%; margin-bottom:20px;">
+                <div style="text-align:center;">
+                    <div style="font-size:12px; color:#9ca3af;">المسافة (كم)</div>
+                    <div id="gps-dist" style="font-size:32px; font-weight:900; color:#fff;">0.00</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:12px; color:#9ca3af;">الزمن</div>
+                    <div id="gps-time" style="font-size:32px; font-weight:900; color:var(--accent);">00:00</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:12px; color:#9ca3af;">السرعة</div>
+                    <div id="gps-pace" style="font-size:18px; font-weight:700; color:#fff; margin-top:10px;">--:--</div>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; width:100%;">
+                <button id="btn-gps-start" onclick="toggleGPS()" class="btn btn-primary" style="flex:2; height:50px; font-size:16px;">
+                    ابدأ <i class="ri-play-fill"></i>
+                </button>
+                <button id="btn-gps-finish" onclick="finishGPSRun()" class="btn" style="flex:1; background:#ef4444; color:#fff; display:none;">
+                    إنهاء
+                </button>
+                <button onclick="closeGPSModal()" class="btn" style="width:50px; background:rgba(255,255,255,0.1);">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div style="font-size:10px; color:#6b7280; margin-top:10px;">
+                ⚠️ للحفاظ على الـ GPS، لا تقفل شاشة الهاتف (سنبقيها مضيئة لك).
+            </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-update-app" class="modal-overlay" style="z-index: 9999; backdrop-filter: blur(8px);">
+        <div class="glass-update-card">
+            <div class="update-icon-glow">
+                <i class="ri-rocket-2-fill"></i>
+            </div>
+            <h3 class="update-title">تحديث جديد متاح! 🚀</h3>
+            <p class="update-version">إصدار <span id="new-version-num">V3.5</span></p>
+            <div class="update-changelog">
+                <p style="margin-bottom:5px; color:#f59e0b; font-weight:bold;">ما الجديد؟</p>
+                <ul id="update-notes-list"></ul>
+            </div>
+            <button onclick="applyAppUpdate()" class="btn-update-action">
+                تحديث الآن <i class="ri-refresh-line"></i>
+            </button>
+            <div onclick="closeModal('modal-update-app')" class="btn-update-later">تحديث لاحقاً</div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
-    <div id="gps-map" style="flex:1; width:100%; height:100%; z-index:1;"></div>
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/coach.js"></script>
+    <script src="js/activities.js"></script>
+    <script src="js/challenges.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script> 
 
-    <div style="
-        position: absolute; 
-        bottom: 20px; left: 20px; right: 20px; 
-        background: rgba(17, 24, 39, 0.85); 
-        backdrop-filter: blur(12px); 
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 24px; 
-        padding: 20px; 
-        z-index: 1000;
-        display: flex; flex-direction: column; align-items: center;
-    ">
-        <div style="display:flex; justify-content:space-around; width:100%; margin-bottom:20px;">
-            <div style="text-align:center;">
-                <div style="font-size:12px; color:#9ca3af;">المسافة (كم)</div>
-                <div id="gps-dist" style="font-size:32px; font-weight:900; color:#fff;">0.00</div>
-            </div>
-            <div style="text-align:center;">
-                <div style="font-size:12px; color:#9ca3af;">الزمن</div>
-                <div id="gps-time" style="font-size:32px; font-weight:900; color:var(--accent);">00:00</div>
-            </div>
-            <div style="text-align:center;">
-                <div style="font-size:12px; color:#9ca3af;">السرعة</div>
-                <div id="gps-pace" style="font-size:18px; font-weight:700; color:#fff; margin-top:10px;">--:--</div>
-            </div>
-        </div>
-
-        <div style="display:flex; gap:10px; width:100%;">
-            <button id="btn-gps-start" onclick="toggleGPS()" class="btn btn-primary" style="flex:2; height:50px; font-size:16px;">
-                ابدأ <i class="ri-play-fill"></i>
-            </button>
-            <button id="btn-gps-finish" onclick="finishGPSRun()" class="btn" style="flex:1; background:#ef4444; color:#fff; display:none;">
-                إنهاء
-            </button>
-            <button onclick="closeGPSModal()" class="btn" style="width:50px; background:rgba(255,255,255,0.1);">
-                <i class="ri-close-line"></i>
-            </button>
-        </div>
-        
-        <div style="font-size:10px; color:#6b7280; margin-top:10px;">
-            ⚠️ للحفاظ على الـ GPS، لا تقفل شاشة الهاتف (سنبقيها مضيئة لك).
-        </div>
-    </div>
-  </div>
-</div>
+    <script>
+      const isHttp = location.protocol === 'http:' || location.protocol === 'https:';
+      if (isHttp && 'serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then((reg) => console.log('Service Worker Registered 🟢', reg.scope))
+            .catch((err) => console.log('Service Worker Error 🔴', err));
+        });
+      }
+    </script>
+    
+    <div id="toast-container" class="toast-container"></div>
 
 </body>
 </html>
-
