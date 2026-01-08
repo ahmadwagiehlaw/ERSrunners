@@ -91,4 +91,6 @@ function initApp() {
     // ✅ 2. (مهم جداً) تهيئة تبويبات البروفايل على "نشاطي"
     // عشان لما تفتح البروفايل متلاقيش الصفحة فاضية
     if(typeof switchProfileTab === 'function') switchProfileTab('activity');
+    // أضف السطر ده في آخر الدالة
+if(typeof renderCoachLibrary === 'function') renderCoachLibrary();
 }

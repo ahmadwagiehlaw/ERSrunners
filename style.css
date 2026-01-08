@@ -5281,3 +5281,179 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
     font-size: 8px; padding: 2px 6px;
     border-bottom-left-radius: 8px; font-weight: bold;
 }
+
+.elite-workout-item {
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.elite-workout-item:hover {
+    transform: translateX(-5px);
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+
+/* ==================== Skimble Premium Card Design (Updated Logo) ==================== */
+
+.skimble-premium-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 15px 0;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    position: relative;
+    overflow: hidden;
+}
+
+.skimble-premium-card:hover {
+    transform: translateY(-5px);
+    border-color: #ff8a00;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 138, 0, 0.2);
+}
+
+/* محتوى النص (يمين) */
+.skimble-content {
+    flex: 1;
+    text-align: right;
+    padding-left: 15px; /* مسافة بسيطة من اللوجو */
+}
+
+.skimble-label {
+    display: block;
+    font-size: 10px;
+    color: #ff8a00;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.skimble-title {
+    margin: 0;
+    font-size: 19px; /* تكبير العنوان قليلاً */
+    font-weight: 900;
+    color: #fff;
+}
+
+.skimble-subtitle {
+    margin: 5px 0 0 0;
+    font-size: 12px;
+    color: #94a3b8;
+}
+
+/* 🔥 التعديل الجديد للوجو: بدون حاوية وبحجم كبير 🔥 */
+.skimble-card-img {
+    width: 250px; /* تكبير اللوجو */
+    height: 75px;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); /* ظل للوجو عشان يبرز */
+    transition: transform 0.3s ease;
+    flex-shrink: 0; /* يمنع اللوجو من الانضغاط */
+}
+
+.skimble-premium-card:hover .skimble-card-img {
+    transform: scale(1.1) rotate(-5deg); /* حركة تفاعلية للوجو عند التمرير */
+}
+
+/* استجابة الموبايل */
+@media (max-width: 400px) {
+    .skimble-title { font-size: 16px; }
+    .skimble-card-img { 
+        width: 60px; 
+        height: 60px; 
+    }
+}
+
+
+/* ستايل زر التشيك */
+.check-wrapper {
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.check-circle {
+    width: 28px;
+    height: 28px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: rgba(0,0,0,0.2);
+}
+
+.check-circle i {
+    font-size: 18px;
+    color: transparent; /* مخفي في البداية */
+    transition: all 0.2s;
+}
+
+/* حالة الإتمام */
+.check-circle.checked {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.1);
+}
+
+.check-circle.checked i {
+    color: #000; /* يظهر علامة الصح */
+}
+
+/* تعتيم الكارت عند الإتمام */
+.sch-card.task-completed {
+    opacity: 0.8;
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
+.sch-card.task-completed .sch-title {
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+.sch-card.task-completed {
+    border-color: rgba(16, 185, 129, 0.2);
+    opacity: 0.6; /* بهتان بسيط */
+}
+.sch-card.task-completed .sch-title {
+    text-decoration: line-through; /* خط فوق الكلام */
+}
+/* تنسيق دائرة التشيك */
+.check-circle {
+    width: 26px;
+    height: 26px;
+    border: 2px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+    background: rgba(0,0,0,0.3);
+}
+
+.check-circle i {
+    font-size: 16px;
+    color: transparent;
+}
+
+/* الحالة لما تكون Done */
+.check-circle.checked {
+    background: #10b981; /* لون أخضر */
+    border-color: #10b981;
+}
+
+.check-circle.checked i {
+    color: #000; /* علامة الصح تظهر بالأسود */
+}
+
+/* بهتان الكارت المخلص */
+.task-completed {
+    opacity: 0.7;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+}

@@ -209,25 +209,27 @@
 </div>
 
  
-      <div class="tool-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
-        <div class="tool-ico"><i class="ri-links-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">Workout Trainers</div>
-          <div class="tool-sub">تمارين إضافية من كوتش وجيه (Skimble)</div>
-        </div>
-        <i class="ri-external-link-line"></i>
-      </div>
-
-      <div class="tool-card" onclick="openBasicLibrary()">
-        <div class="tool-ico"><i class="ri-book-3-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">المكتبة الأساسية</div>
-          <div class="tool-sub">مرجع سريع للتمارين والمفاهيم</div>
-        </div>
-        <i class="ri-arrow-left-s-line"></i>
-      </div>
+<div class="skimble-premium-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
+    <div class="skimble-content">
+        <span class="skimble-label">Coach Wajeeh Workouts</span>
+        <h3 class="skimble-title">تدرب مع كوتش وجيه</h3>
+        <p class="skimble-subtitle">تمارين احترافية مخصصة لك على Skimble</p>
     </div>
+    <div class="skimble-logo-container">
+        <img src="skimble.png" alt="Skimble Logo" class="skimble-card-img">
+    </div>
+</div>
 
+<div id="coach-library-section" style="margin-top: 25px;">
+    <div class="section-title-row">
+        <h4>مكتبة التمارين الذكية 📚</h4>
+    </div>
+    
+    <div id="library-types-container" class="schedule-scroll-wrapper">
+        </div>
+</div>
+
+<p></p>
     <div id="basic-library-section" class="basic-lib-card">
       <div class="section-title-row">
         <h4>المكتبة الأساسية 📚</h4>
@@ -909,6 +911,20 @@
     </div>
 
 
+
+
+<div id="modal-catalog" class="modal-overlay">
+    <div class="modal-box ers-blue-glass" style="max-height: 80vh;">
+        <div class="modal-head">
+            <h3 id="catalog-title" style="margin:0;">المكتبة الذكية</h3>
+            <button class="modal-close" onclick="closeModal('modal-catalog')"><i class="ri-close-line"></i></button>
+        </div>
+        <div id="catalog-body" style="overflow-y: auto; padding: 10px 5px;">
+            </div>
+        <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px; width:100%;">فهمت الخطة 🫡</button>
+    </div>
+</div>
+
     <div id="modal-run-feedback" class="modal-overlay" style="z-index: 4000;">
         <div class="modal-box" style="text-align:center; padding-top:40px; position:relative; overflow:visible;">
             
@@ -1443,6 +1459,7 @@
           <span>إخفاء تحدي الأسبوع</span>
           <label class="switch"><input id="pref-hide-weekly" type="checkbox"><span class="slider"></span></label>
         </div>
+        
         <div class="toggle-row">
           <span>إخفاء المكتبة الأساسية</span>
           <label class="switch"><input id="pref-hide-lib" type="checkbox"><span class="slider"></span></label>

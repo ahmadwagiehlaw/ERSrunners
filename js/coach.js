@@ -1287,3 +1287,86 @@ function openCoachWorkoutLog(){
     console.error(e);
   }
 }
+
+
+
+
+// ==================== Smart Elite Library Logic ====================
+
+// 1. قاعدة بيانات التمارين الذكية (محتوى عبقري واحترافي)
+const ELITE_WORKOUTS_DATA = {
+    intervals: [
+        { name: "سلم السرعة (Ladder)", desc: "100m, 200m, 400m, 800m ثم العكس. الراحة هي نفس زمن الجري.", goal: "زيادة السرعة القصوى (V02 Max)" },
+        { name: "انترفل الأهرامات", desc: "5 جولات × (1د سريع جداً / 1د مشي) ثم 5 جولات × (30ث انفجار سرعة / 30ث راحة).", goal: "تحسين التحمل اللاهوائي" }
+    ],
+    tempo: [
+        { name: "الإيقاع المتصاعد", desc: "جري 10 كم: أول 4 كم سهل، ثم زيادة السرعة تدريجياً كل 2 كم لتنتهي بأقصى سرعة.", goal: "تعويد الجسم على دفع التعب" },
+        { name: "تمبو الثبات", desc: "جري مسافة 6-8 كم بسرعة ثابتة (أبطأ 15 ثانية من رقمك الشخصي في الـ 5 كم).", goal: "رفع عتبة اللاكتيك" }
+    ],
+    long_run: [
+        { name: "ماراثون سيميوليشن", desc: "جري 15-18 كم مع إضافة 3 كم في المنتصف بسرعة الماراثون المستهدفة.", goal: "بناء التحمل العضلي الطويل" },
+        { name: "جري الاستكشاف السلبي", desc: "جري مسافة طويلة بحيث يكون النصف الثاني أسرع من النصف الأول بـ 5-10 دقائق.", goal: "الانضباط وتوزيع المجهود" }
+    ],
+    recovery: [
+        { name: "مساج الجري (Shakeout)", desc: "15-20 دقيقة هرولة خفيفة جداً (Pace > 8:00) مع تحريك الذراعين بحرية.", goal: "تنشيط الدورة الدموية للاستشفاء" },
+        { name: "التعافي النشط 3-2-1", desc: "3 كم مشي سريع، 2 كم هرولة، 1 كم مشي بطيء.", goal: "إزالة حمض اللاكتيك بعد السباقات" }
+    ],
+    strength: [
+        { name: "قوة الكور الفولاذية", desc: "Plank (1min), Russian Twists (50), Leg Raises (20) × 3 مجموعات.", goal: "ثبات الجذع أثناء الجري" },
+        { name: "انفجار الساقين (Plyo)", desc: "Jump Squats, Lunges, Calf Raises. كل تمرين 45 ثانية مع 15 ثانية راحة.", goal: "زيادة قوة دفع الخطوة" }
+    ]
+};
+
+// 2. تحديث دالة الرسم (التعديل لفتح المودال الجديد)
+function renderCoachLibrary() {
+    const container = document.getElementById('library-types-container');
+    if (!container) return;
+
+    const categories = [
+        { id: 'intervals', name: 'انترفل / سرعات', icon: '⏱️', color: '#ef4444' },
+        { id: 'tempo', name: 'تمبو / إيقاع', icon: '⚡', color: '#3b82f6' },
+        { id: 'long_run', name: 'جري طويل', icon: '🏃‍♂️', color: '#10b981' },
+        { id: 'recovery', name: 'استشفاء', icon: '🧘‍♂️', color: '#8b5cf6' },
+        { id: 'strength', name: 'تمارين قوة', icon: '💪', color: '#f59e0b' }
+    ];
+
+    let html = '';
+    categories.forEach(cat => {
+        const count = ELITE_WORKOUTS_DATA[cat.id].length;
+        html += `
+            <div class="sch-card" onclick="openEliteWorkoutsModal('${cat.id}', '${cat.name}')" 
+                 style="min-width: 125px; border-bottom: 3px solid ${cat.color}; cursor:pointer;">
+                <div class="sch-icon" style="color:${cat.color}; font-size:24px;">${cat.icon}</div>
+                <div class="sch-title" style="margin-top:5px;">${cat.name}</div>
+                <div class="sch-desc">${count} تمرين ذكي</div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// 3. دالة فتح مودال التمارين الذكية
+function openEliteWorkoutsModal(catId, catName) {
+    const workouts = ELITE_WORKOUTS_DATA[catId];
+    let listHtml = '';
+
+    workouts.forEach(w => {
+        listHtml += `
+            <div class="elite-workout-item" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; margin-bottom:12px; border-right:4px solid var(--primary);">
+                <h4 style="margin:0 0 5px 0; color:#fff;">${w.name}</h4>
+                <p style="font-size:12px; color:#cbd5e1; margin:0 0 8px 0; line-height:1.4;">${w.desc}</p>
+                <div style="font-size:10px; color:var(--primary); font-weight:bold;">🎯 الهدف: ${w.goal}</div>
+            </div>
+        `;
+    });
+
+    // تحديث محتوى مودال الكتالوج (أو مودال مخصص)
+    const titleEl = document.getElementById('catalog-title');
+    const bodyEl = document.getElementById('catalog-body');
+    
+    if(titleEl && bodyEl) {
+        titleEl.innerText = `تمارين الـ ${catName} الذكية`;
+        bodyEl.innerHTML = listHtml;
+        openModal('modal-catalog');
+    }
+}

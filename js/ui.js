@@ -1700,35 +1700,42 @@ const WEEKLY_SCHEDULE = [
 ];
 
 // 2. دالة رسم الجدول
+// ==================== Weekly Checkable Schedule (V2.0) ====================
+
+// ==================== Weekly Checkable Schedule (Final Fix) ====================
+
 function renderTeamSchedule() {
     const container = document.getElementById('schedule-scroll-container');
     if (!container) return;
 
-    // معرفة رقم اليوم الحالي (0 = الأحد, 1 = الاثنين, ... 6 = السبت)
     const todayIndex = new Date().getDay(); 
+    // جلب الحالات المسجلة من الـ LocalStorage
+    const savedStatus = JSON.parse(localStorage.getItem('ers_weekly_check')) || {};
 
     let html = '';
     
-    // إعادة ترتيب المصفوفة لتبدأ من "اليوم" (اختياري) أو عرضها كما هي
-    // سنعرضها كما هي (سبت -> جمعة) ونميز اليوم الحالي
-    
+    // تأكد إن المصفوفة WEEKLY_SCHEDULE معرفة عندك (السبت id:6، الأحد id:0 ...)
     WEEKLY_SCHEDULE.forEach(item => {
         const isToday = (item.id === todayIndex);
-        const activeClass = isToday ? 'today' : '';
-        const badge = isToday ? '<div class="today-badge">اليوم</div>' : '';
+        const checkKey = `day_${item.id}`; 
+        const isDone = savedStatus[checkKey] || false;
         
-        // تغيير لون الأيقونة حسب النوع
-        let iconColor = '#fff';
-        if (item.type === 'run') iconColor = '#10b981'; // أخضر
-        if (item.type === 'speed') iconColor = '#ef4444'; // أحمر
-        if (item.type === 'rest') iconColor = '#6b7280'; // رمادي
-        if (item.type === 'gym') iconColor = '#f59e0b'; // برتقالي
+        const activeClass = isToday ? 'today' : '';
+        const doneClass = isDone ? 'task-completed' : '';
 
+        // 🔥 هنا سر ظهور الدائرة: أضفنا ديف الـ check-wrapper
         html += `
-            <div class="sch-card ${activeClass}" onclick="showToast('${item.title}: ${item.desc}', 'info')">
-                ${badge}
+            <div class="sch-card ${activeClass} ${doneClass}" id="card-${item.id}" style="min-width: 120px; position:relative;">
+                ${isToday ? '<div class="today-badge">اليوم</div>' : ''}
+                
                 <div class="sch-day">${item.day}</div>
-                <div class="sch-icon" style="color:${iconColor}">${item.icon}</div>
+                
+                <div class="check-wrapper" onclick="toggleTaskDone(${item.id})" style="margin: 10px 0; cursor:pointer;">
+                    <div class="check-circle ${isDone ? 'checked' : ''}">
+                        <i class="ri-check-line"></i>
+                    </div>
+                </div>
+
                 <div class="sch-title">${item.title}</div>
                 <div class="sch-desc">${item.desc}</div>
             </div>
@@ -1736,12 +1743,20 @@ function renderTeamSchedule() {
     });
 
     container.innerHTML = html;
+}
+
+// دالة التبديل (اضفها لو مش موجودة)
+function toggleTaskDone(dayId) {
+    const checkKey = `day_${dayId}`;
+    let savedStatus = JSON.parse(localStorage.getItem('ers_weekly_check')) || {};
     
-    // سكرول تلقائي لليوم الحالي عشان المستخدم يشوفه أول ما يفتح
-    setTimeout(() => {
-        const todayCard = container.querySelector('.sch-card.today');
-        if(todayCard) {
-            todayCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        }
-    }, 500);
+    savedStatus[checkKey] = !savedStatus[checkKey];
+    localStorage.setItem('ers_weekly_check', JSON.stringify(savedStatus));
+
+    // إعادة الرسم فوراً لتحديث الألوان
+    renderTeamSchedule();
+    
+    if (savedStatus[checkKey]) {
+        if(typeof showToast === 'function') showToast("عاش يا بطل! تم الإنجاز 💪", "success");
+    }
 }
