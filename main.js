@@ -345,7 +345,7 @@ function openImageViewer(url){
 }
 window.openImageViewer = openImageViewer;
 
-
+//===================== تبويب الصفحة الرئيسية للمدرب ====================
 function switchHomeTab(tab, el) {
     // tabs
     document.querySelectorAll('.glass-tab')
@@ -358,4 +358,114 @@ function switchHomeTab(tab, el) {
 
     const target = document.getElementById('coach-home-tab-' + tab);
     if (target) target.classList.add('active');
+}
+
+
+
+
+// ==================== 🔄 PWA AUTO UPDATE LOGIC ====================
+
+let newWorker; // لتخزين الوركر الجديد بعد التحديث ليظهر المودال الخاص بالتحديث التلقائي
+
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').then(reg => {
+            
+            // تهيئة بيانات المودال
+            initUpdateCheck();
+
+            reg.addEventListener('updatefound', () => {
+                newWorker = reg.installing;
+                newWorker.addEventListener('statechange', () => {
+                    // لو الحالة بقت installed وفيه controller حالي (يعني دي مش أول مرة يفتح الموقع)
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // 🔥 هنا نظهر المودال الزجاجي
+                        openModal('modal-update-app');
+                    }
+                });
+            });
+        });
+
+        // التعامل مع حالة "تم التحديث"
+        let refreshing;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            window.location.reload();
+            refreshing = true;
+        });
+    }
+}
+
+// دالة زرار "تحديث الآن"
+function applyAppUpdate() {
+    if (newWorker) {
+        // إرسال أمر للوركر عشان يتخطى الانتظار ويفعل نفسه
+        newWorker.postMessage({ action: 'skipWaiting' });
+    } else {
+        // لو مفيش وركر (مجرد احتياط)
+        window.location.reload();
+    }
+}
+
+// استدعاء التسجيل عند بدء التطبيق
+window.addEventListener('load', registerServiceWorker);
+// ==================== End PWA AUTO UPDATE LOGIC ====================
+
+
+// ==================== Profile Tabs Logic ====================
+
+function switchProfileTab(tabName) {
+    // 1. تحديث الأزرار
+    document.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(`ptab-${tabName}`).classList.add('active');
+
+    // 2. تحديث المحتوى
+    document.querySelectorAll('.p-tab-content').forEach(el => el.classList.remove('active'));
+    document.getElementById(`p-content-${tabName}`).classList.add('active');
+
+    // 3. (اختياري) تحميل بيانات خاصة بالتبويب لو لسه متحملتش
+    if (tabName === 'goals') {
+        loadProfileChallenges(); // دالة جديدة هعملهالك تحت
+    }
+}
+
+// دالة لجلب تحديات المستخدم فقط وعرضها في تبويب "أهدافي"
+function loadProfileChallenges() {
+    const container = document.getElementById('profile-active-challenges');
+    if (!container) return;
+    
+    // نستخدم الكاش الموجود في allChallengesCache
+    // ونفلتر فقط اللي المستخدم مشترك فيه (isJoined)
+    const myChallenges = (window.allChallengesCache || []).filter(ch => ch.isJoined && !ch.completed);
+
+    if (myChallenges.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state-mini" style="background:rgba(255,255,255,0.02); padding:20px;">
+                <i class="ri-flag-line" style="font-size:24px; display:block; margin-bottom:5px;"></i>
+                لا توجد تحديات نشطة حالياً
+            </div>`;
+        return;
+    }
+
+    let html = '';
+    myChallenges.forEach(ch => {
+        // ... نفس كود رسم الكارت المصغر ...
+        // ممكن ننسخ المنطق من loadActiveChallenges أو نعمل دالة مشتركة renderMiniCard(ch)
+        // للسهولة هنا مثال سريع:
+        const perc = Math.min((ch.progress / ch.target) * 100, 100);
+        html += `
+            <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" 
+                 style="cursor:pointer; border-left: 3px solid var(--primary); margin-bottom:10px;">
+                <div class="mini-ch-title">${ch.title}</div>
+                <div class="mini-ch-progress">
+                    <div class="mini-ch-fill" style="width:${perc}%; background:var(--primary)"></div>
+                </div>
+                <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
+                    <span>${Math.floor(ch.progress)}</span>
+                    <span>${ch.target}</span>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
 }

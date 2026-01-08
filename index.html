@@ -235,7 +235,7 @@
                     </div>
                 </div>
             </section>
-            
+
 
             <section id="view-challenges" class="view">
                 <div class="tabs-nav">
@@ -599,115 +599,157 @@
                 </div>
             </section>
 
-            <section id="view-profile" class="view">
-                <div class="pro-hero-card compact">
-                    <div class="pro-card-header">
-                        <div class="pro-avatar-box" onclick="openAvatarSelector()">
-                            <div class="pro-avatar" id="userMainAvatar">🏃</div>
-                            <div class="edit-badge"><i class="ri-camera-line"></i></div>
-                        </div>
-                        <div class="pro-info-box">
-                            <div class="pro-name-row">
-                                <h2 id="profileName">...</h2>
-                                <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
-                                <button onclick="openEditProfile()" class="btn-edit-profile-fancy">
-                                    <i class="ri-user-settings-line"></i>
-                                    <span>تعديل بياناتك</span>
-                                </button>
-                            </div>
-                            <div class="pro-meta-row">
-                                <span id="profileRegion"><i class="ri-map-pin-line"></i> ...</span>
-                                <span class="dot-sep">•</span>
-                                <span id="nextLevelDist">0</span> كم للترقية
-                            </div>
-                            <div class="mini-xp-track">
-                                <div class="mini-xp-fill" id="xpBar"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="pro-stats-strip">
-                        <div class="p-strip-item">
-                            <span class="p-strip-val" id="profileTotalDist">0</span>
-                            <span class="p-strip-lbl">كم</span>
-                        </div>
-                        <div class="v-divider"></div>
-                        <div class="p-strip-item">
-                            <span class="p-strip-val" id="profileTotalRuns">0</span>
-                            <span class="p-strip-lbl">جرية</span>
-                        </div>
-                        <div class="v-divider"></div>
-                        <div class="p-strip-item">
-                            <span class="p-strip-val" id="profilePace">-</span>
-                            <span class="p-strip-lbl">السرعة</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="cw-actions">
-                    <button class="btn btn-glossy-active" onclick="openNewRun()" style="width:100%; height:50px; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
-                        <i class="ri-run-line"></i> ابدأ تمرينك
+<section id="view-profile" class="view">
+    
+    <div class="pro-hero-card compact">
+        <div class="pro-card-header">
+            <div class="pro-avatar-box" onclick="openAvatarSelector()">
+                <div class="pro-avatar" id="userMainAvatar">🏃</div>
+                <div class="edit-badge"><i class="ri-camera-line"></i></div>
+            </div>
+            
+            <div class="pro-info-box">
+                <div class="pro-name-row">
+                    <h2 id="profileName">...</h2>
+                    <span class="pro-rank-pill" id="profileRankText">مبتدئ</span>
+                    
+                    <button onclick="openEditProfile()" class="btn-edit-profile-fancy">
+                        <i class="ri-user-settings-line"></i> <span>تعديل</span>
                     </button>
                 </div>
-                <p> </p>
-                <div class="goal-card" onclick="setPersonalGoal()">
-                    <div class="goal-info">
-                        <span class="goal-title">هدفي الشهري 🎯</span>
-                        <h3 id="goalText">اضغط لتحديد هدف</h3>
-                        <span class="goal-sub" id="goalSub">0 كم متبقي</span>
-                    </div>
-                    <div class="goal-ring-wrapper">
-                        <div class="goal-ring" id="goalRing" style="--p:0"></div>
-                        <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
-                    </div>
-                </div>
-
-                <div class="section-title-row">
-                    <h4>تحليل النشاط</h4>
-                    <div class="chart-toggle-row">
-                        <button class="chart-toggle-btn active" onclick="loadChart('week', this)">أسبوع</button>
-                        <button class="chart-toggle-btn" onclick="loadChart('month', this)">شهر</button>
-                    </div>
-                </div>
-                <div class="chart-scroll-wrapper">
-                    <div class="chart-container" id="main-chart-area">
-                        <div style="margin:auto; font-size:12px; color:#6b7280;">جاري التحميل...</div>
-                    </div>
-                </div>
                 
-                <div class="records-container">
-                    <div class="records-header"><i class="ri-trophy-line"></i> أرقامي القياسية</div>
-                    <div class="records-grid">
-                        <div class="record-box">
-                            <div class="record-icon"><i class="ri-route-line"></i></div>
-                            <span class="record-val" id="best-dist">0</span><span class="record-lbl">أطول مسافة</span>
-                        </div>
-                        <div class="record-box">
-                            <div class="record-icon"><i class="ri-timer-flash-line"></i></div>
-                            <span class="record-val" id="best-pace">-</span><span class="record-lbl">أفضل بيس</span>
-                        </div>
-                        <div class="record-box">
-                            <div class="record-icon"><i class="ri-history-line"></i></div>
-                            <span class="record-val" id="total-time-hours">0</span><span class="record-lbl">ساعات</span>
-                        </div>
-                    </div>
+                <div class="pro-meta-row">
+                    <span id="profileRegion"><i class="ri-map-pin-line"></i> ...</span>
+                    <span class="dot-sep">•</span>
+                    <span id="nextLevelDist">0</span> كم للترقية
                 </div>
+                <div class="mini-xp-track">
+                    <div class="mini-xp-fill" id="xpBar"></div>
+                </div>
+            </div>
+        </div>
 
-                <div class="badges-section" style="margin-top: 20px;">
-                    <h3 class="section-title">إنجازاتي 🎖️</h3>
-                    <div id="badges-grid" class="badges-grid">
-                        <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...</div>
-                    </div>
-                </div>
+        <div class="pro-stats-strip">
+            <div class="p-strip-item">
+                <span class="p-strip-val" id="profileTotalDist">0</span>
+                <span class="p-strip-lbl">كم</span>
+            </div>
+            <div class="v-divider"></div>
+            <div class="p-strip-item">
+                <span class="p-strip-val" id="profileTotalRuns">0</span>
+                <span class="p-strip-lbl">جرية</span>
+            </div>
+            <div class="v-divider"></div>
+            <div class="p-strip-item">
+                <span class="p-strip-val" id="profilePace">-</span>
+                <span class="p-strip-lbl">السرعة</span>
+            </div>
+        </div>
+    </div>
 
-                <div class="log-section">
-                    <h3 class="section-title">سجل الأنشطة</h3>
-                    <div id="activity-log" class="log-list"></div>
+    <div class="cw-actions" style="margin-top: 10px; margin-bottom: 20px;">
+        <button class="btn btn-glossy-active" onclick="openNewRun()" style="width:100%; height:50px; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <i class="ri-run-line"></i> ابدأ تمرينك
+        </button>
+    </div>
+
+    <div class="profile-tabs-nav">
+        <div class="p-tab active" onclick="switchProfileTab('activity')" id="ptab-activity">
+            <i class="ri-pulse-line"></i> نشاطي
+        </div>
+        <div class="p-tab" onclick="switchProfileTab('goals')" id="ptab-goals">
+            <i class="ri-flag-2-line"></i> أهدافي
+        </div>
+        <div class="p-tab" onclick="switchProfileTab('stats')" id="ptab-stats">
+            <i class="ri-trophy-line"></i> أرقامي
+        </div>
+    </div>
+
+    <div id="p-content-activity" class="p-tab-content active">
+        <div class="glass-panel" style="margin-bottom: 15px; padding: 12px; display:none;" id="latest-interactions-box">
+            <div style="font-size:12px; color:#9ca3af; margin-bottom:8px;">آخر التفاعلات ❤️</div>
+            <div id="interactions-list-mini" style="font-size:11px;">
+                <div style="color:#6b7280;">لا توجد تفاعلات حديثة</div>
+            </div>
+        </div>
+
+        <div class="section-title-row">
+            <h4>تحليل النشاط 📊</h4>
+            <div class="chart-toggle-row">
+                <button class="chart-toggle-btn active" onclick="loadChart('week', this)">أسبوع</button>
+                <button class="chart-toggle-btn" onclick="loadChart('month', this)">شهر</button>
+            </div>
+        </div>
+        <div class="chart-scroll-wrapper">
+            <div class="chart-container" id="main-chart-area">
+                <div style="margin:auto; font-size:12px; color:#6b7280;">جاري التحميل...</div>
+            </div>
+        </div>
+
+        <div class="log-section" style="margin-top: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h3 class="section-title" style="margin:0;">سجل الأنشطة 📓</h3>
+                <span style="font-size:10px; color:var(--primary);">عرض الكل</span>
+            </div>
+            <div id="activity-log" class="log-list"></div>
+        </div>
+    </div>
+
+    <div id="p-content-goals" class="p-tab-content">
+        <div class="goal-card" onclick="setPersonalGoal()" style="margin-top:0;">
+            <div class="goal-info">
+                <span class="goal-title">هدفي الشهري 🎯</span>
+                <h3 id="goalText">اضغط لتحديد هدف</h3>
+                <span class="goal-sub" id="goalSub">0 كم متبقي</span>
+            </div>
+            <div class="goal-ring-wrapper">
+                <div class="goal-ring" id="goalRing" style="--p:0"></div>
+                <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
+            </div>
+        </div>
+
+        <div class="section-title-row" style="margin-top: 25px;">
+            <h4>تحدياتي النشطة 🔥</h4>
+        </div>
+        <div id="profile-active-challenges" class="mini-challenges-scroll" style="flex-wrap: wrap; overflow: visible;">
+            <div class="empty-state-mini">جاري تحميل تحدياتك...</div>
+        </div>
+    </div>
+
+    <div id="p-content-stats" class="p-tab-content">
+        <div class="records-container" style="margin-top:0;">
+            <div class="records-header"><i class="ri-medal-2-fill"></i> أرقامي القياسية</div>
+            <div class="records-grid">
+                <div class="record-box">
+                    <div class="record-icon"><i class="ri-route-line"></i></div>
+                    <span class="record-val" id="best-dist">0</span><span class="record-lbl">أطول مسافة</span>
                 </div>
-                <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:30px;">
-                    <i class="ri-logout-box-r-line"></i> تسجيل خروج
-                </button>
-            </section>
-        </main>
+                <div class="record-box">
+                    <div class="record-icon"><i class="ri-timer-flash-line"></i></div>
+                    <span class="record-val" id="best-pace">-</span><span class="record-lbl">أفضل بيس</span>
+                </div>
+                <div class="record-box">
+                    <div class="record-icon"><i class="ri-history-line"></i></div>
+                    <span class="record-val" id="total-time-hours">0</span><span class="record-lbl">ساعات</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="badges-section" style="margin-top: 25px;">
+            <h3 class="section-title">جدار البطولات 🎖️</h3>
+            <div id="badges-grid" class="badges-grid">
+                <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...</div>
+            </div>
+        </div>
+        
+        <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:40px; width:100%;">
+            <i class="ri-logout-box-r-line"></i> تسجيل خروج
+        </button>
+    </div>
+
+</section>
+
+</main>
 
         <nav class="bottom-nav">
             <div class="nav-item active" onclick="switchView('home')"><i class="ri-brain-line"></i><span>الكوتش</span></div>
