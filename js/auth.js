@@ -13,26 +13,40 @@ function toggleAuthMode() {
     if (mainBtn) mainBtn.innerText = isSignupMode ? "إنشاء حساب جديد" : "دخول";
 }
 
+// ==================== 1. Authentication (Fixed for Glass Design) ====================
 async function handleAuth() {
     const emailEl = document.getElementById('email');
     const passEl = document.getElementById('password');
     const msgEl = document.getElementById('auth-msg');
-    const activeBtn = document.querySelector('.auth-box .btn-primary');
+    
+    // 🔥 هنا التغيير المهم: بنختار الزرار بالاسم الجديد
+    const activeBtn = document.querySelector('.btn-auth-glass');
+    const btnTextSpan = document.getElementById('btn-auth-text');
     
     if (!emailEl || !passEl) return;
     const email = emailEl.value;
     const pass = passEl.value;
+    
     if (msgEl) msgEl.innerText = "";
 
-    const originalText = activeBtn.innerText;
-    activeBtn.innerHTML = 'جاري الاتصال <span class="loader-btn"></span>';
-    activeBtn.disabled = true;
-    activeBtn.style.opacity = "0.7";
+    // حفظ النص الأصلي
+    let originalText = "تسجيل الدخول";
+    if (btnTextSpan) {
+        originalText = btnTextSpan.innerText;
+        btnTextSpan.innerText = 'جاري الاتصال...';
+    }
+
+    // تعطيل الزر مؤقتاً
+    if (activeBtn) {
+        activeBtn.disabled = true;
+        activeBtn.style.opacity = "0.7";
+    }
 
     try {
         if (!email || !pass) throw new Error("يرجى ملء البيانات");
 
-        if (isSignupMode) {
+        if (typeof isSignupMode !== 'undefined' && isSignupMode) {
+            // --- إنشاء حساب ---
             const name = document.getElementById('username').value;
             const region = document.getElementById('region').value;
             if (!name || !region) throw new Error("البيانات ناقصة");
@@ -45,20 +59,33 @@ async function handleAuth() {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         } else {
+            // --- تسجيل دخول ---
             await auth.signInWithEmailAndPassword(email, pass);
         }
     } catch (err) {
+        console.error("Auth Error:", err);
         if (msgEl) {
             if(err.code === 'auth/email-already-in-use') msgEl.innerText = "هذا البريد مسجل بالفعل.";
             else if(err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة.";
             else if(err.code === 'auth/user-not-found') msgEl.innerText = "غير مسجل.";
             else msgEl.innerText = "خطأ: " + err.message;
         }
-        activeBtn.innerHTML = originalText;
-        activeBtn.disabled = false;
-        activeBtn.style.opacity = "1";
+        
+        // إرجاع الزر لحالته
+        if (btnTextSpan) btnTextSpan.innerText = originalText;
+        if (activeBtn) {
+            activeBtn.disabled = false;
+            activeBtn.style.opacity = "1";
+        }
     }
 }
+
+
+
+
+
+
+
 
 function logout() {
     if(confirm("تسجيل خروج؟")) {

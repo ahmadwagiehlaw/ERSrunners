@@ -31,31 +31,62 @@
 <body>
     <div id="offline-banner" class="offline-banner">⚠️ لا يوجد اتصال بالإنترنت - وضع التصفح</div>
 
-    <div id="auth-screen" class="full-screen-overlay">
-        <div class="auth-box">
-            <div class="logo-area">
-                <h1>ERS <span class="accent-text">RUNNERS</span></h1>
-                <p>منصة العدائين المحترفين</p>
+<div id="auth-screen" class="full-screen-overlay" style="background: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;">
+    
+    <div class="glass-auth-overlay">
+        
+        <div class="glass-auth-card">
+            
+            <div class="auth-logo-wrapper">
+                <div class="logo-glow"></div>
+                <img src="ers-logo.png" class="auth-logo-img" alt="ERS Logo">
+            </div>
+
+            <div class="auth-welcome-text">
+                <h2>أهلاً بك في <span class="text-gradient">ERS</span></h2>
+                <p>مجتمع النخبة للعدائين المحترفين</p>
             </div>
             
-            <div class="form-group">
-                <input type="email" id="email" placeholder="البريد الإلكتروني">
-                <input type="password" id="password" placeholder="كلمة المرور">
+            <div class="form-group auth-inputs">
+                <div class="input-glass-wrapper">
+                    <i class="ri-mail-line"></i>
+                    <input type="email" id="email" placeholder="البريد الإلكتروني">
+                </div>
                 
-                <div id="signup-fields" style="display:none;">
-                    <input type="text" id="username" placeholder="الاسم ثلاثي">
-                    <select id="region">
-                        <option value="" disabled selected>اختر منطقتك</option>
-                        <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
-                    </select>
+                <div class="input-glass-wrapper">
+                    <i class="ri-lock-2-line"></i>
+                    <input type="password" id="password" placeholder="كلمة المرور">
+                </div>
+                
+                <div id="signup-fields" style="display:none; animation: slideDown 0.4s ease;">
+                    <div class="input-glass-wrapper">
+                        <i class="ri-user-3-line"></i>
+                        <input type="text" id="username" placeholder="الاسم ثلاثي">
+                    </div>
+                    <div class="input-glass-wrapper">
+                        <i class="ri-map-pin-user-line"></i>
+                        <select id="region">
+                            <option value="" disabled selected>اختر منطقتك</option>
+                            <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
+                        </select>
+                    </div>
                 </div>
 
-                <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
-                <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
-                <div id="auth-msg" class="error-msg"></div>
+                <button class="btn-auth-glass" onclick="handleAuth()">
+                    <span id="btn-auth-text">تسجيل الدخول</span> 
+                    <i class="ri-arrow-left-line"></i>
+                </button>
+                
+                <div class="auth-footer">
+                    <button class="btn-text-glass" onclick="toggleAuthMode()" id="toggleAuthBtn">جديد معنا؟ إنشاء حساب</button>
+                </div>
+                
+                <div id="auth-msg" class="error-msg-glass"></div>
             </div>
         </div>
     </div>
+</div>
+
 
     <div id="app-content" style="display:none;">
         <header class="glass-header">

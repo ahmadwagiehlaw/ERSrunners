@@ -5112,3 +5112,115 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
 /* تنسيق التفاعلات المضغوط (سطر واحد) */
 .inter-item.compact { transition: background 0.2s; }
 .inter-item.compact:active { background: rgba(255,255,255,0.08) !important; }
+
+
+/* ==================== PREMIUM GLASS AUTH SCREEN (FINAL) ==================== */
+
+/* الخلفية والطبقة المعتمة */
+.glass-auth-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(5, 10, 20, 0.85); /* تعتيم قوي للتركيز */
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    z-index: 100;
+}
+
+/* الكارت الزجاجي */
+.glass-auth-card {
+    width: 100%; max-width: 380px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 40px 30px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: authCardFloat 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* اللوجو والهالة */
+.auth-logo-wrapper {
+    position: relative; display: inline-block; margin-bottom: 20px;
+}
+.auth-logo-img {
+    width: 220px; /* 🔥 الحجم الكبير */
+    height: auto; 
+    position: relative; z-index: 2;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+}
+.logo-glow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%); /* هالة برتقالية */
+    border-radius: 50%; 
+    filter: blur(40px);
+    pointer-events: none; /* 🔥 مهم: عشان الماوس يعدي منها */
+    z-index: 0; 
+}
+
+/* النصوص */
+.auth-welcome-text h2 {
+    color: #fff; font-size: 24px; font-weight: 800; margin: 0 0 5px 0;
+}
+.text-gradient {
+    background: linear-gradient(135deg, #fff 0%, #93c5fd 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.auth-welcome-text p { color: #94a3b8; font-size: 13px; margin: 0 0 30px 0; }
+
+/* الحقول (إصلاح التفاعل) */
+.auth-inputs { 
+    display: flex; flex-direction: column; gap: 15px; 
+    position: relative; z-index: 10; /* 🔥 رفعناها فوق الهالة */
+}
+
+.input-glass-wrapper {
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    display: flex; align-items: center;
+    transition: all 0.3s ease;
+}
+.input-glass-wrapper:focus-within {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+.input-glass-wrapper i { position: absolute; right: 15px; color: #64748b; font-size: 18px; }
+.input-glass-wrapper input, .input-glass-wrapper select {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: #fff; padding: 16px 45px 16px 15px; 
+    font-size: 14px; font-family: inherit;
+}
+.input-glass-wrapper select option { background: #1f2937; color: #fff; }
+
+/* الزر البرتقالي */
+.btn-auth-glass {
+    background: linear-gradient(135deg, #f59e0b, #ea580c); 
+    border: none; border-radius: 16px;
+    color: #fff; font-weight: bold; font-size: 16px;
+    padding: 16px; cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
+    transition: transform 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-auth-glass:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(234, 88, 12, 0.5); }
+.btn-auth-glass:active { transform: scale(0.98); }
+.btn-auth-glass:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.btn-text-glass {
+    background: none; border: none; color: #94a3b8; font-size: 12px;
+    cursor: pointer; padding: 10px; margin-top: 10px;
+}
+.btn-text-glass:hover { color: #fff; text-decoration: underline; }
+
+.error-msg-glass { color: #ef4444; font-size: 12px; margin-top: 10px; min-height: 18px; }
+
+@keyframes authCardFloat {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
