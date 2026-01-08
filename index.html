@@ -76,16 +76,30 @@
                     <span id="btn-auth-text">تسجيل الدخول</span> 
                     <i class="ri-arrow-left-line"></i>
                 </button>
+
+  
                 
                 <div class="auth-footer">
                     <button class="btn-text-glass" onclick="toggleAuthMode()" id="toggleAuthBtn">جديد معنا؟ إنشاء حساب</button>
                 </div>
                 
+      
+                <div class="auth-box">
+    <div id="pwa-install-container" style="display: none; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
+        <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px;">للحصول على تجربة أسرع وأفضل:</p>
+        <button id="btn-pwa-install" class="btn" style="background: white; color: black; width: 100%; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i class="ri-download-cloud-2-line"></i> تثبيت تطبيق ERS
+        </button>
+    </div>
+    
                 <div id="auth-msg" class="error-msg-glass"></div>
+      
+</div>
             </div>
         </div>
     </div>
 </div>
+
 
 
     <div id="app-content" style="display:none;">
@@ -161,7 +175,7 @@
   <!-- Sticky Tabs -->
   <div id="coach-tabs-nav" class="coach-tabs-nav">
     <button class="coach-tab-btn active" data-tab="today" onclick="setCoachHomeTab('today')">🎯 يومك</button>
-    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 مكتبة التمارين</button>
+    <button class="coach-tab-btn" data-tab="plan" onclick="setCoachHomeTab('plan')">📚 المكتبة</button>
     <button class="coach-tab-btn" data-tab="community" onclick="setCoachHomeTab('community')">🏆 ترتيبك</button>
   </div>
 
@@ -743,7 +757,12 @@
     </div>
 </div>
 
-                
+                       <div class="section-title-row" style="margin-top:22px;">
+                    <h4>أخبار الفريق ⚡</h4>
+                </div>
+                <div id="global-feed-list" class="feed-list-compact">
+                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
+                </div>         
 
             </section>
 <section id="view-profile" class="view">

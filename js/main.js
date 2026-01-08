@@ -441,3 +441,47 @@ function updateHeroWeekDist() {
     // 3. العرض النهائي (سيظهر 0.0 لو لم تجرِ من السبت)
     displayEl.innerText = weekTotal.toFixed(1);
 }
+
+
+/**
+ * نظام تثبيت التطبيق (PWA Install Logic)
+ */
+
+// 1. الاستماع لحدث طلب التثبيت من المتصفح
+window.addEventListener('beforeinstallprompt', (e) => {
+    // منع المتصفح من إظهار التنبيه الافتراضي
+    e.preventDefault();
+    // حفظ الحدث لاستخدامه لاحقاً
+    window.deferredPrompt = e;
+    
+    // إظهار الزر فقط إذا كان المستخدم في صفحة تسجيل الدخول (Auth)
+    const installContainer = document.getElementById('pwa-install-container');
+    if (installContainer) {
+        installContainer.style.display = 'block';
+    }
+});
+
+// 2. منطق الضغط على الزر
+document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
+    const promptEvent = window.deferredPrompt;
+    if (!promptEvent) return;
+
+    // إظهار نافذة التثبيت
+    promptEvent.prompt();
+
+    // انتظار رد المستخدم
+    const { outcome } = await promptEvent.userChoice;
+    console.log(`User response to install prompt: ${outcome}`);
+
+    // مسح الحدث لأنه لا يمكن استخدامه مرتين
+    window.deferredPrompt = null;
+    
+    // إخفاء الزر بعد الضغط
+    document.getElementById('pwa-install-container').style.display = 'none';
+});
+
+// 3. إخفاء الزر إذا تم التثبيت بالفعل بنجاح
+window.addEventListener('appinstalled', () => {
+    console.log('ERS App was installed.');
+    document.getElementById('pwa-install-container').style.display = 'none';
+});

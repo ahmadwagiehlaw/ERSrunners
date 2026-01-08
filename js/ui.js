@@ -1517,7 +1517,7 @@ function loadRecentInteractions() {
 
     db.collection('users').doc(currentUser.uid).collection('notifications')
         .orderBy('timestamp', 'desc')
-        .limit(5)
+        .limit(10)
         .get()
         .then(snap => {
             if(snap.empty) {
