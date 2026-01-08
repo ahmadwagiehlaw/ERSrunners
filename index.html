@@ -98,36 +98,46 @@
 
 
     <div id="app-content" style="display:none;">
-        <header class="glass-header">
-            <div class="header-inner">
-                <div class="header-right">
-                    <img src="ers-logo.png" class="brand-logo" alt="Logo"> 
-                    <div class="user-greeting-box">
-    <div style="display:flex; align-items:center; gap:5px;">
-        <span class="hello-text">أهلاً يا كابتن 👋</span>
-    </div>
-    <div style="display:flex; align-items:center; gap:8px;">
-        <h3 id="headerName" class="header-name" onclick="switchView('profile')" role="button" tabindex="0" style="margin:0;">...</h3>
-        <div id="streak-badge" class="streak-badge" style="display:none;">
-            <i class="ri-fire-fill"></i> <span id="streak-count">0</span>
-        </div>
-    </div>
-</div>
-                </div>
-                <div class="header-actions">
-                    <div class="icon-badge add-btn" onclick="openNewRun()"><i class="ri-add-line"></i></div>
-                    <div class="icon-badge" onclick="showNotifications()">
-                        <i class="ri-notification-3-line"></i><span class="badge-dot" id="notif-dot"></span>
-                    </div>
-                    <div class="icon-badge" onclick="openBugReport()" title="إبلاغ عن مشكلة"><i class="ri-bug-2-line"></i></div>
-                    <div class="icon-badge" onclick="openSettingsModal()"><i class="ri-settings-4-line"></i></div>
-                    
-                    <div id="header-install-btn" class="icon-badge install-pulse" onclick="installApp()" style="display: none; background: #fff; color: #000;">
-                        <i class="ri-download-cloud-2-fill"></i>
+     <header class="glass-header">
+    <div class="header-inner">
+        <div class="header-right">
+            <div class="logo-container">
+                <img src="ers-logo.png" class="brand-logo" alt="ERS Logo"> 
+            </div>
+            <div class="user-greeting-box">
+                <span class="hello-text">أهلاً يا كابتن 👋</span>
+                <div class="user-info-row" onclick="switchView('profile')">
+                    <h3 id="headerName" class="header-name">...</h3>
+                    <div id="streak-badge" class="header-streak">
+                        <i class="ri-fire-fill"></i> <span id="streak-count">0</span>
                     </div>
                 </div>
             </div>
-        </header>
+        </div>
+
+        <div class="header-actions">
+
+            <div class="add-btn-crystal" onclick="openNewRun()">
+                <i class="ri-add-line"></i>
+                <div class="pulse-ring"></div>
+            </div>
+
+            <div class="action-group-mini">
+                <div class="icon-badge-mini" onclick="showNotifications()">
+                    <i class="ri-notification-3-line"></i>
+                    <span class="badge-dot" id="notif-dot"></span>
+                </div>
+                <div class="icon-badge-mini" onclick="openSettingsModal()">
+                    <i class="ri-settings-4-line"></i>
+                </div>
+                <div class="icon-badge-mini" onclick="openBugReport()">
+                    <i class="ri-bug-2-line"></i>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</header>
 
         <main class="main-container">
             

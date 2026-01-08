@@ -5561,3 +5561,282 @@ body {
 #latest-interactions-box {
     transition: all 0.3s ease;
 }
+
+/* الحاوية الرئيسية للهيدر */
+.main-app-header {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: rgba(10, 15, 24, 0.85); /* Midnight Deep */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+}
+
+.header-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* القسم الأيمن واللوجو */
+.brand-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.app-logo-premium {
+    height: 80x; /* اللوجو كبير وواضح كما طلبت */
+    width: auto;
+    filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+}
+
+.user-info-stack {
+    display: flex;
+    flex-direction: column;
+}
+
+.welcome-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.user-display-name {
+    font-size: 17px;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    cursor: pointer;
+}
+
+/* زر الإضافة الكريستالي النابض */
+.crystal-add-btn {
+    width: 48px;
+    height: 48px;
+    background: #ffffff;
+    border: none;
+    border-radius: 16px;
+    color: #000;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pulsate {
+    animation: crystalPulse 2s infinite;
+}
+
+@keyframes crystalPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4); transform: scale(1); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); transform: scale(1.05); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); transform: scale(1); }
+}
+
+/* الأزرار الجانبية */
+.actions-cluster {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.action-divider {
+    width: 1px;
+    height: 25px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.icon-group {
+    display: flex;
+    gap: 8px;
+}
+
+.ghost-action-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    position: relative;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.ghost-action-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(2px);
+}
+
+.notification-dot {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 7px;
+    height: 7px;
+    background: #ff4d4d;
+    border-radius: 50%;
+    border: 2px solid #0a0f18;
+}
+
+/* استايل الستريك المصغر */
+.mini-streak-chip {
+    background: linear-gradient(45deg, #f59e0b, #ef4444);
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #fff;
+}
+
+/* الهيدر الأساسي - أغمق وأفخم */
+.glass-header {
+    background: rgba(10, 15, 25, 0.98) !important; /* أسود ملكي عميق */
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    height: 85px;
+    padding: 0 15px;
+    position: sticky;
+    top: 0;
+    z-index: 5000;
+}
+
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+/* اللوجو - واضح وبدون وهج مبالغ */
+.logo-container {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 5px;
+    border-radius: 12px;
+    margin-left: 12px;
+}
+
+.brand-logo {
+    height: 48px; /* حجم كبير وواضح */
+    width: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    display: block;
+}
+
+/* الترحيب واسم المستخدم */
+.user-greeting-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.hello-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 500;
+}
+
+.user-info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.header-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    margin: 0;
+}
+
+/* مجموعة الأيقونات المصغرة */
+.action-group-mini {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px;
+    border-radius: 15px;
+    gap: 4px;
+    margin-right: 10px;
+}
+
+.icon-badge-mini {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.icon-badge-mini:active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* 🔥 زر الزائد الكريستالي الأبيض النبّاض 🔥 */
+.add-btn-crystal {
+    width: 42px;
+    height: 42px;
+    background: #ffffff !important;
+    color: #000 !important;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    position: relative;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+}
+
+.pulse-ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #fff;
+    border-radius: 14px;
+    animation: crystal-pulse 2s infinite;
+}
+
+@keyframes crystal-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ستريك الهيدر الصغير */
+.header-streak {
+    background: linear-gradient(to right, #f59e0b, #d97706);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: #fff;
+}
