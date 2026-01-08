@@ -22,7 +22,7 @@ body {
 
 /* Auth Screen */
 .full-screen-overlay {
-    position: fixed; inset: 0; z-index: 2000;
+    position: fixed; inset: 0; z-index: 1000;
     background: var(--bg-dark);
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
@@ -4432,108 +4432,107 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
 }
 
 
-/* ==================== THE FLOATING CRYSTAL NAV (Final) ==================== */
+/* ==================== THE FLOATING CRYSTAL NAV (Elegant Edition) ==================== */
 
 .bottom-nav {
     position: fixed;
-    bottom: 20px;
-    left: 15px;
-    right: 15px;
-    height: 75px;
+    bottom: 0; 
+    left: 0;
+    right: 0;
+    height: 80px; /* ارتفاع متوازن */
     
-    /* الخلفية: أسود ملكي عميق */
-    background: rgba(15, 20, 30, 0.9); 
-    backdrop-filter: blur(25px);
-    -webkit-backdrop-filter: blur(25px);
+    /* خلفية midnight عميقة جداً بلمسة زجاجية مطفية */
+    background: rgba(10, 15, 24, 0.98); 
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
 
-    /* الحواف والظل */
-    border-radius: 25px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    border-radius: 28px 28px 0 0; 
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    
+    /* ظل ناعم جداً للفصل */
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
 
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    padding: 0 15px;
+    padding: 0 12px 12px 12px; 
     z-index: 2000;
 }
 
-/* --- العنصر العادي (غير النشط) --- */
+/* --- العنصر العادي --- */
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: rgba(255, 255, 255, 0.4); /* لون باهت هادي */
-    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* حركة ناعمة */
+    color: rgba(255, 255, 255, 0.25); /* لون خافت جداً وراقي */
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
     position: relative;
-    width: 60px;
-    height: 60px;
-    border-radius: 50%;
+    width: 50px;
+    height: 50px;
 }
 
 .nav-item i {
-    font-size: 24px;
-    margin-bottom: 2px;
-    transition: 0.3s;
+    font-size: 20px;
+    margin-bottom: 4px;
 }
 
 .nav-item span {
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
+    font-size: 9px;
+    font-weight: 600;
+    opacity: 0.7;
 }
 
-/* --- 🔥 الحالة النشطة: الكريستالة (The Crystal) 🔥 --- */
+/* --- 🔥 الكريستالة الناعمة (The Elegant Crystal) 🔥 --- */
 
 .nav-item.active {
-    /* 1. الخلفية: تدرج زجاجي أبيض شفاف */
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    /* أبيض ثلجي نصف شفاف يعطي ملمس الزجاج المطفى */
+    background: rgba(255, 255, 255, 0.92); 
     
-    /* 2. الحدود: برواز أبيض خفيف كأنه حافة زجاج */
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    /* لون أيقونة داكن بلمسة سماوية خفيفة جداً */
+    color: #0f172a; 
     
-    /* 3. الحركة والظلال */
-    transform: translateY(-25px) scale(1.1); /* يطير لفوق */
+    /* ارتفاع انسيابي غير مبالغ فيه */
+    transform: translateY(-22px) scale(1.1); 
+    
+    /* ظل ناعم وشفاف */
     box-shadow: 
-        0 10px 20px rgba(0, 0, 0, 0.3), /* ظل عميق */
-        inset 0 0 15px rgba(255, 255, 255, 0.05); /* لمعة داخلية */
+        0 12px 24px rgba(0, 0, 0, 0.3),
+        0 0 15px rgba(255, 255, 255, 0.1); 
     
-    /* 4. اللون */
-    color: #fff; /* الأيقونة تبقى أبيض ناصع */
-    backdrop-filter: blur(8px);
+    border-radius: 18px; /* شكل مربع بزويا منحنية بدلاً من الدائرة الكاملة لمظهر عصري */
+    border: 1px solid rgba(255, 255, 255, 1);
 }
 
-/* الأيقونة داخل الكريستالة */
 .nav-item.active i {
-    font-size: 26px;
+    font-size: 24px;
     margin-bottom: 0;
-    /* ظل خفيف للأيقونة نفسها عشان تبرز */
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 
-/* إخفاء النص عند النشاط */
 .nav-item.active span {
     display: none;
 }
 
-/* --- تأثير الإضاءة تحت الزرار (Spotlight) --- */
+/* --- الضوء السفلي الهادئ (Soft Glow) --- */
 .nav-item.active::after {
     content: '';
     position: absolute;
-    bottom: -20px; /* تحت الزرار بشوية */
+    bottom: -12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 25px;
-    height: 6px;
+    width: 30px;
+    height: 5px;
     
-    /* ضوء أبيض/سماوي هادي بدلاً من الأخضر */
-    background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 70%);
+    /* توهج أبيض خافت جداً "رايق" */
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 80%);
     border-radius: 50%;
-    opacity: 0.8;
     filter: blur(3px);
     z-index: -1;
+}
+
+/* ضمان عدم تداخل المحتوى مع النافبار */
+body {
+    padding-bottom: 90px !important;
 }
 
 /* ✅ Safe visual re-order (keeps HTML order to avoid JS issues) */
@@ -5437,4 +5436,42 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
 #btn-pwa-install:active {
     transform: scale(0.96);
     background: #e5e7eb;
+}
+
+
+/* حل مشكلة ظهور النافبار خلف شاشة الدخول */
+
+#auth-screen {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 99999 !important; /* أعلى قيمة ممكنة لتغطية النافبار وكل شيء */
+    background: var(--bg-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* زر التثبيت بتصميم متناسق مع شاشة الدخول */
+#pwa-install-container {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 15px;
+    margin: 20px 0;
+    text-align: center;
+    backdrop-filter: blur(5px);
+}
+
+#btn-pwa-install {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-weight: 800;
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }

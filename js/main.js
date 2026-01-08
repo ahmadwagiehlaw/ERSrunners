@@ -443,45 +443,54 @@ function updateHeroWeekDist() {
 }
 
 
-/**
- * نظام تثبيت التطبيق (PWA Install Logic)
- */
+/* نظام تثبيت التطبيق المحسن (ERS PWA Install Engine)
+   يضمن ظهور الزر فقط عند توفر إمكانية التثبيت 
+*/
 
-// 1. الاستماع لحدث طلب التثبيت من المتصفح
+// تعريف متغير عالمي لحفظ الطلب (تأكد من عدم تعريفه مرتين)
+window.deferredPrompt = null;
+
+// 1. الاستماع لحدث طلب التثبيت (يطلقه المتصفح تلقائياً)
 window.addEventListener('beforeinstallprompt', (e) => {
-    // منع المتصفح من إظهار التنبيه الافتراضي
+    // منع المتصفح من إظهار التنبيه الافتراضي الخاص به
     e.preventDefault();
-    // حفظ الحدث لاستخدامه لاحقاً
+    // تخزين الحدث في المتغير العالمي لاستخدامه عند ضغط الزر
     window.deferredPrompt = e;
     
-    // إظهار الزر فقط إذا كان المستخدم في صفحة تسجيل الدخول (Auth)
+    // البحث عن حاوية الزر وإظهارها فوراً
     const installContainer = document.getElementById('pwa-install-container');
     if (installContainer) {
         installContainer.style.display = 'block';
+        console.log("🚀 ERS: Install button is now active");
     }
 });
 
-// 2. منطق الضغط على الزر
-document.getElementById('btn-pwa-install')?.addEventListener('click', async () => {
-    const promptEvent = window.deferredPrompt;
-    if (!promptEvent) return;
+// 2. تفعيل منطق الضغط على الزر (التنفيذ الفعلي للتثبيت)
+document.addEventListener('click', async (e) => {
+    // التحقق إذا كان العنصر المضغوط هو زر التثبيت
+    if (e.target.closest('#btn-pwa-install')) {
+        const promptEvent = window.deferredPrompt;
+        if (!promptEvent) return;
 
-    // إظهار نافذة التثبيت
-    promptEvent.prompt();
+        // إظهار نافذة التثبيت الرسمية للمتصفح
+        promptEvent.prompt();
 
-    // انتظار رد المستخدم
-    const { outcome } = await promptEvent.userChoice;
-    console.log(`User response to install prompt: ${outcome}`);
+        // انتظار قرار المستخدم (وافق أم رفض)
+        const { outcome } = await promptEvent.userChoice;
+        console.log(`User response: ${outcome}`);
 
-    // مسح الحدث لأنه لا يمكن استخدامه مرتين
-    window.deferredPrompt = null;
-    
-    // إخفاء الزر بعد الضغط
-    document.getElementById('pwa-install-container').style.display = 'none';
+        // مسح الحدث وتصفيره
+        window.deferredPrompt = null;
+        
+        // إخفاء الزر
+        const container = document.getElementById('pwa-install-container');
+        if (container) container.style.display = 'none';
+    }
 });
 
-// 3. إخفاء الزر إذا تم التثبيت بالفعل بنجاح
+// 3. التأكد من إخفاء الزر إذا نجح التثبيت
 window.addEventListener('appinstalled', () => {
-    console.log('ERS App was installed.');
-    document.getElementById('pwa-install-container').style.display = 'none';
+    console.log('✅ ERS Installed Successfully');
+    const container = document.getElementById('pwa-install-container');
+    if (container) container.style.display = 'none';
 });
