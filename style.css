@@ -5475,3 +5475,89 @@ body {
     cursor: pointer;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
+
+
+/* --- تحديث الأزرار للهوية الجديدة (Crystal & Midnight) --- */
+
+/* الزر الرئيسي (Primary) - بديل الأخضر */
+.btn-primary {
+    background: rgba(255, 255, 255, 0.95) !important; /* أبيض ناصع */
+    color: #0f172a !important; /* نص داكن جداً */
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    padding: 10px 18px !important;
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-primary:active {
+    transform: scale(0.95);
+    background: #e2e8f0 !important;
+}
+
+/* الزر الشفاف (Ghost) - تفاصيل ومشاركة */
+.btn-ghost {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 10px 18px !important;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+}
+
+.btn-ghost:active {
+    background: rgba(255, 255, 255, 0.1) !important;
+    transform: scale(0.95);
+}
+
+/* حاوية الأزرار لضمان التنسيق */
+.cw-actions, .wc-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.cw-actions button, .wc-actions button {
+    flex: 1; /* جعل الأزرار متساوية العرض وSlim */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+
+/* تنسيق العناصر القابلة للطي */
+.foldable-content {
+    max-height: 500px; /* أقصى ارتفاع مسموح به */
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    margin-top: 10px;
+}
+
+.foldable-content.folded {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    pointer-events: none;
+}
+
+.fold-icon {
+    transition: transform 0.3s ease;
+    font-size: 18px;
+    color: rgba(255,255,255,0.4);
+}
+
+.fold-icon.rotated {
+    transform: rotate(180deg);
+}
+
+/* تحسين شكل البانل عند الطي */
+#latest-interactions-box {
+    transition: all 0.3s ease;
+}

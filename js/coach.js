@@ -929,6 +929,7 @@ const imgRaw = (w.imageUrl && String(w.imageUrl).trim()) ? String(w.imageUrl).tr
 const imgSafe = imgRaw.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 
 container.innerHTML = `
+
   <div class="coach-workout-card" onclick="openDailyWorkoutModal();">
     <div class="cw-media ${imgRaw ? 'has-img' : ''}" ${imgRaw ? `style="--cw-img:url('${imgSafe}')"` : ''}>
       ${imgRaw ? `<button class="cw-zoom" title="تكبير الصورة" onclick="event.stopPropagation(); openImageViewer('${imgSafe}');"><i class="ri-zoom-in-line"></i></button>` : ''}

@@ -1745,3 +1745,21 @@ function renderTeamSchedule() {
         }
     }, 500);
 }
+
+
+function toggleInteractionsFold() {
+    const content = document.getElementById('interactions-list-mini');
+    const icon = document.getElementById('interactions-fold-icon');
+    const header = document.getElementById('interactions-header');
+
+    // تبديل الكلاسات
+    content.classList.toggle('folded');
+    icon.classList.toggle('rotated');
+
+    // تعديل الهامش السفلي للعنوان عند الطي لتبدو الحاوية أصغر
+    if (content.classList.contains('folded')) {
+        header.style.marginBottom = "0px";
+    } else {
+        header.style.marginBottom = "10px";
+    }
+}

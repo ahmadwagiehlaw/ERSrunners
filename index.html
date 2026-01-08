@@ -750,16 +750,16 @@
             </div>
         </div>
     </div>
-</div>
 
-                       <div class="section-title-row" style="margin-top:22px;">
+            <div class="section-title-row" style="margin-top:22px;">
                     <h4>أخبار الفريق ⚡</h4>
                 </div>
                 <div id="global-feed-list" class="feed-list-compact">
                     <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
                 </div>         
 
-            </section>
+                       </section>
+
 <section id="view-profile" class="view">
     
     <div class="pro-hero-card compact">
@@ -840,13 +840,17 @@
             </div>
         </div>
 
-        <div class="glass-panel" style="margin-top: 20px; padding: 15px; border-color:rgba(255,255,255,0.08); display:none;" id="latest-interactions-box">
-            <div style="font-size:12px; color:#f59e0b; margin-bottom:10px; font-weight:bold; display:flex; align-items:center; gap:5px;">
-                <i class="ri-heart-pulse-fill"></i> التفاعلات الأخيرة
-            </div>
-            <div id="interactions-list-mini" class="interactions-box">
-                </div>
+<div class="glass-panel foldable-container" style="margin-top: 20px; padding: 15px; border-color:rgba(255,255,255,0.08); display:none;" id="latest-interactions-box">
+    <div onclick="toggleInteractionsFold()" style="cursor:pointer; font-size:12px; color:#f59e0b; margin-bottom:0px; font-weight:bold; display:flex; align-items:center; justify-content:space-between; width:100%;" id="interactions-header">
+        <div style="display:flex; align-items:center; gap:5px;">
+            <i class="ri-heart-pulse-fill"></i> التفاعلات الأخيرة
         </div>
+        <i class="ri-arrow-down-s-line fold-icon" id="interactions-fold-icon"></i>
+    </div>
+    
+    <div id="interactions-list-mini" class="interactions-box foldable-content folded">
+    </div>
+</div>
 
         <div class="log-section" style="margin-top: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -869,6 +873,8 @@
             </div>
         </div>
 
+
+        
         <div class="section-title-row" style="margin-top: 25px;">
             <h4>تحدياتي النشطة 🔥</h4>
         </div>

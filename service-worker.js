@@ -1,4 +1,4 @@
-// ERS Runners - Service Worker (V2.1.0)
+// ERS Runners - Service Worker (V2.2.0)
 const CACHE_NAME = 'ers-cache-v4.1.0'; // تحديث رقم النسخة // تحديث رقم النسخة
 const ASSETS_TO_CACHE = [
   './',

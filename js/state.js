@@ -26,7 +26,7 @@ function initUpdateCheck() {
 let globalFeedLastDoc = null;
 let globalFeedHasMore = true;
 let globalFeedLoading = false;
-const GLOBAL_FEED_PAGE_SIZE = 5;
+const GLOBAL_FEED_PAGE_SIZE = 10;
 
 let currentUser = null;
 let userData = {};
