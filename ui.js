@@ -792,96 +792,6 @@ async function deleteFullAccount() {
     } catch (e) { alert("خطأ: " + e.message); }
 }
 
-// Fix Stats
-// Fix Stats (Rebuild from runs - single source of truth)
-async function fixMyStats() {
-  if (!confirm("إعادة حساب العدادات من سجل الجريات؟")) return;
-
-  const btn = document.getElementById('fix-btn');
-  if (btn) btn.innerText = "جاري الحساب...";
-
-  try {
-    const uid = currentUser.uid;
-    const snap = await db.collection('users').doc(uid).collection('runs').get();
-
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-
-    let totalDist = 0;
-    let totalRuns = 0;
-    let totalRunDist = 0;
-    let totalWalkDist = 0;
-
-    let monthDist = 0;
-    let monthRunDist = 0;
-    let monthWalkDist = 0;
-
-    snap.forEach(doc => {
-      const r = doc.data() || {};
-      const dist = Number(r.dist) || 0;
-      if (dist <= 0) return; // XT or invalid doesn't count
-
-      totalDist += dist;
-      totalRuns += 1;
-
-      const kind = String(r.autoKind || '').toLowerCase();
-      if (kind === 'walk') totalWalkDist += dist;
-      else totalRunDist += dist; // default Run
-
-      // month split by timestamp (fallback: ignore if missing)
-      const ts = r.timestamp?.toDate ? r.timestamp.toDate() : null;
-      if (ts && ts.getFullYear() === currentYear && ts.getMonth() === currentMonth) {
-        monthDist += dist;
-        if (kind === 'walk') monthWalkDist += dist;
-        else monthRunDist += dist;
-      }
-    });
-
-    // rounding
-    const round2 = (x) => Math.round((x + Number.EPSILON) * 100) / 100;
-    totalDist = round2(totalDist);
-    totalRunDist = round2(totalRunDist);
-    totalWalkDist = round2(totalWalkDist);
-    monthDist = round2(monthDist);
-    monthRunDist = round2(monthRunDist);
-    monthWalkDist = round2(monthWalkDist);
-
-    await db.collection('users').doc(uid).set({
-      totalDist,
-      totalRuns,
-      totalRunDist,
-      totalWalkDist,
-      monthDist,
-      monthRunDist,
-      monthWalkDist,
-      lastMonthKey: currentMonthKey
-    }, { merge: true });
-
-    // keep local state consistent
-    userData.totalDist = totalDist;
-    userData.totalRuns = totalRuns;
-    userData.totalRunDist = totalRunDist;
-    userData.totalWalkDist = totalWalkDist;
-    userData.monthDist = monthDist;
-    userData.monthRunDist = monthRunDist;
-    userData.monthWalkDist = monthWalkDist;
-    userData.lastMonthKey = currentMonthKey;
-
-    // clear caches that depend on totals
-    try { allUsersCache = []; } catch(e) {}
-
-    updateUI();
-    alert(`تم التصحيح ✅\nالإجمالي: ${totalDist} كم\nهذا الشهر: ${monthDist} كم`);
-  } catch (e) {
-    console.error(e);
-    alert("خطأ أثناء إعادة الحساب");
-  } finally {
-    if (btn) btn.innerText = "إصلاح";
-  }
-}
-
 // Share Logic
 function generateShareCard(dist, time, dateStr) {
     document.getElementById('share-name').innerText = userData.name;
@@ -1436,74 +1346,67 @@ function toggleChallengeInputs() {
 
 
 async function submitRun() {
-    
-    
-    if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+
+    if (!navigator.onLine) {
+        return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+    }
 
     const btn = document.getElementById('save-run-btn');
-    const distInputRaw = parseFloat(document.getElementById('log-dist').value);
+
+    const dist = parseFloat(document.getElementById('log-dist').value);
     const time = parseFloat(document.getElementById('log-time').value);
     const type = document.getElementById('log-type').value;
-    const link = document.getElementById('log-link').value;
     const dateInput = document.getElementById('log-date').value;
     const imgUrlInput = document.getElementById('uploaded-img-url');
 
-    const isCore = _ersIsCoreType(type);
-    const xtDist = (!isCore && distInputRaw && distInputRaw > 0) ? distInputRaw : 0;
-    const dist = isCore ? (distInputRaw || 0) : 0; // ✅ XT لا يؤثر على التحديات/الإحصائيات
-
-    if (!time) return showToast("البيانات ناقصة!", "error");
-    if (time <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
-
-    if (isCore) {
-      if (!dist) return showToast("البيانات ناقصة!", "error");
-      if (dist <= 0) return showToast("الأرقام يجب أن تكون صحيحة", "error");
+    // ===== Validation بسيط وواضح =====
+    if (!dist || dist <= 0) {
+        return showToast("المسافة غير صحيحة", "error");
     }
 
-    // Coach workout logging: require proof image
-const coachCtx = window._ersCoachLogCtx || null;
-if (coachCtx && coachCtx.requireImage && (!imgUrlInput || !imgUrlInput.value)) {
-  return showToast("لازم ترفق صورة إثبات لتمرين الكوتش 📸", "error");
-}
+    if (!time || time <= 0) {
+        return showToast("الوقت غير صحيح", "error");
+    }
 
-    // تعطيل الزر لمنع التكرار
-    if(btn) { 
-        btn.innerText = "جاري الحفظ..."; 
-        btn.disabled = true; 
+    if (!['Run', 'Walk'].includes(type)) {
+        return showToast("نوع النشاط غير مدعوم حاليًا", "error");
+    }
+
+    // ===== تعطيل الزر =====
+    if (btn) {
+        btn.innerText = "جاري الحفظ...";
+        btn.disabled = true;
         btn.style.opacity = "0.7";
     }
 
     try {
         const uid = currentUser.uid;
         const selectedDate = new Date(dateInput);
-        
-        // 1. منطق التعديل (Edit Mode)
+        const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+        const currentMonthKey = selectedDate.toISOString().slice(0, 7);
+
+        const isRun = (type === 'Run');
+
+        /* ===============================
+           EDIT MODE
+        =============================== */
         if (editingRunId) {
-            const oldIsCore = _ersIsCoreType(editingOldType);
-            const oldDistForStats = oldIsCore ? (editingOldDist || 0) : 0;
-            const newDistForStats = isCore ? dist : 0;
-            const distDiff = newDistForStats - oldDistForStats;
-            const runDiff = (isCore ? 1 : 0) - (oldIsCore ? 1 : 0); 
 
-            const updatePayload = { 
-                dist: (isCore ? dist : 0),
-                time,
-                type,
-                link,
-                xtDist: (isCore ? 0 : xtDist),
-                img: imgUrlInput.value
-            };
+            const oldWasRun = (editingOldType === 'Run');
+            const distDiff = (isRun ? dist : 0) - (oldWasRun ? editingOldDist : 0);
+            const runDiff = (isRun ? 1 : 0) - (oldWasRun ? 1 : 0);
 
-            // ✅ لو التعديل ده تم من "نفّذ التمرين" نعلّم الجرية كتمرينة كوتش
-            if (coachCtx) {
-                updatePayload.coachWorkout = true;
-                updatePayload.coachWorkoutId = coachCtx.workoutId || null;
-                updatePayload.coachWorkoutTitle = coachCtx.title || null;
-                updatePayload.coachWorkoutEmoji = coachCtx.emoji || null;
-                updatePayload.coachWorkoutDateKey = coachCtx.dateKey || null;
-            }
-
-            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update(updatePayload);
+            await db.collection('users')
+                .doc(uid)
+                .collection('runs')
+                .doc(editingRunId)
+                .update({
+                    dist,
+                    time,
+                    type,
+                    timestamp,
+                    img: imgUrlInput?.value || null
+                });
 
             await db.collection('users').doc(uid).set({
                 totalDist: firebase.firestore.FieldValue.increment(distDiff),
@@ -1511,144 +1414,246 @@ if (coachCtx && coachCtx.requireImage && (!imgUrlInput || !imgUrlInput.value)) {
                 monthDist: firebase.firestore.FieldValue.increment(distDiff)
             }, { merge: true });
 
-            // إعادة فحص التحديات بأثر رجعي عند إضافة صورة
-            if (imgUrlInput.value) { 
-                 const activeCh = await db.collection('challenges').where('active', '==', true).get();
-                 const batch = db.batch();
-                 let updatedCount = 0;
-
-                 activeCh.forEach(doc => {
-                    const ch = doc.data();
-                    const rules = ch.rules || {};
-                    if (rules.requireImg && dist >= (rules.minDistPerRun || 0)) {
-                        const participantRef = doc.ref.collection('participants').doc(uid);
-                        batch.set(participantRef, { completed: true }, { merge: true });
-                        updatedCount++;
-                    }
-                 });
-                 if(updatedCount > 0) await batch.commit();
-            }
-
             showToast("تم التعديل بنجاح ✅", "success");
             editingRunId = null;
 
         } else {
-            // 2. منطق الإضافة الجديدة (New Run)
-            const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-            const streakInfo = isCore ? updateStreakLogic(selectedDate) : { currentStreak: (userData.currentStreak || 0), lastDate: (userData.lastRunDate || null) };
-            const currentMonthKey = selectedDate.toISOString().slice(0, 7); 
-            let newMonthDist = (userData.monthDist || 0) + dist;
 
-            // باقي منطقك كما هو...
-            const pace = (dist > 0) ? (time / dist) : 0;
-            const autoKind = _ersAutoKind(type, pace);
-            const slowAsWalk = !!(autoKind === 'Walk');
+            /* ===============================
+               NEW RUN
+            =============================== */
 
-            // احترام تعطيل التعليقات
-            const commentsDisabled = !!getUserPref('disableComments', false);
-
-            const coachCtx2 = window._ersCoachLogCtx || null;
             const runData = {
-              dist: (isCore ? dist : 0),
-              xtDist: (isCore ? 0 : xtDist),
-              time,
-              type,
-              pace,
-              autoKind,
-              slowAsWalk,
-              timestamp,
-              img: imgUrlInput.value,
-              commentsDisabled,
-
-              // coach workout marker (for motivation + filtering)
-              coachWorkout: !!coachCtx2,
-              coachWorkoutId: coachCtx2?.workoutId || null,
-              coachWorkoutTitle: coachCtx2?.title || null,
-              coachWorkoutEmoji: coachCtx2?.emoji || null,
-              coachWorkoutDateKey: coachCtx2?.dateKey || null
+                dist,
+                time,
+                type,
+                timestamp,
+                img: imgUrlInput?.value || null
             };
 
             await db.collection('users').doc(uid).collection('runs').add(runData);
+
             await db.collection('activity_feed').add({
-               uid: uid, userName: userData.name, userRegion: userData.region, ...runData, likes: []
+                uid,
+                userName: userData.name,
+                userRegion: userData.region,
+                ...runData,
+                likes: []
             });
 
-            // تحديث إجماليات المستخدم (كما هو عندك)
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(dist),
-                totalRuns: firebase.firestore.FieldValue.increment(isCore ? 1 : 0),
-                totalRunDist: firebase.firestore.FieldValue.increment(autoKind==='Run' ? dist : 0),
-                totalWalkDist: firebase.firestore.FieldValue.increment(autoKind==='Walk' ? dist : 0),
-                monthDist: newMonthDist,
-                lastMonthKey: currentMonthKey,
-                currentStreak: streakInfo.currentStreak,
-                lastRunDate: streakInfo.lastDate || timestamp
-            }, { merge: true });
+            // الحسابات تدخل للجري فقط
+            if (isRun) {
+                await db.collection('users').doc(uid).set({
+                    totalDist: firebase.firestore.FieldValue.increment(dist),
+                    totalRuns: firebase.firestore.FieldValue.increment(1),
+                    monthDist: firebase.firestore.FieldValue.increment(dist),
+                    lastMonthKey: currentMonthKey,
+                    lastRunDate: timestamp
+                }, { merge: true });
+            }
 
             showToast("تم حفظ النشاط ✅", "success");
         }
 
-        // تحليلك/مكافآتك كما هي...
-        checkNewBadges(dist, time, selectedDate);
-        setTimeout(() => { showRunAnalysis(dist, time, autoKind, pace); }, 300);
-
         // إغلاق وتنظيف
         closeModal('modal-log');
-
-        // reset coach logging context + modal title
-        if(window._ersCoachLogCtx){
-          window._ersCoachLogCtx = null;
-          const h = document.querySelector('#modal-log h3');
-          if(h) h.innerText = 'تسجيل نشاط 🏃‍♂️';
-        }
 
     } catch (e) {
         console.error(e);
         showToast("حصل خطأ أثناء الحفظ", "error");
     } finally {
-        if(btn) { 
-            btn.innerText = "حفظ النشاط"; 
-            btn.disabled = false; 
+        if (btn) {
+            btn.innerText = "حفظ النشاط";
+            btn.disabled = false;
             btn.style.opacity = "1";
         }
     }
 }
 
 
-// ==================== Team Workout: Details Fix ====================
-window.openTeamWorkoutDetails = function () {
-  // داخل صفحة الكوتش نفسها: نروح لتبويب "plan"
-  if (typeof setCoachHomeTab === 'function') {
-    setCoachHomeTab('plan');
-    setTimeout(() => {
-      const el = document.getElementById('team-workout');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 150);
-    return;
-  }
 
-  // fallback: لو التبويبات مش متاحة لأي سبب
-  console.warn('setCoachHomeTab is not defined');
-};
+// ==================== Profile Tabs Switcher (V4.0) ====================
 
-// ===== Plan Segments (Coach Plan Tab) =====
-window.setPlanSegment = function(seg){
-  // buttons
-  document.querySelectorAll('.plan-seg-btn').forEach(b=>{
-    b.classList.toggle('active', b.dataset.planseg === seg);
-  });
+function switchProfileTab(tabName) {
+    // 1. تحديث شكل الأزرار (Active State)
+    document.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
+    const btn = document.getElementById(`ptab-${tabName}`);
+    if(btn) btn.classList.add('active');
 
-  // views
-  document.querySelectorAll('.plan-seg-view').forEach(v=>{
-    v.classList.toggle('active', v.id === `plan-seg-${seg}`);
-  });
-};
+    // 2. إخفاء كل المحتوى وإظهار المطلوب
+    document.querySelectorAll('.p-tab-content').forEach(el => el.classList.remove('active'));
+    const content = document.getElementById(`p-content-${tabName}`);
+    if(content) content.classList.add('active');
 
-// Toggle show/hide schedule body
-window.toggleTeamWorkout = function(){
-  const body = document.getElementById('team-workout-body');
-  if(!body) return;
-  const isHidden = body.style.display === 'none';
-  body.style.display = isHidden ? 'block' : 'none';
-};
-// ==================== V5.0 Active Challenges Loading & Rendering ====================
+    // 3. إعادة تحميل البيانات للتبويب المفتوح (لضمان ظهورها)
+    if (tabName === 'activity') {
+        // إعادة رسم الشارت والسجل
+        if(typeof loadChart === 'function') loadChart('week'); 
+        if(typeof loadActivityLog === 'function') loadActivityLog();
+    } 
+    else if (tabName === 'goals') {
+        // تحميل تحديات البروفايل
+        loadProfileChallenges();
+        // تحديث حلقة الهدف
+        if(typeof updateGoalRing === 'function') updateGoalRing();
+    }
+    // (تم تأجيل تبويب الإحصائيات مؤقتاً كما طلبت)
+}
+
+// دالة مساعدة لتحميل تحديات البروفايل (تبويب أهدافي)
+function loadProfileChallenges() {
+    const container = document.getElementById('profile-active-challenges');
+    if (!container) return;
+    
+    const myChallenges = (window.allChallengesCache || []).filter(ch => ch.isJoined && !ch.completed);
+
+    if (myChallenges.length === 0) {
+        container.innerHTML = `<div class="empty-state-mini">لا توجد تحديات نشطة</div>`;
+        return;
+    }
+
+    let html = '';
+    myChallenges.forEach(ch => {
+        const perc = Math.min((ch.progress / ch.target) * 100, 100);
+        html += `
+            <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" 
+                 style="cursor:pointer; border-left: 3px solid var(--primary); margin-bottom:10px; width:100%;">
+                <div class="mini-ch-title">${ch.title}</div>
+                <div class="mini-ch-progress">
+                    <div class="mini-ch-fill" style="width:${perc}%; background:var(--primary)"></div>
+                </div>
+                <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
+                    <span>${Math.floor(ch.progress)} / ${ch.target}</span>
+                    <span>باقي ${ch.durationDays || '?'} يوم</span>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+ /**
+ * نظام نبض الفريق المحدث - ERS Social Engine
+ */
+async function refreshTeamFeed() {
+    const container = document.getElementById('team-live-feed');
+    if (!container) return;
+
+    try {
+        // جلب البيانات مع فحص وجود الاندكس
+        const snap = await db.collectionGroup('runs')
+            .orderBy('timestamp', 'desc')
+            .limit(12)
+            .get();
+
+        if (snap.empty) {
+            container.innerHTML = `<p style="text-align:center; padding:40px; color:gray;">لا توجد أنشطة حالياً.</p>`;
+            return;
+        }
+
+        let html = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const userName = data.userName || 'بطل ERS';
+            const pace = (data.time && data.dist) ? (data.time / data.dist).toFixed(2) : (data.pace || '--');
+
+            html += `
+                <div class="run-card-social">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                        <div style="width:40px; height:40px; background:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; color:white;">
+                            ${userName[0].toUpperCase()}
+                        </div>
+                        <div>
+                            <div style="font-weight:bold; font-size:14px;">${userName}</div>
+                            <div style="font-size:10px; color:var(--text-muted);">${data.type || 'جري'} • فريق ERS</div>
+                        </div>
+                    </div>
+                    <div style="font-size:14px; margin-bottom:12px;">${data.note || 'أتممت تمريناً جديداً بنجاح! 🔥'}</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px; text-align:center;">
+                        <div><b style="display:block;">${data.dist}</b><small style="font-size:9px; color:gray;">كم</small></div>
+                        <div><b style="display:block;">${data.time}</b><small style="font-size:9px; color:gray;">دقيقة</small></div>
+                        <div><b style="display:block;">${pace}</b><small style="font-size:9px; color:gray;">بيس</small></div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        document.getElementById('feed-status-dot').style.background = '#10b981'; // أخضر يعني البيانات وصلت
+
+    } catch (err) {
+        console.error("Feed Error:", err);
+        container.innerHTML = `<p style="text-align:center; padding:20px; color:#ef4444;">يتم الآن تهيئة بيانات الفريق.. انتظر دقيقتين.</p>`;
+    }
+}
+
+// تشغيل عند فتح التبويب
+window.addEventListener('click', (e) => {
+    if (e.target.closest('[onclick*="view-club"]')) {
+        setTimeout(refreshTeamFeed, 100);
+    }
+});
+
+
+/**
+/**
+ * المحرك الرئيسي للجورنال البانورامي
+ */
+async function loadPanoramaJournal() {
+    const slider = document.getElementById('journal-slider');
+    const dotsContainer = document.getElementById('journal-dots');
+    if (!slider) return;
+
+    try {
+        const doc = await db.collection('app_settings').doc('panorama_journal').get();
+        if (!doc.exists) {
+            slider.innerHTML = `<div style="padding:20px; text-align:center;">لا توجد صفحات في الجورنال حالياً.</div>`;
+            return;
+        }
+
+        const { pages } = doc.data();
+        
+        // 1. رسم الصفحات
+        slider.innerHTML = pages.map(page => `
+            <div class="journal-page">
+                <div class="journal-media">
+                    <img src="${page.image}" class="main-img" onerror="this.src='https://via.placeholder.com/800x400?text=ERS+Runners'">
+                    <div class="journal-overlay"></div>
+                </div>
+                <div class="journal-content">
+                    <span class="journal-badge">ERS JOURNAL</span>
+                    <h2>${page.title}</h2>
+                    <p>${page.desc || ''}</p>
+                </div>
+            </div>
+        `).join('');
+
+        // 2. رسم النقاط (Dots)
+        if(dotsContainer) {
+            dotsContainer.innerHTML = pages.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}"></div>`).join('');
+        }
+
+        // 3. تفعيل مستمع التمرير لتحديث النقاط
+        slider.onscroll = () => {
+            const index = Math.round(slider.scrollLeft / slider.offsetWidth);
+            const absIndex = Math.abs(index);
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === absIndex));
+        };
+
+        // 4. تشغيل التقليب التلقائي (Auto-play)
+        if (window.journalInterval) clearInterval(window.journalInterval);
+        window.journalInterval = setInterval(() => {
+            const maxScroll = slider.scrollWidth - slider.offsetWidth;
+            // في RTL التمرير يذهب لليسار (قيم سالبة)
+            if (Math.abs(slider.scrollLeft) >= maxScroll - 10) {
+                slider.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                slider.scrollBy({ left: -slider.offsetWidth, behavior: 'smooth' });
+            }
+        }, 5000);
+
+    } catch (e) {
+        console.error("Journal Error:", e);
+        slider.innerHTML = `<div style="color:red; text-align:center; padding:20px;">خطأ في تحميل الصور</div>`;
+    }
+}
