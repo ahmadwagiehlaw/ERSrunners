@@ -1470,23 +1470,200 @@ async function submitRun() {
     }
 }
 
-// مثال (Pseudo-code) يضاف بعد حفظ الجرية بنجاح
-function checkNewBadges(user) {
-    let newBadges = [];
-    
-    // فحص المسافة الإجمالية
-    if (user.totalDist >= 100 && !user.badges.includes('dist_100k')) {
-        newBadges.push('dist_100k');
+
+// ==================== ✅ PROFILE COMPLETE LOGIC (FINAL) ====================
+
+// 1. دالة التبديل بين التبويبات (مع الإنعاش)
+function switchProfileTab(tabName) {
+    // UI Updates
+    document.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
+    const btn = document.getElementById(`ptab-${tabName}`);
+    if(btn) btn.classList.add('active');
+
+    document.querySelectorAll('.p-tab-content').forEach(el => el.classList.remove('active'));
+    const content = document.getElementById(`p-content-${tabName}`);
+    if(content) content.classList.add('active');
+
+    // Data Refresh Logic
+    if (tabName === 'activity') {
+        if(typeof loadChart === 'function') loadChart('week'); 
+        if(typeof loadActivityLog === 'function') loadActivityLog();
+        loadRecentInteractions(); // تحميل التفاعلات
+    } 
+    else if (tabName === 'goals') {
+        // تحديث حلقة الهدف
+        if(typeof updateGoalRing === 'function') updateGoalRing();
+        // تحميل التحديات
+        loadProfileChallenges();
     }
-    
-    // فحص السرعة
-    if (currentRunPace < 5.0 && !user.badges.includes('speed_rocket')) {
-        newBadges.push('speed_rocket');
+    else if (tabName === 'stats') {
+        renderProfileBadges(); // رسم البادجات
+    }
+}
+
+// 2. دالة التفاعلات (النسخة الذكية - سطر واحد)
+function loadRecentInteractions() {
+    const container = document.getElementById('interactions-list-mini');
+    const box = document.getElementById('latest-interactions-box');
+    if(!container) return;
+
+    if(!currentUser) {
+        if(box) box.style.display = 'none';
+        return;
     }
 
-    if (newBadges.length > 0) {
-        // تحديث الداتابيز وإظهار احتفال
-        updateUserBadges(user.uid, newBadges);
-        showToast(`مبروك! حصلت على ${newBadges.length} وسام جديد 🏅`, "success");
+    // إظهار البوكس مبدئياً
+    if(box) box.style.display = 'block';
+
+    db.collection('users').doc(currentUser.uid).collection('notifications')
+        .orderBy('timestamp', 'desc')
+        .limit(5)
+        .get()
+        .then(snap => {
+            if(snap.empty) {
+                container.innerHTML = `<div style="text-align:center; padding:5px; font-size:11px; opacity:0.6;">لا توجد تفاعلات جديدة</div>`;
+                return;
+            }
+
+            let html = '';
+            snap.forEach(doc => {
+                const n = doc.data();
+                
+                // تحديد الاسم
+                let rawName = n.senderName || n.userName || n.name;
+                let displayName = rawName;
+                let avatarChar = rawName ? rawName.charAt(0) : '';
+                
+                // تحديد النص والأيقونة
+                let actionText = '';
+                let iconOverlay = '';
+                let iconColor = '#9ca3af';
+
+                switch (n.type) {
+                    case 'like':
+                        if(!displayName) { displayName = "إعجاب"; avatarChar = "❤️"; }
+                        actionText = "أعجب بنشاطك";
+                        iconOverlay = '<i class="ri-heart-fill"></i>';
+                        iconColor = '#ef4444';
+                        break;
+                    case 'comment':
+                        if(!displayName) { displayName = "تعليق"; avatarChar = "💬"; }
+                        let shortMsg = (n.msg || '').substring(0, 20) + ((n.msg && n.msg.length>20)?'...':'');
+                        actionText = `علق: <span style="color:#cbd5e1">"${shortMsg}"</span>`;
+                        iconOverlay = '<i class="ri-chat-3-fill"></i>';
+                        iconColor = '#3b82f6';
+                        break;
+                    case 'badge':
+                        displayName = "إنجاز جديد";
+                        avatarChar = "🏆";
+                        actionText = "حصلت على وسام!";
+                        iconOverlay = '<i class="ri-medal-fill"></i>';
+                        iconColor = '#f59e0b';
+                        break;
+                    case 'admin':
+                    case 'system':
+                        displayName = "إدارة الفريق";
+                        avatarChar = "📢";
+                        actionText = n.msg || "تنبيه هام";
+                        iconOverlay = '<i class="ri-megaphone-fill"></i>';
+                        iconColor = '#10b981';
+                        break;
+                    default:
+                        if(!displayName) { displayName = "إشعار"; avatarChar = "🔔"; }
+                        actionText = n.msg || "تفاعل جديد";
+                        iconOverlay = '<i class="ri-notification-3-fill"></i>';
+                }
+
+                const timeAgo = (typeof getTimeAgo === 'function') ? getTimeAgo(n.timestamp ? n.timestamp.toDate() : new Date()) : '';
+
+                html += `
+                    <div class="inter-item compact" style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:6px;">
+                        <div style="position:relative; flex-shrink:0;">
+                            <div style="width:32px; height:32px; background:#1f2937; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:1px solid rgba(255,255,255,0.1);">
+                                ${avatarChar}
+                            </div>
+                            <div style="position:absolute; bottom:-3px; left:-3px; width:14px; height:14px; background:${iconColor}; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8px; border:2px solid #111827;">
+                                ${iconOverlay}
+                            </div>
+                        </div>
+                        <div style="flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; color:#9ca3af;">
+                            <strong style="color:#fff; margin-left:3px;">${displayName}</strong> ${actionText}
+                        </div>
+                        <span style="font-size:9px; color:#64748b; flex-shrink:0;">${timeAgo}</span>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            console.error(err);
+            if(box) box.style.display = 'none';
+        });
+}
+
+// 3. دالة التحديات (الموثوقة)
+function loadProfileChallenges() {
+    const container = document.getElementById('profile-active-challenges');
+    if (!container) return;
+    
+    // استخدام الكاش الموجود أو مصفوفة فارغة لتجنب الأخطاء
+    const allCh = window.allChallengesCache || [];
+    const myChallenges = allCh.filter(ch => ch.isJoined === true && !ch.completed);
+
+    if (myChallenges.length === 0) {
+        container.innerHTML = `<div class="empty-state-mini" style="width:100%; text-align:center; padding:15px; color:#6b7280; font-size:12px;">لا توجد تحديات نشطة حالياً</div>`;
+        return;
     }
+
+    let html = '';
+    myChallenges.forEach(ch => {
+        const perc = Math.min(((ch.progress||0) / (ch.target||1)) * 100, 100);
+        html += `
+            <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" 
+                 style="cursor:pointer; border-left: 3px solid var(--primary); margin-bottom:10px; width:100%;">
+                <div class="mini-ch-title">${ch.title}</div>
+                <div class="mini-ch-progress">
+                    <div class="mini-ch-fill" style="width:${perc}%; background:var(--primary)"></div>
+                </div>
+                <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
+                    <span>${Math.floor(ch.progress||0)} / ${ch.target}</span>
+                    <span>${ch.durationDays || 30} يوم</span>
+                </div>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+// 4. دالة البادجات (الخاصة بالبروفايل الشخصي)
+function renderProfileBadges() {
+    const grid = document.getElementById('badges-grid');
+    if (!grid || !userData.badges) return;
+
+    if (userData.badges.length === 0) {
+        grid.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; padding:20px;">شد حيلك يا بطل واكسب أول وسام! 🏆</div>';
+        return;
+    }
+
+    let html = '';
+    // جلب الإعدادات من coach.js بأمان
+    const config = (typeof BADGES_CONFIG !== 'undefined') ? BADGES_CONFIG : [];
+
+    userData.badges.forEach(bId => {
+        const conf = config.find(x => x.id === bId);
+        if(conf) {
+            html += `
+                <div class="badge-item" onclick="showToast('${conf.icon} ${conf.name}: ${conf.desc}', 'info')"
+                     style="cursor:pointer; background:rgba(255,255,255,0.05); border-radius:12px; padding:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; width:80px; height:90px; border:1px solid rgba(255,255,255,0.05);">
+                    <div style="font-size:32px; margin-bottom:5px;">${conf.icon}</div>
+                    <div style="font-size:10px; color:#fff; text-align:center; line-height:1.2; font-weight:bold;">${conf.name}</div>
+                </div>
+            `;
+        }
+    });
+    
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(80px, 1fr))";
+    grid.style.gap = "10px";
+    grid.innerHTML = html;
 }

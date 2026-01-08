@@ -75,7 +75,7 @@ function filterLeaderboard(type) {
     loadLeaderboard(type);
 }
 
-function viewUserProfile(targetUid) {   
+function viewUserProfile(targetUid) {
     const user = allUsersCache.find(u => u.uid === targetUid);
     if (!user) return showToast("بيانات المستخدم غير متوفرة", "error");
 
@@ -88,72 +88,43 @@ function viewUserProfile(targetUid) {
     document.getElementById('view-total-dist').innerText = (user.totalDist || 0).toFixed(1);
     document.getElementById('view-total-runs').innerText = user.totalRuns || 0;
 
-    document.getElementById('modal-view-user').style.display = 'flex';}
+    document.getElementById('modal-view-user').style.display = 'flex';
     // ... (داخل viewUserProfile) ...
 
-// ... (داخل دالة viewUserProfile بعد السطر: document.getElementById('modal-view-user').style.display = 'flex';)
-
-    // 🔥 عرض البادجات المتطور (V2.0)
+    // 🔥 عرض البادجات في بروفايل العضو (ميزة جديدة)
     const badgesContainer = document.createElement('div');
-    badgesContainer.id = 'view-user-badges';
-    badgesContainer.style.cssText = `
-        margin-top: 20px; 
-        padding: 15px; 
-        background: rgba(255,255,255,0.03); 
-        border-radius: 16px; 
-        border: 1px solid rgba(255,255,255,0.05);
-        text-align: center;
-    `;
-
-    // عنوان القسم
-    badgesContainer.innerHTML = `<h4 style="margin:0 0 10px 0; font-size:12px; color:#9ca3af;">الإنجازات المكتسبة (${user.badges ? user.badges.length : 0})</h4>`;
-
-    const grid = document.createElement('div');
-    grid.style.cssText = "display:flex; gap:8px; justify-content:center; flex-wrap:wrap;";
-
+    badgesContainer.style.cssText = "margin-top:15px; display:flex; gap:5px; justify-content:center; flex-wrap:wrap;";
+    
     if (user.badges && user.badges.length > 0) {
         user.badges.forEach(bId => {
             const badgeConfig = BADGES_CONFIG.find(x => x.id === bId);
             if(badgeConfig) {
-                // التحكم للأدمن (الحذف)
+                // لو أنا أدمن، أضيف زر الحذف عند الضغط
                 const action = userData.isAdmin ? `onclick="adminRevokeBadge('${user.uid}', '${bId}')"` : '';
-                const cursor = userData.isAdmin ? 'cursor:pointer' : 'cursor:help';
+                const cursor = userData.isAdmin ? 'cursor:pointer; border:1px dashed #ef4444;' : '';
                 
-                // تصميم البادج الواحد
-                grid.innerHTML += `
-                    <div title="${badgeConfig.name}: ${badgeConfig.desc}" ${action} 
-                         style="
-                            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); 
-                            width: 45px; height: 45px; 
-                            border-radius: 12px; 
-                            display: flex; align-items: center; justify-content: center; 
-                            font-size: 24px; 
-                            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-                            border: 1px solid rgba(255,255,255,0.1);
-                            ${cursor}; transition: transform 0.2s;
-                         "
-                         onmouseover="this.style.transform='scale(1.1)'" 
-                         onmouseout="this.style.transform='scale(1.0)'">
+                badgesContainer.innerHTML += `
+                    <div title="${userData.isAdmin ? 'اضغط للحذف' : badgeConfig.name}" ${action} 
+                         style="background:rgba(255,255,255,0.1); padding:5px; border-radius:8px; font-size:16px; ${cursor}">
                         ${badgeConfig.icon}
                     </div>
                 `;
             }
         });
     } else {
-        grid.innerHTML = '<div style="font-size:11px; color:#6b7280; padding:10px;">لا توجد إنجازات حتى الآن.. شد حيلك يا بطل! 💪</div>';
+        badgesContainer.innerHTML = '<span style="font-size:10px; color:#6b7280;">لا توجد إنجازات</span>';
     }
 
-    badgesContainer.appendChild(grid);
-
-    // تنظيف القديم وإضافة الجديد
+    // تنظيف أي حاوية بادجات قديمة وإضافة الجديدة
     const existingBadges = document.getElementById('view-user-badges');
     if(existingBadges) existingBadges.remove();
     
-    // إضافة بعد إحصائيات المستخدم
-    const statsGrid = document.querySelector('#modal-view-user .stats-grid');
-    if(statsGrid) statsGrid.after(badgesContainer);
+    badgesContainer.id = 'view-user-badges';
+    // إضافة البادجات بعد الـ stats-grid
+    document.querySelector('#modal-view-user .stats-grid').after(badgesContainer);
 
-// ... (باقي الكود)
+    // ... (باقي الكود)
+}
 
 const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر", "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء", "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية", "Gharbia": "الغربية", "Beni Suef": "بني سويف" };
 
