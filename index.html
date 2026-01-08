@@ -117,6 +117,10 @@
 
         <div class="header-actions">
 
+                        <div class="add-btn-crystal" onclick="openNewRun()">
+                <i class="ri-add-line"></i>
+                <div class="pulse-ring"></div>
+            </div>
 
             <div class="action-group-mini">
                 <div class="icon-badge-mini" onclick="showNotifications()">
@@ -125,9 +129,6 @@
                 </div>
                 <div class="icon-badge-mini" onclick="openSettingsModal()">
                     <i class="ri-settings-4-line"></i>
-                </div>
-                <div class="icon-badge-mini" onclick="openBugReport()">
-                    <i class="ri-bug-2-line"></i>
                 </div>
             </div>
 
@@ -155,9 +156,14 @@
       </div>
 
       <div class="coach-hero-actions">
+                              <div class="hero-icon-btn" onclick="openBugReport()">
+                    <i class="ri-bug-2-line"></i>
+                </div>
+
         <button class="hero-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش"><i class="ri-settings-3-line"></i></button>
         <button class="hero-icon-btn" onclick="openExternal('https://www.skimble.com/workouts/created')" title="Workout Trainers (Skimble)"><i class="ri-external-link-line"></i></button>
       </div>
+
     </div>
 
     <div class="coach-hero-stats">
