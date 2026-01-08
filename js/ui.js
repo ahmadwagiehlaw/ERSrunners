@@ -1471,153 +1471,50 @@ async function submitRun() {
 }
 
 
-// ==================== ✅ PROFILE COMPLETE LOGIC (FINAL) ====================
 
-// 1. دالة التبديل بين التبويبات (مع الإنعاش)
+// ==================== Profile Tabs Switcher (V4.0) ====================
+
 function switchProfileTab(tabName) {
-    // UI Updates
+    // 1. تحديث شكل الأزرار (Active State)
     document.querySelectorAll('.p-tab').forEach(el => el.classList.remove('active'));
     const btn = document.getElementById(`ptab-${tabName}`);
     if(btn) btn.classList.add('active');
 
+    // 2. إخفاء كل المحتوى وإظهار المطلوب
     document.querySelectorAll('.p-tab-content').forEach(el => el.classList.remove('active'));
     const content = document.getElementById(`p-content-${tabName}`);
     if(content) content.classList.add('active');
 
-    // Data Refresh Logic
+    // 3. إعادة تحميل البيانات للتبويب المفتوح (لضمان ظهورها)
     if (tabName === 'activity') {
+        // إعادة رسم الشارت والسجل
         if(typeof loadChart === 'function') loadChart('week'); 
         if(typeof loadActivityLog === 'function') loadActivityLog();
-        loadRecentInteractions(); // تحميل التفاعلات
     } 
     else if (tabName === 'goals') {
+        // تحميل تحديات البروفايل
+        loadProfileChallenges();
         // تحديث حلقة الهدف
         if(typeof updateGoalRing === 'function') updateGoalRing();
-        // تحميل التحديات
-        loadProfileChallenges();
     }
-    else if (tabName === 'stats') {
-        renderProfileBadges(); // رسم البادجات
-    }
+    // (تم تأجيل تبويب الإحصائيات مؤقتاً كما طلبت)
 }
 
-// 2. دالة التفاعلات (النسخة الذكية - سطر واحد)
-function loadRecentInteractions() {
-    const container = document.getElementById('interactions-list-mini');
-    const box = document.getElementById('latest-interactions-box');
-    if(!container) return;
-
-    if(!currentUser) {
-        if(box) box.style.display = 'none';
-        return;
-    }
-
-    // إظهار البوكس مبدئياً
-    if(box) box.style.display = 'block';
-
-    db.collection('users').doc(currentUser.uid).collection('notifications')
-        .orderBy('timestamp', 'desc')
-        .limit(5)
-        .get()
-        .then(snap => {
-            if(snap.empty) {
-                container.innerHTML = `<div style="text-align:center; padding:5px; font-size:11px; opacity:0.6;">لا توجد تفاعلات جديدة</div>`;
-                return;
-            }
-
-            let html = '';
-            snap.forEach(doc => {
-                const n = doc.data();
-                
-                // تحديد الاسم
-                let rawName = n.senderName || n.userName || n.name;
-                let displayName = rawName;
-                let avatarChar = rawName ? rawName.charAt(0) : '';
-                
-                // تحديد النص والأيقونة
-                let actionText = '';
-                let iconOverlay = '';
-                let iconColor = '#9ca3af';
-
-                switch (n.type) {
-                    case 'like':
-                        if(!displayName) { displayName = "إعجاب"; avatarChar = "❤️"; }
-                        actionText = "أعجب بنشاطك";
-                        iconOverlay = '<i class="ri-heart-fill"></i>';
-                        iconColor = '#ef4444';
-                        break;
-                    case 'comment':
-                        if(!displayName) { displayName = "تعليق"; avatarChar = "💬"; }
-                        let shortMsg = (n.msg || '').substring(0, 20) + ((n.msg && n.msg.length>20)?'...':'');
-                        actionText = `علق: <span style="color:#cbd5e1">"${shortMsg}"</span>`;
-                        iconOverlay = '<i class="ri-chat-3-fill"></i>';
-                        iconColor = '#3b82f6';
-                        break;
-                    case 'badge':
-                        displayName = "إنجاز جديد";
-                        avatarChar = "🏆";
-                        actionText = "حصلت على وسام!";
-                        iconOverlay = '<i class="ri-medal-fill"></i>';
-                        iconColor = '#f59e0b';
-                        break;
-                    case 'admin':
-                    case 'system':
-                        displayName = "إدارة الفريق";
-                        avatarChar = "📢";
-                        actionText = n.msg || "تنبيه هام";
-                        iconOverlay = '<i class="ri-megaphone-fill"></i>';
-                        iconColor = '#10b981';
-                        break;
-                    default:
-                        if(!displayName) { displayName = "إشعار"; avatarChar = "🔔"; }
-                        actionText = n.msg || "تفاعل جديد";
-                        iconOverlay = '<i class="ri-notification-3-fill"></i>';
-                }
-
-                const timeAgo = (typeof getTimeAgo === 'function') ? getTimeAgo(n.timestamp ? n.timestamp.toDate() : new Date()) : '';
-
-                html += `
-                    <div class="inter-item compact" style="display:flex; align-items:center; gap:10px; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:6px;">
-                        <div style="position:relative; flex-shrink:0;">
-                            <div style="width:32px; height:32px; background:#1f2937; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; border:1px solid rgba(255,255,255,0.1);">
-                                ${avatarChar}
-                            </div>
-                            <div style="position:absolute; bottom:-3px; left:-3px; width:14px; height:14px; background:${iconColor}; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:8px; border:2px solid #111827;">
-                                ${iconOverlay}
-                            </div>
-                        </div>
-                        <div style="flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-size:11px; color:#9ca3af;">
-                            <strong style="color:#fff; margin-left:3px;">${displayName}</strong> ${actionText}
-                        </div>
-                        <span style="font-size:9px; color:#64748b; flex-shrink:0;">${timeAgo}</span>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        })
-        .catch(err => {
-            console.error(err);
-            if(box) box.style.display = 'none';
-        });
-}
-
-// 3. دالة التحديات (الموثوقة)
+// دالة مساعدة لتحميل تحديات البروفايل (تبويب أهدافي)
 function loadProfileChallenges() {
     const container = document.getElementById('profile-active-challenges');
     if (!container) return;
     
-    // استخدام الكاش الموجود أو مصفوفة فارغة لتجنب الأخطاء
-    const allCh = window.allChallengesCache || [];
-    const myChallenges = allCh.filter(ch => ch.isJoined === true && !ch.completed);
+    const myChallenges = (window.allChallengesCache || []).filter(ch => ch.isJoined && !ch.completed);
 
     if (myChallenges.length === 0) {
-        container.innerHTML = `<div class="empty-state-mini" style="width:100%; text-align:center; padding:15px; color:#6b7280; font-size:12px;">لا توجد تحديات نشطة حالياً</div>`;
+        container.innerHTML = `<div class="empty-state-mini">لا توجد تحديات نشطة</div>`;
         return;
     }
 
     let html = '';
     myChallenges.forEach(ch => {
-        const perc = Math.min(((ch.progress||0) / (ch.target||1)) * 100, 100);
+        const perc = Math.min((ch.progress / ch.target) * 100, 100);
         html += `
             <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" 
                  style="cursor:pointer; border-left: 3px solid var(--primary); margin-bottom:10px; width:100%;">
@@ -1626,8 +1523,8 @@ function loadProfileChallenges() {
                     <div class="mini-ch-fill" style="width:${perc}%; background:var(--primary)"></div>
                 </div>
                 <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
-                    <span>${Math.floor(ch.progress||0)} / ${ch.target}</span>
-                    <span>${ch.durationDays || 30} يوم</span>
+                    <span>${Math.floor(ch.progress)} / ${ch.target}</span>
+                    <span>باقي ${ch.durationDays || '?'} يوم</span>
                 </div>
             </div>
         `;
@@ -1635,128 +1532,128 @@ function loadProfileChallenges() {
     container.innerHTML = html;
 }
 
-// 4. دالة البادجات (نظام التحفيز - 4 في الصف)
-function renderProfileBadges() {
-    const grid = document.getElementById('badges-grid');
-    if (!grid) return;
+ /**
+ * نظام نبض الفريق المحدث - ERS Social Engine
+ */
+async function refreshTeamFeed() {
+    const container = document.getElementById('team-live-feed');
+    if (!container) return;
 
-    // التأكد من تحميل الكونفيج
-    const config = (typeof BADGES_CONFIG !== 'undefined') ? BADGES_CONFIG : [];
-    
-    // قائمة بادجات المستخدم الحالية
-    const userBadges = userData.badges || [];
+    try {
+        // جلب البيانات مع فحص وجود الاندكس
+        const snap = await db.collectionGroup('runs')
+            .orderBy('timestamp', 'desc')
+            .limit(12)
+            .get();
 
-    let html = '';
-    
-    config.forEach(badge => {
-        // هل يمتلك هذا البادج؟
-        const isEarned = userBadges.includes(badge.id);
-        
-        // الستايل: لو مكتسب يظهر عادي، لو لأ يظهر باهت ورمادي
-        const styleFilter = isEarned ? '' : 'filter: grayscale(100%); opacity: 0.35;';
-        const lockIcon = isEarned ? '' : '<i class="ri-lock-2-fill" style="position:absolute; top:5px; right:5px; font-size:12px; color:#fff;"></i>';
-        const bgStyle = isEarned 
-            ? 'background:rgba(255,255,255,0.08); border:1px solid rgba(16, 185, 129, 0.3);' // أخضر خفيف للمكتسب
-            : 'background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.1);'; // مقطع لغير المكتسب
+        if (snap.empty) {
+            container.innerHTML = `<p style="text-align:center; padding:40px; color:gray;">لا توجد أنشطة حالياً.</p>`;
+            return;
+        }
 
-        html += `
-            <div class="badge-item" onclick="showBadgeDetails('${badge.name}', '${badge.desc}', '${badge.icon}', ${isEarned})"
-                 style="position:relative; cursor:pointer; ${bgStyle} border-radius:12px; padding:10px 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:90px; transition:transform 0.2s; ${styleFilter}">
-                ${lockIcon}
-                <div style="font-size:28px; margin-bottom:5px;">${badge.icon}</div>
-                <div style="font-size:9px; color:#fff; text-align:center; line-height:1.2; font-weight:bold;">${badge.name}</div>
-            </div>
-        `;
-    });
-    
-    // ضبط الشبكة لتكون 4 أعمدة بالضبط
-    grid.style.display = "grid";
-    grid.style.gridTemplateColumns = "repeat(4, 1fr)"; // 🔥 4 في الصف
-    grid.style.gap = "8px";
-    grid.innerHTML = html;
-}
+        let html = '';
+        snap.forEach(doc => {
+            const data = doc.data();
+            const userName = data.userName || 'بطل ERS';
+            const pace = (data.time && data.dist) ? (data.time / data.dist).toFixed(2) : (data.pace || '--');
 
-// دالة مساعدة لإظهار التفاصيل (بتفرق في الرسالة لو البادج مقفول)
-function showBadgeDetails(title, desc, icon, isEarned) {
-    if(isEarned) {
-        showToast(`${icon} ${title}: ${desc}`, "success");
-    } else {
-        // رسالة تحفيزية للمقفول
-        showToast(`🔒 ${title}: ${desc} (واصل التمرين لفتحه!)`, "info");
+            html += `
+                <div class="run-card-social">
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+                        <div style="width:40px; height:40px; background:var(--primary); border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; color:white;">
+                            ${userName[0].toUpperCase()}
+                        </div>
+                        <div>
+                            <div style="font-weight:bold; font-size:14px;">${userName}</div>
+                            <div style="font-size:10px; color:var(--text-muted);">${data.type || 'جري'} • فريق ERS</div>
+                        </div>
+                    </div>
+                    <div style="font-size:14px; margin-bottom:12px;">${data.note || 'أتممت تمريناً جديداً بنجاح! 🔥'}</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:rgba(0,0,0,0.2); padding:10px; border-radius:12px; text-align:center;">
+                        <div><b style="display:block;">${data.dist}</b><small style="font-size:9px; color:gray;">كم</small></div>
+                        <div><b style="display:block;">${data.time}</b><small style="font-size:9px; color:gray;">دقيقة</small></div>
+                        <div><b style="display:block;">${pace}</b><small style="font-size:9px; color:gray;">بيس</small></div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+        document.getElementById('feed-status-dot').style.background = '#10b981'; // أخضر يعني البيانات وصلت
+
+    } catch (err) {
+        console.error("Feed Error:", err);
+        container.innerHTML = `<p style="text-align:center; padding:20px; color:#ef4444;">يتم الآن تهيئة بيانات الفريق.. انتظر دقيقتين.</p>`;
     }
 }
 
-// ==================== Weekly Schedule Logic ====================
+// تشغيل عند فتح التبويب
+window.addEventListener('click', (e) => {
+    if (e.target.closest('[onclick*="view-club"]')) {
+        setTimeout(refreshTeamFeed, 100);
+    }
+});
 
-// 1. بيانات الجدول (ممكن تعدلها براحتك)
-const WEEKLY_SCHEDULE = [
-    { id: 6, day: 'السبت', title: 'جري طويل', desc: 'مسافة 10-15 كم', type: 'run', icon: '🏃‍♂️' },
-    { id: 0, day: 'الأحد', title: 'استشفاء', desc: 'راحة تامة أو يوجا', type: 'rest', icon: '🧘‍♂️' },
-    { id: 1, day: 'الاثنين', title: 'تمبو', desc: '5 كم رتم سريع', type: 'speed', icon: '⚡' },
-    { id: 2, day: 'الثلاثاء', title: 'جري خفيف', desc: 'هرولة 30 دقيقة', type: 'run', icon: '👟' },
-    { id: 3, day: 'الأربعاء', title: 'انترفل', desc: '8x400m سرعة', type: 'speed', icon: '⏱️' },
-    { id: 4, day: 'الخميس', title: 'تمارين قوة', desc: 'جيم أو سويدي', type: 'gym', icon: '💪' },
-    { id: 5, day: 'الجمعة', title: 'راحة', desc: 'يوم العائلة', type: 'rest', icon: '🌴' }
-];
 
-// 2. دالة رسم الجدول
-// ==================== Weekly Checkable Schedule (V2.0) ====================
+/**
+/**
+ * المحرك الرئيسي للجورنال البانورامي
+ */
+async function loadPanoramaJournal() {
+    const slider = document.getElementById('journal-slider');
+    const dotsContainer = document.getElementById('journal-dots');
+    if (!slider) return;
 
-// ==================== Weekly Checkable Schedule (Final Fix) ====================
+    try {
+        const doc = await db.collection('app_settings').doc('panorama_journal').get();
+        if (!doc.exists) {
+            slider.innerHTML = `<div style="padding:20px; text-align:center;">لا توجد صفحات في الجورنال حالياً.</div>`;
+            return;
+        }
 
-function renderTeamSchedule() {
-    const container = document.getElementById('schedule-scroll-container');
-    if (!container) return;
-
-    const todayIndex = new Date().getDay(); 
-    // جلب الحالات المسجلة من الـ LocalStorage
-    const savedStatus = JSON.parse(localStorage.getItem('ers_weekly_check')) || {};
-
-    let html = '';
-    
-    // تأكد إن المصفوفة WEEKLY_SCHEDULE معرفة عندك (السبت id:6، الأحد id:0 ...)
-    WEEKLY_SCHEDULE.forEach(item => {
-        const isToday = (item.id === todayIndex);
-        const checkKey = `day_${item.id}`; 
-        const isDone = savedStatus[checkKey] || false;
+        const { pages } = doc.data();
         
-        const activeClass = isToday ? 'today' : '';
-        const doneClass = isDone ? 'task-completed' : '';
-
-        // 🔥 هنا سر ظهور الدائرة: أضفنا ديف الـ check-wrapper
-        html += `
-            <div class="sch-card ${activeClass} ${doneClass}" id="card-${item.id}" style="min-width: 120px; position:relative;">
-                ${isToday ? '<div class="today-badge">اليوم</div>' : ''}
-                
-                <div class="sch-day">${item.day}</div>
-                
-                <div class="check-wrapper" onclick="toggleTaskDone(${item.id})" style="margin: 10px 0; cursor:pointer;">
-                    <div class="check-circle ${isDone ? 'checked' : ''}">
-                        <i class="ri-check-line"></i>
-                    </div>
+        // 1. رسم الصفحات
+        slider.innerHTML = pages.map(page => `
+            <div class="journal-page">
+                <div class="journal-media">
+                    <img src="${page.image}" class="main-img" onerror="this.src='https://via.placeholder.com/800x400?text=ERS+Runners'">
+                    <div class="journal-overlay"></div>
                 </div>
-
-                <div class="sch-title">${item.title}</div>
-                <div class="sch-desc">${item.desc}</div>
+                <div class="journal-content">
+                    <span class="journal-badge">ERS JOURNAL</span>
+                    <h2>${page.title}</h2>
+                    <p>${page.desc || ''}</p>
+                </div>
             </div>
-        `;
-    });
+        `).join('');
 
-    container.innerHTML = html;
-}
+        // 2. رسم النقاط (Dots)
+        if(dotsContainer) {
+            dotsContainer.innerHTML = pages.map((_, i) => `<div class="dot ${i === 0 ? 'active' : ''}"></div>`).join('');
+        }
 
-// دالة التبديل (اضفها لو مش موجودة)
-function toggleTaskDone(dayId) {
-    const checkKey = `day_${dayId}`;
-    let savedStatus = JSON.parse(localStorage.getItem('ers_weekly_check')) || {};
-    
-    savedStatus[checkKey] = !savedStatus[checkKey];
-    localStorage.setItem('ers_weekly_check', JSON.stringify(savedStatus));
+        // 3. تفعيل مستمع التمرير لتحديث النقاط
+        slider.onscroll = () => {
+            const index = Math.round(slider.scrollLeft / slider.offsetWidth);
+            const absIndex = Math.abs(index);
+            const dots = document.querySelectorAll('.dot');
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === absIndex));
+        };
 
-    // إعادة الرسم فوراً لتحديث الألوان
-    renderTeamSchedule();
-    
-    if (savedStatus[checkKey]) {
-        if(typeof showToast === 'function') showToast("عاش يا بطل! تم الإنجاز 💪", "success");
+        // 4. تشغيل التقليب التلقائي (Auto-play)
+        if (window.journalInterval) clearInterval(window.journalInterval);
+        window.journalInterval = setInterval(() => {
+            const maxScroll = slider.scrollWidth - slider.offsetWidth;
+            // في RTL التمرير يذهب لليسار (قيم سالبة)
+            if (Math.abs(slider.scrollLeft) >= maxScroll - 10) {
+                slider.scrollTo({ left: 0, behavior: 'smooth' });
+            } else {
+                slider.scrollBy({ left: -slider.offsetWidth, behavior: 'smooth' });
+            }
+        }, 5000);
+
+    } catch (e) {
+        console.error("Journal Error:", e);
+        slider.innerHTML = `<div style="color:red; text-align:center; padding:20px;">خطأ في تحميل الصور</div>`;
     }
 }

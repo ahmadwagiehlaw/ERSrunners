@@ -1,33 +1,17 @@
 /* ERS Coach */
 
 // ==================== 4. Badges & Coach ====================
-// ==================== 🎖️ نظام الأوسمة والإنجازات (BADGES SYSTEM V2.0) ====================
-
 const BADGES_CONFIG = [
-    // --- الصف الأول: المسافات (Distances) ---
-    { id: 'dist_50k', name: 'بداية الطريق', icon: '🥉', desc: 'أتممت 50 كم إجمالي' },
-    { id: 'dist_100k', name: 'المئوية الأولى', icon: '🥈', desc: 'أتممت 100 كم إجمالي' },
-    { id: 'dist_500k', name: 'نصف مليون', icon: '🥇', desc: 'أتممت 500 كم إجمالي' },
-    { id: 'dist_1000k', name: 'الأسطورة', icon: '👑', desc: 'كسرت حاجز 1000 كم!' },
+    { id: 'first_step', name: 'الانطلاقة', icon: '🚀', desc: 'أول نشاط لك' },
+    { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'نشاط بين 5-8 صباحاً' },
+    { id: 'night_owl', name: 'ساهر الليل', icon: '🌙', desc: 'نشاط بعد 10 مساءً' },
+    { id: 'weekend_warrior', name: 'بطل العطلة', icon: '🎉', desc: 'نشاط يوم الجمعة' },
+    { id: 'half_marathon', name: 'نصف ماراثون', icon: '🔥', desc: 'جرية +20 كم' },
+    { id: 'club_100', name: 'نادي المئة', icon: '💎', desc: 'إجمالي 100 كم' },
+    { id: 'club_500', name: 'المحترف', icon: '👑', desc: 'إجمالي 500 كم' },
+];
 
-    // --- الصف الثاني: تحديات خاصة (Special) ---
-    { id: 'dist_half_marathon', name: 'نصف ماراثون', icon: '🏃', desc: 'جريت 21 كم في مرة واحدة' },
-    { id: 'dist_marathon', name: 'ماراثون كامل', icon: '🦁', desc: 'جريت 42 كم في مرة واحدة' },
-    { id: 'speed_flash', name: 'البرق', icon: '⚡', desc: 'بيس أقل من 4:00 د/كم' },
-    { id: 'speed_rocket', name: 'الصاروخ', icon: '🚀', desc: 'بيس أقل من 5:00 د/كم' },
-
-    // --- الصف الثالث: الاستمرارية (Consistency) ---
-    { id: 'streak_3', name: 'بداية ساخنة', icon: '🔥', desc: 'تمرين لمدة 3 أيام متتالية' },
-    { id: 'streak_7', name: 'أسبوع ناري', icon: '📆', desc: 'تمرين لمدة 7 أيام متتالية' },
-    { id: 'streak_30', name: 'وحش الالتزام', icon: '🛡️', desc: 'تمرين لمدة 30 يوم متتالية' },
-    { id: 'weekend_warrior', name: 'بطل العطلة', icon: '🌴', desc: 'تمرين قوي يوم الجمعة' },
-
-    // --- الصف الرابع: المجتمع والوقت (Social & Time) ---
-    { id: 'early_bird', name: 'طائر الصباح', icon: '🌅', desc: 'تمرين قبل 7 صباحاً' },
-    { id: 'night_owl', name: 'ساهر الليل', icon: '🦉', desc: 'تمرين بعد 10 مساءً' },
-    { id: 'social_star', name: 'نجم الفريق', icon: '🌟', desc: 'عضو نشط في التحديات' },
-    { id: 'elite_club', name: 'نادي النخبة', icon: '💎', desc: 'أداء استثنائي مستمر' }
-];async function checkNewBadges(dist, time, dateObj) {
+async function checkNewBadges(dist, time, dateObj) {
     const myBadges = userData.badges || []; 
     let newBadgesEarned = [];
     const runDate = dateObj || new Date();
@@ -1286,87 +1270,4 @@ function openCoachWorkoutLog(){
    }catch(e){
     console.error(e);
   }
-}
-
-
-
-
-// ==================== Smart Elite Library Logic ====================
-
-// 1. قاعدة بيانات التمارين الذكية (محتوى عبقري واحترافي)
-const ELITE_WORKOUTS_DATA = {
-    intervals: [
-        { name: "سلم السرعة (Ladder)", desc: "100m, 200m, 400m, 800m ثم العكس. الراحة هي نفس زمن الجري.", goal: "زيادة السرعة القصوى (V02 Max)" },
-        { name: "انترفل الأهرامات", desc: "5 جولات × (1د سريع جداً / 1د مشي) ثم 5 جولات × (30ث انفجار سرعة / 30ث راحة).", goal: "تحسين التحمل اللاهوائي" }
-    ],
-    tempo: [
-        { name: "الإيقاع المتصاعد", desc: "جري 10 كم: أول 4 كم سهل، ثم زيادة السرعة تدريجياً كل 2 كم لتنتهي بأقصى سرعة.", goal: "تعويد الجسم على دفع التعب" },
-        { name: "تمبو الثبات", desc: "جري مسافة 6-8 كم بسرعة ثابتة (أبطأ 15 ثانية من رقمك الشخصي في الـ 5 كم).", goal: "رفع عتبة اللاكتيك" }
-    ],
-    long_run: [
-        { name: "ماراثون سيميوليشن", desc: "جري 15-18 كم مع إضافة 3 كم في المنتصف بسرعة الماراثون المستهدفة.", goal: "بناء التحمل العضلي الطويل" },
-        { name: "جري الاستكشاف السلبي", desc: "جري مسافة طويلة بحيث يكون النصف الثاني أسرع من النصف الأول بـ 5-10 دقائق.", goal: "الانضباط وتوزيع المجهود" }
-    ],
-    recovery: [
-        { name: "مساج الجري (Shakeout)", desc: "15-20 دقيقة هرولة خفيفة جداً (Pace > 8:00) مع تحريك الذراعين بحرية.", goal: "تنشيط الدورة الدموية للاستشفاء" },
-        { name: "التعافي النشط 3-2-1", desc: "3 كم مشي سريع، 2 كم هرولة، 1 كم مشي بطيء.", goal: "إزالة حمض اللاكتيك بعد السباقات" }
-    ],
-    strength: [
-        { name: "قوة الكور الفولاذية", desc: "Plank (1min), Russian Twists (50), Leg Raises (20) × 3 مجموعات.", goal: "ثبات الجذع أثناء الجري" },
-        { name: "انفجار الساقين (Plyo)", desc: "Jump Squats, Lunges, Calf Raises. كل تمرين 45 ثانية مع 15 ثانية راحة.", goal: "زيادة قوة دفع الخطوة" }
-    ]
-};
-
-// 2. تحديث دالة الرسم (التعديل لفتح المودال الجديد)
-function renderCoachLibrary() {
-    const container = document.getElementById('library-types-container');
-    if (!container) return;
-
-    const categories = [
-        { id: 'intervals', name: 'انترفل / سرعات', icon: '⏱️', color: '#ef4444' },
-        { id: 'tempo', name: 'تمبو / إيقاع', icon: '⚡', color: '#3b82f6' },
-        { id: 'long_run', name: 'جري طويل', icon: '🏃‍♂️', color: '#10b981' },
-        { id: 'recovery', name: 'استشفاء', icon: '🧘‍♂️', color: '#8b5cf6' },
-        { id: 'strength', name: 'تمارين قوة', icon: '💪', color: '#f59e0b' }
-    ];
-
-    let html = '';
-    categories.forEach(cat => {
-        const count = ELITE_WORKOUTS_DATA[cat.id].length;
-        html += `
-            <div class="sch-card" onclick="openEliteWorkoutsModal('${cat.id}', '${cat.name}')" 
-                 style="min-width: 125px; border-bottom: 3px solid ${cat.color}; cursor:pointer;">
-                <div class="sch-icon" style="color:${cat.color}; font-size:24px;">${cat.icon}</div>
-                <div class="sch-title" style="margin-top:5px;">${cat.name}</div>
-                <div class="sch-desc">${count} تمرين ذكي</div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
-
-// 3. دالة فتح مودال التمارين الذكية
-function openEliteWorkoutsModal(catId, catName) {
-    const workouts = ELITE_WORKOUTS_DATA[catId];
-    let listHtml = '';
-
-    workouts.forEach(w => {
-        listHtml += `
-            <div class="elite-workout-item" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; margin-bottom:12px; border-right:4px solid var(--primary);">
-                <h4 style="margin:0 0 5px 0; color:#fff;">${w.name}</h4>
-                <p style="font-size:12px; color:#cbd5e1; margin:0 0 8px 0; line-height:1.4;">${w.desc}</p>
-                <div style="font-size:10px; color:var(--primary); font-weight:bold;">🎯 الهدف: ${w.goal}</div>
-            </div>
-        `;
-    });
-
-    // تحديث محتوى مودال الكتالوج (أو مودال مخصص)
-    const titleEl = document.getElementById('catalog-title');
-    const bodyEl = document.getElementById('catalog-body');
-    
-    if(titleEl && bodyEl) {
-        titleEl.innerText = `تمارين الـ ${catName} الذكية`;
-        bodyEl.innerHTML = listHtml;
-        openModal('modal-catalog');
-    }
 }

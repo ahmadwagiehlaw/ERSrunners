@@ -905,3 +905,24 @@ function loadChart(mode, btnElement) {
       });
 }
 
+
+async function saveJournalPanorama() {
+    const links = document.getElementById('adm-journal-links').value.split('|').map(s => s.trim());
+    const titles = document.getElementById('adm-journal-titles').value.split('|').map(s => s.trim());
+    const descs = document.getElementById('adm-journal-desc').value.split('|').map(s => s.trim());
+
+    const pages = links.map((link, i) => ({
+        image: link,
+        title: titles[i] || "بطل ERS",
+        desc: descs[i] || ""
+    }));
+
+    try {
+        await db.collection('app_settings').doc('panorama_journal').set({ pages });
+        alert("تم النشر بنجاح! اخرج من صفحة الإدارة وستجد التغيير.");
+        // تحديث الواجهة فوراً دون ريفريش
+        loadPanoramaJournal();
+    } catch (e) {
+        alert("فشل الحفظ: " + e.message);
+    }
+}
