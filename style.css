@@ -5907,3 +5907,64 @@ body {
 .coach-speed-btn i {
     font-size: 22px; /* تكبير حجم الأيقونة */
 }
+
+/* ==================== القالب الموحد للتبويبات الكريستالية ==================== */
+
+/* الحاوية الأساسية (لـ coach-tabs-nav و tabs-nav) */
+.coach-tabs-nav, .tabs-nav {
+    display: flex !important;
+    background: rgba(15, 23, 42, 0.8) !important; /* خلفية داكنة عميقة لإبراز التباين */
+    border-radius: 12px !important;
+    padding: 4px !important;
+    margin: 15px !important;
+    position: sticky !important;
+    top: 75px !important;
+    z-index: 100 !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    gap: 5px !important;
+}
+
+/* الأزرار الفردية (Items) */
+.coach-tab-btn, .tab-item {
+    flex: 1 !important;
+    text-align: center !important;
+    padding: 8px 5px !important; /* ارتفاع نحيف Slim لسهولة التصفح */
+    font-size: 12px !important;
+    color: #94a3b8 !important; /* رمادي هادئ للحالة غير النشطة */
+    cursor: pointer !important;
+    border-radius: 9px !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    font-weight: 600 !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    outline: none !important;
+}
+
+/* 🔥 التبويب النشط - الأبيض الكريستالي الموحد 🔥 */
+.coach-tab-btn.active, .tab-item.active {
+    background: rgba(255, 255, 255, 1) !important; /* أبيض صريح ناصع */
+    color: #111827 !important; /* نص أسود داكن جداً للوضوح التام */
+    font-weight: 800 !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: 
+        inset 0 2px 4px rgba(0,0,0,0.1), 
+        0 4px 12px rgba(255,255,255,0.25) !important; /* توهج كريستالي أبيض */
+    transform: scale(0.97) !important; /* تأثير الزر المضغوط عند التنشيط */
+}
+
+/* ضمان وضوح الأيقونات داخل التبويب النشط */
+.coach-tab-btn.active i, .tab-item.active i {
+    color: #111827 !important;
+}
+
+/* تحسينات الاستجابة للموبايل */
+@media (max-width: 480px) {
+    .coach-tab-btn, .tab-item {
+        font-size: 13px !important;
+    }
+}
