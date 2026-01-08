@@ -1635,35 +1635,53 @@ function loadProfileChallenges() {
     container.innerHTML = html;
 }
 
-// 4. دالة البادجات (الخاصة بالبروفايل الشخصي)
+// 4. دالة البادجات (نظام التحفيز - 4 في الصف)
 function renderProfileBadges() {
     const grid = document.getElementById('badges-grid');
-    if (!grid || !userData.badges) return;
+    if (!grid) return;
 
-    if (userData.badges.length === 0) {
-        grid.innerHTML = '<div style="text-align:center; color:#6b7280; font-size:12px; padding:20px;">شد حيلك يا بطل واكسب أول وسام! 🏆</div>';
-        return;
-    }
+    // التأكد من تحميل الكونفيج
+    const config = (typeof BADGES_CONFIG !== 'undefined') ? BADGES_CONFIG : [];
+    
+    // قائمة بادجات المستخدم الحالية
+    const userBadges = userData.badges || [];
 
     let html = '';
-    // جلب الإعدادات من coach.js بأمان
-    const config = (typeof BADGES_CONFIG !== 'undefined') ? BADGES_CONFIG : [];
+    
+    config.forEach(badge => {
+        // هل يمتلك هذا البادج؟
+        const isEarned = userBadges.includes(badge.id);
+        
+        // الستايل: لو مكتسب يظهر عادي، لو لأ يظهر باهت ورمادي
+        const styleFilter = isEarned ? '' : 'filter: grayscale(100%); opacity: 0.35;';
+        const lockIcon = isEarned ? '' : '<i class="ri-lock-2-fill" style="position:absolute; top:5px; right:5px; font-size:12px; color:#fff;"></i>';
+        const bgStyle = isEarned 
+            ? 'background:rgba(255,255,255,0.08); border:1px solid rgba(16, 185, 129, 0.3);' // أخضر خفيف للمكتسب
+            : 'background:rgba(255,255,255,0.02); border:1px dashed rgba(255,255,255,0.1);'; // مقطع لغير المكتسب
 
-    userData.badges.forEach(bId => {
-        const conf = config.find(x => x.id === bId);
-        if(conf) {
-            html += `
-                <div class="badge-item" onclick="showToast('${conf.icon} ${conf.name}: ${conf.desc}', 'info')"
-                     style="cursor:pointer; background:rgba(255,255,255,0.05); border-radius:12px; padding:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; width:80px; height:90px; border:1px solid rgba(255,255,255,0.05);">
-                    <div style="font-size:32px; margin-bottom:5px;">${conf.icon}</div>
-                    <div style="font-size:10px; color:#fff; text-align:center; line-height:1.2; font-weight:bold;">${conf.name}</div>
-                </div>
-            `;
-        }
+        html += `
+            <div class="badge-item" onclick="showBadgeDetails('${badge.name}', '${badge.desc}', '${badge.icon}', ${isEarned})"
+                 style="position:relative; cursor:pointer; ${bgStyle} border-radius:12px; padding:10px 5px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:90px; transition:transform 0.2s; ${styleFilter}">
+                ${lockIcon}
+                <div style="font-size:28px; margin-bottom:5px;">${badge.icon}</div>
+                <div style="font-size:9px; color:#fff; text-align:center; line-height:1.2; font-weight:bold;">${badge.name}</div>
+            </div>
+        `;
     });
     
+    // ضبط الشبكة لتكون 4 أعمدة بالضبط
     grid.style.display = "grid";
-    grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(80px, 1fr))";
-    grid.style.gap = "10px";
+    grid.style.gridTemplateColumns = "repeat(4, 1fr)"; // 🔥 4 في الصف
+    grid.style.gap = "8px";
     grid.innerHTML = html;
+}
+
+// دالة مساعدة لإظهار التفاصيل (بتفرق في الرسالة لو البادج مقفول)
+function showBadgeDetails(title, desc, icon, isEarned) {
+    if(isEarned) {
+        showToast(`${icon} ${title}: ${desc}`, "success");
+    } else {
+        // رسالة تحفيزية للمقفول
+        showToast(`🔒 ${title}: ${desc} (واصل التمرين لفتحه!)`, "info");
+    }
 }
