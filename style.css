@@ -5224,3 +5224,60 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
     from { opacity: 0; transform: translateY(30px) scale(0.95); }
     to { opacity: 1; transform: translateY(0) scale(1); }
 }
+
+/* ==================== Weekly Schedule Styles ==================== */
+
+/* الحاوية القابلة للسكرول الأفقي */
+.schedule-scroll-wrapper {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* نعومة السكرول في الآيفون */
+}
+
+/* إخفاء شريط التمرير المزعج */
+.schedule-scroll-wrapper::-webkit-scrollbar { height: 4px; }
+.schedule-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+/* تصميم كارت اليوم الواحد */
+.sch-card {
+    min-width: 110px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* تأثير عند الضغط */
+.sch-card:active { transform: scale(0.95); }
+
+/* تمييز "اليوم الحالي" */
+.sch-card.today {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+    border: 1px solid var(--primary);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+}
+
+/* نصوص الكارت */
+.sch-day { font-size: 11px; color: #9ca3af; margin-bottom: 5px; }
+.sch-icon { font-size: 20px; margin-bottom: 5px; }
+.sch-title { font-size: 12px; font-weight: bold; color: #fff; margin-bottom: 3px; }
+.sch-desc { font-size: 10px; color: #6b7280; line-height: 1.2; }
+
+/* شارة "اليوم" */
+.today-badge {
+    position: absolute; top: 0; right: 0;
+    background: var(--primary); color: #000;
+    font-size: 8px; padding: 2px 6px;
+    border-bottom-left-radius: 8px; font-weight: bold;
+}

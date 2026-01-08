@@ -40,13 +40,13 @@ let isLiking = false; // Debounce variable
 let currentChallengeFilter = 'all'; // 🔥 هذا السطر مهم جداً ليعرف التطبيق البداية
 
 
-// ==================== 2. Initialization ====================
+// ==================== 2. Initialization ====================// ==================== 2. Initialization (Final Stable) ====================
 function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
     
     const dateInput = document.getElementById('log-date');
-    if(dateInput) dateInput.value = getLocalInputDate();
+    if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
 
     updateUI();
     loadActivityLog();
@@ -54,18 +54,20 @@ function initApp() {
     loadActiveChallenges(); 
     loadGlobalFeed();
     listenForNotifications();
-    loadChart('week'); // استخدام الشارت الجديد
+    loadChart('week'); 
     initNetworkMonitor();
-    checkSharedData();
+    
+    // ❌ (تم التعطيل) كانت تسبب توقف التطبيق سابقاً
+    // checkSharedData(); 
 
-    // ✅ مهم: فعل نظام الكوتش بعد الدخول
+    // ✅ تفعيل نظام الكوتش
     try {
         if (typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
     } catch (e) {
         console.warn('[initApp] setupCoachFeedOnce failed:', e);
     }
 
-    // ✅ مهم: لو عندك hero-week-dist خليها تتحدث هنا (مش في main.js)
+    // ✅ تحديث مسافة الهيرو الأسبوعية
     try {
         if (typeof updateHeroWeekDist === 'function') updateHeroWeekDist();
     } catch (e) {
@@ -75,11 +77,18 @@ function initApp() {
     // 🔥 تحديث حالة التواجد (V1.5 Presence System)
     if (currentUser) {
         const now = new Date();
-        const todayStr = now.toISOString().slice(0, 10); // 2024-01-01
+        const todayStr = now.toISOString().slice(0, 10);
         
         db.collection('users').doc(currentUser.uid).update({
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp(), // لتحديد المتواجدين الآن
-            lastLoginDate: todayStr // لتحديد زوار اليوم
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+            lastLoginDate: todayStr
         }).catch(err => console.log("Presence Error", err));
     }
+
+    // ✅ 1. تشغيل جدول الفريق (الجديد)
+    if(typeof renderTeamSchedule === 'function') renderTeamSchedule();
+
+    // ✅ 2. (مهم جداً) تهيئة تبويبات البروفايل على "نشاطي"
+    // عشان لما تفتح البروفايل متلاقيش الصفحة فاضية
+    if(typeof switchProfileTab === 'function') switchProfileTab('activity');
 }

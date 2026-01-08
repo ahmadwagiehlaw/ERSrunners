@@ -1685,3 +1685,63 @@ function showBadgeDetails(title, desc, icon, isEarned) {
         showToast(`🔒 ${title}: ${desc} (واصل التمرين لفتحه!)`, "info");
     }
 }
+
+// ==================== Weekly Schedule Logic ====================
+
+// 1. بيانات الجدول (ممكن تعدلها براحتك)
+const WEEKLY_SCHEDULE = [
+    { id: 6, day: 'السبت', title: 'جري طويل', desc: 'مسافة 10-15 كم', type: 'run', icon: '🏃‍♂️' },
+    { id: 0, day: 'الأحد', title: 'استشفاء', desc: 'راحة تامة أو يوجا', type: 'rest', icon: '🧘‍♂️' },
+    { id: 1, day: 'الاثنين', title: 'تمبو', desc: '5 كم رتم سريع', type: 'speed', icon: '⚡' },
+    { id: 2, day: 'الثلاثاء', title: 'جري خفيف', desc: 'هرولة 30 دقيقة', type: 'run', icon: '👟' },
+    { id: 3, day: 'الأربعاء', title: 'انترفل', desc: '8x400m سرعة', type: 'speed', icon: '⏱️' },
+    { id: 4, day: 'الخميس', title: 'تمارين قوة', desc: 'جيم أو سويدي', type: 'gym', icon: '💪' },
+    { id: 5, day: 'الجمعة', title: 'راحة', desc: 'يوم العائلة', type: 'rest', icon: '🌴' }
+];
+
+// 2. دالة رسم الجدول
+function renderTeamSchedule() {
+    const container = document.getElementById('schedule-scroll-container');
+    if (!container) return;
+
+    // معرفة رقم اليوم الحالي (0 = الأحد, 1 = الاثنين, ... 6 = السبت)
+    const todayIndex = new Date().getDay(); 
+
+    let html = '';
+    
+    // إعادة ترتيب المصفوفة لتبدأ من "اليوم" (اختياري) أو عرضها كما هي
+    // سنعرضها كما هي (سبت -> جمعة) ونميز اليوم الحالي
+    
+    WEEKLY_SCHEDULE.forEach(item => {
+        const isToday = (item.id === todayIndex);
+        const activeClass = isToday ? 'today' : '';
+        const badge = isToday ? '<div class="today-badge">اليوم</div>' : '';
+        
+        // تغيير لون الأيقونة حسب النوع
+        let iconColor = '#fff';
+        if (item.type === 'run') iconColor = '#10b981'; // أخضر
+        if (item.type === 'speed') iconColor = '#ef4444'; // أحمر
+        if (item.type === 'rest') iconColor = '#6b7280'; // رمادي
+        if (item.type === 'gym') iconColor = '#f59e0b'; // برتقالي
+
+        html += `
+            <div class="sch-card ${activeClass}" onclick="showToast('${item.title}: ${item.desc}', 'info')">
+                ${badge}
+                <div class="sch-day">${item.day}</div>
+                <div class="sch-icon" style="color:${iconColor}">${item.icon}</div>
+                <div class="sch-title">${item.title}</div>
+                <div class="sch-desc">${item.desc}</div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    
+    // سكرول تلقائي لليوم الحالي عشان المستخدم يشوفه أول ما يفتح
+    setTimeout(() => {
+        const todayCard = container.querySelector('.sch-card.today');
+        if(todayCard) {
+            todayCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }, 500);
+}
