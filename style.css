@@ -5077,305 +5077,294 @@ button, input, select, textarea, .tab-item, .coach-tab-btn {
     border-color: rgba(239, 68, 68, 0.3);
 }
 
+/* ==================== Profile Tabs & Interactions ==================== */
 
-/* ==================== Profile Tabs Logic (Essential) ==================== */
-/* حاوية التبويبات المحدثة */
+/* شريط التبويبات */
 .profile-tabs-nav {
     display: flex;
-    background: rgba(15, 23, 42, 0.8); /* أغمق قليلاً لإبراز الأبيض */
+    background: rgba(30, 41, 59, 0.6);
     border-radius: 12px;
     padding: 4px;
-    margin: 0 15px 20px 15px;
+    margin-bottom: 20px;
     position: sticky;
     top: 75px;
     z-index: 90;
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* التبويب الفردي - Slim & Professional */
 .p-tab {
-    flex: 1;
-    text-align: center;
-    padding: 8px 5px; /* ارتفاع نحيف Slim كما طلبت */
-    font-size: 12px;
-    color: #94a3b8;
-    cursor: pointer;
-    border-radius: 9px;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    gap: 6px;
+    flex: 1; text-align: center; padding: 10px;
+    font-size: 13px; color: #94a3b8; cursor: pointer;
+    border-radius: 8px; transition: all 0.3s ease;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
     font-weight: 500;
-    border: 1px solid transparent;
 }
 
-/* التبويب النشط - أبيض كريستالي مضغوط */
 .p-tab.active {
-    background: rgba(255, 255, 255, 1); /* لون أبيض صريح */
-    color: #111827; /* نص داكن للتباين الوضح */
-    font-weight: 800;
-    border: 1px solid #ffffff;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), 0 4px 12px rgba(255,255,255,0.2);
-    transform: scale(0.97); /* تأثير الزر المضغوط */
+    background: var(--bg-card); color: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-weight: bold;
 }
 
-/* أيقونة التبويب النشط */
-.p-tab.active i {
-    color: #111827;
+.p-tab-content { display: none; animation: fadeIn 0.3s ease; }
+.p-tab-content.active { display: block; }
+
+/* تنسيق التفاعلات المضغوط (سطر واحد) */
+.inter-item.compact { transition: background 0.2s; }
+.inter-item.compact:active { background: rgba(255,255,255,0.08) !important; }
+
+
+/* ==================== PREMIUM GLASS AUTH SCREEN (FINAL) ==================== */
+
+/* الخلفية والطبقة المعتمة */
+.glass-auth-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(5, 10, 20, 0.85); /* تعتيم قوي للتركيز */
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    z-index: 100;
 }
 
-/* إخفاء وإظهار المحتوى (الإبقاء على منطقك الأصلي) */
-.p-tab-content {
-    display: none;
-    animation: fadeIn 0.3s ease;
+/* الكارت الزجاجي */
+.glass-auth-card {
+    width: 100%; max-width: 380px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    padding: 40px 30px;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    animation: authCardFloat 1s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.p-tab-content.active {
-    display: block;
+/* اللوجو والهالة */
+.auth-logo-wrapper {
+    position: relative; display: inline-block; margin-bottom: 20px;
+}
+.auth-logo-img {
+    width: 220px; /* 🔥 الحجم الكبير */
+    height: auto; 
+    position: relative; z-index: 2;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.5));
+}
+.logo-glow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%); /* هالة برتقالية */
+    border-radius: 50%; 
+    filter: blur(40px);
+    pointer-events: none; /* 🔥 مهم: عشان الماوس يعدي منها */
+    z-index: 0; 
 }
 
+/* النصوص */
+.auth-welcome-text h2 {
+    color: #fff; font-size: 24px; font-weight: 800; margin: 0 0 5px 0;
+}
+.text-gradient {
+    background: linear-gradient(135deg, #fff 0%, #93c5fd 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.auth-welcome-text p { color: #94a3b8; font-size: 13px; margin: 0 0 30px 0; }
 
-/* إصلاح حاوية الفريق */
-.team-feed-container {
+/* الحقول (إصلاح التفاعل) */
+.auth-inputs { 
+    display: flex; flex-direction: column; gap: 15px; 
+    position: relative; z-index: 10; /* 🔥 رفعناها فوق الهالة */
+}
+
+.input-glass-wrapper {
+    position: relative;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    display: flex; align-items: center;
+    transition: all 0.3s ease;
+}
+.input-glass-wrapper:focus-within {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+.input-glass-wrapper i { position: absolute; right: 15px; color: #64748b; font-size: 18px; }
+.input-glass-wrapper input, .input-glass-wrapper select {
+    width: 100%; background: transparent; border: none; outline: none;
+    color: #fff; padding: 16px 45px 16px 15px; 
+    font-size: 14px; font-family: inherit;
+}
+.input-glass-wrapper select option { background: #1f2937; color: #fff; }
+
+/* الزر البرتقالي */
+.btn-auth-glass {
+    background: linear-gradient(135deg, #f59e0b, #ea580c); 
+    border: none; border-radius: 16px;
+    color: #fff; font-weight: bold; font-size: 16px;
+    padding: 16px; cursor: pointer;
+    margin-top: 10px;
+    box-shadow: 0 10px 20px rgba(234, 88, 12, 0.3);
+    transition: transform 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-auth-glass:hover { transform: translateY(-2px); box-shadow: 0 15px 30px rgba(234, 88, 12, 0.5); }
+.btn-auth-glass:active { transform: scale(0.98); }
+.btn-auth-glass:disabled { opacity: 0.7; cursor: not-allowed; }
+
+.btn-text-glass {
+    background: none; border: none; color: #94a3b8; font-size: 12px;
+    cursor: pointer; padding: 10px; margin-top: 10px;
+}
+.btn-text-glass:hover { color: #fff; text-decoration: underline; }
+
+.error-msg-glass { color: #ef4444; font-size: 12px; margin-top: 10px; min-height: 18px; }
+
+@keyframes authCardFloat {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ==================== Weekly Schedule Styles ==================== */
+
+/* الحاوية القابلة للسكرول الأفقي */
+.schedule-scroll-wrapper {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch; /* نعومة السكرول في الآيفون */
+}
+
+/* إخفاء شريط التمرير المزعج */
+.schedule-scroll-wrapper::-webkit-scrollbar { height: 4px; }
+.schedule-scroll-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+/* تصميم كارت اليوم الواحد */
+.sch-card {
+    min-width: 110px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 14px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
-    padding: 10px 15px;
-    min-height: 200px; /* لضمان وجود مساحة */
-}
-
-/* بطاقة الجرية الاجتماعية - تصميم ERS المميز */
-.run-card-social {
-    background: rgba(31, 41, 55, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 20px;
-    padding: 16px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    animation: fadeInUp 0.4s ease;
-}
-
-.run-card-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.user-avatar-circle {
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
-    background: var(--primary);
-    color: #fff;
-    display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 900;
-    font-size: 18px;
-    box-shadow: 0 0 10px var(--primary-glow);
-}
-
-.run-stats-social {
-    display: flex;
-    justify-content: space-around;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 12px;
-    border-radius: 14px;
-    margin: 12px 0;
-}
-
-.stat-box { text-align: center; }
-.stat-box .val { display: block; font-size: 16px; font-weight: 800; color: #fff; }
-.stat-box .lbl { font-size: 10px; color: var(--text-muted); }
-
-.run-actions-social {
-    display: flex;
-    gap: 20px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-}
-
-.social-btn {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.social-btn:hover { color: var(--primary); }
-
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* تنسيق كروت الفريق - ستايل كريستالي مضغوط */
-.run-card-social {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 20px;
-    padding: 16px;
-    margin-bottom: 15px;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s;
-}
-
-.run-card-social:active {
-    transform: scale(0.98); /* تأثير الضغط */
-    background: rgba(255, 255, 255, 0.05) !important;
-}
-
-.animate-in {
-    animation: slideUpFade 0.4s ease forwards;
-}
-
-@keyframes slideUpFade {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* المعرض العلوي - Stories */
-.club-gallery-wrapper {
-    padding: 15px;
-    overflow-x: auto;
-    display: flex;
-    gap: 12px;
-    scrollbar-width: none;
-}
-.club-gallery-wrapper::-webkit-scrollbar { display: none; }
-
-.story-card {
-    min-width: 100px;
-    height: 140px;
-    border-radius: 15px;
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    border: 2px solid rgba(16, 185, 129, 0.3);
-    flex-shrink: 0;
-}
-
-.story-tag {
-    position: absolute;
-    bottom: 8px;
-    right: 5px;
-    left: 5px;
-    font-size: 10px;
-    background: rgba(0,0,0,0.6);
-    padding: 4px;
-    border-radius: 6px;
     text-align: center;
-    backdrop-filter: blur(4px);
-}/* الحاوية الخارجية لإعطاء حواف ناعمة لكل الجورنال */
-.journal-panorama-wrapper {
-    margin: 15px;
-    border-radius: 28px; /* حواف مستديرة جداً مثل المودالز */
+    transition: all 0.3s ease;
+    position: relative;
     overflow: hidden;
-    position: relative;
-    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
-    border: 1px solid var(--border);
 }
 
-.journal-panorama-container {
+/* تأثير عند الضغط */
+.sch-card:active { transform: scale(0.95); }
+
+/* تمييز "اليوم الحالي" */
+.sch-card.today {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+    border: 1px solid var(--primary);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+}
+
+/* نصوص الكارت */
+.sch-day { font-size: 11px; color: #9ca3af; margin-bottom: 5px; }
+.sch-icon { font-size: 20px; margin-bottom: 5px; }
+.sch-title { font-size: 12px; font-weight: bold; color: #fff; margin-bottom: 3px; }
+.sch-desc { font-size: 10px; color: #6b7280; line-height: 1.2; }
+
+/* شارة "اليوم" */
+.today-badge {
+    position: absolute; top: 0; right: 0;
+    background: var(--primary); color: #000;
+    font-size: 8px; padding: 2px 6px;
+    border-bottom-left-radius: 8px; font-weight: bold;
+}
+
+.elite-workout-item {
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+.elite-workout-item:hover {
+    transform: translateX(-5px);
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+
+/* ==================== Skimble Premium Card Design (Updated Logo) ==================== */
+
+.skimble-premium-card {
     display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    height: 420px;
-    background: var(--bg-card);
-}
-.journal-panorama-container::-webkit-scrollbar { display: none; }
-
-.journal-page {
-    min-width: 100%;
-    scroll-snap-align: start;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 20px;
+    margin: 15px 0;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     position: relative;
+    overflow: hidden;
 }
 
-.journal-page img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
+.skimble-premium-card:hover {
+    transform: translateY(-5px);
+    border-color: #ff8a00;
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 15px rgba(255, 138, 0, 0.2);
 }
 
-/* تأثير التكبير عند اللمس */
-.journal-page:active img { transform: scale(1.08); }
-
-.journal-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to top, rgba(17, 24, 39, 0.95) 5%, transparent 70%);
+/* محتوى النص (يمين) */
+.skimble-content {
+    flex: 1;
+    text-align: right;
+    padding-left: 15px; /* مسافة بسيطة من اللوجو */
 }
 
-.journal-content {
-    position: absolute;
-    bottom: 25px;
-    right: 20px;
-    left: 20px;
+.skimble-label {
+    display: block;
+    font-size: 10px;
+    color: #ff8a00;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin-bottom: 4px;
 }
 
-.journal-content h2 {
-    font-size: 22px;
+.skimble-title {
+    margin: 0;
+    font-size: 19px; /* تكبير العنوان قليلاً */
     font-weight: 900;
     color: #fff;
-    margin: 8px 0;
-    line-height: 1.3;
 }
 
-/* نقاط التنقل */
-.journal-dots {
-    position: absolute;
-    bottom: 14px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    pointer-events: none;
-}
-.j-dot { width: 6px; height: 6px; background: rgba(255,255,255,0.3); border-radius: 50%; transition: 0.3s; }
-.j-dot.active { width: 20px; background: var(--primary); border-radius: 10px; }
-
- 
-
-.journal-page {
-    min-width: 100%;
-    scroll-snap-align: start;
-    position: relative;
-    overflow: hidden; /* يضمن أن الصورة تتبع انحناء الحواف */
+.skimble-subtitle {
+    margin: 5px 0 0 0;
+    font-size: 12px;
+    color: #94a3b8;
 }
 
-.journal-media .main-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 24px; /* حواف الصورة نفسها */
+/* 🔥 التعديل الجديد للوجو: بدون حاوية وبحجم كبير 🔥 */
+.skimble-card-img {
+    width: 250px; /* تكبير اللوجو */
+    height: 75px;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3)); /* ظل للوجو عشان يبرز */
+    transition: transform 0.3s ease;
+    flex-shrink: 0; /* يمنع اللوجو من الانضغاط */
 }
 
-/* لوحة الإدارة - تحسين شكل الحقول */
-.admin-card {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 18px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border: 1px solid var(--border);
+.skimble-premium-card:hover .skimble-card-img {
+    transform: scale(1.1) rotate(-5deg); /* حركة تفاعلية للوجو عند التمرير */
 }
 
-.form-input {
-    width: 100%;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px;
-    color: white;
-    margin-top: 8px;
+/* استجابة الموبايل */
+@media (max-width: 400px) {
+    .skimble-title { font-size: 16px; }
+    .skimble-card-img { 
+        width: 60px; 
+        height: 60px; 
+    }
 }

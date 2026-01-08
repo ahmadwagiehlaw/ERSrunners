@@ -31,31 +31,62 @@
 <body>
     <div id="offline-banner" class="offline-banner">⚠️ لا يوجد اتصال بالإنترنت - وضع التصفح</div>
 
-    <div id="auth-screen" class="full-screen-overlay">
-        <div class="auth-box">
-            <div class="logo-area">
-                <h1>ERS <span class="accent-text">RUNNERS</span></h1>
-                <p>منصة العدائين المحترفين</p>
+<div id="auth-screen" class="full-screen-overlay" style="background: url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop') no-repeat center center/cover;">
+    
+    <div class="glass-auth-overlay">
+        
+        <div class="glass-auth-card">
+            
+            <div class="auth-logo-wrapper">
+                <div class="logo-glow"></div>
+                <img src="ers-logo.png" class="auth-logo-img" alt="ERS Logo">
+            </div>
+
+            <div class="auth-welcome-text">
+                <h2>أهلاً بك في <span class="text-gradient">ERS</span></h2>
+                <p>مجتمع النخبة للعدائين المحترفين</p>
             </div>
             
-            <div class="form-group">
-                <input type="email" id="email" placeholder="البريد الإلكتروني">
-                <input type="password" id="password" placeholder="كلمة المرور">
+            <div class="form-group auth-inputs">
+                <div class="input-glass-wrapper">
+                    <i class="ri-mail-line"></i>
+                    <input type="email" id="email" placeholder="البريد الإلكتروني">
+                </div>
                 
-                <div id="signup-fields" style="display:none;">
-                    <input type="text" id="username" placeholder="الاسم ثلاثي">
-                    <select id="region">
-                        <option value="" disabled selected>اختر منطقتك</option>
-                        <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
-                    </select>
+                <div class="input-glass-wrapper">
+                    <i class="ri-lock-2-line"></i>
+                    <input type="password" id="password" placeholder="كلمة المرور">
+                </div>
+                
+                <div id="signup-fields" style="display:none; animation: slideDown 0.4s ease;">
+                    <div class="input-glass-wrapper">
+                        <i class="ri-user-3-line"></i>
+                        <input type="text" id="username" placeholder="الاسم ثلاثي">
+                    </div>
+                    <div class="input-glass-wrapper">
+                        <i class="ri-map-pin-user-line"></i>
+                        <select id="region">
+                            <option value="" disabled selected>اختر منطقتك</option>
+                            <option value="Cairo">القاهرة</option><option value="Giza">الجيزة</option><option value="Alexandria">الإسكندرية</option><option value="Dakahlia">الدقهلية</option><option value="Red Sea">البحر الأحمر</option><option value="Beheira">البحيرة</option><option value="Fayoum">الفيوم</option><option value="Gharbia">الغربية</option><option value="Ismailia">الإسماعيلية</option><option value="Monufia">المنوفية</option><option value="Minya">المنيا</option><option value="Qalyubia">القليوبية</option><option value="New Valley">الوادي الجديد</option><option value="Suez">السويس</option><option value="Aswan">أسوان</option><option value="Assiut">أسيوط</option><option value="Beni Suef">بني سويف</option><option value="Port Said">بورسعيد</option><option value="Damietta">دمياط</option><option value="Sharkia">الشرقية</option><option value="South Sinai">جنوب سيناء</option><option value="Kafr El Sheikh">كفر الشيخ</option><option value="Matrouh">مطروح</option><option value="Luxor">الأقصر</option><option value="Qena">قنا</option><option value="North Sinai">شمال سيناء</option><option value="Sohag">سوهاج</option><option value="Other">أخرى</option>
+                        </select>
+                    </div>
                 </div>
 
-                <button class="btn btn-primary" onclick="handleAuth()">دخول</button>
-                <button class="btn btn-text" onclick="toggleAuthMode()" id="toggleAuthBtn">ليس لديك حساب؟ سجل الآن</button>
-                <div id="auth-msg" class="error-msg"></div>
+                <button class="btn-auth-glass" onclick="handleAuth()">
+                    <span id="btn-auth-text">تسجيل الدخول</span> 
+                    <i class="ri-arrow-left-line"></i>
+                </button>
+                
+                <div class="auth-footer">
+                    <button class="btn-text-glass" onclick="toggleAuthMode()" id="toggleAuthBtn">جديد معنا؟ إنشاء حساب</button>
+                </div>
+                
+                <div id="auth-msg" class="error-msg-glass"></div>
             </div>
         </div>
     </div>
+</div>
+
 
     <div id="app-content" style="display:none;">
         <header class="glass-header">
@@ -166,44 +197,39 @@
 
 <div id="coach-home-tab-plan" class="coach-home-tab">
     
-    <div id="team-workout" class="team-workout-card" style="margin-top: 0; margin-bottom: 20px;">
-        <div class="section-title-row">
-            <h4>جدول التدريب الأسبوعي للفريق 👥</h4>
-            <span class="link-text" onclick="switchView('team')">تفاصيل</span>
-        </div>
-        <div class="mini-note">تمرين خفيف للجميع… الهدف الالتزام 🔥</div>
-        <div id="team-workout-body" class="team-workout-body"></div>
+<div id="team-workout" class="team-workout-card" style="margin-top: 0; margin-bottom: 20px;">
+    <div class="section-title-row" style="margin-bottom: 10px;">
+        <h4>جدول التدريب الأسبوعي للفريق 🗓️</h4>
+        <span class="link-text" onclick="switchView('team')">تفاصيل</span>
     </div>
-
-    <div class="plan-tools-grid">
-      <div class="tool-card" onclick="openCoachPreferences()">
-        <div class="tool-ico"><i class="ri-sliders-4-line"></i></div>
-        <div class="tool-meta">
-          <div class="modal-box">تفضيلات الكوتش</div>
-          <div class="tool-sub">اضبط أهدافك وإخفاء/إظهار أجزاء الصفحة</div>
-        </div>
-        <i class="ri-arrow-left-s-line"></i>
-      </div>
-
-      <div class="tool-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
-        <div class="tool-ico"><i class="ri-links-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">Workout Trainers</div>
-          <div class="tool-sub">تمارين إضافية من كوتش وجيه (Skimble)</div>
-        </div>
-        <i class="ri-external-link-line"></i>
-      </div>
-
-      <div class="tool-card" onclick="openBasicLibrary()">
-        <div class="tool-ico"><i class="ri-book-3-line"></i></div>
-        <div class="tool-meta">
-          <div class="tool-title">المكتبة الأساسية</div>
-          <div class="tool-sub">مرجع سريع للتمارين والمفاهيم</div>
-        </div>
-        <i class="ri-arrow-left-s-line"></i>
-      </div>
+    
+    <div id="schedule-scroll-container" class="schedule-scroll-wrapper">
+        <div class="loader-placeholder small">جاري تحميل الجدول...</div>
     </div>
+</div>
 
+ 
+<div class="skimble-premium-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
+    <div class="skimble-content">
+        <span class="skimble-label">Coach Wajeeh Workouts</span>
+        <h3 class="skimble-title">تدرب مع كوتش وجيه</h3>
+        <p class="skimble-subtitle">تمارين احترافية مخصصة لك على Skimble</p>
+    </div>
+    <div class="skimble-logo-container">
+        <img src="skimble.png" alt="Skimble Logo" class="skimble-card-img">
+    </div>
+</div>
+
+<div id="coach-library-section" style="margin-top: 25px;">
+    <div class="section-title-row">
+        <h4>مكتبة التمارين الذكية 📚</h4>
+    </div>
+    
+    <div id="library-types-container" class="schedule-scroll-wrapper">
+        </div>
+</div>
+
+<p></p>
     <div id="basic-library-section" class="basic-lib-card">
       <div class="section-title-row">
         <h4>المكتبة الأساسية 📚</h4>
@@ -249,16 +275,7 @@
     </div>
 
 
-    <div class="glass-panel">
-        <div class="section-title-row" style="margin-top:0;">
-            <h4>الترتيب العام (Hall of Fame)</h4>
-            <span class="link-text" onclick="switchView('challenges')">الكامل</span>
-        </div>
-        <div id="hall-of-fame-list" class="hof-grid">
-            <div class="empty-state-mini">جاري التحميل...</div>
-        </div>
-    </div>
-
+ 
 
     <div class="glass-panel" style="border-color: rgba(59, 130, 246, 0.3);"> <div class="section-title-row" style="margin-top:0;">
             <h4>تحدياتي النشطة 🔥</h4>
@@ -350,34 +367,8 @@
                     <div class="admin-tab" data-tab="studio" onclick="switchAdminTab('studio')">التحديات</div>
                     <div class="admin-tab" data-tab="coach" onclick="switchAdminTab('coach')">الكوتش</div>
                     <div class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">الأعضاء</div>
-</div><div class="admin-tabs">
-    <div class="admin-tab active" data-tab="overview" onclick="switchAdminTab('overview')">إحصائيات</div>
-    <div class="admin-tab" data-tab="studio" onclick="switchAdminTab('studio')">الاستوديو 🎨</div>
-    </div>
-
-<div id="admin-studio" class="admin-content-section">
-    <div class="admin-card">
-        <h5 style="color:var(--primary);"><i class="ri-gallery-fill"></i> محرر الجورنال البانورامي</h5>
-        <p style="font-size: 11px; color: var(--text-muted);">ضع الروابط والعناوين مفصولة بـ علامة (|)</p>
-        
-        <div class="form-group">
-            <label>روابط الصور (URL)</label>
-            <textarea id="adm-journal-links" class="form-input" placeholder="رابط1 | رابط2 | رابط3"></textarea>
-        </div>
-
-        <div class="form-group" style="margin-top:10px;">
-            <label>العناوين</label>
-            <textarea id="adm-journal-titles" class="form-input" placeholder="عنوان1 | عنوان2 | عنوان3"></textarea>
-        </div>
-
-        <div class="form-group" style="margin-top:10px;">
-            <label>نصوص الوصف (اختياري)</label>
-            <textarea id="adm-journal-desc" class="form-input" placeholder="وصف1 | وصف2 | وصف3"></textarea>
-        </div>
-
-        <button class="btn btn-primary w-100" style="margin-top:15px;" onclick="saveJournalPanorama()">نشر التحديث للجميع 🚀</button>
-    </div>
 </div>
+
                 <div id="admin-overview" class="admin-content-section active">
                     
                         
@@ -708,15 +699,7 @@
                         <p>بودكاست الفريق + لوحة الشرف + أخبار وفعاليات</p>
                     </div>
                 </div>
-<p></p>
-<div class="journal-panorama-container" id="journal-slider">
-    <div style="width:100%; display:flex; align-items:center; justify-content:center; color:var(--text-muted);">
-        <i class="ri-loader-4-line ri-spin"></i> جاري تحميل الجورنال...
-    </div>
-</div>
 
-<div class="journal-dots" id="journal-dots"></div>
- 
                 <div class="club-card">
                     <div class="club-card-head">
                         <h4>ERS Podcast</h4>
@@ -734,7 +717,7 @@
                     </div>
                 </div>
 
-               
+                <p></p>
                 
     <div class="social-grid">
         <div class="social-card fb-card" onclick="openExternal('https://www.facebook.com/egyrunnerssquad/')">
@@ -758,19 +741,11 @@
             </div>
         </div>
     </div>
-
-                <div class="section-title-row" style="margin-top:22px;">
-                    <h4>أخبار الفريق ⚡</h4>
-                </div>
-                <div id="global-feed-list" class="feed-list-compact">
-                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
-                </div>
-    
 </div>
-            
+
+                
 
             </section>
-
 <section id="view-profile" class="view">
     
     <div class="pro-hero-card compact">
@@ -851,6 +826,14 @@
             </div>
         </div>
 
+        <div class="glass-panel" style="margin-top: 20px; padding: 15px; border-color:rgba(255,255,255,0.08); display:none;" id="latest-interactions-box">
+            <div style="font-size:12px; color:#f59e0b; margin-bottom:10px; font-weight:bold; display:flex; align-items:center; gap:5px;">
+                <i class="ri-heart-pulse-fill"></i> التفاعلات الأخيرة
+            </div>
+            <div id="interactions-list-mini" class="interactions-box">
+                </div>
+        </div>
+
         <div class="log-section" style="margin-top: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                 <h3 class="section-title" style="margin:0;">سجل الأنشطة 📓</h3>
@@ -902,7 +885,7 @@
         <div class="badges-section" style="margin-top: 25px;">
             <h3 class="section-title">جدار البطولات 🎖️</h3>
             <div id="badges-grid" class="badges-grid">
-                <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">قريباً...</div>
+                <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...</div>
             </div>
         </div>
         
@@ -912,14 +895,6 @@
     </div>
 
 </section>
-
-
-
-
-
-
-
-
 
 
 
@@ -935,6 +910,20 @@
         </nav>
     </div>
 
+
+
+
+<div id="modal-catalog" class="modal-overlay">
+    <div class="modal-box ers-blue-glass" style="max-height: 80vh;">
+        <div class="modal-head">
+            <h3 id="catalog-title" style="margin:0;">المكتبة الذكية</h3>
+            <button class="modal-close" onclick="closeModal('modal-catalog')"><i class="ri-close-line"></i></button>
+        </div>
+        <div id="catalog-body" style="overflow-y: auto; padding: 10px 5px;">
+            </div>
+        <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px; width:100%;">فهمت الخطة 🫡</button>
+    </div>
+</div>
 
     <div id="modal-run-feedback" class="modal-overlay" style="z-index: 4000;">
         <div class="modal-box" style="text-align:center; padding-top:40px; position:relative; overflow:visible;">
@@ -1470,6 +1459,7 @@
           <span>إخفاء تحدي الأسبوع</span>
           <label class="switch"><input id="pref-hide-weekly" type="checkbox"><span class="slider"></span></label>
         </div>
+        
         <div class="toggle-row">
           <span>إخفاء المكتبة الأساسية</span>
           <label class="switch"><input id="pref-hide-lib" type="checkbox"><span class="slider"></span></label>
