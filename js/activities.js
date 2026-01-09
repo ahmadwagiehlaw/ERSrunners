@@ -528,12 +528,7 @@ async function deleteRun(id, dist) {
         loadGlobalFeed();
         showToast("تم الحذف 🗑️", "success");
     } catch (error) { showToast("فشل الحذف", "error"); }
-    // في نهاية دالة saveActivity ودالة deleteRun
-if (typeof loadActiveChallenges === 'function') {
-    setTimeout(loadActiveChallenges, 500); // تأخير بسيط لضمان تحديث الـ Cache
 }
-}
-
 
 
 

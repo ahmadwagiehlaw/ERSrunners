@@ -178,45 +178,13 @@ async function loadActiveChallenges() {
                     .doc(currentUser.uid)
                     .get();
 
-// داخل دالة loadActiveChallenges بعد حساب الـ progress
-if (currentUser && pSnap.exists) {
-    isJoined = true;
-    const allRuns = window._ersRunsCache || [];
-    
-    // حساب المسافة الفعلية من سجل الجريات
-const challengeRuns = allRuns.filter(r => {
-    const rDate = r.timestamp ? r.timestamp.toDate() : new Date();
-    const is2026 = rDate.getFullYear() === 2026;
-    const isJanuary = rDate.getMonth() === 0;
-
-    // لو التحدي سنوي، فلتر بالسنة فقط. لو شهري، فلتر بالشهر والسنة.
-    if (ch.period === 'annual') {
-        return is2026 && r.type === 'Run';
-    } else {
-        return is2026 && isJanuary && r.type === 'Run';
-    }
-});
-
-    let calculatedProgress = 0;
-    if (ch.type === 'distance') {
-        calculatedProgress = challengeRuns.reduce((sum, r) => sum + (parseFloat(r.dist) || 0), 0);
-    } else if (ch.type === 'frequency') {
-        calculatedProgress = challengeRuns.length;
-    }
-
-    // 🔥 الجزء الجديد: تحديث قاعدة البيانات تلقائياً لو الرقم اختلف
-    const dbProgress = Number(pSnap.data().progress) || 0;
-    if (calculatedProgress !== dbProgress) {
-        // تحديث صامت لقاعدة البيانات لضمان ظهورها في الليدربورد والتفاصيل
-        doc.ref.collection('participants').doc(currentUser.uid).update({
-            progress: calculatedProgress,
-            completed: calculatedProgress >= Number(ch.target)
-        });
-    }
-
-    progress = calculatedProgress;
-    completed = progress >= Number(ch.target);
-}            }
+                if (pSnap.exists) {
+                    const pData = pSnap.data();
+                    isJoined = true;
+                    progress = Number(pData.progress) || 0;
+                    completed = pData.completed === true;
+                }
+            }
 
             allChallengesCache.push({
                 id: doc.id,
@@ -815,13 +783,6 @@ async function deleteChallenge(id) {
         if(document.getElementById('admin-active-challenges-list')) {
             loadAdminChallengesList();
         }
-
-        // داخل دالة deleteRun بعد مسح البيانات وتحديث الـ userData
-updateUI();
-loadActivityLog(); 
-// 🔥 السطر السحري المطلوب إضافته هنا:
-if (typeof loadActiveChallenges === 'function') loadActiveChallenges();
-
     } catch(e) {
         console.error(e);
         showToast("فشل الحذف", "error");
