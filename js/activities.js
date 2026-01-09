@@ -743,3 +743,81 @@ async function checkNewBadges() {
         } catch (e) { console.error("Badges Error:", e); }
     }
 }
+
+
+async function syncFromStrava() {
+    const btn = document.getElementById('strava-sync-btn');
+    if(btn) { btn.innerText = "جاري المزامنة... ⏳"; btn.disabled = true; }
+
+    try {
+        if (!window.STRAVA_CONFIG) throw new Error("إعدادات استرافا العامة غير موجودة");
+        
+        // 1. استخدام توكن المستخدم لو موجود، وإلا نستخدم الافتراضي (للتجربة)
+        const refreshToken = userData.stravaRefreshToken || window.STRAVA_CONFIG.REFRESH_TOKEN;
+        const { CLIENT_ID, CLIENT_SECRET } = window.STRAVA_CONFIG;
+        
+        if (!refreshToken) throw new Error("لم يتم ربط حساب استرافا");
+
+        // 2. تجديد الـ Token
+        const authResponse = await fetch(`https://www.strava.com/oauth/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                refresh_token: refreshToken,
+                grant_type: 'refresh_token'
+            })
+        });
+        
+        const authData = await authResponse.json();
+        if(!authData.access_token) throw new Error("فشل تجديد التصريح");
+
+        // 3. جلب آخر نشاط
+        const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=1`, {
+            headers: { 'Authorization': `Bearer ${authData.access_token}` }
+        });
+        
+        const data = await response.json();
+        if(!data || data.length === 0) {
+            showToast("لا توجد أنشطة جديدة في استرافا", "info");
+            return;
+        }
+
+        const lastRun = data[0];
+        const isDuplicate = (window._ersRunsCache || []).some(r => r.stravaId === lastRun.id);
+        if(isDuplicate) {
+            showToast("هذا النشاط مسجل بالفعل ✅", "info");
+            return;
+        }
+
+        // 4. تجهيز البيانات (المسافة، الوقت، والمسار)
+        const runData = {
+            dist: parseFloat((lastRun.distance / 1000).toFixed(2)),
+            time: Math.round(lastRun.moving_time / 60),
+            type: "Run",
+            dateStr: lastRun.start_date.split('T')[0],
+            timestamp: firebase.firestore.Timestamp.fromDate(new Date(lastRun.start_date)),
+            stravaId: lastRun.id,
+            source: "Strava",
+            polyline: lastRun.map ? lastRun.map.summary_polyline : null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        // 5. الحفظ والتحديث الشامل
+        await db.collection('users').doc(currentUser.uid).collection('runs').add(runData);
+        
+        showToast("عاش يا بطل! تمت المزامنة ✅", "success");
+        closeModal('modal-log');
+
+        await loadActivityLog(); 
+        updateUI();
+        loadActiveChallenges();
+
+    } catch (e) {
+        console.error("Strava Error:", e);
+        showToast("فشل في المزامنة: تأكد من ربط الحساب", "error");
+    } finally {
+        if(btn) { btn.innerText = "مزامنة استرافا"; btn.disabled = false; }
+    }
+}

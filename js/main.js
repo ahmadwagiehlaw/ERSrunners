@@ -495,3 +495,55 @@ window.addEventListener('appinstalled', () => {
     const container = document.getElementById('pwa-install-container');
     if (container) container.style.display = 'none';
 });
+
+
+
+
+// ==================== 2. Strava OAuth back to app====================s
+// فحص العودة من استرافا فور تحميل التطبيق
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+
+    if (code && localStorage.getItem('ers_is_linking_strava')) {
+        handleStravaResponse(code);
+    }
+});
+
+async function handleStravaResponse(code) {
+    localStorage.removeItem('ers_is_linking_strava');
+    showToast("جاري تأمين الربط مع استرافا... 🔗", "info");
+
+    try {
+        const { CLIENT_ID, CLIENT_SECRET } = window.STRAVA_CONFIG;
+
+        const response = await fetch('https://www.strava.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: CLIENT_ID,
+                client_secret: CLIENT_SECRET,
+                code: code,
+                grant_type: 'authorization_code'
+            })
+        });
+
+        const data = await response.json();
+        
+        if (data.refresh_token) {
+            // حفظ التوكن في حساب المستخدم بدقة
+            await db.collection('users').doc(currentUser.uid).update({
+                stravaRefreshToken: data.refresh_token,
+                stravaConnected: true
+            });
+            
+            showToast("عاش! تم ربط استرافا بنجاح 🎉", "success");
+            // تنظيف الرابط
+            window.history.replaceState({}, document.title, window.location.pathname);
+            if(typeof updateUI === 'function') updateUI();
+        }
+    } catch (e) {
+        console.error("Link Error:", e);
+        showToast("فشل الربط، حاول مرة أخرى", "error");
+    }
+}

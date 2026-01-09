@@ -33,6 +33,16 @@ function updateUI() {
         const nextName = ranksList[currentIdx + 1] || "القمة"; 
         if(nextRankNameEl) nextRankNameEl.innerText = nextName;
 
+
+        // داخل دالة updateUI في ui.js
+const statusText = document.getElementById('strava-status-text');
+const statusSub = document.getElementById('strava-status-sub');
+if (userData && userData.stravaConnected) {
+    if (statusText) statusText.innerText = "حساب Strava مرتبط ✅";
+    if (statusSub) statusSub.innerText = "يمكنك المزامنة الآن من مودال التسجيل";
+}
+
+
         // 2. تحديث الكالوري (تقديري: المسافة * 60)
         const calEl = document.getElementById('caloriesEst');
         if(calEl) {
@@ -1657,4 +1667,22 @@ async function setAnnualGoal() {
         console.error(e);
         showToast("فشل تحديث الهدف", "error");
     }
+}
+
+
+function switchLogTab(tab) {
+    // 1. تحديث شكل الأزرار
+    document.querySelectorAll('.log-tabs .tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById('tab-btn-' + tab).classList.add('active');
+
+    // 2. إخفاء كل المحتويات
+    const tabs = ['gps', 'manual', 'strava'];
+    tabs.forEach(t => {
+        const el = document.getElementById('log-tab-' + t);
+        if (el) el.style.display = 'none';
+    });
+
+    // 3. إظهار المحتوى المطلوب
+    const target = document.getElementById('log-tab-' + tab);
+    if (target) target.style.display = 'block';
 }

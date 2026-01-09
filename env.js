@@ -6,3 +6,4 @@ const STRAVA_CONFIG = {
 };
 // خلي القيم دي متاحة عالمياً للتطبيق
 window.STRAVA_CONFIG = STRAVA_CONFIG;
+

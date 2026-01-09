@@ -255,7 +255,7 @@
 <div class="skimble-premium-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
     <div class="skimble-content">
         <span class="skimble-label">Coach Wajeeh Workouts</span>
-        <h3 class="skimble-title">تمرينات الكوتش في Workout Trainer</h3>
+        <h3 class="skimble-title">تمرينات الكوتش في تطبيق Workout Trainer العالمي</h3>
         <p class="skimble-subtitle">تمارين احترافية مخصصة لك على Skimble</p>
     </div>
     <div class="skimble-logo-container">
@@ -955,11 +955,8 @@
             </div>
         </div>
         
-        <button class="btn btn-outline-danger" onclick="logout()" style="margin-top:40px; width:100%;">
-            <i class="ri-logout-box-r-line"></i> تسجيل خروج
-        </button>
     </div>
-
+<p> </p><p> </p>
 </section>
 
 
@@ -1024,21 +1021,35 @@
     <div id="modal-log" class="modal-overlay">
   <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden;">
     
-    <div class="modal-head" style="padding: 15px 20px 0; background:transparent; z-index:10; position:relative;">
-        <h3 id="log-modal-title" style="margin:0;">تسجيل نشاط 🏃‍♂️</h3>
-        <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
-    </div>
+<div class="modal-head" style="padding: 15px 20px 0; background:transparent; z-index:10; position:relative;">
+    <h3 id="log-modal-title" style="margin:0;">تسجيل نشاط 🏃‍♂️</h3>
+    <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
+</div>
 
-    <div style="padding: 10px 20px; position:relative; z-index:10;">
-        <div class="log-tabs">
-            <button class="tab-btn active" onclick="switchLogTab('gps')" id="tab-btn-gps">
-                <i class="ri-map-pin-2-fill"></i> تتبع GPS
-            </button>
-            <button class="tab-btn" onclick="switchLogTab('manual')" id="tab-btn-manual">
-                <i class="ri-edit-box-line"></i> يدوي
-            </button>
-        </div>
+<div style="padding: 10px 20px; position:relative; z-index:10;">
+    <div class="log-tabs">
+        <button class="tab-btn" onclick="switchLogTab('strava')" id="tab-btn-strava" style="border-color: #fc4c02; color: #fc4c02;">
+            <i class="ri-refresh-line"></i> مزامنة Strava
+        </button>
+        <button class="tab-btn" onclick="switchLogTab('gps')" id="tab-btn-gps">
+            <i class="ri-map-pin-2-fill"></i> تتبع GPS
+        </button>
+        <button class="tab-btn active" onclick="switchLogTab('manual')" id="tab-btn-manual">
+            <i class="ri-edit-box-line"></i> يدوي
+        </button>
     </div>
+</div>
+
+<div id="log-tab-strava" class="log-tab-content" style="display:none; padding: 20px; text-align: center;">
+    <div style="background: rgba(252, 76, 2, 0.1); padding: 20px; border-radius: 15px; border: 1px dashed #fc4c02;">
+        <i class="ri-strava-fill" style="font-size: 40px; color: #fc4c02;"></i>
+        <p style="font-size: 13px; color: #eee; margin: 10px 0;">سيتم جلب آخر نشاط مسجل على حسابك في استرافا تلقائياً.</p>
+        <button id="strava-sync-btn" class="btn-primary" onclick="syncFromStrava()" style="background: #fc4c02; border: none; width: 100%;">
+            مزامنة الآن
+        </button>
+    </div>
+</div>
+
 
     <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
         
@@ -1187,10 +1198,22 @@
         <div class="modal-box">
             <h3 style="margin-bottom:20px;">الإعدادات ⚙️</h3>
             <div class="settings-list">
+
+<div class="setting-item" id="strava-connect-item" onclick="connectStrava()" style="border: 1px solid #fc4c02; background: rgba(252, 76, 2, 0.05); border-radius:12px; margin-bottom:10px;">
+    <div class="setting-icon" style="color:#fc4c02;"><i class="ri-links-line"></i></div>
+    <div class="setting-text">
+        <span id="strava-status-text" style="color:#fff; font-weight:800;">ربط حساب Strava</span>
+        <small id="strava-status-sub">لمزامنة جرياتك تلقائياً</small>
+    </div>
+</div>
+
                 <button class="setting-item" onclick="forceUpdateApp()">
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
                     <div class="setting-text"><span>تحديث التطبيق</span><small>مسح الذاكرة المؤقتة</small></div>
                 </button>
+
+
+
 
                 <div class="setting-item" id="btn-admin-entry" onclick="openAdminAuth()" style="display:none; border-color:var(--accent);">
                     <div class="setting-icon" style="color:var(--accent);"><i class="ri-admin-line"></i></div>
@@ -1552,17 +1575,19 @@
   </div>
 </div>
 
-
 <script src="js/config.js"></script>
+<script src="env.js"></script>
+
 <script src="js/state.js"></script>
 <script src="js/utils.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/coach.js"></script>
-<script src="js/activities.js"></script>
-<script src="js/challenges.js"></script>
-<script src="js/admin.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/activities.js"></script>
+<script src="js/coach.js"></script>
+<script src="js/admin.js"></script>
 <script src="js/main.js"></script> 
+
+<script src="js/ui.js"></script>
+<script src="js/challenges.js"></script>
 
     <script>
       // Avoid SW errors when opening the file locally (file:// => origin "null").

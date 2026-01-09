@@ -356,7 +356,7 @@ function renderPlanHero(planData) {
         </div>
         <button class="btn-glass-record" onclick="openNewRun()">
             <i class="ri-add-line"></i>
-            <span>تسجيل جرية للخطة</span>
+            <span>جرية اليوم</span>
         </button>
     `;
 }
@@ -1090,6 +1090,8 @@ function renderCoachWeeklyCard(completed, mineData){
 
     card.innerHTML = `
         <div class="wc-head">
+        <div class="ch-badge-fixed">🏆 تحدي الأسبوع</div>
+        </div>
             <div class="wc-badge">
                 <div class="wc-emoji">${emoji}</div>
                 <div>
@@ -1097,14 +1099,13 @@ function renderCoachWeeklyCard(completed, mineData){
                     <div class="wc-meta">${status}</div>
                 </div>
             </div>
-            <div class="chip" onclick="openWeeklyChallengeModal(); event.stopPropagation();"><i class="ri-eye-line"></i> عرض</div>
-        </div>
+         </div>
+          
         <p class="wc-notes">${_escapeHtml(desc).replace(/\n/g,'<br>')}</p>
         <div class="wc-actions">
             <button class="btn btn-primary" onclick="openWeeklyChallengeModal(); event.stopPropagation();" ${completed ? 'disabled style="opacity:.6;"' : ''}>
                 ${completed ? 'تم ✅' : 'تفاصيل التحدي'}
             </button>
-            <button class="btn btn-ghost" onclick="shareWeeklyText(); event.stopPropagation();"><i class="ri-share-line"></i> مشاركة</button>
         </div>
     `;
 }
