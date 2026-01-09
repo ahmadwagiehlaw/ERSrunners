@@ -130,20 +130,24 @@ auth.onAuthStateChanged(async (user) => {
 
 
 
+
 // ==================== 2. Strava OAuth ====================
 
 function connectStrava() {
-    if (!window.STRAVA_CONFIG) return showToast("إعدادات الربط مفقودة", "error");
+    if (!window.STRAVA_CONFIG || !window.STRAVA_CONFIG.CLIENT_ID) {
+        return showToast("خطأ: لم يتم ضبط Client ID في ملف env.js", "error");
+    }
 
     const CLIENT_ID = window.STRAVA_CONFIG.CLIENT_ID;
-    // يجب أن يكون هذا الرابط مطابقاً لما وضعته في Strava API Dashboard
+    // استخراج الدومين الحالي تلقائياً
     const REDIRECT_URI = window.location.origin + window.location.pathname; 
-    const scope = "activity:read_all";
     
+    const scope = "activity:read_all,profile:read_all";
+    
+    // بناء الرابط بدقة
     const authUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&approval_prompt=force&scope=${scope}`;
     
-    // حفظ حالة الربط في التخزين المحلي للعودة إليها
     localStorage.setItem('ers_is_linking_strava', 'true');
-    
     window.location.href = authUrl;
 }
+// ==================== 3. Handle Strava Redirect =============
