@@ -133,20 +133,19 @@ auth.onAuthStateChanged(async (user) => {
 // ==================== 2. Strava OAuth ====================
 
 function connectStrava() {
-    if (!window.STRAVA_CONFIG || !window.STRAVA_CONFIG.CLIENT_ID) {
-        return showToast("خطأ: لم يتم ضبط Client ID في ملف env.js", "error");
+    const clientID = window.STRAVA_CONFIG?.CLIENT_ID;
+    if (!clientID || clientID.includes("تجدها")) {
+        return showToast("خطأ: يرجى وضع رقم Client ID في ملف env.js", "error");
     }
 
-    const CLIENT_ID = window.STRAVA_CONFIG.CLIENT_ID;
-    // استخراج الدومين الحالي تلقائياً
+    // بناء الرابط بشكل ديناميكي ليتوافق مع جيت هب
     const REDIRECT_URI = window.location.origin + window.location.pathname; 
     
+    // تأكد من أن الـ scope يغطي قراءة الأنشطة
     const scope = "activity:read_all,profile:read_all";
     
-    // بناء الرابط بدقة
-    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&approval_prompt=force&scope=${scope}`;
+    const authUrl = `https://www.strava.com/oauth/authorize?client_id=${clientID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&approval_prompt=force&scope=${scope}`;
     
     localStorage.setItem('ers_is_linking_strava', 'true');
     window.location.href = authUrl;
 }
-// ==================== 3. Handle Strava Redirect =============
