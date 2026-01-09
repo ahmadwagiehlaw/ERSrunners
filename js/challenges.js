@@ -184,10 +184,18 @@ if (currentUser && pSnap.exists) {
     const allRuns = window._ersRunsCache || [];
     
     // حساب المسافة الفعلية من سجل الجريات
-    const challengeRuns = allRuns.filter(r => {
-        const rDate = r.timestamp ? r.timestamp.toDate() : new Date();
-        return rDate.getMonth() === 0 && rDate.getFullYear() === 2026 && r.type === 'Run';
-    });
+const challengeRuns = allRuns.filter(r => {
+    const rDate = r.timestamp ? r.timestamp.toDate() : new Date();
+    const is2026 = rDate.getFullYear() === 2026;
+    const isJanuary = rDate.getMonth() === 0;
+
+    // لو التحدي سنوي، فلتر بالسنة فقط. لو شهري، فلتر بالشهر والسنة.
+    if (ch.period === 'annual') {
+        return is2026 && r.type === 'Run';
+    } else {
+        return is2026 && isJanuary && r.type === 'Run';
+    }
+});
 
     let calculatedProgress = 0;
     if (ch.type === 'distance') {

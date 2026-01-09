@@ -138,24 +138,51 @@ function calculateRank(totalDist) {
 }
 
 function updateGoalRing() {
+    // 1. حساب الهدف الشهري (المنطق الحالي)
     const goalRing = document.getElementById('goalRing');
     const goalText = document.getElementById('goalText');
     const goalSub = document.getElementById('goalSub');
+    
     if(goalRing && goalText) {
         const myGoal = userData.monthlyGoal || 0;
         const currentMonthDist = userData.monthDist || 0;
         if(myGoal === 0) {
             goalText.innerText = "اضغط لتحديد هدف";
-            goalSub.innerText = "تحدى نفسك هذا الشهر";
             goalRing.style.background = `conic-gradient(#374151 0deg, rgba(255,255,255,0.05) 0deg)`;
         } else {
             const perc = Math.min((currentMonthDist / myGoal) * 100, 100);
             const deg = (perc / 100) * 360;
-            const remaining = Math.max(myGoal - currentMonthDist, 0).toFixed(1);
             goalText.innerText = `${currentMonthDist.toFixed(1)} / ${myGoal} كم`;
-            goalSub.innerText = remaining == 0 ? "أنت أسطورة! 🎉" : `باقي ${remaining} كم`;
-            goalSub.style.color = remaining == 0 ? "#10b981" : "#a78bfa";
+            goalSub.innerText = `باقي ${Math.max(myGoal - currentMonthDist, 0).toFixed(1)} كم`;
             goalRing.style.background = `conic-gradient(#8b5cf6 ${deg}deg, rgba(255,255,255,0.1) 0deg)`;
+        }
+    }
+
+    // 2. 🔥 حساب الهدف السنوي (الجديد)
+    const annualRing = document.getElementById('annualGoalRing');
+    const annualText = document.getElementById('annualGoalText');
+    const annualSub = document.getElementById('annualGoalSub');
+
+    if (annualRing && annualText) {
+        const annualGoal = userData.annualGoal || 0;
+        
+        // حساب مسافة سنة 2026 من الكاش
+        const runs = window._ersRunsCache || [];
+        const yearTotal = runs.reduce((sum, r) => {
+            const d = r.timestamp ? r.timestamp.toDate() : new Date();
+            return d.getFullYear() === 2026 ? sum + (parseFloat(r.dist) || 0) : sum;
+        }, 0);
+
+        if (annualGoal === 0) {
+            annualText.innerText = "حدد هدفك لعام 2026";
+            annualRing.style.background = `conic-gradient(#374151 0deg, rgba(255,255,255,0.05) 0deg)`;
+        } else {
+            const perc = Math.min((yearTotal / annualGoal) * 100, 100);
+            const deg = (perc / 100) * 360;
+            annualText.innerText = `${yearTotal.toFixed(0)} / ${annualGoal} كم`;
+            annualSub.innerText = `إنجاز ${(perc).toFixed(1)}% من السنة`;
+            // لون ذهبي نيون
+            annualRing.style.background = `conic-gradient(#fbbf24 ${deg}deg, rgba(251, 191, 36, 0.1) 0deg)`;
         }
     }
 }
@@ -1762,4 +1789,20 @@ function toggleInteractionsFold() {
     } else {
         header.style.marginBottom = "10px";
     }
+}
+
+
+
+// ==================== Annual Goal Setting دالة حفظ الهدف السنوي====================
+async function setAnnualGoal() {
+    const val = prompt("ما هو هدفك الكلي لعام 2026؟ (كم)", userData.annualGoal || 1000);
+    if (!val || isNaN(val)) return;
+
+    try {
+        await db.collection('users').doc(currentUser.uid).update({ annualGoal: parseFloat(val) });
+        userData.annualGoal = parseFloat(val);
+        updateGoalRing();
+        showToast("تم تحديد هدف السنة.. انطلق يا بطل! 👑", "success");
+    } catch(e) { showToast("خطأ في الحفظ", "error"); }
+    showBadgeDetails.showToast("تم تحديد هدف السنة.. انطلق يا بطل! 👑", "success");
 }

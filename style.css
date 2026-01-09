@@ -6080,3 +6080,54 @@ body {
     letter-spacing: -1px;
     text-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
+
+
+/* ==================== 👑 ERS ANNUAL GOAL (THE CROWN) 👑 ==================== */
+
+/* كارت الهدف السنوي - ذهبي ملكي */
+.ch-card.annual-mode {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%) !important; /* خلفية ليلية عميقة */
+    border: 2px solid #fbbf24 !important; /* إطار ذهبي */
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.3) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+/* إضافة أيقونة التاج في الخلفية */
+.ch-card.annual-mode::after {
+    content: "👑";
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 80px;
+    opacity: 0.1;
+    transform: rotate(15deg);
+}
+
+/* شريط التقدم الذهبي */
+.annual-mode .road-fill {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+    box-shadow: 0 0 15px #fbbf24;
+}
+
+/* تمييز رقم المسافة السنوية */
+.annual-mode .dist-val-big {
+    color: #fbbf24 !important;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    font-size: 28px !important;
+}
+
+/* حركة العداء في التحدي السنوي (أسرع وأقوى) */
+.annual-mode .road-fill::after {
+    content: "🏃‍♂️";
+    filter: drop-shadow(0 0 15px #fbbf24);
+    font-size: 42px;
+}
+
+.goal-card.yearly {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, rgba(0,0,0,0.2) 100%);
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1);
+}
+.goal-ring.annual {
+    border: 2px solid rgba(251, 191, 36, 0.2);
+}
