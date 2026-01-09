@@ -140,44 +140,62 @@
             
             <section id="view-home" class="view active">
 
-  <!-- V4 Coach Hero (compact + always visible) -->
-  <div class="coach-hero-v4">
+  <!------ الترحيب V4 Coach Hero (compact + always visible) -->
+<div class="coach-hero-v4">
     <div class="coach-hero-top">
-      <div class="coach-hero-left">
-
-        <div class="coach-avatar-v4">
-    <img src="coach.png" alt="Coach" style="width:100%; height:100%; object-fit:cover;">
-</div>
-
-        <div class="coach-hero-text">
-          <div id="coach-greeting" class="coach-greeting">أهلاً يا كابتن 👋</div>
-          <div class="coach-hero-sub">خلي قرارك واضح… والباقي علينا.</div>
+        <div class="coach-hero-left">
+            <div class="coach-avatar-v4">
+                <img src="coach.png" alt="Coach" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+            <div class="coach-hero-text">
+                <div id="coach-greeting" class="coach-greeting">أهلاً يا كابتن 👋</div>
+                <div class="coach-hero-sub">خلي قرارك واضح… والباقي علينا.</div>
+            </div>
         </div>
-      </div>
 
-      <div class="coach-hero-actions">
-                              <div class="hero-icon-btn" onclick="openBugReport()">
-                    <i class="ri-bug-2-line"></i>
-                </div>
-
-        <button class="hero-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش"><i class="ri-settings-3-line"></i></button>
-        <button class="hero-icon-btn" onclick="openExternal('https://www.skimble.com/workouts/created')" title="Workout Trainers (Skimble)"><i class="ri-external-link-line"></i></button>
-      </div>
-
+        <div class="coach-hero-actions">
+            <div class="hero-icon-btn" onclick="openBugReport()" title="إبلاغ عن مشكلة">
+                <i class="ri-bug-2-line"></i>
+            </div>
+            <button class="hero-icon-btn" onclick="openCoachPreferences()" title="تفضيلات الكوتش">
+                <i class="ri-settings-3-line"></i>
+            </button>
+            <button class="hero-icon-btn" onclick="window.open('https://www.skimble.com/workouts/created', '_blank')" title="Workout Trainers">
+                <i class="ri-external-link-line"></i>
+            </button>
+        </div>
     </div>
 
-    <div class="coach-hero-stats">
-      <div class="hero-stat">
-        <span id="hero-week-dist">0.0</span><small>كم / 7 أيام</small>
-      </div>
-      <div class="hero-stat">
-        <span id="hero-month-dist">0.0</span><small>كم / شهر</small>
-      </div>
-      <div class="hero-stat">
-        <span id="hero-streak">0</span><small>ستريك</small>
-      </div>
+    <div class="coach-hero-stats-row">
+        <div class="hero-stat-card">
+            <i class="ri-calendar-line stat-mini-icon blue"></i>
+            <span id="hero-week-dist">3.3</span>
+            <small>كم / 7 أيام</small>
+        </div>
+        <div class="hero-stat-card">
+            <i class="ri-bubble-chart-line stat-mini-icon purple"></i>
+            <span id="hero-month-dist">7.3</span>
+            <small>كم / شهر</small>
+        </div>
+        <div class="hero-stat-card gold-border">
+            <i class="ri-vip-crown-line stat-mini-icon gold"></i>
+            <span id="hero-year-total">120</span>
+            <small>هدف 2026</small>
+        </div>
+        <div class="hero-stat-card">
+            <i class="ri-fire-line stat-mini-icon orange"></i>
+            <span id="hero-streak">1</span>
+            <small>ستريك</small>
+        </div>
     </div>
-  </div>
+
+    <div class="coach-motivation-mini">
+        <div class="motivation-text-line" id="coach-motivation-msg">باقي 36.7 كم لتحقيق هدفك الشهري! 🔥</div>
+        <div class="motivation-progress-bg">
+            <div class="motivation-progress-fill" id="coach-motivation-fill" style="width: 26%;"></div>
+        </div>
+    </div>
+</div>
 
   <!-- Sticky Tabs -->
   <div id="coach-tabs-nav" class="coach-tabs-nav">
@@ -188,33 +206,37 @@
 
   
   <!-- Tabs Content -->
-  <div id="coach-home-tab-today" class="coach-home-tab active">
-     
-<div class="coach-card">
-       <div class="tip-icon" style="width: 50px; height: 50px; flex-shrink: 0; overflow: hidden; padding: 0; border: 2px solid var(--primary); border-radius: 50%; background-color: #fff;">
-          <img src="coach.png" alt="Coach" style="width: 100%; height: 100%; object-fit: cover; object-position: top center;">
-       </div>
-       <div class="coach-content">
-         <div class="coach-topline">
-           <span class="coach-label">قرار اليوم</span>
-           <div class="coach-top-actions">
-             <span id="coach-mode-pill" class="coach-mode-pill">...</span>
-             <button id="coach-speed-btn" class="coach-speed-btn" onclick="openSpeedRadar()" title="رادار السرعة"><i class="ri-speed-up-line"></i></button>
-           </div>
-         </div>
-         <div id="coach-command-title" class="coach-command-title">جاري التحميل...</div>
-         <div id="coach-command-sub" class="coach-command-sub">...</div>
-         <div id="coach-message" class="coach-message">...</div>
-       </div>
+<div id="coach-home-tab-today" class="coach-home-tab active">
+    <div class="coach-card coach-card-premium">
+        <div class="tip-icon" style="width: 50px; height: 50px; flex-shrink: 0; overflow: hidden; padding: 0; border: 2px solid var(--primary); border-radius: 50%; background-color: #fff;">
+            <img src="coach.png" alt="Coach" style="width: 100%; height: 100%; object-fit: cover; object-position: top center;">
+        </div>
+        <div class="coach-content">
+            <div class="coach-topline">
+                <span class="coach-label">قرار الكوتش اليوم</span>
+                <div class="coach-top-actions">
+                    <span id="coach-mode-pill" class="coach-mode-pill">...</span>
+                    <button id="coach-speed-btn" class="coach-speed-btn" onclick="openSpeedRadar()" title="رادار السرعة"><i class="ri-speed-up-line"></i></button>
+                </div>
+            </div>
+            
+            <div id="coach-command-title" class="coach-command-title">جاري التحميل...</div>
+            <div id="coach-command-sub" class="coach-command-sub" style="margin-bottom:10px;">...</div>
+            
+            <div id="coach-message" class="coach-message">...</div>
+        </div>
     </div>
 
-    <div id="plan-hero" class="plan-hero" style="margin-bottom: 20px;"></div>
+    <div class="coach-dual-grid">
+        <div id="plan-hero" class="plan-hero dual-item">
+            </div>
 
-    <div id="team-workout-container"></div>
+        <div id="weekly-challenge-section" class="weekly-challenge-card dual-item">
+            </div>
+    </div>
 
-    <div id="weekly-challenge-section" class="weekly-challenge-card glass-panel" style="margin-top: 20px;"></div>
-
-  </div>
+    <div id="team-workout-container" style="margin-top: 15px;"></div>
+</div>
 
 <div id="coach-home-tab-plan" class="coach-home-tab">
     
@@ -233,7 +255,7 @@
 <div class="skimble-premium-card" onclick="openExternal('https://www.skimble.com/workouts/created')">
     <div class="skimble-content">
         <span class="skimble-label">Coach Wajeeh Workouts</span>
-        <h3 class="skimble-title">تدرب مع كوتش وجيه</h3>
+        <h3 class="skimble-title">تمرينات الكوتش في Workout Trainer</h3>
         <p class="skimble-subtitle">تمارين احترافية مخصصة لك على Skimble</p>
     </div>
     <div class="skimble-logo-container">
@@ -253,7 +275,7 @@
 <p></p>
     <div id="basic-library-section" class="basic-lib-card">
       <div class="section-title-row">
-        <h4>المكتبة الأساسية 📚</h4>
+        <h4>مكتبة الجريات الأساسية 📚</h4>
         <span class="link-text" onclick="openBasicLibrary()">افتح</span>
       </div>
       <div class="mini-note">المكتبة دي مرجع… مش قرار. قرارات اليوم في تبويب "يومك" 👆</div>
@@ -872,27 +894,39 @@
         </div>
     </div>
 
-    <div id="p-content-goals" class="p-tab-content">
-        <div class="goal-card" onclick="setPersonalGoal()" style="margin-top:5px;">
-            <div class="goal-info">
-                <span class="goal-title">هدفي الشهري 🎯</span>
-                <h3 id="goalText">اضغط لتحديد هدف</h3>
-                <span class="goal-sub" id="goalSub">0 كم متبقي</span>
-            </div>
-            <div class="goal-ring-wrapper">
-                <div class="goal-ring" id="goalRing" style="--p:0"></div>
-                <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
-            </div>
+<div id="p-content-goals" class="p-tab-content">
+    <div class="goal-card" onclick="setPersonalGoal()" style="margin-top:5px;">
+        <div class="goal-info">
+            <span class="goal-title">هدفي الشهري 🎯</span>
+            <h3 id="goalText">اضغط لتحديد هدف</h3>
+            <span class="goal-sub" id="goalSub">0 كم متبقي</span>
         </div>
+        <div class="goal-ring-wrapper">
+            <div class="goal-ring" id="goalRing"></div>
+            <div class="goal-icon"><i class="ri-flag-2-fill"></i></div>
+        </div>
+    </div>
 
-
-        
+    <div class="goal-card yearly" onclick="setAnnualGoal()" style="margin-top:15px; border-color: #fbbf24;">
+        <div class="goal-info">
+            <span class="goal-title" style="color: #fbbf24;">هدف سنة 2026 👑</span>
+            <h3 id="annualGoalText">اضغط لتحديد هدفك السنوي</h3>
+            <span class="goal-sub" id="annualGoalSub">0 كم متبقي</span>
+        </div>
+        <div class="goal-ring-wrapper">
+            <div class="goal-ring annual" id="annualGoalRing" style="border-color: rgba(251, 191, 36, 0.1);"></div>
+            <div class="goal-icon" style="color: #fbbf24;"><i class="ri-vip-crown-2-fill"></i></div>
+        </div>
+    </div>
+    
+   
         <div class="section-title-row" style="margin-top: 25px;">
             <h4>تحدياتي النشطة 🔥</h4>
         </div>
-        <div id="profile-active-challenges" class="mini-challenges-scroll" style="flex-wrap: wrap; overflow: visible; gap:10px;">
-            <div class="empty-state-mini">جاري تحميل تحدياتك...</div>
-        </div>
+         <div id="profile-active-challenges" style="margin-top:20px;"></div>
+
+
+          </div>
     </div>
 
     <div id="p-content-stats" class="p-tab-content">
@@ -1771,4 +1805,6 @@
 
 </body>
 </html>
+
+
 

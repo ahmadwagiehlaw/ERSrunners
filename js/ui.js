@@ -51,6 +51,7 @@ function updateUI() {
         // تحديث كروت الإحصائيات (أسبوع/شهر/ستريك)
         try{ renderCoachHeroStats(); }catch(e){}
 // ... باقي الكود كما هو ...
+
        // ... داخل updateUI ...
       const profileAvatar = document.getElementById('userMainAvatar'); // التصحيح
         
@@ -100,12 +101,38 @@ function updateUI() {
         if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
         if(typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
 
-        // زر الأدمن
-        const adminBtn = document.getElementById('btn-admin-entry');
-        if (adminBtn) {
-            adminBtn.style.display = (userData.isAdmin === true) ? 'flex' : 'none';
-        }
 
+
+
+// 🔥 التعديل الصحيح للأهداف السنوية
+        const yearlyGoal = userData.yearlyGoal || 1000; 
+        const totalDist = userData.totalDist || 0;
+        const remaining = Math.max(yearlyGoal - totalDist, 0);
+
+        // 1. تحديث الرقم في الصفحة الرئيسية (الذي كان ثابتاً 120)
+        const heroYearTotal = document.getElementById('hero-year-total');
+        if (heroYearTotal) heroYearTotal.innerText = yearlyGoal;
+
+        // 2. تحديث نص الهدف في الكارت الكبير
+        const annualGoalText = document.getElementById('annualGoalText');
+        if (annualGoalText) annualGoalText.innerText = `${yearlyGoal} كم`;
+
+        // 3. تحديث المتبقي
+        const annualGoalSub = document.getElementById('annualGoalSub');
+        if (annualGoalSub) annualGoalSub.innerText = `${remaining.toFixed(1)} كم متبقي`;        
+
+        
+// إخفاء/إظهار زر لوحة الإدارة بناءً على الصلاحية
+// 🔥 القفل الأمني: إظهار الزر للأدمن فقط وإخفاؤه عن البقية
+const adminBtn = document.getElementById('btn-admin-entry');
+        if (adminBtn) {
+            if (userData && userData.isAdmin === true) {
+                adminBtn.style.display = 'flex'; // إظهار للمشرفين فقط
+            } else {
+                adminBtn.style.display = 'none'; // إخفاء تام عن بقية المستخدمين
+            }
+        }
+    
     } catch (error) { console.error("UI Error:", error); }
 }
 
@@ -508,6 +535,11 @@ function switchView(viewId) {
     const map = {'home':0, 'profile':1, 'club':2, 'challenges':3};
     if(navItems[map[viewId]]) navItems[map[viewId]].classList.add('active');
 
+    if (view === 'admin' && !(userData && userData.isAdmin === true)) {
+        showToast("⛔ غير مسموح لك بالدخول هنا", "error");
+        return;
+    }
+
     // Hooks بسيطة للصفحات الجديدة
     if (viewId === 'home') {
         if (typeof renderPlanCard === 'function') renderPlanCard();
@@ -703,57 +735,44 @@ async function savePersonalGoal() {
 // Profile Editing
 // حفظ بيانات البروفايل والكوتش (V9.0)
 async function saveProfileChanges() {
+    // 1. جلب القيم من العناصر
     const name = document.getElementById('edit-name').value.trim();
     const region = document.getElementById('edit-region').value;
     const gender = document.getElementById('edit-gender').value;
     const birthYear = document.getElementById('edit-birthyear').value;
-    
-    // 🔥 قراءة البيانات الجديدة للكوتش من القوائم
-    const goal = document.getElementById('edit-goal').value;
-    const level = document.getElementById('edit-level').value;
+    // جلب الهدف السنوي من الحقل الجديد (تأكد أن id الحقل في الـ HTML هو edit-yearly-goal)
+    const yearlyGoal = parseFloat(document.getElementById('edit-yearly-goal')?.value) || 1000;
 
-    if (name.length < 3) return showToast("الاسم قصير", "error");
-    
-    const btn = event.target; 
-    btn.innerText = "جاري الحفظ..."; 
-    btn.disabled = true;
-    
+    if (!name) {
+        showToast("يرجى إدخال الاسم", "error");
+        return;
+    }
+
+    const btn = document.querySelector('[onclick="saveProfileChanges()"]');
+    if(btn) btn.innerText = "جاري الحفظ...";
+
     try {
-        // إرسال التحديث لفايربيس
-        await db.collection('users').doc(currentUser.uid).update({ 
+        const updateData = {
             name: name,
             region: region,
             gender: gender,
             birthYear: birthYear,
-            trainingGoal: goal, // حفظ الهدف
-            manualLevel: level  // حفظ المستوى المختار يدوياً
-        });
-        
-        // تحديث المتغيرات المحلية فوراً (عشان التغيير يظهر بدون ريفريش)
-        userData.name = name; 
-        userData.region = region; 
-        userData.gender = gender; 
-        userData.birthYear = birthYear;
-        userData.trainingGoal = goal;
-        userData.manualLevel = level;
+            yearlyGoal: yearlyGoal // حفظ الهدف في قاعدة البيانات
+        };
 
-        allUsersCache = []; // تصفير الكاش لتحديث القوائم والترتيب
+        await db.collection('users').doc(currentUser.uid).update(updateData);
         
-        updateUI(); // تحديث الواجهة
-        closeModal('modal-edit-profile'); 
-        showToast("تم تحديث البروفايل والخطة ✅", "success");
+        // تحديث البيانات محلياً فوراً
+        userData = { ...userData, ...updateData };
         
-        // 🔥 تحديث رسالة الكوتش فوراً بناءً على الاختيار الجديد
-        if(typeof updateCoachAdvice === 'function') updateCoachAdvice();
-        if(typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
-
-    } catch (e) { 
+        showToast("تم تحديث البروفايل بنجاح ✅", "success");
+        closeModal('modal-edit-profile');
+        updateUI(); // تحديث الواجهة لعكس الأرقام الجديدة
+    } catch (e) {
         console.error(e);
-        showToast("حدث خطأ أثناء الحفظ", "error"); 
-    } 
-    finally { 
-        btn.innerText = "حفظ التغييرات"; 
-        btn.disabled = false; 
+        showToast("حدث خطأ أثناء الحفظ", "error");
+    } finally {
+        if(btn) btn.innerText = "حفظ التغييرات";
     }
 }
 
@@ -1325,152 +1344,6 @@ async function saveAvatarSelection() {
     }
 }
 
-
-
-function toggleChallengeInputs() {
-    const type = document.getElementById('adv-ch-type').value;
-    const lbl = document.getElementById('lbl-target');
-    const input = document.getElementById('adv-ch-target');
-    
-    if(type === 'distance') {
-        lbl.innerText = "المسافة المطلوبة (كم)";
-        input.placeholder = "100";
-    } else if (type === 'frequency') {
-        lbl.innerText = "عدد الجريات المطلوبة";
-        input.placeholder = "15";
-    } else if (type === 'speed') {
-        lbl.innerText = "السرعة المطلوبة (دقيقة/كم)";
-        input.placeholder = "4.5"; // يعني 4 دقائق و30 ثانية
-    }
-}
-
-
-async function submitRun() {
-
-    if (!navigator.onLine) {
-        return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
-    }
-
-    const btn = document.getElementById('save-run-btn');
-
-    const dist = parseFloat(document.getElementById('log-dist').value);
-    const time = parseFloat(document.getElementById('log-time').value);
-    const type = document.getElementById('log-type').value;
-    const dateInput = document.getElementById('log-date').value;
-    const imgUrlInput = document.getElementById('uploaded-img-url');
-
-    // ===== Validation بسيط وواضح =====
-    if (!dist || dist <= 0) {
-        return showToast("المسافة غير صحيحة", "error");
-    }
-
-    if (!time || time <= 0) {
-        return showToast("الوقت غير صحيح", "error");
-    }
-
-    if (!['Run', 'Walk'].includes(type)) {
-        return showToast("نوع النشاط غير مدعوم حاليًا", "error");
-    }
-
-    // ===== تعطيل الزر =====
-    if (btn) {
-        btn.innerText = "جاري الحفظ...";
-        btn.disabled = true;
-        btn.style.opacity = "0.7";
-    }
-
-    try {
-        const uid = currentUser.uid;
-        const selectedDate = new Date(dateInput);
-        const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
-        const currentMonthKey = selectedDate.toISOString().slice(0, 7);
-
-        const isRun = (type === 'Run');
-
-        /* ===============================
-           EDIT MODE
-        =============================== */
-        if (editingRunId) {
-
-            const oldWasRun = (editingOldType === 'Run');
-            const distDiff = (isRun ? dist : 0) - (oldWasRun ? editingOldDist : 0);
-            const runDiff = (isRun ? 1 : 0) - (oldWasRun ? 1 : 0);
-
-            await db.collection('users')
-                .doc(uid)
-                .collection('runs')
-                .doc(editingRunId)
-                .update({
-                    dist,
-                    time,
-                    type,
-                    timestamp,
-                    img: imgUrlInput?.value || null
-                });
-
-            await db.collection('users').doc(uid).set({
-                totalDist: firebase.firestore.FieldValue.increment(distDiff),
-                totalRuns: firebase.firestore.FieldValue.increment(runDiff),
-                monthDist: firebase.firestore.FieldValue.increment(distDiff)
-            }, { merge: true });
-
-            showToast("تم التعديل بنجاح ✅", "success");
-            editingRunId = null;
-
-        } else {
-
-            /* ===============================
-               NEW RUN
-            =============================== */
-
-            const runData = {
-                dist,
-                time,
-                type,
-                timestamp,
-                img: imgUrlInput?.value || null
-            };
-
-            await db.collection('users').doc(uid).collection('runs').add(runData);
-
-            await db.collection('activity_feed').add({
-                uid,
-                userName: userData.name,
-                userRegion: userData.region,
-                ...runData,
-                likes: []
-            });
-
-            // الحسابات تدخل للجري فقط
-            if (isRun) {
-                await db.collection('users').doc(uid).set({
-                    totalDist: firebase.firestore.FieldValue.increment(dist),
-                    totalRuns: firebase.firestore.FieldValue.increment(1),
-                    monthDist: firebase.firestore.FieldValue.increment(dist),
-                    lastMonthKey: currentMonthKey,
-                    lastRunDate: timestamp
-                }, { merge: true });
-            }
-
-            showToast("تم حفظ النشاط ✅", "success");
-        }
-
-        // إغلاق وتنظيف
-        closeModal('modal-log');
-
-    } catch (e) {
-        console.error(e);
-        showToast("حصل خطأ أثناء الحفظ", "error");
-    } finally {
-        if (btn) {
-            btn.innerText = "حفظ النشاط";
-            btn.disabled = false;
-            btn.style.opacity = "1";
-        }
-    }
-}
-
-
 // ==================== ✅ PROFILE COMPLETE LOGIC (FINAL) ====================
 
 // 1. دالة التبديل بين التبويبات (مع الإنعاش)
@@ -1761,5 +1634,27 @@ function toggleInteractionsFold() {
         header.style.marginBottom = "0px";
     } else {
         header.style.marginBottom = "10px";
+    }
+}
+
+// ==================== Annual Goal Setting ====================
+async function setAnnualGoal() {
+    const currentGoal = userData.yearlyGoal || 1000;
+    const newGoal = prompt("حدد هدفك السنوي لعام 2026 (بالكيلومتر):", currentGoal);
+    
+    if (newGoal === null || newGoal === "" || isNaN(newGoal)) return;
+
+    try {
+        const goalNum = parseFloat(newGoal);
+        await db.collection('users').doc(currentUser.uid).update({
+            yearlyGoal: goalNum
+        });
+        
+        userData.yearlyGoal = goalNum;
+        showToast(`تم تحديث هدفك السنوي لـ ${goalNum} كم 👑`, "success");
+        updateUI(); // تحديث الواجهة فوراً
+    } catch (e) {
+        console.error(e);
+        showToast("فشل تحديث الهدف", "error");
     }
 }

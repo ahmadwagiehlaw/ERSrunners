@@ -54,17 +54,22 @@ const BADGES_CONFIG = [
 function renderBadges() {
     const grid = document.getElementById('badges-grid');
     if(!grid) return;
+    
     const myBadges = userData.badges || [];
     let html = '';
+    
     BADGES_CONFIG.forEach(badge => {
         const isUnlocked = myBadges.includes(badge.id);
         const stateClass = isUnlocked ? 'unlocked' : 'locked';
-        const clickAction = isUnlocked ? `alert('${badge.desc}')` : `alert('🔒 ${badge.desc}')`;
-        html += `<div class="badge-item ${stateClass}" onclick="${clickAction}"><span class="badge-icon">${badge.icon}</span><span class="badge-name">${badge.name}</span></div>`;
+        
+        html += `
+            <div class="badge-item ${stateClass}" onclick="showToast('${isUnlocked ? badge.desc : '🔒 ' + badge.desc}', 'info')">
+                <span class="badge-icon">${badge.icon}</span>
+                <span class="badge-name">${badge.name}</span>
+            </div>`;
     });
     grid.innerHTML = html;
 }
-
 
 // ==================== V4.0 Helpers (Coach Tabs + Cross Training) ====================
 const ERS_CORE_TYPES = ['Run','Walk','Race'];

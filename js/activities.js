@@ -628,3 +628,118 @@ function updateStreakLogic(newRunDate) {
 
 
 window.renderActivityLog = renderActivityLog;
+
+
+
+
+
+// ==================== submit run نسخة معدلة ومسحت اللي في ملف ui لان دا المكان الصح====================
+async function submitRun() {
+    if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
+
+    const btn = document.getElementById('save-run-btn');
+    const dist = parseFloat(document.getElementById('log-dist').value);
+    const time = parseFloat(document.getElementById('log-time').value);
+    const type = document.getElementById('log-type').value;
+    const dateInput = document.getElementById('log-date').value;
+    const imgUrlInput = document.getElementById('uploaded-img-url');
+
+    if (!dist || dist <= 0 || !time || time <= 0) return showToast("المسافة أو الوقت غير صحيح", "error");
+
+    const selectedDate = new Date(dateInput);
+    const now = new Date();
+    if (selectedDate > now) return showToast("لا يمكنك تسجيل نشاط في المستقبل! 🚀", "error");
+
+    if (btn) { btn.innerText = "جاري الحفظ..."; btn.disabled = true; }
+
+    try {
+        const uid = currentUser.uid;
+        const timestamp = firebase.firestore.Timestamp.fromDate(selectedDate);
+        const isRun = (type === 'Run');
+
+        const runData = {
+            dist, time, type, timestamp,
+            img: imgUrlInput?.value || null,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (editingRunId) {
+            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update(runData);
+            if (selectedDate.getMonth() === now.getMonth() && selectedDate.getFullYear() === now.getFullYear()) {
+                const distDiff = dist - editingOldDist;
+                await db.collection('users').doc(uid).update({
+                    monthDist: firebase.firestore.FieldValue.increment(isRun ? distDiff : 0)
+                });
+            }
+        } else {
+            await db.collection('users').doc(uid).collection('runs').add(runData);
+            await db.collection('activity_feed').add({
+                uid, userName: userData.name, userRegion: userData.region,
+                ...runData, likes: []
+            });
+
+            let updateFields = {
+                totalDist: firebase.firestore.FieldValue.increment(isRun ? dist : 0),
+                totalRuns: firebase.firestore.FieldValue.increment(isRun ? 1 : 0)
+            };
+
+            if (selectedDate.getMonth() === now.getMonth() && selectedDate.getFullYear() === now.getFullYear()) {
+                updateFields.monthDist = firebase.firestore.FieldValue.increment(isRun ? dist : 0);
+                updateFields.lastRunDate = timestamp;
+            }
+
+            await db.collection('users').doc(uid).set(updateFields, { merge: true });
+        }
+
+showToast("تم حفظ النشاط بنجاح ✅", "success");
+        closeModal('modal-log');
+        
+        // تحديث الكاش وإعادة الحساب فوراً لكل أجزاء التطبيق
+        await loadActivityLog(); 
+        if (typeof updateUI === 'function') updateUI();
+        if (typeof updateHeroWeekDist === 'function') updateHeroWeekDist(); // 🔥 إضافة لضمان تحديث عداد الأسبوع
+        if (typeof loadActiveChallenges === 'function') loadActiveChallenges();
+
+    } catch (e) {
+        console.error(e);
+        showToast("خطأ في الحفظ: " + e.message, "error");
+    } finally {
+        if (btn) { btn.innerText = "حفظ النشاط"; btn.disabled = false; }
+    } }   
+
+async function checkNewBadges() {
+    if (!currentUser || !userData) return;
+    
+    const myBadges = userData.badges || [];
+    let newBadgesEarned = [];
+    const totalDist = userData.totalDist || 0;
+    const allRuns = window._ersRunsCache || [];
+
+    // --- منطق فحص المسافات التراكمية ---
+    if (!myBadges.includes('dist_50k') && totalDist >= 50) newBadgesEarned.push('dist_50k');
+    if (!myBadges.includes('dist_100k') && totalDist >= 100) newBadgesEarned.push('dist_100k');
+    if (!myBadges.includes('dist_500k') && totalDist >= 500) newBadgesEarned.push('dist_500k');
+    if (!myBadges.includes('dist_1000k') && totalDist >= 1000) newBadgesEarned.push('dist_1000k');
+
+    // --- منطق فحص الأرقام القياسية في الجرية الواحدة ---
+    allRuns.forEach(run => {
+        const d = parseFloat(run.dist) || 0;
+        const p = run.time ? (run.time / run.dist) : 99;
+
+        if (!myBadges.includes('dist_half_marathon') && d >= 21) newBadgesEarned.push('dist_half_marathon');
+        if (!myBadges.includes('dist_marathon') && d >= 42) newBadgesEarned.push('dist_marathon');
+        if (!myBadges.includes('speed_flash') && p < 4.0) newBadgesEarned.push('speed_flash');
+    });
+
+    // --- تحديث قاعدة البيانات لو فيه جديد ---
+    if (newBadgesEarned.length > 0) {
+        try {
+            await db.collection('users').doc(currentUser.uid).update({
+                badges: firebase.firestore.FieldValue.arrayUnion(...newBadgesEarned)
+            });
+            userData.badges = [...myBadges, ...newBadgesEarned];
+            renderBadges(); // تحديث العرض فوراً
+            showToast(`🎉 مبروك! حصلت على أوسمة جديدة: ${newBadgesEarned.length}`, "success");
+        } catch (e) { console.error("Badges Error:", e); }
+    }
+}

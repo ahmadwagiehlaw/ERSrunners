@@ -131,243 +131,74 @@ const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandr
 
 /* Challenge Engine */
 // ==================== V5.0 Challenge Engine & Admin Tools ====================
+// --- (ضع المتغيرات العامة هنا في الأعلى أو اتركها كما هي) ---
+var currentReportFeedId = window.currentReportFeedId || null;
+window.currentReportFeedId = currentReportFeedId;
 
-var allChallengesCache = window.allChallengesCache || (window.allChallengesCache = []);
-
-
-// تحميل وعرض التحديات (Stable & Safe)
+// --- (دالة التحديات المحدثة التي قررنا استخدامها) ---
 async function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
     const mini = document.getElementById('my-active-challenges'); 
     
-    if (!list) return;
+    if(!list || !currentUser) return;
 
-    // Skeleton loading
-    if (allChallengesCache.length === 0) {
-        list.innerHTML = getSkeletonHTML('challenges');
+    // 1. جلب التحديات من قاعدة البيانات
+    const snap = await db.collection('challenges').where('active', '==', true).get();
+    if(snap.empty) {
+        list.innerHTML = "<div class='empty-state-fun'>لا توجد تحديات حالياً</div>";
+        return;
     }
 
-    try {
-        const snap = await db.collection('challenges')
-            .where('active', '==', true)
-            .get();
+    allChallengesCache = [];
+    let miniHtml = '';
+    const allRuns = window._ersRunsCache || []; // 🔥 المصدر الوحيد للحقيقة
 
-        if (snap.empty) {
-            list.innerHTML = `
-              <div class='empty-state-fun'>
-                <span class='fun-icon'>👻</span>
-                <div class='fun-title'>مفيش تحديات</div>
-              </div>`;
-            if (mini) mini.innerHTML = "<div class='empty-state-mini'>لا تحديات</div>";
-            return;
-        }
-
-        allChallengesCache = [];
-        let miniHtml = '';
-
-        for (const doc of snap.docs) {
-            const ch = doc.data();
-            let isJoined = false;
-            let progress = 0;
-            let completed = false;
-
-            // قراءة حالة المستخدم فقط (بدون حساب أو كتابة)
-            if (currentUser) {
-                const pSnap = await doc.ref
-                    .collection('participants')
-                    .doc(currentUser.uid)
-                    .get();
-
-                if (pSnap.exists) {
-                    const pData = pSnap.data();
-                    isJoined = true;
-                    progress = Number(pData.progress) || 0;
-                    completed = pData.completed === true;
-                }
-            }
-
-            allChallengesCache.push({
-                id: doc.id,
-                ...ch,
-                isJoined,
-                progress,
-                completed
+    for(const doc of snap.docs) {
+        const ch = { id: doc.id, ...doc.data() };
+        
+        // جلب وثيقة المشارك
+        const pDoc = await doc.ref.collection('participants').doc(currentUser.uid).get();
+        if(pDoc.exists) {
+            // 🔥 إعادة حساب التقدم بناءً على الكاش (بما يغطي الجريات القديمة)
+            const startDate = ch.startDate ? new Date(ch.startDate) : new Date(2026, 0, 1);
+            const endDate = ch.endDate ? ch.endDate.toDate() : new Date(2026, 0, 31);
+            
+            const validRuns = allRuns.filter(r => {
+                const rDate = r.timestamp ? r.timestamp.toDate() : null;
+                return rDate && rDate >= startDate && rDate <= endDate && r.type === 'Run';
             });
 
-            // Mini cards في الصفحة الرئيسية
-            if (isJoined && mini) {
-                const safeTarget = ch.target > 0 ? ch.target : 1;
-                let perc = 0;
+            let currentProgress = 0;
+            if (ch.type === 'distance') {
+                currentProgress = validRuns.reduce((sum, r) => sum + (parseFloat(r.dist) || 0), 0);
+            } else if (ch.type === 'frequency') {
+                currentProgress = validRuns.length;
+            }
 
-                if (ch.type === 'speed') {
-                    perc = completed ? 100 : 0;
-                } else {
-                    perc = Math.min((progress / safeTarget) * 100, 100);
-                }
+            // تحديث قاعدة البيانات في الخلفية إذا اختلف الرقم
+            if (Math.abs(currentProgress - (pDoc.data().progress || 0)) > 0.01) {
+                doc.ref.collection('participants').doc(currentUser.uid).update({ progress: currentProgress });
+            }
 
+            allChallengesCache.push({ ...ch, isJoined: true, progress: currentProgress });
+
+            // تحديث شريط التقدم في الصفحة الرئيسية
+            if (mini) {
+                const perc = Math.min((currentProgress / (ch.target || 1)) * 100, 100);
                 miniHtml += `
-                <div class="mini-challenge-card"
-                     onclick="switchView('challenges'); setTab('active-challenges');"
-                     style="cursor:pointer; border-left: 3px solid ${completed ? '#10b981' : 'var(--accent)'}">
-                    
+                <div class="mini-challenge-card" onclick="switchView('challenges');">
                     <div class="mini-ch-title">${ch.title}</div>
-
-                    <div class="mini-ch-progress">
-                        <div class="mini-ch-fill"
-                             style="width:${perc}%; background:${completed ? '#10b981' : 'var(--primary)'}">
-                        </div>
-                    </div>
-
-                    <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
-                        <span>${ch.type === 'speed' ? (completed ? 'نجحت!' : 'حاول') : Math.floor(progress)}</span>
-                        <span>${ch.target}</span>
-                    </div>
+                    <div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div>
                 </div>`;
             }
+        } else {
+            allChallengesCache.push({ ...ch, isJoined: false, progress: 0 });
         }
-
-        // إعادة ضبط الفلتر
-        currentChallengeFilter = 'all';
-        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-        const allBtn = document.querySelector('.filter-pill:first-child');
-        if (allBtn) allBtn.classList.add('active');
-
-        renderChallenges();
-
-        if (mini) {
-            mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
-        }
-
-    } catch (e) {
-        console.error("loadActiveChallenges error:", e);
-        showToast("حصل خطأ أثناء تحميل التحديات", "error");
     }
-}
 
-var currentReportFeedId = window.currentReportFeedId || null;
-window.currentReportFeedId = currentReportFeedId;
-
-
-// فتح نافذة تفاصيل التحدي
-// ==================== V5.4 Challenge Details (Rank Fixed) ====================
-
-async function openChallengeDetails(chId) {
-    const modal = document.getElementById('modal-challenge-details');
-    const header = document.getElementById('ch-modal-header');
-    const list = document.getElementById('ch-leaderboard-list');
-    
-    if(!modal) return;
-
-    // 1. فتح المودال وعرض لودر
-    modal.style.display = 'flex';
-    list.innerHTML = '<div class="loader-placeholder">جاري سحب الأبطال...</div>';
-    header.innerHTML = ''; // تنظيف الهيدر مؤقتاً
-
-    try {
-        // 2. جلب بيانات التحدي الأساسية
-        const chDoc = await db.collection('challenges').doc(chId).get();
-        if (!chDoc.exists) return showToast("التحدي غير موجود", "error");
-        
-        const ch = chDoc.data();
-        const target = parseFloat(ch.target) || 1; // لتجنب القسمة على صفر
-        document.getElementById('ch-modal-title').innerText = ch.title;
-
-        // 3. رسم كارت الهيدر الفخم (نفس الستايل الذهبي)
-        let typeIcon = ch.type === 'speed' ? '⚡' : '🛣️';
-        let typeText = ch.type === 'speed' ? 'تحدي سرعة' : 'سباق مسافات';
-        
-        header.innerHTML = `
-            <div style="text-align:center; width:100%;">
-                <div style="font-size:14px; color:#fff; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:5px;">
-                    <span>${typeIcon}</span> ${typeText}
-                </div>
-                
-                <div style="font-size:11px; color:#9ca3af; margin-top:5px; display:flex; gap:10px; justify-content:center;">
-                    <span><i class="ri-flag-line"></i> هدف: ${ch.target} ${ch.type==='frequency'?'مرة':'كم'}</span>
-                    <span><i class="ri-time-line"></i> المدة: ${ch.durationDays || 30} يوم</span>
-                </div>
-
-                <div style="margin-top:15px; font-size:32px; font-weight:900; color:var(--primary); text-shadow:0 0 20px rgba(16,185,129,0.3);">
-                    ${ch.target} <span style="font-size:14px; font-weight:normal;">كم</span>
-                </div>
-            </div>
-        `;
-
-        // 4. جلب وترتيب المشاركين (إصلاح الـ NaN)
-        const snap = await db.collection('challenges').doc(chId).collection('participants')
-            .orderBy('progress', 'desc').limit(50).get();
-
-        if (snap.empty) {
-            list.innerHTML = '<div style="text-align:center; padding:30px; color:#6b7280;">لا يوجد مشاركين بعد.<br>كن أنت الأول! 🚀</div>';
-            return;
-        }
-
-        let html = '';
-        snap.docs.forEach((doc, index) => {
-            const p = doc.data();
-            const rank = index + 1;
-            const isMe = (currentUser && doc.id === currentUser.uid);
-            
-            // 🔥🔥🔥 الإصلاح الجذري للـ NaN 🔥🔥🔥
-            // نحاول تحويل القيمة لرقم، ولو فشل نستخدم صفر
-            let safeProgress = parseFloat(p.progress);
-            if (isNaN(safeProgress)) safeProgress = 0;
-
-            // حساب النسبة المئوية
-            let percent = Math.min((safeProgress / target) * 100, 100);
-            if (ch.type === 'speed' && p.completed) percent = 100;
-
-            // تحديد شكل الأفاتار
-            let avatarHtml = '';
-            if (p.photoUrl) {
-                avatarHtml = `<div class="avatar-col" style="background-image:url('${p.photoUrl}'); background-size:cover; border:1px solid #444;"></div>`;
-            } else {
-                let initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                avatarHtml = `<div class="avatar-col" style="background:#374151; display:flex; align-items:center; justify-content:center; color:#fff;">${initial}</div>`;
-            }
-
-            // ستايل الصف (تمييز نفسي)
-            let rowStyle = isMe 
-                ? 'border:1px solid var(--primary); background:rgba(16,185,129,0.05);' 
-                : 'border-bottom:1px solid rgba(255,255,255,0.05);';
-
-            // تلوين المراكز الأولى
-            let rankBadge = `<span style="font-weight:bold; color:#9ca3af;">#${rank}</span>`;
-            if (rank === 1) rankBadge = '🥇';
-            if (rank === 2) rankBadge = '🥈';
-            if (rank === 3) rankBadge = '🥉';
-
-            html += `
-            <div class="leader-row" style="${rowStyle} padding:12px; border-radius:12px; margin-bottom:8px;">
-                <div class="rank-col" style="font-size:16px;">${rankBadge}</div>
-                ${avatarHtml}
-                
-                <div class="info-col">
-                    <div class="name" style="color:#fff; font-size:13px;">
-                        ${p.name || 'مستخدم'} ${isMe ? '<span style="color:var(--primary); font-size:10px;">(أنت)</span>' : ''}
-                    </div>
-                    
-                    <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:5px; overflow:hidden;">
-                        <div style="width:${percent}%; height:100%; background:${p.completed ? '#10b981' : 'var(--accent)'};"></div>
-                    </div>
-                </div>
-
-                <div class="dist-col" style="text-align:left;">
-                    <span style="display:block; font-size:14px; font-weight:bold; color:#fff;">${safeProgress.toFixed(1)}</span>
-                    <span style="font-size:10px; color:#9ca3af;">${ch.type==='frequency'?'مرة':'كم'}</span>
-                </div>
-            </div>`;
-        });
-
-        list.innerHTML = html;
-
-    } catch (e) {
-        console.error(e);
-        list.innerHTML = '<div style="text-align:center; color:#ef4444; padding:20px;">حدث خطأ في تحميل البيانات</div>';
-    }
-}
-
-// ==================== Community Reporting System (V5.0) ====================
+    if (mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
+    renderChallenges(); 
+}// ==================== Community Reporting System (V5.0) ====================
 
 function openReportModal(feedId) {
     currentReportFeedId = feedId;
@@ -2045,3 +1876,7 @@ async function openLeagueHero(uid) {
         console.error("Error fetching hero logs:", e);
     }
 }
+
+
+
+ 

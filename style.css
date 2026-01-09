@@ -539,8 +539,12 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 /* Badges Fixed */
 .badges-section { padding: 0 5px; }
 .badges-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
-    background: rgba(255,255,255,0.03); padding: 15px; border-radius: 16px; border: 1px solid var(--border); margin-top: 10px;
+display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* جعل الأوسمة صغيرة ومتجاورة */
+    gap: 12px;
+    padding: 10px;
+    max-width: 450px;
+    margin: 0 auto;
 }
 .badge-item {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -889,11 +893,14 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .records-container {
     background: linear-gradient(135deg, #1c1917, #292524); /* لون برونزي داكن فخم */
     border-radius: 20px;
-    padding: 20px;
+    padding: 15px;
     position: relative;
     overflow: hidden;
     margin-top: 20px;
     border: 1px solid rgba(255,255,255,0.05);
+    margin: 15px auto; /* توسيط الحاوية */
+    max-width: 450px;  /* تحديد عرض أقصى يمنع الضخامة */
+    width: 95%;        /* مرونة في الشاشات الصغيرة */
 }
 /* أيقونة خلفية */
 .records-container::before {
@@ -911,7 +918,7 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .records-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr); /* 3 أعمدة متساوية */
-    gap: 15px;
+        gap: 10px;
     position: relative; z-index: 2;
 }
 
@@ -5968,3 +5975,442 @@ body {
         font-size: 13px !important;
     }
 }
+
+
+
+/* ==================== 💎 ERS CHALLENGE MASTERPIECE (V6) 💎 ==================== */
+
+/* --- القاعدة العامة للكروت: زجاجية وعميقة --- */
+.ch-card {
+    position: relative;
+    border-radius: 20px !important;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+/* --- 1. كارت المسافات (The Navigator) - أزرق المحيط العميق --- */
+.ch-card.dist-mode {
+    order: -1 !important;
+    background: linear-gradient(160deg, #0f172a 0%, #1e40af 100%) !important;
+}
+
+/* جرافيك طريق متلاشي (Perspective Road) */
+.ch-card.dist-mode::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 600'%3E%3Cpath fill='%233b82f6' fill-opacity='.1' d='M0 600l350-600h100l350 600H0zm425-50h-50v-100h50v100z'/%3E%3C/svg%3E");
+    background-size: cover;
+    opacity: 0.4;
+}
+
+/* عداء ماراثون يظهر كظل خلفي */
+.ch-card.dist-mode::after {
+    content: "🏁";
+    position: absolute; top: 15px; left: 15px;
+    font-size: 40px; opacity: 0.1;
+}
+
+/* --- 2. كارت السرعة (The Lightning) - أحمر الغضب والسرعة --- */
+.ch-card.speed-mode {
+    background: linear-gradient(160deg, #111827 0%, #7f1d1d 100%) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* جرافيك خطوط الحركة (Action Lines) */
+.ch-card.speed-mode::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(239, 68, 68, 0.05) 20px, rgba(239, 68, 68, 0.05) 21px);
+}
+
+/* --- 3. كارت العادة/التكرار (The Guardian) - أخضر الغابات والنمو --- */
+.ch-card.habit-mode {
+    background: linear-gradient(160deg, #064e3b 0%, #111827 100%) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+/* جرافيك حلقات النمو (Growth Rings) */
+.ch-card.habit-mode::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' stroke='%2310b981' stroke-opacity='0.05' fill='none' stroke-width='2'/%3E%3C/svg%3E");
+    background-size: 60px;
+}
+
+/* ==================== 🏃‍♂️ ANIMATION & ELEMENTS 🏃‍♂️ ==================== */
+
+/* تسميك شريط التقدم وجعله "مضمار" حقيقي */
+.road-track {
+    height: 14px !important;
+    background: rgba(0,0,0,0.5) !important;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin: 35px 0 10px;
+    position: relative;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.road-fill {
+    border-radius: 20px;
+    position: relative;
+    background: linear-gradient(90deg, var(--accent), #fff, var(--accent)) !important;
+    background-size: 200% 100%;
+    animation: shine 3s infinite linear;
+}
+
+/* شخص بيجري بوضوح فوق البار */
+.road-fill::after {
+    content: "🏃‍♂️";
+    position: absolute;
+    right: -10px; top: -35px;
+    font-size: 28px;
+    filter: drop-shadow(0 0 5px #fff);
+    animation: running-man 0.8s infinite alternate ease-in-out;
+}
+
+@keyframes running-man {
+    from { transform: translateX(0) scaleX(1); }
+    to { transform: translateX(-5px) scaleX(1.1); }
+}
+
+@keyframes shine {
+    to { background-position: 200% center; }
+}
+
+/* كلاس مخصص لجعل الأرقام "تلمع" */
+.dist-val-big {
+    font-weight: 900 !important;
+    font-size: 32px !important;
+    letter-spacing: -1px;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+
+/* ==================== 👑 ERS ANNUAL GOAL (THE CROWN) 👑 ==================== */
+
+/* كارت الهدف السنوي - ذهبي ملكي */
+.ch-card.annual-mode {
+    background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 100%) !important; /* خلفية ليلية عميقة */
+    border: 2px solid #fbbf24 !important; /* إطار ذهبي */
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.3) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+/* إضافة أيقونة التاج في الخلفية */
+.ch-card.annual-mode::after {
+    content: "👑";
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    font-size: 80px;
+    opacity: 0.1;
+    transform: rotate(15deg);
+}
+
+/* شريط التقدم الذهبي */
+.annual-mode .road-fill {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+    box-shadow: 0 0 15px #fbbf24;
+}
+
+/* تمييز رقم المسافة السنوية */
+.annual-mode .dist-val-big {
+    color: #fbbf24 !important;
+    text-shadow: 0 0 10px rgba(251, 191, 36, 0.5);
+    font-size: 28px !important;
+}
+
+/* حركة العداء في التحدي السنوي (أسرع وأقوى) */
+.annual-mode .road-fill::after {
+    content: "🏃‍♂️";
+    filter: drop-shadow(0 0 15px #fbbf24);
+    font-size: 42px;
+}
+
+.goal-card.yearly {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, rgba(0,0,0,0.2) 100%);
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1);
+}
+.goal-ring.annual {
+    border: 2px solid rgba(251, 191, 36, 0.2);
+
+    
+}
+
+/* كارت الترحيب الاسطوري
+/* تنسيق صف الإحصائيات المتجاورة */
+.coach-hero-stats-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 15px;
+    overflow-x: auto; /* للسماح بالتمرير لو الشاشة صغيرة جداً */
+    padding-bottom: 5px;
+}
+
+.hero-stat-card {
+    flex: 1; /* جعل المربعات متساوية الحجم */
+    min-width: 75px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.hero-stat-card span {
+    font-size: 16px;
+    font-weight: 900;
+    color: #fff;
+    margin: 4px 0;
+}
+
+.hero-stat-card small {
+    font-size: 9px;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+/* أيقونات صغيرة داخل المربعات */
+.stat-mini-icon { font-size: 14px; margin-bottom: 2px; }
+.stat-mini-icon.blue { color: #3b82f6; }
+.stat-mini-icon.purple { color: #8b5cf6; }
+.stat-mini-icon.gold { color: #fbbf24; }
+.stat-mini-icon.orange { color: #f97316; }
+
+.gold-border { border-color: rgba(251, 191, 36, 0.3) !important; }
+
+/* البار التحفيزي السفلي */
+.coach-motivation-mini {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.motivation-text-line {
+    font-size: 10px;
+    color: #c4b5fd;
+    text-align: center;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.motivation-progress-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.motivation-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6, #d8b4fe);
+}
+
+/* الحاوية الشبكية القسرية - عمودين متساويين دائماً */
+.coach-dual-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* توزيع 50% لكل كارت */
+    gap: 12px !important;
+    margin: 15px 0 !important;
+    align-items: stretch !important; /* فرض تساوي الارتفاع */
+}
+
+/* توحيد خصائص الكروت الأساسية */
+.plan-hero, .weekly-challenge-card {
+    margin: 0 !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important; /* ملء كامل ارتفاع الـ Grid Row */
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-sizing: border-box !important;
+}
+
+/* حاوية المحتوى الداخلي لكل كارت */
+.dual-card-container {
+    flex: 1; /* جعل المحتوى يأخذ المساحة المتاحة ويدفع الأزرار للأسفل */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* تنسيق العناوين والأيقونات */
+.ch-badge-fixed {
+    font-size: 9px;
+    font-weight: 900;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 3px 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    display: inline-block;
+}
+
+.ch-main-title {
+    font-size: 13px !important;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    margin: 4px 0;
+}
+
+/* الوصف الصغير - تحديد سطرين بحد أقصى لمنع تمدد الكارت */
+.ch-mini-desc {
+    font-size: 10px;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.4;
+    margin: 8px 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* توحيد حجم ومكان الأزرار في الأسفل */
+.ch-btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-top: auto; /* دفع الأزرار للقاع دائماً */
+}
+
+.ch-btn-group button, .plan-hero .btn {
+    padding: 10px 2px !important;
+    font-size: 10px !important;
+    border-radius: 10px !important;
+    white-space: nowrap;
+}
+
+/* تكبير البادج العلوي ليكون هو الهوية الأساسية */
+.ch-badge-fixed-large {
+    font-size: 11px;
+    font-weight: 900;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    padding: 4px 10px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    display: inline-block;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+/* سطر العنوان المدمج (أيقونة + نص) */
+.wc-main-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.wc-icon-inline { font-size: 20px; flex-shrink: 0; }
+
+.ch-main-title-inline {
+    font-size: 14px !important;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.wc-status-line {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+/* الوصف المحكم لضمان تناسق الارتفاع */
+.ch-mini-desc-v2 {
+    font-size: 10px;
+    color: rgba(255,255,255,0.5);
+    line-height: 1.4;
+    margin-bottom: 10px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+
+.modal-box {
+    max-height: 90vh; /* يسمح بالتمدد لحد 90% من طول الشاشة */
+    overflow-y: auto; /* يظهر سكرول لو العناصر كتير */
+}
+
+/* تنسيق زر لوحة المشرفين لضمان الظهور والضغط */
+#btn-admin-entry {
+    display: none; /* القيمة الافتراضية هي الإخفاء */
+    border: 1px solid var(--accent);
+    padding: 15px;
+    border-radius: 16px;
+    margin-top: 15px;
+}
+
+#view-admin {
+    position: relative;
+    z-index: 1000;
+    background: var(--bg-dark);
+    min-height: 100vh;
+}
+
+#btn-admin-entry:hover {
+    background: rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+    border-color: var(--accent);
+}
+
+#btn-admin-entry .setting-icon {
+    font-size: 24px;
+    color: var(--accent);
+}
+
+#btn-admin-entry .setting-text span {
+    color: #fff;
+    font-weight: 800;
+    font-size: 14px;
+}
+/* --- تمييز كارت خطة التدريب (الجانب الأيمن) --- */
+.plan-hero.dual-item {
+    background: linear-gradient(145deg, rgba(30, 58, 138, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    box-shadow: inset 0 0 15px rgba(59, 130, 246, 0.1);
+}
+
+.plan-hero.dual-item .ch-badge-fixed-large {
+    color: #60a5fa; /* أزرق فاتح للبادج */
+    background: rgba(59, 130, 246, 0.15);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* --- تمييز كارت التحدي الأسبوعي (الجانب الأيسر) --- */
+.weekly-challenge-card.dual-item {
+    background: linear-gradient(145deg, rgba(6, 78, 59, 0.3) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+.weekly-challenge-card.dual-item .ch-badge-fixed-large {
+    color: #10b981; /* أخضر للبادج */
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+/* توحيد الأزرار لتبدو منسجمة مع كل كارت */
+.plan-hero .btn-primary { background: #2563eb !important; }
+.weekly-challenge-card .btn-primary { background: #059669 !important; }
+
+

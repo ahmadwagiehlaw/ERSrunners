@@ -418,30 +418,31 @@ function updateHeroWeekDist() {
     const displayEl = document.getElementById('hero-week-dist');
     if (!displayEl) return;
 
-    // 1. تحديد السبت الماضي كبداية للأسبوع
+    // 1. تحديد بداية الأسبوع (السبت الماضي) بدقة
     const now = new Date();
     const day = now.getDay(); // 0 (Sun) to 6 (Sat)
-    const diff = (day === 6) ? 0 : (day + 1); // عدد الأيام من السبت
+    // السبت هو 6، نحتاج العودة للوراء بمقدار (day+1)%7
+    const diffToSaturday = (day === 6) ? 0 : (day + 1);
     
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - diff);
-    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfSat = new Date(now);
+    startOfSat.setDate(now.getDate() - diffToSaturday);
+    startOfSat.setHours(0, 0, 0, 0);
 
-    // 2. الفلترة من الكاش (بدون قراءة جديدة من الداتابيز)
-    const allRuns = window.allRunsCache || [];
+    const allRuns = window._ersRunsCache || []; // 🔥 استخدام نفس الكاش
     let weekTotal = 0;
 
     allRuns.forEach(run => {
-        let runDate = run.timestamp ? run.timestamp.toDate() : new Date(run.date);
-        if (runDate >= startOfWeek) {
+        const rDate = run.timestamp ? run.timestamp.toDate() : null;
+        if (rDate && rDate >= startOfSat) {
             weekTotal += parseFloat(run.dist || 0);
         }
     });
 
-    // 3. العرض النهائي (سيظهر 0.0 لو لم تجرِ من السبت)
     displayEl.innerText = weekTotal.toFixed(1);
+    
+    // تحديث إحصائيات الهيرو الأخرى بالمرة
+    if (typeof renderCoachHeroStats === 'function') renderCoachHeroStats();
 }
-
 
 /* نظام تثبيت التطبيق المحسن (ERS PWA Install Engine)
    يضمن ظهور الزر فقط عند توفر إمكانية التثبيت 

@@ -647,18 +647,19 @@ function getGoalName(g) {
 
 /* Admin Dashboard */
 // ==================== 8. V3.0 Admin Dashboard (The Command Center) ====================
-
 function openAdminAuth() {
+    // التحقق من حالة الأدمن قبل السماح بالدخول
     if (currentUser && userData && userData.isAdmin === true) {
         closeModal('modal-settings'); 
         setTimeout(() => { 
             switchView('admin'); 
-            switchAdminTab('overview'); // تشغيل التبويب الافتراضي
+            switchAdminTab('overview');
         }, 100);
     } else { 
-        showToast("⛔ هذه المنطقة محظورة", "error"); 
+        showToast("⛔ هذه المنطقة محظورة للمشرفين فقط", "error");
     }
 }
+
 
 function loadAdminDashboard() {
     loadAllUsersTable();
