@@ -130,7 +130,6 @@ auth.onAuthStateChanged(async (user) => {
 
 
 
-
 // ==================== 2. Strava OAuth ====================
 
 function connectStrava() {
