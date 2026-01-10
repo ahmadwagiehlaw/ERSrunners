@@ -2,95 +2,38 @@
 
 // ==================== 5. Activity Log Logic ====================
 // ==================== 1. فتح نافذة نشاط جديد (تنظيف كامل) ====================
+// ==================== 1. فتح نافذة نشاط جديد (تنظيف كامل) ====================
 // ==================== Unified GPS & Manual Log Logic ====================
 
 // 1. فتح المودال (النسخة المطورة)
 function openNewRun() {
-    // تصفير المتغيرات القديمة
     editingRunId = null;
     editingOldDist = 0;
     
-    // إعادة التبويب للافتراضي (اليدوي)
-switchLogTab('manual');
-    // تنظيف الحقول اليدوية
+    // تنظيف الحقول (تأكدنا أن الـ IDs مطابقة للـ HTML الجديد)
     document.getElementById('log-dist').value = '';
     document.getElementById('log-time').value = '';
-    document.getElementById('uploaded-img-url').value = '';
-    const preview = document.getElementById('img-preview');
-    if(preview) { preview.src = ''; preview.style.display = 'none'; }
-    const status = document.getElementById('upload-status');
-    if(status) status.innerText = '';
     
-    // ضبط التاريخ
+    // ضبط التاريخ الافتراضي
     const dateInput = document.getElementById('log-date');
     if (dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
 
-    // فتح المودال
-openModal('modal-log');
 
-    // تهيئة الخريطة (إذا كنا في تبويب GPS)
-    setTimeout(() => {
-        initInternalMap();
-    }, 500);
-}
-// ✅ لا نهيّئ الخريطة إلا لو المستخدم راح لتبويب GPS بنفسه
+// يوضع داخل openNewRun()
+document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
 
-// 2. التبديل بين التبويبات
-function switchLogTab(tabName) {
-    const gpsView = document.getElementById('view-gps');
-    const manualView = document.getElementById('view-manual');
-    const btnGps = document.getElementById('tab-btn-gps');
-    const btnManual = document.getElementById('tab-btn-manual');
-
-    if (tabName === 'gps') {
-        gpsView.style.display = 'block';
-        manualView.style.display = 'none';
-        btnGps.classList.add('active');
-        btnManual.classList.remove('active');
-        // تنشيط الخريطة لتصحيح أبعادها
-        if(mapInstance) mapInstance.invalidateSize();
-    } else {
-        gpsView.style.display = 'none';
-        manualView.style.display = 'block';
-        btnGps.classList.remove('active');
-        btnManual.classList.add('active');
-        // إذا كان هناك تتبع شغال، نوقفه؟ لا، نتركه يعمل في الخلفية لو المستخدم حب يبدل ويرجع
-        // لكن لو المستخدم حب يدخل يدوي، بنفترض انه هيكتب بإيده
-    }
+// تعديل دالة المزامنة لتقبل (عدد الأنشطة)
+async function syncFromStrava(count = 30) {
+    // الكود الذي كتبناه سابقاً مع تمرير count لـ per_page
+    // وتأكد من جلب act.type === 'VirtualRun' للتريدميل
 }
 
-// 3. منطق الـ GPS الداخلي (مشابه للسابق ولكن داخل العناصر الجديدة)
-let mapInstance = null;
-let gpsWatchId = null;
-let gpsPath = [];
-let gpsCurrentDist = 0;
-let gpsStartTime = null;
-let gpsTimerInterval = null;
-let polylineInstance = null;
-let wakeLock = null;
 
-function initInternalMap() {
-    if (mapInstance) {
-        mapInstance.invalidateSize();
-        return;
-    }
-    
-    const mapEl = document.getElementById('gps-map');
-    if(!mapEl) return;
 
-    mapInstance = L.map('gps-map', { zoomControl: false }).setView([30.0444, 31.2357], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap', subdomains: 'abcd', maxZoom: 19
-    }).addTo(mapInstance);
-    
-    // تحديد الموقع المبدئي
-    navigator.geolocation.getCurrentPosition(pos => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-        mapInstance.setView([lat, lng], 16);
-        L.marker([lat, lng]).addTo(mapInstance);
-    });
+    openModal('modal-log');
 }
+
+
 
 async function toggleGPSLog() {
     const btn = document.getElementById('btn-start-gps');
@@ -345,54 +288,43 @@ function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if(!list) return;
 
-    // جلب البيانات
     db.collection('users').doc(currentUser.uid).collection('runs')
       .orderBy('timestamp', 'desc').limit(50).onSnapshot(snap => {
           
           if(snap.empty) { 
-              list.innerHTML = `
-                <div style="text-align:center; padding:40px 20px; color:#6b7280;">
-                    <i class="ri-run-line" style="font-size:40px; margin-bottom:10px; display:block; opacity:0.5;"></i>
-                    لا توجد أنشطة مسجلة بعد.<br>ابدأ أول جرية لك الآن!
-                </div>`; 
+              list.innerHTML = `<div class="no-data">لا توجد أنشطة مسجلة بعد.</div>`; 
               return; 
           }
 
           const runs = []; 
-          
-          // 1. استخراج البيانات وحساب الأرقام القياسية
-          let maxDist = 0;
-          let maxTime = 0;
-          let bestPace = 999; // رقم كبير مبدئياً
+          let maxDist = 0, maxTime = 0, bestPace = 999;
 
           snap.forEach(doc => {
-              const r = doc.data(); 
-              r.id = doc.id;
-              runs.push(r); // إضافة الجرية للمصفوفة
-
-              // حساب الأرقام القياسية
-              if (r.dist > maxDist) maxDist = r.dist;
-              if (r.time > maxTime) maxTime = r.time;
-              
-              // حساب أفضل بيس (بشرط المسافة > 1 كم لتجنب أخطاء الـ GPS)
-              if (r.dist >= 1 && r.time > 0) {
-                  const p = r.time / r.dist;
-                  if (p < bestPace) bestPace = p;
+              const r = doc.data(); r.id = doc.id;
+              runs.push(r);
+              if (!_ersIsCoreType(r.type)) {
+                  if (r.dist > maxDist) maxDist = r.dist;
+                  if (r.time > maxTime) maxTime = r.time;
+                  if (r.dist >= 1 && r.time > 0) {
+                      const p = r.time / r.dist;
+                      if (p < bestPace) bestPace = p;
+                  }
               }
           });
 
-          // Cache for Coach V2 decision engine
-// Cache for Coach V2 decision engine
-window._ersRunsCache = runs;
+          // 1. تحديث الكاش العالمي
+          window._ersRunsCache = runs; 
 
-// Notify other modules that runs cache is ready/updated
-try {
-  window.dispatchEvent(new CustomEvent('ers:runs-updated', { detail: { count: runs.length } }));
-} catch(e) {}
+          // 🔥 2. السطر السحري الأول: تحديث مسافة الأسبوع (الزرقاء)
+          if (typeof updateHeroWeekDist === 'function') updateHeroWeekDist();
 
-if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI(runs);
+          // 🔥 3. السطر السحري الثاني: تحديث واجهة المستخدم بالكامل (الإحصائيات الشهرية)
+          if (typeof updateUI === 'function') updateUI();
+          
+          // تحديث محرك الكوتش
+          if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI(runs);
 
-          // 2. تجميع حسب الشهر
+          // --- كود بناء الـ HTML (زي ما هو بدون تغيير) ---
           const groups = {};
           runs.forEach(r => {
               const date = r.timestamp ? r.timestamp.toDate() : new Date();
@@ -402,97 +334,52 @@ if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI(runs);
           });
 
           let html = '';
-
-          // 3. عرض البيانات (لوب الشهور)
           for (const [month, monthRuns] of Object.entries(groups)) {
               const monthTotal = monthRuns.reduce((acc, curr) => acc + (parseFloat(curr.dist)||0), 0).toFixed(1);
 
               html += `
-              <div class="log-group">
-                  <div class="log-month-header">
-                      <span>${month}</span>
-                      <span style="font-size:10px; opacity:0.8;">إجمالي: ${monthTotal} كم</span>
-                  </div>
-              `;
+              <div class="log-group" style="margin-bottom:15px;">
+                  <div class="log-month-header" style="display:flex; justify-content:space-between; padding:8px 10px; background:rgba(255,255,255,0.03); border-radius:8px; margin-bottom:10px; font-size:12px;">
+                      <span style="color:var(--primary); font-weight:bold;">${month}</span>
+                      <span style="color:var(--text-muted);">إجمالي: ${monthTotal} كم</span>
+                  </div>`;
 
-              // 4. عرض الجريات داخل الشهر
               monthRuns.forEach(r => {
                   const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
-                  const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'long' });
+                  const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'short' });
                   const dayNum = dateObj.getDate();
+                  const pace = (r.dist > 0 && r.time > 0) ? (r.time / r.dist).toFixed(2) : '-';
                   
-                  // حساب البيس الحالي
-                  let currentPace = 0;
-                  if(r.dist > 0 && r.time > 0) currentPace = r.time / r.dist;
-                  const paceDisplay = currentPace > 0 ? currentPace.toFixed(1) : '-';
-
-                  // 🔥 تحديد نوع الإنجاز والألوان
-                  let iconClass = r.type !== 'Walk' ? 'ri-run-line' : 'ri-walk-line';
-                  let typeClass = r.type !== 'Walk' ? 'run' : 'walk';
-                  let recordLabel = ''; 
-
-                  // أ) هل هي الأطول مسافة؟ (الذهبي)
-                  if (_ersIsCoreType(r.type) && r.dist === maxDist && maxDist > 5) {
-                      iconClass = 'ri-trophy-fill';
-                      typeClass = 'record-gold';
-                      recordLabel = '<span style="font-size:9px; color:#f59e0b; margin-right:5px;">(الأطول)</span>';
-                  } 
-                  // ب) هل هي الأسرع؟ (الأحمر) - بشرط تكون جري وليست مشي
-                  else if (_ersIsCoreType(r.type) && currentPace === bestPace && r.dist >= 1 && r.type === 'Run') {
-                      iconClass = 'ri-flashlight-fill'; 
-                      typeClass = 'record-fire';
-                      recordLabel = '<span style="font-size:9px; color:#ef4444; margin-right:5px;">(الأسرع)</span>';
-                  }
-                  // ج) هل هي الأطول زمناً؟ (البنفسجي)
-                  else if (_ersIsCoreType(r.type) && r.time === maxTime && maxTime > 30) {
-                      iconClass = 'ri-hourglass-fill';
-                      typeClass = 'record-time';
-                      recordLabel = '<span style="font-size:9px; color:#a78bfa; margin-right:5px;">(تحمل)</span>';
-                  }
-const coachBadge = r.coachWorkout
-  ? '<span class="badge-coach-run"><i class="ri-whistle-line"></i> تمرين الكوتش</span>'
-  : '';
-
-
+                  const hasMap = r.polyline ? '<i class="ri-map-2-line" style="color:var(--primary)"></i>' : '';
+                  const hasImg = r.imgUrl ? '<i class="ri-image-line" style="color:var(--accent)"></i>' : '';
 
                   html += `
-                  <div class="log-row-compact">
-                      <div class="log-icon-wrapper ${typeClass}">
-                          <i class="${iconClass}"></i>
-                      </div>
-
-                      <div class="log-details">
-                          <div class="log-main-stat">
-                              ${(_ersIsCoreType(r.type) ? `${formatNumber(r.dist)} <span class="log-unit">كم</span> ${recordLabel}` : `<span class="xt-badge">XT</span> <span class="log-unit">${r.type || 'Cross'}</span>`)}
+                  <div class="activity-item-foldable" onclick="openRunDetail('${r.id}')" style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer;">
+                      <div style="display:flex; align-items:center; gap:12px;">
+                          <div style="width:50px; height:50px; border-radius:8px; background:#111827; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.05);">
+                              ${r.imgUrl ? `<img src="${r.imgUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="${r.type === 'Walk' ? 'ri-walk-line' : 'ri-run-line'}" style="font-size:20px; opacity:0.5;"></i>`}
                           </div>
-                          <div class="log-sub-stat">
-                              <span><i class="ri-calendar-line"></i> ${dayNum} ${dayName}</span>
-                              ${(_ersIsCoreType(r.type) ? `<span><i class="ri-timer-flash-line"></i> ${paceDisplay} د/كم</span>` : `<span><i class="ri-time-line"></i> ${r.time || 0} دقيقة</span>`)}
+                          
+                          <div style="flex:1;">
+                              <div style="display:flex; justify-content:space-between; align-items:start;">
+                                  <div style="font-weight:900; font-size:16px;">${r.dist} <small style="font-size:10px; color:var(--text-muted);">كم</small></div>
+                                  <div style="font-size:12px; color:var(--primary); font-family:monospace;">${pace} <small>بيس</small></div>
+                              </div>
+                              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                                  <div style="font-size:11px; color:var(--text-muted);">${dayNum} ${dayName} • ${r.time} دقيقة</div>
+                                  <div style="display:flex; gap:8px;">${hasMap}${hasImg}</div>
+                              </div>
                           </div>
-                      </div>
-
-                      <div class="log-actions">
-                          <button class="btn-icon-action share" onclick="generateShareCard('${r.dist}', '${r.time}', '${dayNum} ${month}')">
-                              <i class="ri-share-forward-line"></i>
-                          </button>
-                          
-                          <button class="btn-icon-action" onclick="editRun('${r.id}', ${r.dist}, ${r.time}, '${r.type}', '${r.link || ''}', '${r.img || ''}', ${r.xtDist || 0})">
-                              <i class="ri-pencil-line"></i>
-                          </button>
-                          
-                          <button class="btn-icon-action delete" onclick="deleteRun('${r.id}', ${r.dist})">
-                              <i class="ri-delete-bin-line"></i>
-                          </button>
                       </div>
                   </div>`;
               });
-
-              html += `</div>`; // إغلاق ديف الشهر
+              html += `</div>`;
           }
-
           list.innerHTML = html;
       });
 }
+
+// ==================== 7. حذف نشاط ====================
 async function deleteRun(id, dist) {
     dist = parseFloat(dist);
     if(!confirm("هل أنت متأكد من الحذف؟")) return;
@@ -745,79 +632,155 @@ async function checkNewBadges() {
 }
 
 
-async function syncFromStrava() {
+// ==================== 14. مزامنة استرافا (V6.0) ====================
+async function syncFromStrava(count = 1) {
     const btn = document.getElementById('strava-sync-btn');
-    if(btn) { btn.innerText = "جاري المزامنة... ⏳"; btn.disabled = true; }
+    const originalText = btn.innerText;
+    btn.innerText = "جاري الاتصال بـ Strava...";
+    btn.disabled = true;
 
     try {
-        if (!window.STRAVA_CONFIG) throw new Error("إعدادات استرافا العامة غير موجودة");
-        
-        // 1. استخدام توكن المستخدم لو موجود، وإلا نستخدم الافتراضي (للتجربة)
-        const refreshToken = userData.stravaRefreshToken || window.STRAVA_CONFIG.REFRESH_TOKEN;
-        const { CLIENT_ID, CLIENT_SECRET } = window.STRAVA_CONFIG;
-        
-        if (!refreshToken) throw new Error("لم يتم ربط حساب استرافا");
+        const refreshToken = userData.stravaRefreshToken || (window.STRAVA_CONFIG ? window.STRAVA_CONFIG.REFRESH_TOKEN : null);
+        if (!refreshToken) throw new Error("لم يتم ربط الحساب");
 
-        // 2. تجديد الـ Token
-        const authResponse = await fetch(`https://www.strava.com/oauth/token`, {
+        const { CLIENT_ID, CLIENT_SECRET } = window.STRAVA_CONFIG;
+
+        // 1. تجديد التصريح (Access Token)
+        const authData = await (await fetch(`https://www.strava.com/oauth/token`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                client_id: CLIENT_ID,
-                client_secret: CLIENT_SECRET,
-                refresh_token: refreshToken,
-                grant_type: 'refresh_token'
-            })
-        });
-        
-        const authData = await authResponse.json();
-        if(!authData.access_token) throw new Error("فشل تجديد التصريح");
+            body: JSON.stringify({ client_id: CLIENT_ID, client_secret: CLIENT_SECRET, refresh_token: refreshToken, grant_type: 'refresh_token' })
+        })).json();
 
-        // 3. جلب آخر نشاط
-        const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=1`, {
+        // 2. جلب الأنشطة (توسيع الفلتر ليشمل المشي والتريدميل)
+        const response = await fetch(`https://www.strava.com/api/v3/athlete/activities?per_page=${count}`, {
             headers: { 'Authorization': `Bearer ${authData.access_token}` }
         });
-        
-        const data = await response.json();
-        if(!data || data.length === 0) {
-            showToast("لا توجد أنشطة جديدة في استرافا", "info");
-            return;
+        const activities = await response.json();
+
+        let imported = [];
+        for (const act of activities) {
+            const isDuplicate = (window._ersRunsCache || []).some(r => r.stravaId === act.id);
+            // قبول الجري، المشي، والتمارين الداخلية (VirtualRun)
+            const validTypes = ['Run', 'Walk', 'VirtualRun', 'Hike'];
+            
+            if (!isDuplicate && validTypes.includes(act.type)) {
+                const runData = {
+                    dist: parseFloat((act.distance / 1000).toFixed(2)),
+                    time: Math.round(act.moving_time / 60),
+                    type: act.type === 'VirtualRun' ? 'Treadmill' : act.type,
+                    dateStr: act.start_date.split('T')[0],
+                    timestamp: firebase.firestore.Timestamp.fromDate(new Date(act.start_date)),
+                    stravaId: act.id,
+                    source: "Strava",
+                    polyline: act.map ? act.map.summary_polyline : null
+                };
+                const docRef = await db.collection('users').doc(currentUser.uid).collection('runs').add(runData);
+                imported.push({ id: docRef.id, ...runData });
+            }
         }
 
-        const lastRun = data[0];
-        const isDuplicate = (window._ersRunsCache || []).some(r => r.stravaId === lastRun.id);
-        if(isDuplicate) {
-            showToast("هذا النشاط مسجل بالفعل ✅", "info");
-            return;
+        if (imported.length > 0) {
+            await loadActivityLog(); 
+            updateUI();
+            closeModal('modal-log');
+            // فتح تفاصيل أول تمرين تم استيراده فوراً
+            if (typeof showFeedbackModal === 'function') showFeedbackModal(imported[0]);
+            showToast(`نجاح! تم استيراد ${imported.length} نشاط 🏆`, "success");
+        } else {
+            showToast("لا توجد أنشطة جديدة لمزامنتها حالياً", "info");
         }
-
-        // 4. تجهيز البيانات (المسافة، الوقت، والمسار)
-        const runData = {
-            dist: parseFloat((lastRun.distance / 1000).toFixed(2)),
-            time: Math.round(lastRun.moving_time / 60),
-            type: "Run",
-            dateStr: lastRun.start_date.split('T')[0],
-            timestamp: firebase.firestore.Timestamp.fromDate(new Date(lastRun.start_date)),
-            stravaId: lastRun.id,
-            source: "Strava",
-            polyline: lastRun.map ? lastRun.map.summary_polyline : null,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        // 5. الحفظ والتحديث الشامل
-        await db.collection('users').doc(currentUser.uid).collection('runs').add(runData);
-        
-        showToast("عاش يا بطل! تمت المزامنة ✅", "success");
-        closeModal('modal-log');
-
-        await loadActivityLog(); 
-        updateUI();
-        loadActiveChallenges();
-
     } catch (e) {
-        console.error("Strava Error:", e);
-        showToast("فشل في المزامنة: تأكد من ربط الحساب", "error");
+        console.error("Sync Error:", e);
+        showToast("خطأ في الاتصال بالسيرفر. تأكد من ربط حسابك.", "error");
     } finally {
-        if(btn) { btn.innerText = "مزامنة استرافا"; btn.disabled = false; }
+        btn.innerText = originalText;
+        btn.disabled = false;
     }
+}
+
+
+// ==================== 15. تحسينات واجهة المستخدم ====================
+// =======================1. دالة رفع الصور لـ ImgBB
+async function uploadToImgBB(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const status = document.getElementById('upload-status');
+    status.innerText = "جاري الرفع... ⏳";
+    
+    const formData = new FormData();
+    formData.append("image", file);
+    
+    try {
+        const res = await fetch("https://api.imgbb.com/1/upload?key=YOUR_API_KEY", { // ضع مفتاحك هنا
+            method: "POST",
+            body: formData
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('uploaded-img-url').value = data.data.url;
+            status.innerText = "✅ تم الرفع بنجاح";
+        }
+    } catch (e) { status.innerText = "❌ فشل الرفع"; }
+}
+
+// 2. دالة التعديل (إصلاح زر التعديل)
+function editRun(runId) {
+    const run = window._ersRunsCache.find(r => r.id === runId);
+    if (!run) return;
+
+    editingRunId = runId;
+    editingOldDist = run.dist;
+    
+    document.getElementById('log-dist').value = run.dist;
+    document.getElementById('log-time').value = run.time;
+    document.getElementById('log-type').value = run.type || 'Run';
+    document.getElementById('log-date').value = run.dateStr || '';
+    document.getElementById('uploaded-img-url').value = run.imgUrl || '';
+    
+    document.getElementById('log-modal-title').innerText = "تعديل النشاط ✏️";
+    openModal('modal-log');
+}
+
+// =================. دالة فتح التفاصيل عند الضغط على الكارت
+function openRunDetail(runId) {
+    const run = (window._ersRunsCache || []).find(r => r.id === runId);
+    if (!run) return;
+
+    // ملء البيانات الأساسية
+    document.getElementById('detail-type').innerText = run.type === 'Treadmill' ? 'تمرين تريدميل 🏃‍♀️' : 'نشاط جري 🏃‍♂️';
+    document.getElementById('detail-dist').innerText = run.dist;
+    document.getElementById('detail-time').innerText = run.time;
+    document.getElementById('detail-date').innerText = run.dateStr;
+    
+    const pace = run.dist > 0 ? (run.time / run.dist).toFixed(2) : '0.00';
+    document.getElementById('detail-pace').innerText = pace;
+
+    const mapEl = document.getElementById('detail-map');
+    const imgEl = document.getElementById('detail-img');
+    
+    // إخفاء الكل أولاً
+    mapEl.style.display = 'none';
+    imgEl.style.display = 'none';
+
+    // 1. لو جاية من سترافا وفيها خريطة
+    if (run.polyline) {
+        mapEl.style.display = 'block';
+        setTimeout(() => {
+            // تنظيف الخريطة القديمة لو موجودة
+            if (window._detailMap) { window._detailMap.remove(); }
+            window._detailMap = L.map('detail-map', { zoomControl: false }).setView([0, 0], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window._detailMap);
+            const coords = L.Polyline.fromEncoded(run.polyline).getLatLngs();
+            const poly = L.polyline(coords, { color: '#10b981', weight: 4 }).addTo(window._detailMap);
+            window._detailMap.fitBounds(poly.getBounds());
+        }, 300);
+    } 
+    // 2. لو إدخال يدوي وفيها صورة مرفوعة
+    else if (run.imgUrl) {
+        imgEl.src = run.imgUrl;
+        imgEl.style.display = 'block';
+    }
+
+    openModal('modal-run-detail');
 }

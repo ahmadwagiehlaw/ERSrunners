@@ -335,12 +335,12 @@ function renderPlanHero(planData) {
             <div class="plan-top-actions">
                 <button class="btn-glass-rect" onclick="openPlanScheduleModal()">
                     <i class="ri-calendar-todo-fill"></i>
-                    <span>خطة التدريب</span>
+                    <span>الخطة</span>
                 </button>
 
 <button class="btn-glass-rect danger" onclick="resetActivePlan(this)">
     <i class="ri-close-circle-line"></i>
-    <span>إلـغـاء الخطة</span>
+    <span>إلــغــاء</span>
 </button>          
 
 </div>

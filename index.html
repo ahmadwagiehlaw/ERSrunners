@@ -975,163 +975,79 @@
 
 
 
+    
 
-<div id="modal-catalog" class="modal-overlay">
-    <div class="modal-box ers-blue-glass" style="max-height: 80vh;">
-        <div class="modal-head">
-            <h3 id="catalog-title" style="margin:0;">المكتبة الذكية</h3>
-            <button class="modal-close" onclick="closeModal('modal-catalog')"><i class="ri-close-line"></i></button>
+
+<!--  + تفاصيل الجرية + مودال تسجيل جرية جديدة-->
+
+<div id="modal-log" class="modal-overlay">
+    <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden; background: #1a1f2e;">
+        <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--border);">
+            <h3 id="log-modal-title" style="margin:0; font-size: 18px;">تسجيل نشاط 🏃‍♂️</h3>
+            <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
         </div>
-        <div id="catalog-body" style="overflow-y: auto; padding: 10px 5px;">
-            </div>
-        <button class="btn btn-primary" onclick="closeModal('modal-catalog')" style="margin-top:15px; width:100%;">فهمت الخطة 🫡</button>
-    </div>
-</div>
-
-    <div id="modal-run-feedback" class="modal-overlay" style="z-index: 4000;">
-        <div class="modal-box" style="text-align:center; padding-top:40px; position:relative; overflow:visible;">
-            
-            <div class="coach-feedback-avatar">
-                <div class="coach-img"></div>
-                <div class="coach-badge">👔</div>
-            </div>
-
-            <h2 id="feedback-title" style="margin:10px 0 5px 0; color:var(--primary);">تحليل الأداء ⚡</h2>
-            
-            <div id="feedback-body" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin:15px 0; border:1px solid rgba(255,255,255,0.1);">
-                <p id="feedback-msg" style="font-size:14px; line-height:1.6; color:#e5e7eb; margin:0;">
-                    جاري تحليل الجرية...
-                </p>
-            </div>
-
-            <div class="feedback-stats">
-                <div><span id="fb-pace">0.0</span> <small>السرعة</small></div>
-                <div style="border-right:1px solid #444; border-left:1px solid #444;">
-                    <span id="fb-score">Excellent</span> <small>التقييم</small>
-                </div>
-                <div><span id="fb-cal">0</span> <small>كالوري</small></div>
-            </div>
-
-            <button class="btn btn-primary" onclick="closeModal('modal-run-feedback')" style="margin-top:20px;">
-                شكراً يا كوتش 💪
+        <div class="modal-body" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
+            <button id="strava-sync-btn" class="btn btn-primary" onclick="syncFromStrava(30)" style="background: #fc4c02; border: none; width: 100%; height: 50px; margin-bottom: 20px;">
+                <i class="ri-refresh-line"></i> مزامنة تمارين الشهر من Strava
             </button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <input type="number" id="log-dist" placeholder="المسافة (كم)" step="0.01" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
+                <select id="log-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
+                    <option value="Run">جري 🏃‍♂️</option>
+                    <option value="Treadmill">تريدميل 🏃‍♀️</option>
+                    <option value="Walk">مشي 🚶‍♂️</option>
+                </select>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <input type="number" id="log-time" placeholder="الوقت (دقائق)" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
+                <input type="date" id="log-date" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <button onclick="document.getElementById('log-file').click()" class="btn" style="width:100%; border:1px dashed var(--border); color:var(--text-muted);">
+                    <i class="ri-image-add-line"></i> ارفع صورة الإثبات
+                </button>
+                <input type="file" id="log-file" onchange="uploadToImgBB(this)" style="display:none;">
+                <input type="hidden" id="uploaded-img-url">
+                <div id="upload-status" style="font-size:10px; text-align:center; margin-top:5px; color:var(--primary);"></div>
+            </div>
+            <button class="btn btn-primary" onclick="submitRun()" style="width:100%; height: 50px;">حفظ النشاط</button>
         </div>
     </div>
-    
-    <div id="modal-log" class="modal-overlay">
-  <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden;">
-    
-<div class="modal-head" style="padding: 15px 20px 0; background:transparent; z-index:10; position:relative;">
-    <h3 id="log-modal-title" style="margin:0;">تسجيل نشاط 🏃‍♂️</h3>
-    <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
 </div>
 
-<div style="padding: 10px 20px; position:relative; z-index:10;">
-    <div class="log-tabs">
-        <button class="tab-btn" onclick="switchLogTab('strava')" id="tab-btn-strava" style="border-color: #fc4c02; color: #fc4c02;">
-            <i class="ri-refresh-line"></i> مزامنة Strava
-        </button>
-        <button class="tab-btn" onclick="switchLogTab('gps')" id="tab-btn-gps">
-            <i class="ri-map-pin-2-fill"></i> تتبع GPS
-        </button>
-        <button class="tab-btn active" onclick="switchLogTab('manual')" id="tab-btn-manual">
-            <i class="ri-edit-box-line"></i> يدوي
-        </button>
-    </div>
-</div>
-
-<div id="log-tab-strava" class="log-tab-content" style="display:none; padding: 20px; text-align: center;">
-    <div style="background: rgba(252, 76, 2, 0.1); padding: 20px; border-radius: 15px; border: 1px dashed #fc4c02;">
-        <i class="ri-strava-fill" style="font-size: 40px; color: #fc4c02;"></i>
-        <p style="font-size: 13px; color: #eee; margin: 10px 0;">سيتم جلب آخر نشاط مسجل على حسابك في استرافا تلقائياً.</p>
-        <button id="strava-sync-btn" class="btn-primary" onclick="syncFromStrava()" style="background: #fc4c02; border: none; width: 100%;">
-            مزامنة الآن
-        </button>
-    </div>
-</div>
-
-
-    <div class="modal-body" style="padding: 0 20px 20px; max-height:80vh; overflow-y:auto;">
-        
-        <div id="view-gps" style="display:block;">
-            <div id="gps-map-container" style="height:250px; width:100%; border-radius:16px; margin-bottom:15px; position:relative; overflow:hidden; border:1px solid var(--border);">
-                <div id="gps-map" style="width:100%; height:100%;"></div>
-                <div class="gps-overlay-stats">
-                    <div>
-                        <span>المسافة</span>
-                        <strong id="live-gps-dist">0.00</strong> <small>km</small>
-                    </div>
-                    <div>
-                        <span>الزمن</span>
-                        <strong id="live-gps-time" style="color:var(--accent);">00:00</strong>
-                    </div>
+<div id="modal-run-detail" class="modal-overlay">
+    <div class="modal-box" style="max-width:450px; padding:0; background: #1a1f2e; overflow:hidden;">
+        <div id="detail-map" style="height: 220px; width: 100%; background: #111827; display:none;"></div>
+        <img id="detail-img" style="width:100%; height:220px; object-fit:cover; display:none;">
+        <div style="padding: 20px;">
+            <h3 id="detail-type" style="margin:0;">جري 🏃‍♂️</h3>
+            <p id="detail-date" style="color:var(--text-muted); font-size:12px; margin:5px 0 15px;"></p>
+            <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; text-align:center;">
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px;">
+                    <small style="color:var(--text-muted);">المسافة</small>
+                    <div id="detail-dist" style="font-weight:900; color:var(--primary);">0</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px;">
+                    <small style="color:var(--text-muted);">الزمن</small>
+                    <div id="detail-time" style="font-weight:900; color:#fff;">0</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.03); padding:10px; border-radius:12px;">
+                    <small style="color:var(--text-muted);">البيس</small>
+                    <div id="detail-pace" style="font-weight:900; color:var(--accent);">0</div>
                 </div>
             </div>
-
-            <div style="display:flex; gap:10px;">
-                <button id="btn-start-gps" onclick="toggleGPSLog()" class="btn btn-primary" style="flex:2; height:50px; font-size:16px;">
-                    ابدأ <i class="ri-play-fill"></i>
-                </button>
-                <button id="btn-finish-gps" onclick="finishGPSLog()" class="btn" style="flex:1; background:#ef4444; color:#fff; display:none;">
-                    إنهاء
-                </button>
-            </div>
-            <div style="text-align:center; font-size:10px; color:#6b7280; margin-top:8px;">
-                ⚠️ اترك الشاشة مفتوحة لضمان دقة التتبع
-            </div>
-        </div>
-
-<div id="view-manual" style="display:none; padding-top:10px;">
-    
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">التاريخ</label>
-            <input type="date" id="log-date" class="input-box compact-input">
-        </div>
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">النوع</label>
-            <select id="log-type" class="input-box compact-input">
-                <option value="Run">جري (Run)</option>
-                <option value="Walk">مشي (Walk)</option>
-                <option value="Cycling">عجل (Bike)</option>
-                <option value="Swimming">سباحة (Swim)</option>
-                <option value="Core">تمارين (Gym/Core)</option>
-            </select>
-        </div>
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">المسافة (km)</label>
-            <input type="number" id="log-dist" class="input-box compact-input" placeholder="0.00" step="0.01">
-        </div>
-        <div>
-            <label style="font-size:10px; color:#9ca3af; margin-right:4px;">الزمن (دقيقة)</label>
-            <input type="number" id="log-time" class="input-box compact-input" placeholder="00">
+            <button class="btn btn-primary" onclick="closeModal('modal-run-detail')" style="width:100%; margin-top:20px;">إغلاق</button>
         </div>
     </div>
-
-    <div style="margin-top: 4px;">
-        <label style="font-size:10px; color:#9ca3af; margin-right:4px;">صورة النشاط (مطلوب)</label>
-        
-        <div class="upload-magic-box" onclick="document.getElementById('log-img-file').click()">
-            <div class="magic-content">
-                <i class="ri-camera-lens-fill magic-icon"></i>
-                <span id="upload-text-hint">اضغط لإرفاق صورة</span>
-            </div>
-            <img id="img-preview" class="magic-preview" style="display:none;">
-        </div>
-
-        <input type="hidden" id="uploaded-img-url">
-        <input type="file" id="log-img-file" accept="image/*" style="display:none" onchange="uploadImageToImgBB(this)">
-        <div id="upload-status" style="font-size:10px; text-align:center; height:14px; margin-top:2px;"></div>
-    </div>
-
-    <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()" style="width:100%; margin-top:12px; height:48px;">
-        حفظ النشاط
-    </button>
 </div>
 
-    </div>
-  </div>
-</div>
+
+
+
+
+
+
+
         <div id="view-manual" style="display:none; padding:15px;">
             <div style="text-align:center; margin-bottom:15px;">
                 <h3 style="margin:0; font-size:16px;">توثيق النشاط 📝</h3>
@@ -1199,13 +1115,14 @@
             <h3 style="margin-bottom:20px;">الإعدادات ⚙️</h3>
             <div class="settings-list">
 
-<div class="setting-item" id="strava-connect-item" onclick="connectStrava()" style="border: 1px solid #fc4c02; background: rgba(252, 76, 2, 0.05); border-radius:12px; margin-bottom:10px;">
+                <div class="setting-item" onclick="connectStrava()" style="border-left: 4px solid #fc4c02; background: rgba(252, 76, 2, 0.05);">
     <div class="setting-icon" style="color:#fc4c02;"><i class="ri-links-line"></i></div>
     <div class="setting-text">
-        <span id="strava-status-text" style="color:#fff; font-weight:800;">ربط حساب Strava</span>
-        <small id="strava-status-sub">لمزامنة جرياتك تلقائياً</small>
+        <span id="strava-status-text">ربط حساب Strava</span>
+        <small>لمزامنة جرياتك تلقائياً</small>
     </div>
 </div>
+
 
                 <button class="setting-item" onclick="forceUpdateApp()">
                     <div class="setting-icon"><i class="ri-refresh-line"></i></div>
