@@ -1001,36 +1001,79 @@
 <!--  + تفاصيل الجرية + مودال تسجيل جرية جديدة-->
 
 <div id="modal-log" class="modal-overlay">
-    <div class="modal-box" style="max-width:500px; padding:0; overflow:hidden; background: #1a1f2e;">
-        <div class="modal-head" style="padding: 15px 20px; border-bottom: 1px solid var(--border);">
-            <h3 id="log-modal-title" style="margin:0; font-size: 18px;">تسجيل نشاط 🏃‍♂️</h3>
-            <button class="modal-close" onclick="closeModal('modal-log')"><i class="ri-close-line"></i></button>
+    <div class="modal-box" style="max-width:480px; padding:0; overflow:hidden; background: #1a1f2e; border-radius: 20px;">
+        
+        <div class="modal-head" style="padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h3 id="log-modal-title" style="margin:0; font-size: 20px; font-weight: 800;">تسجيل نشاط <span style="font-weight:normal;">🏃‍♂️</span></h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: var(--text-muted);">وثّق مجهودك وحافظ على الستريك!</p>
+            </div>
+            <button class="modal-close" onclick="closeModal('modal-log')" style="background:rgba(255,255,255,0.1); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;"><i class="ri-close-line"></i></button>
         </div>
-        <div class="modal-body" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
-            <button id="strava-sync-btn" class="btn btn-primary" onclick="syncFromStrava(30)" style="background: #fc4c02; border: none; width: 100%; height: 50px; margin-bottom: 20px;">
-                <i class="ri-refresh-line"></i> مزامنة تمارين الشهر من Strava
+
+        <div class="modal-body" style="padding: 24px; max-height: 80vh; overflow-y: auto;">
+            
+            <button id="strava-sync-btn" class="btn-strava" onclick="syncFromStrava(30)">
+                <svg class="strava-logo" role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+                <span>مزامنة الأنشطة من Strava</span>
             </button>
+
+            <div class="separator">أو التسجيل اليدوي</div>
+
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <input type="number" id="log-dist" placeholder="المسافة (كم)" step="0.01" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
-                <select id="log-type" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
-                    <option value="Run">جري 🏃‍♂️</option>
-                    <option value="Treadmill">تريدميل 🏃‍♀️</option>
-                    <option value="Walk">مشي 🚶‍♂️</option>
-                </select>
+                <div>
+                    <label style="font-size:11px; color:var(--text-muted); margin-bottom:5px; display:block;">المسافة (كم)</label>
+                    <input type="number" id="log-dist" placeholder="0.00" step="0.01" class="input-styled">
+                </div>
+                <div>
+                    <label style="font-size:11px; color:var(--text-muted); margin-bottom:5px; display:block;">نوع النشاط</label>
+                    <select id="log-type" class="input-styled">
+                        <option value="Run">جري 🏃‍♂️</option>
+                        <option value="Treadmill">تريدميل 🏃‍♀️</option>
+                        <option value="Walk">مشي 🚶‍♂️</option>
+                    </select>
+                </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                <input type="number" id="log-time" placeholder="الوقت (دقائق)" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
-                <input type="date" id="log-date" style="width:100%; padding:12px; background:rgba(255,255,255,0.05); border:1px solid var(--border); border-radius:10px; color:#fff;">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <label style="font-size:11px; color:var(--text-muted); margin-bottom:5px; display:block;">الوقت (دقائق)</label>
+                    <input type="number" id="log-time" placeholder="00" class="input-styled">
+                </div>
+                <div>
+                    <label style="font-size:11px; color:var(--text-muted); margin-bottom:5px; display:block;">التاريخ</label>
+                    <input type="date" id="log-date" class="input-styled">
+                </div>
             </div>
-            <div style="margin-bottom: 20px;">
-                <button onclick="document.getElementById('log-file').click()" class="btn" style="width:100%; border:1px dashed var(--border); color:var(--text-muted);">
-                    <i class="ri-image-add-line"></i> ارفع صورة الإثبات
-                </button>
-                <input type="file" id="log-file" onchange="uploadToImgBB(this)" style="display:none;">
+
+            <div style="margin-bottom: 25px;">
+                <label style="font-size:12px; color:#fff; margin-bottom:8px; display:block; font-weight:bold;">صورة الإثبات (الساعة أو التطبيق) 📸</label>
+                
+                <div class="upload-zone" id="drop-zone" onclick="document.getElementById('log-file').click()">
+                    <button class="remove-img-btn" id="remove-img-btn" onclick="event.stopPropagation(); removeImage();">
+                        <i class="ri-close-line"></i>
+                    </button>
+                    
+                    <img id="preview-image-box" src="" alt="Preview">
+
+                    <div id="upload-placeholder">
+                        <div class="upload-icon-wrapper">
+                            <i class="ri-upload-cloud-2-line"></i>
+                        </div>
+                        <div class="upload-text">اضغط لرفع صورة</div>
+                        <div class="upload-subtext">أو اسحب الصورة هنا</div>
+                    </div>
+                </div>
+
+                <input type="file" id="log-file" onchange="handleFileSelect(this)" style="display:none;" accept="image/*">
                 <input type="hidden" id="uploaded-img-url">
-                <div id="upload-status" style="font-size:10px; text-align:center; margin-top:5px; color:var(--primary);"></div>
+                
+                <div id="upload-status" style="font-size:11px; text-align:center; margin-top:8px; color:var(--text-muted); font-weight:500;"></div>
             </div>
-            <button class="btn btn-primary" onclick="submitRun()" style="width:100%; height: 50px;">حفظ النشاط</button>
+
+            <button class="btn btn-primary" onclick="submitRun()" style="width:100%; height: 55px; border-radius: 12px; font-weight:bold; font-size: 16px; box-shadow: 0 4px 20px rgba(var(--primary-rgb), 0.3);">
+                حفظ وتسجيل النشاط ✅
+            </button>
         </div>
     </div>
 </div>
@@ -1060,6 +1103,8 @@
         </div>
     </div>
 </div>
+
+
 
 
 
