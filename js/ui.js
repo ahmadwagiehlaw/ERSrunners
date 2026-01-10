@@ -781,12 +781,10 @@ function generateShareCard(dist, time, dateStr) {
 var allChallengesCache = window.allChallengesCache || (window.allChallengesCache = []);
 
 // ==================== تحميل الخلاصة العالمية ====================
-/* ==================== UI: Global Feed (Fixed Strava Branding) ==================== */
 async function loadGlobalFeed() {
     const list = document.getElementById('global-feed-list');
     if (!list) return;
 
-    // لودر التحميل
     list.innerHTML = `
         <div style="text-align:center; padding:30px; color:var(--text-muted);">
             <i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i>
@@ -808,45 +806,41 @@ async function loadGlobalFeed() {
         snap.forEach(doc => {
             const p = doc.data();
             
-            // 1. تحديد نوع النشاط ومصدره
+            // --- 1. منطق الألوان والتمييز (إصلاح جذري) ---
             const rawType = String(p.type || '').trim().toLowerCase();
             const isWalk = rawType.includes('walk') || rawType.includes('hike');
             
-            // هل هو من سترافا؟ (فحص دقيق)
-            const isStrava = (p.source === 'Strava' || p.stravaId || (p.link && p.link.includes('strava.com')));
+            // ألوان صريحة لضمان الظهور
+            // أزرق سماوي للمشي | أخضر زمردي للجري
+            const themeColor = isWalk ? '#0ea5e9' : '#10b981'; 
+            const typeIcon = isWalk ? 'ri-walk-line' : 'ri-run-line';
+            const typeLabel = isWalk ? 'تمشية' : 'جري';
 
-            // 2. ضبط الألوان (الأولوية لسترافا)
-            let themeColor = '#10b981'; // أخضر (جري) افتراضي
-            if (isStrava) themeColor = '#FC4C02'; // برتقالي (سترافا)
-            else if (isWalk) themeColor = '#0ea5e9'; // أزرق (مشي)
-
-            // 3. ضبط الأيقونة
-            let iconHtml = '';
-            if (isStrava) {
-                // أيقونة سترافا SVG واضحة
-                iconHtml = `<svg style="width:20px; height:20px; fill:#FC4C02;" viewBox="0 0 24 24"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>`;
-            } else {
-                const typeIcon = isWalk ? 'ri-walk-line' : 'ri-run-line';
-                iconHtml = `<i class="${typeIcon}" style="font-size:20px;"></i>`;
-            }
-
-            // 4. تجهيز النصوص
+            // --- 2. تجهيز البيانات ---
             const userName = p.userName || 'عداء';
             const userRegion = p.userRegion || 'مصر';
             const dist = parseFloat(p.dist || 0).toFixed(2);
             const pace = (p.dist > 0 && p.time > 0) ? (p.time / p.dist).toFixed(2) : '--';
             
             let timeAgo = 'الآن';
-            try { if (p.timestamp && typeof getArabicTimeAgo === 'function') timeAgo = getArabicTimeAgo(p.timestamp); } catch(e) {}
+            try {
+                if (p.timestamp && typeof getArabicTimeAgo === 'function') {
+                    timeAgo = getArabicTimeAgo(p.timestamp);
+                }
+            } catch(e) {}
 
             const isLiked = p.likes && currentUser && p.likes.includes(currentUser.uid);
             const likesCount = (p.likes || []).length;
             const commentsCount = p.commentsCount || 0;
 
-            // Safe JSON للمودال
-            const safeDataJson = JSON.stringify({ ...p, id: doc.id, timestamp: null }).replace(/"/g, '&quot;');
+            // بيانات المودال (Safe JSON)
+            const safeDataJson = JSON.stringify({
+                ...p,
+                id: doc.id,
+                timestamp: null 
+            }).replace(/"/g, '&quot;');
 
-            // 5. بناء كارت الخبر (HTML)
+            // --- 3. بناء الكارت ---
             html += `
             <div class="feed-card-premium" onclick="openRunDetailFromFeed('${doc.id}', ${safeDataJson})" 
                  style="background:rgba(30, 41, 59, 0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:15px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden;">
@@ -856,27 +850,22 @@ async function loadGlobalFeed() {
                 <div style="display:flex; gap:12px; align-items:flex-start;">
                     
                     <div style="flex:1;">
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
-                            <div style="width:40px; height:40px; border-radius:12px; background:${themeColor}15; color:${themeColor}; display:flex; align-items:center; justify-content:center; border:1px solid ${themeColor}30;">
-                                ${iconHtml}
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:${themeColor}20; color:${themeColor}; display:flex; align-items:center; justify-content:center; border:1px solid ${themeColor}40;">
+                                <i class="${typeIcon}" style="font-size:18px;"></i>
                             </div>
-                            
                             <div>
                                 <div style="font-size:14px; font-weight:bold; color:#f1f5f9; line-height:1.2;">${userName}</div>
-                                <div style="font-size:11px; color:#94a3b8; margin-top:2px;">${timeAgo} • ${userRegion}</div>
+                                <div style="font-size:11px; color:#94a3b8;">${timeAgo} • ${userRegion}</div>
                             </div>
                         </div>
 
                         <div style="display:flex; gap:15px; margin-bottom:12px; padding-right:5px;">
                             <div>
                                 <span style="font-size:10px; color:#64748b; display:block;">المسافة</span>
-                                <div style="display:flex; align-items:baseline; gap:2px;">
-                                    <span style="font-size:18px; font-weight:800; color:${themeColor}; letter-spacing:-0.5px;">${dist}</span>
-                                    <span style="font-size:10px; color:${themeColor};">كم</span>
-                                    ${isStrava ? `<span style="font-size:9px; background:#FC4C02; color:#fff; padding:1px 4px; border-radius:4px; margin-right:4px; transform:translateY(-2px);">Strava</span>` : ''}
-                                </div>
+                                <span style="font-size:18px; font-weight:800; color:${themeColor}; letter-spacing:-0.5px;">${dist}</span>
+                                <span style="font-size:10px; color:${themeColor};">كم</span>
                             </div>
-                            
                             <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:15px;">
                                 <span style="font-size:10px; color:#64748b; display:block;">السرعة</span>
                                 <span style="font-size:16px; font-weight:700; color:#cbd5e1;">${pace}</span>

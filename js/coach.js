@@ -1298,82 +1298,452 @@ function openCoachWorkoutLog(){
 
 
 
-// ==================== Smart Elite Library Logic ====================
+/* ==================== 🧠 ERS COACH SYSTEM (ULTIMATE CONTENT) ==================== */
 
-// 1. قاعدة بيانات التمارين الذكية (محتوى عبقري واحترافي)
+// ==================== 1. 📚 مكتبة الجريات الأساسية (الموسوعة) ====================
+const BASIC_RUNS_DATA = [
+    { 
+        title: 'Easy Run', sub: 'الجري السهل', icon: '😌', color: '#10b981',
+        desc: 'جري مريح جداً، تقدر تتكلم فيه بجمل كاملة بدون نهجان.',
+        goal: 'بناء القاعدة الهوائية (Endurance) وتعويد الجسم.',
+        zone: 'Zone 2'
+    },
+    { 
+        title: 'LSD Run', sub: 'الجري الطويل', icon: '🐢', color: '#3b82f6',
+        desc: 'Long Slow Distance. جري لمسافة طويلة برتم بطيء وثابت.',
+        goal: 'زيادة التحمل العضلي وحرق الدهون كمصدر طاقة.',
+        zone: 'Zone 2'
+    },
+    { 
+        title: 'Tempo Run', sub: 'جري التمبو', icon: '⚡', color: '#f59e0b',
+        desc: 'جري "مجهد بس مريح" (Comfortably Hard). رتم أسرع من العادي.',
+        goal: 'رفع عتبة اللاكتيك (تجري أسرع لفترة أطول بدون تعب).',
+        zone: 'Zone 3-4'
+    },
+    { 
+        title: 'Intervals', sub: 'الانترفل', icon: '🔥', color: '#ef4444',
+        desc: 'فترات جري بأقصى سرعة متبوعة بفترات راحة (مشى/وقوف).',
+        goal: 'زيادة السرعة القصوى وقوة القلب (VO2 Max).',
+        zone: 'Zone 5'
+    },
+    { 
+        title: 'Fartlek', sub: 'لعب السرعات', icon: '🔀', color: '#8b5cf6',
+        desc: 'جري عشوائي ممتع (سريع ثم بطيء) حسب الشعور والأرض.',
+        goal: 'كسر الروتين وتحسين تغيير السرعات.',
+        zone: 'Mix'
+    },
+    { 
+        title: 'Recovery Run', sub: 'جري الاستشفاء', icon: '💤', color: '#64748b',
+        desc: 'جري بطيء جداً جداً (أبطأ من الإيزي) لمدة قصيرة.',
+        goal: 'فك العضلات بعد السباقات أو التمارين الشاقة.',
+        zone: 'Zone 1'
+    }
+];
+
+// ==================== 2. 🏋️ مكتبة التمارين الذكية (المحتوى الضخم) ====================
 const ELITE_WORKOUTS_DATA = {
-    intervals: [
-        { name: "سلم السرعة (Ladder)", desc: "100m, 200m, 400m, 800m ثم العكس. الراحة هي نفس زمن الجري.", goal: "زيادة السرعة القصوى (V02 Max)" },
-        { name: "انترفل الأهرامات", desc: "5 جولات × (1د سريع جداً / 1د مشي) ثم 5 جولات × (30ث انفجار سرعة / 30ث راحة).", goal: "تحسين التحمل اللاهوائي" }
+    'warmup': [
+        { name: 'Dynamic Leg Swings', desc: 'مرجحة الرجل (أمام/خلف و جانبي) لفك الحوض.', icon: '🦵', diff: 'سهل' },
+        { name: 'High Knees', desc: 'رفع الركبة عالياً مع حركة الذراعين لتنشيط القلب.', icon: '🆙', diff: 'متوسط' },
+        { name: 'Butt Kicks', desc: 'لمس الكعب للمؤخرة لتسخين العضلة الخلفية.', icon: '👠', diff: 'سهل' },
+        { name: 'Walking Lunges', desc: 'خطوة واسعة للأمام مع النزول (تسخين شامل).', icon: '🚶', diff: 'متوسط' },
+        { name: 'Ankle Rolls', desc: 'دوران الكاحل في الاتجاهين (مهم جداً).', icon: '🔄', diff: 'سهل' }
     ],
-    tempo: [
-        { name: "الإيقاع المتصاعد", desc: "جري 10 كم: أول 4 كم سهل، ثم زيادة السرعة تدريجياً كل 2 كم لتنتهي بأقصى سرعة.", goal: "تعويد الجسم على دفع التعب" },
-        { name: "تمبو الثبات", desc: "جري مسافة 6-8 كم بسرعة ثابتة (أبطأ 15 ثانية من رقمك الشخصي في الـ 5 كم).", goal: "رفع عتبة اللاكتيك" }
+    'strength': [
+        { name: 'Bodyweight Squats', desc: 'السكوات: أهم تمرين لقوة الرجلين (3×15).', icon: '🏋️', diff: 'أساسي' },
+        { name: 'Plank Hold', desc: 'الثبات (بلانك) لتقوية عضلات الكور والظهر.', icon: '🧱', diff: 'قوي' },
+        { name: 'Single Leg Deadlift', desc: 'الرفعة الميتة برجل واحدة (للتوازن والخلفيات).', icon: '⚖️', diff: 'صعب' },
+        { name: 'Calf Raises', desc: 'رفع السمانة (على سلم أو أرض) لحماية الكاحل.', icon: '🩰', diff: 'أساسي' },
+        { name: 'Glute Bridges', desc: 'رفع الحوض من الأرض لتقوية المؤخرة وأسفل الظهر.', icon: '🌉', diff: 'متوسط' }
     ],
-    long_run: [
-        { name: "ماراثون سيميوليشن", desc: "جري 15-18 كم مع إضافة 3 كم في المنتصف بسرعة الماراثون المستهدفة.", goal: "بناء التحمل العضلي الطويل" },
-        { name: "جري الاستكشاف السلبي", desc: "جري مسافة طويلة بحيث يكون النصف الثاني أسرع من النصف الأول بـ 5-10 دقائق.", goal: "الانضباط وتوزيع المجهود" }
+    'drills': [
+        { name: 'Strides', desc: 'جريات قصيرة (100م) بتسارع تدريجي لتحسين الفورم.', icon: '🚀', diff: 'ممتع' },
+        { name: 'A-Skip', desc: 'قفزات إيقاعية مع رفع الركبة (لتوافق اليد والرجل).', icon: '🐇', diff: 'تكييك' },
+        { name: 'Cadence Drill', desc: 'جري مكاني سريع جداً 30 ثانية (لزيادة التردد).', icon: '⚡', diff: 'سريع' },
+        { name: 'Bounding', desc: 'قفزات واسعة وعالية (لزيادة طول الخطوة وقوتها).', icon: '🦘', diff: 'صعب' }
     ],
-    recovery: [
-        { name: "مساج الجري (Shakeout)", desc: "15-20 دقيقة هرولة خفيفة جداً (Pace > 8:00) مع تحريك الذراعين بحرية.", goal: "تنشيط الدورة الدموية للاستشفاء" },
-        { name: "التعافي النشط 3-2-1", desc: "3 كم مشي سريع، 2 كم هرولة، 1 كم مشي بطيء.", goal: "إزالة حمض اللاكتيك بعد السباقات" }
-    ],
-    strength: [
-        { name: "قوة الكور الفولاذية", desc: "Plank (1min), Russian Twists (50), Leg Raises (20) × 3 مجموعات.", goal: "ثبات الجذع أثناء الجري" },
-        { name: "انفجار الساقين (Plyo)", desc: "Jump Squats, Lunges, Calf Raises. كل تمرين 45 ثانية مع 15 ثانية راحة.", goal: "زيادة قوة دفع الخطوة" }
+    'injuries': [
+        { name: 'IT Band Stretch', desc: 'إطالة الشريط الجانبي (رجل فوق رجل والميل).', icon: '🩹', diff: 'علاج' },
+        { name: 'Foam Rolling', desc: 'استخدام الفوم رولر لفك العقد العضلية.', icon: '🧴', diff: 'استشفاء' },
+        { name: 'Shin Splints Exercise', desc: 'رسم الحروف بطرف القدم لتقوية الساق الأمامية.', icon: '✍️', diff: 'وقاية' },
+        { name: 'Ice & Elevate', desc: 'رفع الرجل ووضع ثلج بعد الإصابة الحادة.', icon: '🧊', diff: 'إسعاف' }
     ]
 };
 
-// 2. تحديث دالة الرسم (التعديل لفتح المودال الجديد)
-function renderCoachLibrary() {
-    const container = document.getElementById('library-types-container');
-    if (!container) return;
 
-    const categories = [
-        { id: 'intervals', name: 'انترفل / سرعات', icon: '⏱️', color: '#ef4444' },
-        { id: 'tempo', name: 'تمبو / إيقاع', icon: '⚡', color: '#3b82f6' },
-        { id: 'long_run', name: 'جري طويل', icon: '🏃‍♂️', color: '#10b981' },
-        { id: 'recovery', name: 'استشفاء', icon: '🧘‍♂️', color: '#8b5cf6' },
-        { id: 'strength', name: 'تمارين قوة', icon: '💪', color: '#f59e0b' }
+// ==================== 🛠️ محركات الرسم (Rendering Engines) ====================
+
+// 1. محرك الجدول (Team Schedule)
+window.renderTeamSchedule = function() {
+    const container = document.getElementById('schedule-scroll-container');
+    if (!container) return false;
+
+    console.log("✅ Coach: Rendering Schedule...");
+
+    // جدول محدث وأكثر جاذبية
+    const schedule = [
+        { day: 6, title: 'LSD Run', desc: 'جري طويل', icon: '🔥', color: '#3b82f6' },
+        { day: 0, title: 'Rest', desc: 'راحة سلبية', icon: '💤', color: '#64748b' },
+        { day: 1, title: 'Easy Run', desc: '5 كم هادي', icon: '🏃', color: '#10b981' },
+        { day: 2, title: 'Intervals', desc: 'سرعات', icon: '⚡', color: '#ef4444' },
+        { day: 3, title: 'Tempo', desc: 'رتم متوسط', icon: '🍂', color: '#f59e0b' },
+        { day: 4, title: 'Strength', desc: 'تقويات', icon: '💪', color: '#8b5cf6' },
+        { day: 5, title: 'Team Run', desc: 'تجمعة', icon: '🏆', color: '#eab308' }
     ];
 
-    let html = '';
-    categories.forEach(cat => {
-        const count = ELITE_WORKOUTS_DATA[cat.id].length;
-        html += `
-            <div class="sch-card" onclick="openEliteWorkoutsModal('${cat.id}', '${cat.name}')" 
-                 style="min-width: 125px; border-bottom: 3px solid ${cat.color}; cursor:pointer;">
-                <div class="sch-icon" style="color:${cat.color}; font-size:24px;">${cat.icon}</div>
-                <div class="sch-title" style="margin-top:5px;">${cat.name}</div>
-                <div class="sch-desc">${count} تمرين ذكي</div>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
-}
-
-// 3. دالة فتح مودال التمارين الذكية
-function openEliteWorkoutsModal(catId, catName) {
-    const workouts = ELITE_WORKOUTS_DATA[catId];
-    let listHtml = '';
-
-    workouts.forEach(w => {
-        listHtml += `
-            <div class="elite-workout-item" style="background:rgba(255,255,255,0.05); padding:15px; border-radius:15px; margin-bottom:12px; border-right:4px solid var(--primary);">
-                <h4 style="margin:0 0 5px 0; color:#fff;">${w.name}</h4>
-                <p style="font-size:12px; color:#cbd5e1; margin:0 0 8px 0; line-height:1.4;">${w.desc}</p>
-                <div style="font-size:10px; color:var(--primary); font-weight:bold;">🎯 الهدف: ${w.goal}</div>
-            </div>
-        `;
-    });
-
-    // تحديث محتوى مودال الكتالوج (أو مودال مخصص)
-    const titleEl = document.getElementById('catalog-title');
-    const bodyEl = document.getElementById('catalog-body');
+    const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const todayIdx = new Date().getDay(); 
+    const order = [6, 0, 1, 2, 3, 4, 5];
     
-    if(titleEl && bodyEl) {
-        titleEl.innerText = `تمارين الـ ${catName} الذكية`;
-        bodyEl.innerHTML = listHtml;
-        openModal('modal-catalog');
+    let html = '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px;">';
+    
+    order.forEach(dIdx => {
+        const item = schedule.find(s => s.day === dIdx);
+        const dayName = daysAr[dIdx];
+        const isToday = (todayIdx === dIdx);
+        
+        // تصميم الكارت
+        const border = isToday ? item.color : 'rgba(255,255,255,0.1)';
+        const bg = isToday ? `${item.color}15` : 'rgba(255,255,255,0.03)'; // 15 for low opacity
+
+        html += `
+        <div style="min-width:125px; padding:15px; border-radius:16px; background:${bg}; border:1px solid ${border}; display:flex; flex-direction:column; gap:8px; position:relative; overflow:hidden;">
+            ${isToday ? `<div style="position:absolute; top:0; right:0; background:${item.color}; color:#000; font-size:9px; padding:2px 8px; border-bottom-left-radius:8px; font-weight:bold;">اليوم</div>` : ''}
+            
+            <div style="font-size:11px; color:#9ca3af;">${dayName}</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="font-size:24px;">${item.icon}</div>
+                <div>
+                    <div style="font-size:13px; font-weight:bold; color:#fff;">${item.title}</div>
+                    <div style="font-size:10px; color:${item.color}; filter:brightness(1.2);">${item.desc}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    return true;
+};
+
+// 2. محرك مكتبة التمارين (Coach Library) - التصميم الجديد
+window.renderCoachLibrary = function() {
+    const container = document.getElementById('library-types-container');
+    if (!container) return false;
+
+    console.log("✅ Coach: Rendering Library...");
+
+    const categories = [
+        { id: 'warmup', name: 'التسخين والإطالات', icon: '🧘‍♂️', color: '#f59e0b', bg: 'linear-gradient(135deg, #f59e0b20 0%, #f59e0b05 100%)' },
+        { id: 'strength', name: 'تقويات العدائين', icon: '💪', color: '#ef4444', bg: 'linear-gradient(135deg, #ef444420 0%, #ef444405 100%)' },
+        { id: 'drills', name: 'الدريلات (تكنيك)', icon: '⚙️', color: '#3b82f6', bg: 'linear-gradient(135deg, #3b82f620 0%, #3b82f605 100%)' },
+        { id: 'injuries', name: 'تأهيل الإصابات', icon: '❤️‍🩹', color: '#10b981', bg: 'linear-gradient(135deg, #10b98120 0%, #10b98105 100%)' }
+    ];
+
+    let html = '<div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:5px;">';
+    categories.forEach(cat => {
+        const count = ELITE_WORKOUTS_DATA[cat.id]?.length || 0;
+        html += `
+        <div onclick="openEliteWorkoutsModal('${cat.id}', '${cat.name}')" 
+             style="min-width:130px; padding:15px; border-radius:16px; background:${cat.bg}; border:1px solid ${cat.color}40; cursor:pointer; text-align:center; transition:transform 0.2s;">
+            <div style="font-size:28px; margin-bottom:8px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3));">${cat.icon}</div>
+            <div style="font-size:13px; font-weight:bold; color:#fff; margin-bottom:4px;">${cat.name}</div>
+            <div style="font-size:10px; color:${cat.color}; font-weight:bold; opacity:0.8;">${count} تمرين</div>
+        </div>`;
+    });
+    html += '</div>';
+
+    container.innerHTML = html;
+    return true;
+};
+
+// 3. دالة فتح مودال التمارين الذكية (Premium Cards)
+window.openEliteWorkoutsModal = function(catId, catName) {
+    const workouts = ELITE_WORKOUTS_DATA[catId] || [];
+    
+let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+
+    // 🔥 زرار المدرب الذكي (الجديد)
+    if(workouts.length > 0) {
+        html += `
+        <button onclick="closeModal('modal-daily-workout'); SmartTrainer.startSession('${catId}')" 
+                class="btn btn-primary" style="width:100%; height:50px; font-size:16px; margin-bottom:10px; box-shadow:0 4px 15px rgba(16,185,129,0.3);">
+            <i class="ri-play-circle-line" style="font-size:20px; vertical-align:middle;"></i> ابدأ التمرين مع المدرب الذكي
+        </button>
+        `;
+    }
+        
+    if(workouts.length === 0) html += `<div style="text-align:center; padding:20px; color:#999;">جاري إضافة التمارين قريباً...</div>`;
+    
+    workouts.forEach(w => {
+        html += `
+        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:15px;">
+            <div style="width:45px; height:45px; background:rgba(255,255,255,0.05); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:24px;">
+                ${w.icon}
+            </div>
+            <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-weight:bold; color:#fff; font-size:14px;">${w.name}</div>
+                    <span style="font-size:9px; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; color:#cbd5e1;">${w.diff}</span>
+                </div>
+                <div style="font-size:11px; color:#9ca3af; margin-top:4px; line-height:1.4;">${w.desc}</div>
+            </div>
+        </div>`;
+    });
+    html += `</div>`;
+
+    fillAndOpenModal(catName, html);
+};
+
+// 4. دالة فتح المكتبة الأساسية (Basic Library - Premium)
+window.openBasicLibrary = function() {
+    let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+    BASIC_RUNS_DATA.forEach(run => {
+        html += `
+        <div style="background:rgba(255,255,255,0.03); padding:0; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+            <div style="display:flex;">
+                <div style="width:6px; background:${run.color};"></div>
+                
+                <div style="padding:15px; flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:24px;">${run.icon}</span>
+                            <div>
+                                <div style="font-weight:900; color:#fff; font-size:15px;">${run.title}</div>
+                                <div style="font-size:11px; color:${run.color}; font-weight:bold;">${run.sub}</div>
+                            </div>
+                        </div>
+                        <span style="font-size:10px; background:${run.color}20; color:${run.color}; padding:3px 8px; border-radius:20px; font-weight:bold;">${run.zone}</span>
+                    </div>
+                    
+                    <div style="font-size:12px; color:#cbd5e1; line-height:1.5; margin-bottom:8px;">${run.desc}</div>
+                    
+                    <div style="display:flex; align-items:center; gap:5px; margin-top:5px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05);">
+                        <i class="ri-focus-2-line" style="color:${run.color}; font-size:12px;"></i>
+                        <span style="font-size:10px; color:#9ca3af;">الهدف: ${run.goal}</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += `</div>`;
+
+    fillAndOpenModal("📚 أنواع الجري الأساسية", html);
+};
+
+// دالة مساعدة لفتح المودال
+function fillAndOpenModal(title, content) {
+    const tEl = document.getElementById('daily-modal-title');
+    const bEl = document.getElementById('daily-modal-body');
+    if (tEl && bEl) {
+        tEl.innerHTML = title; // innerHTML عشان لو في ايموجي
+        bEl.innerHTML = content;
+        if(typeof openModal === 'function') openModal('modal-daily-workout');
     }
 }
+
+// ==================== 🚀 مفتاح التشغيل الإجباري ====================
+(function forceStartCoach() {
+    let attempts = 0;
+    const maxAttempts = 10; // زودنا المحاولات شوية
+
+    const tryRender = () => {
+        attempts++;
+        const s = renderTeamSchedule();
+        const l = renderCoachLibrary();
+
+        if (s && l) {
+            console.log("✅ Coach System Fully Loaded!");
+        } else if (attempts < maxAttempts) {
+            setTimeout(tryRender, 300);
+        }
+    };
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', tryRender);
+    } else {
+        tryRender();
+    }
+})();
+
+
+
+
+
+
+
+
+/* ==================== 🤖 ERS SMART TRAINER ENGINE (with Voice) ==================== */
+
+const SmartTrainer = {
+    queue: [],         // قائمة التمارين اللي هتتنفذ
+    currentIndex: 0,   // احنا في الخطوة رقم كام
+    timer: null,       // مؤقت الجافاسكربت
+    timeLeft: 0,       // الثواني المتبقية
+    totalTime: 0,      // الزمن الكلي للخطوة (عشان شريط التقدم)
+    isPaused: false,
+    
+    // إعدادات افتراضية
+    workTime: 30,      // زمن التمرين (ثانية)
+    restTime: 10,      // زمن الراحة (ثانية)
+
+    // 1. بدء الكلاس (يتم استدعاؤها من المودال القديم)
+    startSession: function(categoryName) {
+        // نجهز قائمة التمارين من الداتا الموجودة
+        // بنعمل دمج ذكي: تمرين -> راحة -> تمرين -> راحة
+        const workouts = ELITE_WORKOUTS_DATA[categoryName] || [];
+        if (workouts.length === 0) return alert("لا توجد تمارين لبدء المدرب!");
+
+        this.queue = [];
+        workouts.forEach((w, index) => {
+            // إضافة التمرين
+            this.queue.push({
+                type: 'work',
+                name: w.name,
+                desc: w.desc, // عشان ينطقها لو حابب
+                duration: this.workTime,
+                color: '#10b981' // أخضر للتمرين
+            });
+
+            // إضافة راحة (ما عدا بعد آخر تمرين)
+            if (index < workouts.length - 1) {
+                this.queue.push({
+                    type: 'rest',
+                    name: 'راحة واستعداد',
+                    desc: `التالي: ${workouts[index+1].name}`,
+                    duration: this.restTime,
+                    color: '#f59e0b' // برتقالي للراحة
+                });
+            }
+        });
+
+        // إضافة شاشة "انتهى التمرين"
+        this.queue.push({ type: 'finish', name: 'عاش يا وحش! 🔥', duration: 0 });
+
+        // تهيئة وبدء
+        this.currentIndex = 0;
+        this.isPaused = false;
+        document.getElementById('modal-smart-trainer').style.display = 'flex';
+        
+        // منع انطفاء الشاشة (Wake Lock - لو المتصفح بيدعمها)
+        try { navigator.wakeLock.request('screen'); } catch(e){}
+
+        this.playStep();
+    },
+
+    // 2. تشغيل الخطوة الحالية
+    playStep: function() {
+        const step = this.queue[this.currentIndex];
+
+        if (step.type === 'finish') {
+            this.speak("عاش يا بطل، أتممت التمرين بنجاح");
+            setTimeout(() => this.quit(), 3000);
+            return;
+        }
+
+        // تحديث الواجهة
+        document.getElementById('trainer-ex-name').innerText = step.name;
+        document.getElementById('trainer-status').innerText = (step.type === 'work') ? 'إشتغل 🔥' : 'استريح 💤';
+        
+        // اسم التمرين اللي جاي
+        const nextStep = this.queue[this.currentIndex + 2]; // +2 عشان بنفوت الراحة
+        document.getElementById('trainer-next').innerText = nextStep ? `التالي: ${nextStep.name}` : "التالي: النهاية";
+
+        // ضبط العداد
+        this.timeLeft = step.duration;
+        this.totalTime = step.duration;
+        this.updateTimerUI();
+
+        // تغيير لون الدائرة
+        document.getElementById('timer-progress-ring').style.stroke = step.color;
+
+        // 🔊 النطق الصوتي (Voice Guidance)
+        if (step.type === 'work') {
+            this.speak(`ابدأ تمرين.. ${step.name}`);
+        } else {
+            this.speak("راحة.. خد نفسك واستعد");
+        }
+
+        // بدء العداد
+        this.startTimer();
+    },
+
+    // 3. العداد التنازلي (The Heartbeat)
+    startTimer: function() {
+        if (this.timer) clearInterval(this.timer);
+        
+        this.timer = setInterval(() => {
+            if (this.isPaused) return;
+
+            this.timeLeft--;
+            this.updateTimerUI();
+
+            // تنبيه صوتي في آخر 3 ثواني
+            if (this.timeLeft > 0 && this.timeLeft <= 3) {
+                // نغمة بسيطة أو نطق الرقم (اختياري)
+                 // this.speak(this.timeLeft); 
+            }
+
+            if (this.timeLeft <= 0) {
+                clearInterval(this.timer);
+                this.speak("تغيير"); // صفارة النهاية
+                this.currentIndex++;
+                this.playStep();
+            }
+        }, 1000);
+    },
+
+    // 4. تحديث الشاشة (UI Render)
+    updateTimerUI: function() {
+        const timerEl = document.getElementById('trainer-timer');
+        const ringEl = document.getElementById('timer-progress-ring');
+        
+        // كتابة الرقم
+        timerEl.innerText = this.timeLeft;
+
+        // تحريك الدائرة (SVG Stroke Dashoffset)
+        // المحيط الكامل = 754
+        const circumference = 754;
+        const offset = circumference - (this.timeLeft / this.totalTime) * circumference;
+        ringEl.style.strokeDashoffset = offset;
+    },
+
+    // 5. التحكم (Pause/Skip/Quit)
+    togglePause: function() {
+        this.isPaused = !this.isPaused;
+        const icon = document.querySelector('#btn-trainer-pause i');
+        if (this.isPaused) {
+            icon.className = 'ri-play-fill';
+            this.speak("توقف مؤقت");
+        } else {
+            icon.className = 'ri-pause-fill';
+            this.speak("استكمال");
+        }
+    },
+
+    skip: function() {
+        clearInterval(this.timer);
+        this.currentIndex++;
+        this.playStep();
+    },
+
+    quit: function() {
+        if (this.timer) clearInterval(this.timer);
+        document.getElementById('modal-smart-trainer').style.display = 'none';
+        this.speak("تم إنهاء الجلسة");
+    },
+
+    // 6. محرك الكلام (Text-to-Speech Engine) 🗣️
+    speak: function(text) {
+        if (!window.speechSynthesis) return;
+
+        // إلغاء أي كلام قديم عشان ميتداخلش
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ar-SA'; // اللغة العربية
+        utterance.rate = 0.9;     // السرعة (1 طبيعي، 0.9 أهدى شوية للمدرب)
+        utterance.pitch = 1;      // حدة الصوت
+        
+        window.speechSynthesis.speak(utterance);
+    }
+};

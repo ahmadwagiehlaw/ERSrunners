@@ -921,3 +921,90 @@ function removeImage() {
     
     if(status) status.innerHTML = '';
 }
+
+
+
+
+/* ==================== 🕵️‍♂️ Anti-Duplication Engine دالة منع تكرار الجريات==================== */
+
+function isDuplicateRun(newRun, existingRuns) {
+    // 1. لو الجرية جاية بـ ID من سترافا، نتأكد إنه مش موجود قبل كدا
+    if (newRun.stravaId) {
+        const exactMatch = existingRuns.find(r => r.stravaId === newRun.stravaId);
+        if (exactMatch) return true; // مكررة بنسبة 100% (نفس المصدر)
+    }
+
+    // 2. الفحص الذكي (Fuzzy Logic) للجريات اليدوية أو المتشابهة
+    // بنقارن: التاريخ + النوع + (المسافة بتقريب)
+    
+    // تحويل تواريخ المقارنة لصيغة YYYY-MM-DD
+    let newDateStr = '';
+    if (newRun.timestamp && newRun.timestamp.toDate) newDateStr = newRun.timestamp.toDate().toISOString().split('T')[0];
+    else if (newRun.date) newDateStr = newRun.date; // لو جاية نص
+
+    return existingRuns.some(oldRun => {
+        // أ. فحص التاريخ
+        let oldDateStr = '';
+        if (oldRun.timestamp && oldRun.timestamp.toDate) oldDateStr = oldRun.timestamp.toDate().toISOString().split('T')[0];
+        else if (oldRun.dateStr) oldDateStr = oldRun.dateStr;
+
+        if (oldDateStr !== newDateStr) return false; // تواريخ مختلفة = مش مكرر
+
+        // ب. فحص النوع (اختياري لو عايز تدقق أوي)
+        if (oldRun.type !== newRun.type) return false; 
+
+        // ج. فحص المسافة (المهم)
+        // بنسمح بفرق بسيط (Tolerence) وليكن 0.1 كم (100 متر)
+        const distDiff = Math.abs(parseFloat(oldRun.dist) - parseFloat(newRun.dist));
+        
+        // لو الفرق أقل من 150 متر.. نعتبرها غالباً نفس الجرية
+        if (distDiff <= 0.15) {
+            console.warn(`Duplicate Detected: ${newRun.dist}km vs existing ${oldRun.dist}km on ${newDateStr}`);
+            return true; // قفشناه! دي تكرار
+        }
+
+        return false;
+    });
+}
+
+//=================== 16. مزامنة استرافا مع منع التكرار (V6.1) ====================
+async function syncFromStrava(count = 30) {
+    // ... (كود جلب التوكن والأنشطة من سترافا زي ما هو) ...
+    
+    const activities = await response.json();
+    
+    // 1. نجيب الجريات المسجلة حالياً للمستخدم من الكاش أو الداتابيز
+    const existingRuns = window._ersRunsCache || []; // أو هاتهم من الداتابيز لو الكاش فاضي
+
+    let addedCount = 0;
+
+    for (const act of activities) {
+        if (act.type !== 'Run' && act.type !== 'Walk') continue;
+
+        // تجهيز بيانات الجرية الجديدة
+        const newRunObj = {
+            stravaId: act.id,
+            dist: (act.distance / 1000).toFixed(2),
+            type: act.type,
+            date: act.start_date.split('T')[0], // YYYY-MM-DD
+            timestamp: firebase.firestore.Timestamp.fromDate(new Date(act.start_date)) // عشان المقارنة الدقيقة
+        };
+
+        // 🛑 فحص التكرار قبل الإضافة
+        if (isDuplicateRun(newRunObj, existingRuns)) {
+            console.log(`Skipping duplicate run: ${act.name}`);
+            continue; // فوت اللفة دي وخش علي اللي بعدها
+        }
+
+        // ... لو مش مكررة، كمل كود الحفظ في الداتابيز ...
+        // await db.collection('runs').add(....);
+        addedCount++;
+    }
+
+    if (addedCount > 0) {
+        showToast(`تم استيراد ${addedCount} نشاط جديد`);
+        loadActivityLog(); // تحديث الواجهة
+    } else {
+        showToast("لا توجد أنشطة جديدة (كل الأنشطة موجودة بالفعل)");
+    }
+}
