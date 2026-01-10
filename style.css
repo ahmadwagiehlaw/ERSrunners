@@ -7158,7 +7158,7 @@ body {
 }
 
 .hello-text {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--primary);
     margin-bottom: 3px;
     opacity: 0.9;
@@ -7178,19 +7178,17 @@ body {
     line-height: 1;
 }
 
-/* 6. بادج الستريك (مضغوط) */
+/* 6. بادج الستريك (النار) */
 .header-streak {
-    background: rgba(245, 158, 11, 0.15);
-    color: #f59e0b;
-    padding: 0 4px;
-    border-radius: 4px;
+    background: linear-gradient(to right, #f59e0b, #d97706);
+    padding: 2px 8px;
+    border-radius: 20px;
     font-size: 10px;
-    font-weight: 700;
+    font-weight: 900;
     display: flex;
     align-items: center;
-    gap: 2px;
-    height: 18px;
-    border: 1px solid rgba(245, 158, 11, 0.2);
+    gap: 3px;
+    color: #fff;
 }
 
 /* 7. الأزرار اليسرى (تقليل الفراغات) */
