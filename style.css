@@ -10,7 +10,15 @@
     --font-main: 'Tajawal', sans-serif;
 }
 
-
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    margin: 0; padding: 0;
+    overflow-x: hidden;
+    padding-bottom: 80px; 
+}
 
 /* Auth Screen */
 .full-screen-overlay {
@@ -44,181 +52,66 @@ input:focus { border-color: var(--primary); background: rgba(16,185,129,0.05); }
 .btn-text { background: transparent; color: var(--text-muted); font-size: 13px; }
 .btn-outline-danger { background: transparent; border: 1px solid #ef4444; color: #ef4444; }
 
-
-
-
-/* ==================== 🛠️ MASTER LAYOUT FIX (Android & iOS) ==================== */
-
-/* 1. ضبط جذري للصفحة لمنع الحركة العرضية */
-html {
-    box-sizing: border-box;
-    -webkit-text-size-adjust: 100%; /* يمنع تكبير الخط التلقائي في الأندرويد */
-    overflow-x: hidden; /* يمنع السكرول الأفقي تماماً */
-}
-
-*, *:before, *:after {
-    box-sizing: inherit; /* يضمن إن البادينج لا يزيد عرض العنصر */
-}
-
-body {
-    font-family: var(--font-main);
-    background-color: var(--bg-dark);
-    color: var(--text-main);
-    margin: 0; 
-    padding: 0;
-    width: 100%;
-    max-width: 100%;
-    overflow-x: hidden; /* تأكيد منع الخروج عن الشاشة */
-    padding-top: 95px; /* ✅ مسافة تعويضية عشان الهيدر الثابت */
-    padding-bottom: 90px; /* ✅ مسافة عشان النافبار اللي تحت */
-}
-
-/* 2. الهيدر الزجاجي (الثبات التام) */
+/* ==================== Premium Glass Header ==================== */
 .glass-header {
-    position: fixed; /* تثبيت */
+/* الإبقاء على كافة خصائصك كما هي */
+    background: #0a0f19 !important;
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: sticky;
     top: 0;
-    left: 0;
-    right: 0; /* استخدام right:0 أفضل من width:100% في التجاوب */
-    z-index: 5000; /* طبقة عالية جداً */
-    
-    background: rgba(17, 24, 39, 0.95); /* لون غامق شبه شفاف */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    
-    /* التعامل مع النوتش */
-    padding-top: env(safe-area-inset-top, 15px); 
-    padding-bottom: 10px;
-    
-    /* توسيط المحتوى */
-    display: flex;
-    justify-content: center;
+    z-index: 5000;
+
+    /* 🔥 الإصلاح الحقيقي لمشكلة النوتش 🔥 */
+    padding-top: env(safe-area-inset-top) !important; 
+    height: auto !important; /* السماح للهيدر بالتمدد ليشمل منطقة النوتش */
+    min-height: 80px; /* الحفاظ على الارتفاع الأصلي للمحتوى */
 }
 
-/* 3. حاوية الهيدر الداخلية (تمنع العناصر تلزق في الحواف) */
+/* التأكد من توسيط المحتوى داخل الارتفاع الجديد */
 .header-inner {
-    width: 100%;
-    max-width: 100%; /* أمان */
-    padding: 0 15px; /* مسافة جانبية مريحة */
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 55px; /* ارتفاع ثابت للمحتوى الداخلي */
+    height: 80px; /* ارتفاع ثابت للمحتوى الداخلي فقط */
+    padding: 0 15px;
+}
+.header-inner { display: flex; justify-content: space-between; align-items: center; }
+.header-right { display: flex; align-items: center; gap: 15px; }
+
+.brand-logo {
+    height: 55px; width: auto; object-fit: contain;
+    border: none; border-radius: 0; background: transparent; box-shadow: none;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.4));
+    transition: transform 0.3s;
+}
+.brand-logo:active { transform: scale(0.95); }
+
+.user-greeting-box { display: flex; flex-direction: column; justify-content: center; }
+.hello-text { font-size: 11px; color: var(--primary); font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px; }
+.user-greeting-box h3 {
+    margin: 0; font-size: 15px; font-weight: 800; color: #fff; line-height: 1.2;
+    max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-/* 4. الجزء اليمين (اللوجو والاسم) */
-.header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px; /* مسافة صغيرة بين اللوجو والاسم */
-}
-
-.logo-container .brand-logo {
-    height: 48px; /* حجم اللوجو المناسب */
-    width: auto;
-    object-fit: contain;
-    display: block;
-}
-
-/* 5. نصوص الترحيب */
-.user-greeting-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    line-height: 1.1;
-}
-
-.hello-text {
-    font-size: 10px;
-    color: var(--primary);
-    font-weight: bold;
-    margin-bottom: 2px;
-}
-
-.user-info-row {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.header-name {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 800;
-    color: #fff;
-    white-space: nowrap; /* يمنع الاسم ينزل سطرين */
-}
-
-/* 6. بادج الستريك (النار) */
-.header-streak {
-    background: rgba(255, 165, 0, 0.15);
-    color: #fb923c;
-    padding: 1px 5px;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    border: 1px solid rgba(255, 165, 0, 0.3);
-    height: 20px;
-}
-
-/* 7. الأزرار اليسرى (الإجراءات) */
 .header-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.05); padding: 6px;
+    border-radius: 50px; border: 1px solid rgba(255,255,255,0.05);
 }
-
-/* زر الإضافة الكريستالي */
-.add-btn-crystal {
-    width: 40px;
-    height: 40px;
-    background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 20px;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
-    position: relative;
-    cursor: pointer;
-    flex-shrink: 0; /* يمنع الزرار ينضغط */
+.icon-badge {
+    width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;
+    border-radius: 50%; color: #fff; cursor: pointer; transition: 0.2s; position: relative;
 }
+.icon-badge:active { background: rgba(255,255,255,0.1); transform: scale(0.9); }
+.icon-badge i { font-size: 20px; }
+.icon-badge.add-btn { background: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary-glow); margin-left: 0; }
 
-/* الأزرار الصغيرة */
-.action-group-mini {
-    display: flex;
-    gap: 8px;
-}
-
-.icon-badge-mini {
-    width: 38px;
-    height: 38px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #fff;
-    font-size: 18px;
-    cursor: pointer;
-    position: relative;
-    flex-shrink: 0;
-}
-
-
-
-
-
-
-
-
-
-
+/* Main Views */
+.view { display: none; animation: fadeIn 0.3s ease; padding: 20px; }
+.view.active { display: block; }
+@keyframes fadeIn { from {opacity:0; transform:translateY(5px);} to {opacity:1; transform:translateY(0);} }
 
 /* Cards */
 /* ==================== V3.1 Hero Rank Card (World Class Design) ==================== */
@@ -2132,6 +2025,68 @@ display: grid;
     100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); transform: scale(1); }
 }
 
+/* ==================== إصلاح زحمة الهيدر في الموبايل hEADER جديد==================== */
+
+@media (max-width: 480px) {
+    /* 1. تقليل الهوامش الجانبية للشاشة */
+    .glass-header {
+        padding-left: 12px;
+        padding-right: 12px;
+        padding-top: calc(10px + env(safe-area-inset-top));
+        padding-bottom: 10px;
+/* حل مشكلة الآيفون (Safe Area) */
+    padding-top: env(safe-area-inset-top); 
+    height: calc(80px + env(safe-area-inset-top));
+    
+    position: sticky;
+    top: 0;
+    z-index: 5000;
+}
+    }
+
+    /* 2. تصغير اللوجو */
+    .brand-logo {
+        height: 55px; /* كان 55px */
+    }
+
+    /* 3. تقليل الفراغ بين اللوجو والاسم */
+    .header-right {
+        gap: 10px; /* كان 15px */
+    }
+
+    /* 4. تصغير خط الترحيب والاسم */
+    .hello-text {
+        font-size: 11px;
+    }
+    .user-greeting-box h3 {
+        font-size: 13px; /* كان 15px */
+        max-width: 90px; /* لضمان عدم تمدد الاسم الطويل */
+    }
+
+    /* 5. ضغط حاوية الأزرار */
+    .header-actions {
+        gap: 3px; /* تقليل المسافة بين الزراير */
+        padding: 4px; /* تقليل الحشو الداخلي */
+    }
+
+    /* 6. تصغير الأزرار الدائرية */
+    .icon-badge {
+        width: 32px; /* كان 38px */
+        height: 32px;
+    }
+    .icon-badge i {
+        font-size: 16px; /* تصغير الأيقونة داخل الزر */
+    }
+
+    /* 7. ضبط شارة الستريك (النار) */
+    .streak-badge {
+        padding: 1px 6px;
+        font-size: 10px;
+    }
+    .streak-badge i {
+        font-size: 10px;
+    }
+}
 
 /* تصميم إشعار الإدارة الفخم (V4.0 - Midnight Neon) */
 .notif-item.admin-alert {
@@ -5778,6 +5733,39 @@ body {
     color: #fff;
 }
 
+/* الهيدر الأساسي - أغمق وأفخم */
+.glass-header {
+    background: rgba(10, 15, 25, 0.98) !important; /* أسود ملكي عميق */
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    height: 85px;
+    padding: 0 15px;
+    position: sticky;
+    top: 0;
+    z-index: 5000;
+}
+
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 100%;
+}
+
+/* اللوجو - واضح وبدون وهج مبالغ */
+.logo-container {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 5px;
+    border-radius: 12px;
+    margin-left: 12px;
+}
+
+.brand-logo {
+    height: 48px; /* حجم كبير وواضح */
+    width: auto;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    display: block;
+}
 
 /* الترحيب واسم المستخدم */
 .user-greeting-box {
@@ -6439,7 +6427,92 @@ body {
 
 
 
- /* --- Input Fields Styling --- */
+/* ==================== 🛠️ FIX ANDROID OVERFLOW  حل سحري لمشكلة زيادة عرض الهيدر==================== */
+
+/* 1. إجبار المتصفح على حساب العرض بدقة (بما فيه الـ Padding) */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. منع السكرول الجانبي نهائياً في الصفحة */
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; /* هذا السطر هو الحل السحري */
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+/* 3. إصلاح الهيدر تحديداً */
+/* استبدل .navbar باسم الكلاس الخاص بالهيدر عندك لو مختلف */
+.navbar, header, .header-container {
+    width: 100%;      /* استخدم % بدلاً من vw */
+    max-width: 100vw; /* ضمان عدم تجاوز الشاشة */
+    padding-left: 15px; /* مسافات آمنة */
+    padding-right: 15px;
+    
+    /* لو بتستخدم position fixed */
+    left: 0;
+    right: 0;
+}
+
+
+
+
+/* --- Strava Button Style --- */
+.btn-strava {
+    background: #FC4C02;
+    color: white;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    width: 100%;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 15px rgba(252, 76, 2, 0.3);
+}
+
+.btn-strava:active {
+    transform: scale(0.98);
+}
+
+.strava-logo {
+    width: 24px;
+    height: 24px;
+    fill: white; /* لجعل الشعار أبيض */
+}
+
+/* --- Separator --- */
+.separator {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    margin: 20px 0;
+}
+
+.separator::before, .separator::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.separator:not(:empty)::before {
+    margin-right: .25em;
+}
+
+.separator:not(:empty)::after {
+    margin-left: .25em;
+}
+
+/* --- Input Fields Styling --- */
 .input-styled {
     width: 100%;
     padding: 14px 12px;
@@ -6639,6 +6712,88 @@ body {
     display: block; /* يظهر لما نضيف كلاس active */
 }
 
+/* ==================== 🛠️ HEADER FIXES (YOUR DESIGN) ==================== */
+
+/* 1. إصلاح مشكلة الزوم في أندرويد (أساسي) */
+html, body {
+    width: 100%;
+    overflow-x: hidden; /* يمنع الصفحة إنها تعرض زيادة عن اللزوم */
+}
+body {
+    padding-top: 100px; /* توسيع مسافة عشان الهيدر الثابت */
+}
+
+/* 2. الهيدر الزجاجي (تثبيت + نوتش + أندرويد) */
+.glass-header {
+    position: fixed; /* تثبيت الهيدر */
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 5000; /* طبقة عالية جداً فوق كل شيء */
+    
+    background: rgba(17, 24, 39, 0.90); /* خلفية زجاجية غامقة */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    
+    /* ⚠️ التعامل مع النوتش (Notch Safe Area) */
+    padding-top: env(safe-area-inset-top, 15px); 
+    padding-bottom: 10px;
+}
+
+/* الحاوية الداخلية (تضمن عدم خروج العناصر عن الشاشة) */
+.header-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 15px; /* مسافات جانبية آمنة */
+    box-sizing: border-box; /* مهم جداً للأندرويد */
+}
+
+/* 3. الجزء اليمين (اللوجو + الاسم) */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* ✅ تقليل المسافة بين اللوجو والاسم (كانت كبيرة) */
+}
+
+/* 4. تكبير اللوجو */
+.logo-container .brand-logo {
+    height: 55px; /* ✅ تكبير اللوجو (كان صغير) */
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+/* 5. تنسيق نصوص الترحيب */
+.user-greeting-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.2;
+}
+
+.hello-text {
+    font-size: 11px;
+    color: var(--primary); /* اللون الأخضر */
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.user-info-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.header-name {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: #fff;
+}
 
 /* 6. بادج الستريك (النار) */
 .header-streak {
@@ -6933,3 +7088,166 @@ body {
 .control-btn:active { transform: scale(0.9); }
 
 
+
+/* ==================== 🛠️ MASTER LAYOUT FIX (Android & iOS) ==================== */
+
+/* 1. ضبط جذري للصفحة لمنع الحركة العرضية */
+html {
+    box-sizing: border-box;
+    -webkit-text-size-adjust: 100%; /* يمنع تكبير الخط التلقائي في الأندرويد */
+    overflow-x: hidden; /* يمنع السكرول الأفقي تماماً */
+}
+
+*, *:before, *:after {
+    box-sizing: inherit; /* يضمن إن البادينج لا يزيد عرض العنصر */
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    margin: 0; 
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; /* تأكيد منع الخروج عن الشاشة */
+    padding-top: 95px; /* ✅ مسافة تعويضية عشان الهيدر الثابت */
+    padding-bottom: 90px; /* ✅ مسافة عشان النافبار اللي تحت */
+}
+
+/* 2. الهيدر الزجاجي (الثبات التام) */
+.glass-header {
+    position: fixed; /* تثبيت */
+    top: 0;
+    left: 0;
+    right: 0; /* استخدام right:0 أفضل من width:100% في التجاوب */
+    z-index: 5000; /* طبقة عالية جداً */
+    
+    background: rgba(17, 24, 39, 0.95); /* لون غامق شبه شفاف */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    
+    /* التعامل مع النوتش */
+    padding-top: env(safe-area-inset-top, 15px); 
+    padding-bottom: 10px;
+    
+    /* توسيط المحتوى */
+    display: flex;
+    justify-content: center;
+}
+
+/* 3. حاوية الهيدر الداخلية (تمنع العناصر تلزق في الحواف) */
+.header-inner {
+    width: 100%;
+    max-width: 100%; /* أمان */
+    padding: 0 15px; /* مسافة جانبية مريحة */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 55px; /* ارتفاع ثابت للمحتوى الداخلي */
+}
+
+/* 4. الجزء اليمين (اللوجو والاسم) */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* مسافة صغيرة بين اللوجو والاسم */
+}
+
+.logo-container .brand-logo {
+    height: 48px; /* حجم اللوجو المناسب */
+    width: auto;
+    object-fit: contain;
+    display: block;
+}
+
+/* 5. نصوص الترحيب */
+.user-greeting-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.1;
+}
+
+.hello-text {
+    font-size: 10px;
+    color: var(--primary);
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.user-info-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.header-name {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 800;
+    color: #fff;
+    white-space: nowrap; /* يمنع الاسم ينزل سطرين */
+}
+
+/* 6. بادج الستريك (النار) */
+.header-streak {
+    background: rgba(255, 165, 0, 0.15);
+    color: #fb923c;
+    padding: 1px 5px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+    height: 20px;
+}
+
+/* 7. الأزرار اليسرى (الإجراءات) */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* زر الإضافة الكريستالي */
+.add-btn-crystal {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 20px;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0; /* يمنع الزرار ينضغط */
+}
+
+/* الأزرار الصغيرة */
+.action-group-mini {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-badge-mini {
+    width: 38px;
+    height: 38px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+}
