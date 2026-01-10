@@ -1771,8 +1771,7 @@ const clickAttr = gov.mvp.uid ? `onclick="openLeagueHero('${gov.mvp.uid}')" styl
 
 
 
-// ==================== 🦸‍♂️ LEAGUE HERO DETAILS (MVP LOGS) ====================
-// ==================== 🦸‍♂️ LEAGUE HERO DETAILS (Glass Edition) ====================
+ // ==================== 🦸‍♂️ LEAGUE HERO DETAILS (Glass Edition) ====================
 
 async function openLeagueHero(uid) {
     const modal = document.getElementById('modal-view-user');

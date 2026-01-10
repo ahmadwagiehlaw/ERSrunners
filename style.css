@@ -6605,3 +6605,88 @@ html, body {
     justify-content: center;
     z-index: 10;
 }
+
+
+
+/* Strava سترافا ايقونات عند الجرياتIcon in Lists */
+.icon-strava-brand {
+    width: 20px;
+    height: 20px;
+    fill: #FC4C02; /* لون سترافا الرسمي */
+}
+
+/* تمييز الخلفية لأنشطة سترافا (اختياري - لمسة جمالية) */
+.strava-bg-hint {
+    background: linear-gradient(to right, rgba(252, 76, 2, 0.05), transparent) !important;
+    border-right-color: #FC4C02 !important;
+}
+
+
+/* ==================== 💎 PREMIUM FEED CARDS ==================== */
+
+/* 1. حاوية الكارت الزجاجية */
+.feed-card-premium {
+    /* خلفية شفافة غامقة */
+    background: rgba(30, 41, 59, 0.75); 
+    /* تأثير الضباب (Blur) */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    /* حدود خفيفة جداً */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 12px;
+    position: relative;
+    overflow: hidden;
+    /* تحسين الأداء */
+    transform: translateZ(0); 
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* تأثير الضغط (تفاعل) */
+.feed-card-premium:active {
+    transform: scale(0.98);
+}
+
+/* 2. أيقونات سترافا (Strava Specifics) */
+.strava-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* خلفية برتقالية خفيفة جداً */
+    background: rgba(252, 76, 2, 0.1);
+    color: #FC4C02;
+    border: 1px solid rgba(252, 76, 2, 0.2);
+}
+
+/* شارة "Strava" النصية الصغيرة */
+.strava-badge-text {
+    font-size: 9px;
+    background: #FC4C02;
+    color: #fff;
+    padding: 1px 5px;
+    border-radius: 4px;
+    margin-right: 5px;
+    font-weight: bold;
+    display: inline-block;
+    vertical-align: middle;
+    transform: translateY(-1px);
+}
+
+/* 3. تنسيق الخطوط والأرقام */
+.feed-dist-num {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1;
+}
+
+.feed-label-small {
+    font-size: 10px;
+    color: #94a3b8; /* لون رمادي فاتح */
+    display: block;
+    margin-bottom: 2px;
+}

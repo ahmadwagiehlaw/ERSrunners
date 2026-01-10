@@ -422,13 +422,28 @@ function loadActivityLog() {
                   
                   // تمييز الألوان والأيقونات
                   const themeColor = isWalk ? '#3b82f6' : 'var(--primary)'; 
-                  const icon = isWalk ? 'ri-walk-line' : 'ri-run-line';
-                  const hasMap = r.polyline ? `<i class="ri-map-2-line" style="color:var(--primary)"></i>` : '';
-                 const hasImg = (r.img || r.imgUrl) ? `<i class="ri-image-line" style="color:var(--accent)"></i>` : '';
+                  // 1. التحقق هل الجرية من سترافا؟
+                  const isStrava = (r.source === 'Strava' || r.stravaId);
 
-                  // --- التصحيح: إعادة بناء كارت السجل الشخصي ---
+                  // 2. تحديد الأيقونة: لو سترافا نعرض اللوجو، لو عادي نعرض أيقونة الجري/المشي
+                  let iconHtml = '';
+                  if (isStrava) {
+                      // أيقونة سترافا SVG
+                      iconHtml = `<svg class="icon-strava-brand" viewBox="0 0 24 24"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>`;
+                  } else {
+                      // الأيقونة العادية
+                      const iconClass = isWalk ? 'ri-walk-line' : 'ri-run-line';
+                      iconHtml = `<i class="${iconClass}"></i>`;
+                  }
+
+                  const hasMap = r.polyline ? `<i class="ri-map-2-line" style="color:var(--primary)"></i>` : '';
+                  const hasImg = (r.img || r.imgUrl) ? `<i class="ri-image-line" style="color:var(--accent)"></i>` : '';
+                  
+                  // كلاس إضافي لتمييز الخلفية قليلاً (اختياري)
+                  const extraClass = isStrava ? 'strava-bg-hint' : '';
+
                   html += `
-                  <div class="log-item" onclick="openRunDetail('${r.id}')" style="display:flex; align-items:center; gap:12px; padding:12px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:8px; border-right:3px solid ${themeColor}; cursor:pointer; position:relative;">
+                  <div class="log-item ${extraClass}" onclick="openRunDetail('${r.id}')" style="display:flex; align-items:center; gap:12px; padding:12px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:8px; border-right:3px solid ${isStrava ? '#FC4C02' : themeColor}; cursor:pointer; position:relative;">
                       
                       <div style="display:flex; flex-direction:column; align-items:center; min-width:40px; text-align:center;">
                           <span style="font-size:10px; color:var(--text-muted);">${dayName}</span>
@@ -436,12 +451,13 @@ function loadActivityLog() {
                       </div>
                   
                       <div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; color:${themeColor}; font-size:18px;">
-                          <i class="${icon}"></i>
+                          ${iconHtml}
                       </div>
                   
                       <div style="flex:1;">
-                          <div style="font-size:14px; color:#fff; font-weight:bold;">
+                          <div style="font-size:14px; color:#fff; font-weight:bold; display:flex; align-items:center; gap:6px;">
                               ${r.dist} <span style="font-size:10px; font-weight:normal; color:var(--text-muted);">كم</span>
+                              ${isStrava ? '<span style="font-size:9px; background:#FC4C02; color:#fff; padding:1px 4px; border-radius:4px;">Strava</span>' : ''}
                           </div>
                           <div style="font-size:11px; color:var(--text-muted);">
                               ${pace} د/كم • ${r.time} دقيقة ${hasMap} ${hasImg}
@@ -449,15 +465,15 @@ function loadActivityLog() {
                       </div>
                   
                       <div style="display:flex; gap:8px;" onclick="event.stopPropagation();">
-<button onclick="window.prepareEditRun('${r.id}')" style="background:none; border:none; color:#9ca3af; cursor:pointer; padding:4px;">
-    <i class="ri-pencil-line"></i>
-</button>
-</button>
+                          <button onclick="window.prepareEditRun('${r.id}')" style="background:none; border:none; color:#9ca3af; cursor:pointer; padding:4px;">
+                              <i class="ri-pencil-line"></i>
+                          </button>
                           <button onclick="deleteRun('${r.id}', '${r.dist}')" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px;">
                               <i class="ri-delete-bin-line"></i>
                           </button>
                       </div>
                   </div>`;
+                  
               });
               html += `</div>`;
           }
@@ -852,4 +868,56 @@ function openRunDetail(runId) {
     }
 
     openModal('modal-run-detail');
+}
+
+
+
+// ====3. كود Javascript (للتحكم في عرض الصورة - ضعه في ملف activities.js أو في النهاية)
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            // إظهار الصورة وإخفاء النص
+            const previewBox = document.getElementById('preview-image-box');
+            const placeholder = document.getElementById('upload-placeholder');
+            const dropZone = document.getElementById('drop-zone');
+            const removeBtn = document.getElementById('remove-img-btn');
+
+            previewBox.src = e.target.result;
+            previewBox.style.display = 'block';
+            placeholder.style.display = 'none';
+            dropZone.classList.add('has-image');
+            removeBtn.style.display = 'flex';
+        }
+
+        reader.readAsDataURL(file);
+        
+        // استدعاء دالة الرفع الأصلية الخاصة بك
+        if(typeof uploadToImgBB === 'function') {
+            uploadToImgBB(input);
+        }
+    }
+}
+
+function removeImage() {
+    const input = document.getElementById('log-file');
+    const previewBox = document.getElementById('preview-image-box');
+    const placeholder = document.getElementById('upload-placeholder');
+    const dropZone = document.getElementById('drop-zone');
+    const removeBtn = document.getElementById('remove-img-btn');
+    const hiddenUrl = document.getElementById('uploaded-img-url');
+    const status = document.getElementById('upload-status');
+
+    input.value = ''; // تصفير الملف
+    hiddenUrl.value = ''; // تصفير الرابط
+    
+    previewBox.src = '';
+    previewBox.style.display = 'none';
+    placeholder.style.display = 'block';
+    dropZone.classList.remove('has-image');
+    removeBtn.style.display = 'none';
+    
+    if(status) status.innerHTML = '';
 }
