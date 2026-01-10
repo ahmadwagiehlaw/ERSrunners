@@ -1,6 +1,6 @@
 {
   "app": "ERS Runners",
-  "version": "2.2.0",
+  "version": "2.5.0",
   "cache": "ers-cache-v4.1.0",
   "assets": [
     "./",

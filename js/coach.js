@@ -1571,179 +1571,461 @@ function fillAndOpenModal(title, content) {
 
 
 
+/* ==================== 🏋️‍♂️ ERS COACH DAILY WORKOUT ==================== *
+/* ==================== 🧠 ERS COACH SYSTEM (BUG-FREE VERSION) ==================== */
 
-/* ==================== 🤖 ERS SMART TRAINER ENGINE (with Voice) ==================== */
+// ==================== 1. قواعد البيانات (Data) ====================
+// نستخدم window لضمان الوصول للبيانات من أي مكان
+window.ELITE_WORKOUTS_DATA = {
+    'warmup': [
+        { name: 'Dynamic Leg Swings', desc: 'مرجحة الرجل (أمام/خلف وجانبي)', goal: 'Mobility' },
+        { name: 'High Knees', desc: 'رفع الركبة عالياً بسرعة', goal: 'Cardio' },
+        { name: 'Butt Kicks', desc: 'لمس الكعب للمؤخرة', goal: 'Warmup' },
+        { name: 'Walking Lunges', desc: 'خطوة واسعة للأمام مع النزول', goal: 'Activation' },
+        { name: 'Ankle Rolls', desc: 'دوران الكاحل في الاتجاهين', goal: 'Joints' }
+    ],
+    'strength': [
+        { name: 'Bodyweight Squats', desc: 'السكوات (القرفصاء)', goal: 'Legs' },
+        { name: 'Plank Hold', desc: 'تمرين الثبات', goal: 'Core' },
+        { name: 'Push-ups', desc: 'ضغط', goal: 'Upper Body' },
+        { name: 'Glute Bridges', desc: 'رفع الحوض من الأرض', goal: 'Glutes' },
+        { name: 'Calf Raises', desc: 'رفع السمانة', goal: 'Ankles' }
+    ],
+    'drills': [
+        { name: 'A-Skip', desc: 'قفزات إيقاعية مع رفع الركبة', goal: 'Form' },
+        { name: 'Cadence Drill', desc: 'جري سريع مكاني 30 ثانية', goal: 'Speed' },
+        { name: 'Bounding', desc: 'قفزات واسعة وعالية', goal: 'Power' },
+        { name: 'Strides', desc: 'جريات قصيرة متسارعة', goal: 'Technique' }
+    ],
+    'injuries': [
+        { name: 'IT Band Stretch', desc: 'إطالة الشريط الجانبي', goal: 'Rehab' },
+        { name: 'Calf Stretch', desc: 'إطالة السمانة', goal: 'Recovery' },
+        { name: 'Foam Rolling', desc: 'تدليك بالفوم رولر', goal: 'Massage' }
+    ]
+};
 
-const SmartTrainer = {
-    queue: [],         // قائمة التمارين اللي هتتنفذ
-    currentIndex: 0,   // احنا في الخطوة رقم كام
-    timer: null,       // مؤقت الجافاسكربت
-    timeLeft: 0,       // الثواني المتبقية
-    totalTime: 0,      // الزمن الكلي للخطوة (عشان شريط التقدم)
+window.BASIC_RUNS_DATA = [
+    { title: 'Easy Run', desc: 'جري مريح (Zone 2)', icon: '😌', color: '#10b981' },
+    { title: 'Tempo', desc: 'جري مجهد مريح (Zone 3-4)', icon: '⚡', color: '#f59e0b' },
+    { title: 'Intervals', desc: 'سرعات عالية (Zone 5)', icon: '🔥', color: '#ef4444' },
+    { title: 'LSD', desc: 'جري طويل ببطء', icon: '🐢', color: '#3b82f6' }
+];
+
+// ==================== 🔊 محرك الصوت (Sound FX) ====================
+window.SoundFX = {
+    ctx: null,
+    init: function() {
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    },
+    tick: function() {
+        if (!this.ctx) return;
+        const o = this.ctx.createOscillator(); 
+        const g = this.ctx.createGain();
+        o.connect(g); g.connect(this.ctx.destination);
+        o.frequency.value = 800; 
+        g.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
+        o.start(); o.stop(this.ctx.currentTime + 0.05);
+    },
+    beep: function() {
+        if (!this.ctx) return;
+        const o = this.ctx.createOscillator(); 
+        const g = this.ctx.createGain();
+        o.connect(g); g.connect(this.ctx.destination);
+        o.type = 'square'; 
+        o.frequency.value = 600; 
+        g.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
+        o.start(); o.stop(this.ctx.currentTime + 0.1);
+    },
+    whistle: function() {
+        if (!this.ctx) return;
+        const o = this.ctx.createOscillator(); 
+        const g = this.ctx.createGain();
+        o.connect(g); g.connect(this.ctx.destination);
+        o.type = 'triangle'; 
+        o.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        o.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.3);
+        g.gain.setValueAtTime(0.3, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.3);
+        o.start(); o.stop(this.ctx.currentTime + 0.3);
+    }
+};
+
+// ==================== 🤖 المدرب الذكي (Smart Trainer) ====================
+window.SmartTrainer = {
+    queue: [],
+    currentIndex: 0,
+    timer: null,
+    timeLeft: 0,
+    totalTime: 0,
     isPaused: false,
+    lang: 'en', // Default Language
     
-    // إعدادات افتراضية
-    workTime: 30,      // زمن التمرين (ثانية)
-    restTime: 10,      // زمن الراحة (ثانية)
+    texts: {
+        en: {
+            startEx: "Start",
+            rest: "Rest now",
+            next: "Next:",
+            finish: "Workout Complete! Awesome job.",
+            pause: "Paused",
+            resume: "Resuming",
+            quit: "Session Ended",
+            statusWork: "GO! 🔥",
+            statusRest: "REST 💤",
+            ready: "Get Ready...",
+            btn: "🇬🇧 EN"
+        },
+        ar: {
+            startEx: "ابدأ تمرين",
+            rest: "راحة.. استعد",
+            next: "التالي:",
+            finish: "عاش يا بطل! أنهيت التمرين.",
+            pause: "توقف مؤقت",
+            resume: "استكمال",
+            quit: "إنهاء الجلسة",
+            statusWork: "اشتغل 🔥",
+            statusRest: "راحة 💤",
+            ready: "استعد...",
+            btn: "🇪🇬 AR"
+        }
+    },
 
-    // 1. بدء الكلاس (يتم استدعاؤها من المودال القديم)
     startSession: function(categoryName) {
-        // نجهز قائمة التمارين من الداتا الموجودة
-        // بنعمل دمج ذكي: تمرين -> راحة -> تمرين -> راحة
-        const workouts = ELITE_WORKOUTS_DATA[categoryName] || [];
-        if (workouts.length === 0) return alert("لا توجد تمارين لبدء المدرب!");
+        window.SoundFX.init();
+        const workouts = window.ELITE_WORKOUTS_DATA[categoryName] || [];
+        if (workouts.length === 0) {
+            alert("No workouts available in this category.");
+            return;
+        }
 
         this.queue = [];
         workouts.forEach((w, index) => {
-            // إضافة التمرين
             this.queue.push({
                 type: 'work',
                 name: w.name,
-                desc: w.desc, // عشان ينطقها لو حابب
-                duration: this.workTime,
-                color: '#10b981' // أخضر للتمرين
+                duration: 30,
+                color: '#10b981'
             });
 
-            // إضافة راحة (ما عدا بعد آخر تمرين)
             if (index < workouts.length - 1) {
                 this.queue.push({
                     type: 'rest',
-                    name: 'راحة واستعداد',
-                    desc: `التالي: ${workouts[index+1].name}`,
-                    duration: this.restTime,
-                    color: '#f59e0b' // برتقالي للراحة
+                    name: 'Rest', 
+                    duration: 10,
+                    color: '#f59e0b',
+                    nextName: workouts[index+1].name
                 });
             }
         });
+        this.queue.push({ type: 'finish', name: 'Finish!', duration: 0 });
 
-        // إضافة شاشة "انتهى التمرين"
-        this.queue.push({ type: 'finish', name: 'عاش يا وحش! 🔥', duration: 0 });
-
-        // تهيئة وبدء
         this.currentIndex = 0;
         this.isPaused = false;
-        document.getElementById('modal-smart-trainer').style.display = 'flex';
         
-        // منع انطفاء الشاشة (Wake Lock - لو المتصفح بيدعمها)
-        try { navigator.wakeLock.request('screen'); } catch(e){}
-
-        this.playStep();
+        const modal = document.getElementById('modal-smart-trainer');
+        if(modal) {
+            modal.style.display = 'flex';
+            this.injectLangButton();
+            try { if(navigator.wakeLock) navigator.wakeLock.request('screen'); } catch(e){}
+            this.speak(this.texts[this.lang].ready);
+            setTimeout(() => this.playStep(), 2000);
+        } else {
+            console.error("Smart Trainer Modal not found!");
+        }
     },
 
-    // 2. تشغيل الخطوة الحالية
     playStep: function() {
         const step = this.queue[this.currentIndex];
+        const T = this.texts[this.lang];
 
         if (step.type === 'finish') {
-            this.speak("عاش يا بطل، أتممت التمرين بنجاح");
+            this.speak(T.finish);
+            window.SoundFX.whistle();
             setTimeout(() => this.quit(), 3000);
             return;
         }
 
-        // تحديث الواجهة
-        document.getElementById('trainer-ex-name').innerText = step.name;
-        document.getElementById('trainer-status').innerText = (step.type === 'work') ? 'إشتغل 🔥' : 'استريح 💤';
-        
-        // اسم التمرين اللي جاي
-        const nextStep = this.queue[this.currentIndex + 2]; // +2 عشان بنفوت الراحة
-        document.getElementById('trainer-next').innerText = nextStep ? `التالي: ${nextStep.name}` : "التالي: النهاية";
+        let displayTitle = step.name;
+        let displayStatus = (step.type === 'work') ? T.statusWork : T.statusRest;
+        let displayNext = "";
 
-        // ضبط العداد
+        if (step.type === 'rest') {
+            displayTitle = T.rest;
+            displayNext = `${T.next} ${step.nextName}`;
+        } else {
+            const nextWork = this.queue[this.currentIndex + 2];
+            displayNext = nextWork ? `${T.next} ${nextWork.name}` : T.finish;
+        }
+
+        document.getElementById('trainer-ex-name').innerText = displayTitle;
+        document.getElementById('trainer-status').innerText = displayStatus;
+        document.getElementById('trainer-next').innerText = displayNext;
+
         this.timeLeft = step.duration;
         this.totalTime = step.duration;
         this.updateTimerUI();
-
-        // تغيير لون الدائرة
         document.getElementById('timer-progress-ring').style.stroke = step.color;
 
-        // 🔊 النطق الصوتي (Voice Guidance)
         if (step.type === 'work') {
-            this.speak(`ابدأ تمرين.. ${step.name}`);
+            this.speak(`${T.startEx}.. ${step.name}`);
+            window.SoundFX.whistle();
         } else {
-            this.speak("راحة.. خد نفسك واستعد");
+            this.speak(T.rest);
+            window.SoundFX.whistle();
         }
 
-        // بدء العداد
         this.startTimer();
     },
 
-    // 3. العداد التنازلي (The Heartbeat)
     startTimer: function() {
         if (this.timer) clearInterval(this.timer);
-        
         this.timer = setInterval(() => {
             if (this.isPaused) return;
 
             this.timeLeft--;
             this.updateTimerUI();
 
-            // تنبيه صوتي في آخر 3 ثواني
-            if (this.timeLeft > 0 && this.timeLeft <= 3) {
-                // نغمة بسيطة أو نطق الرقم (اختياري)
-                 // this.speak(this.timeLeft); 
+            if (this.timeLeft > 0) {
+                if (this.timeLeft <= 3) window.SoundFX.beep();
+                else window.SoundFX.tick();
             }
 
             if (this.timeLeft <= 0) {
                 clearInterval(this.timer);
-                this.speak("تغيير"); // صفارة النهاية
                 this.currentIndex++;
                 this.playStep();
             }
         }, 1000);
     },
 
-    // 4. تحديث الشاشة (UI Render)
     updateTimerUI: function() {
-        const timerEl = document.getElementById('trainer-timer');
-        const ringEl = document.getElementById('timer-progress-ring');
-        
-        // كتابة الرقم
-        timerEl.innerText = this.timeLeft;
-
-        // تحريك الدائرة (SVG Stroke Dashoffset)
-        // المحيط الكامل = 754
-        const circumference = 754;
-        const offset = circumference - (this.timeLeft / this.totalTime) * circumference;
-        ringEl.style.strokeDashoffset = offset;
-    },
-
-    // 5. التحكم (Pause/Skip/Quit)
-    togglePause: function() {
-        this.isPaused = !this.isPaused;
-        const icon = document.querySelector('#btn-trainer-pause i');
-        if (this.isPaused) {
-            icon.className = 'ri-play-fill';
-            this.speak("توقف مؤقت");
-        } else {
-            icon.className = 'ri-pause-fill';
-            this.speak("استكمال");
+        const tEl = document.getElementById('trainer-timer');
+        const rEl = document.getElementById('timer-progress-ring');
+        if(tEl) tEl.innerText = this.timeLeft;
+        if(rEl) {
+            const circumference = 754;
+            const offset = circumference - (this.timeLeft / this.totalTime) * circumference;
+            rEl.style.strokeDashoffset = offset;
         }
     },
 
-    skip: function() {
-        clearInterval(this.timer);
-        this.currentIndex++;
-        this.playStep();
+    togglePause: function() {
+        this.isPaused = !this.isPaused;
+        const icon = document.querySelector('#btn-trainer-pause i');
+        const T = this.texts[this.lang];
+        
+        if (this.isPaused) {
+            if(icon) icon.className = 'ri-play-fill';
+            this.speak(T.pause);
+        } else {
+            if(icon) icon.className = 'ri-pause-fill';
+            this.speak(T.resume);
+        }
+    },
+
+    toggleLang: function() {
+        this.lang = (this.lang === 'en') ? 'ar' : 'en';
+        const btn = document.getElementById('trainer-lang-btn');
+        if(btn) btn.innerText = this.texts[this.lang].btn;
+        
+        const T = this.texts[this.lang];
+        const step = this.queue[this.currentIndex];
+        
+        document.getElementById('trainer-status').innerText = (step.type === 'work') ? T.statusWork : T.statusRest;
+        if(step.type === 'rest') {
+            document.getElementById('trainer-ex-name').innerText = T.rest;
+            document.getElementById('trainer-next').innerText = `${T.next} ${step.nextName}`;
+        } else {
+            const nextWork = this.queue[this.currentIndex + 2];
+            if(nextWork) document.getElementById('trainer-next').innerText = `${T.next} ${nextWork.name}`;
+        }
+        this.speak(this.lang === 'en' ? "Language changed" : "تم تغيير اللغة");
     },
 
     quit: function() {
         if (this.timer) clearInterval(this.timer);
-        document.getElementById('modal-smart-trainer').style.display = 'none';
-        this.speak("تم إنهاء الجلسة");
+        const modal = document.getElementById('modal-smart-trainer');
+        if(modal) modal.style.display = 'none';
+        if(window.speechSynthesis) window.speechSynthesis.cancel();
     },
 
-    // 6. محرك الكلام (Text-to-Speech Engine) 🗣️
     speak: function(text) {
         if (!window.speechSynthesis) return;
-
-        // إلغاء أي كلام قديم عشان ميتداخلش
         window.speechSynthesis.cancel();
-
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ar-SA'; // اللغة العربية
-        utterance.rate = 0.9;     // السرعة (1 طبيعي، 0.9 أهدى شوية للمدرب)
-        utterance.pitch = 1;      // حدة الصوت
-        
+        utterance.lang = (this.lang === 'en') ? 'en-US' : 'ar-SA';
+        utterance.rate = 1;     
         window.speechSynthesis.speak(utterance);
+    },
+
+    injectLangButton: function() {
+        const container = document.querySelector('.trainer-header');
+        if(container && !document.getElementById('trainer-lang-btn')) {
+            const btn = document.createElement('button');
+            btn.id = 'trainer-lang-btn';
+            btn.innerText = this.texts[this.lang].btn;
+            btn.onclick = () => this.toggleLang(); // استخدام Arrow Function لضمان سياق this
+            btn.style.cssText = "background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:5px 12px; border-radius:20px; font-size:12px; margin-bottom:15px; cursor:pointer; font-weight:bold;";
+            container.insertBefore(btn, container.firstChild);
+        }
+    },
+    
+    skip: function() {
+        clearInterval(this.timer);
+        this.currentIndex++;
+        this.playStep();
     }
 };
+
+// ==================== 🛠️ دوال الرسم والربط (Rendering Functions) ====================
+
+// 1. رسم جدول التدريب
+window.renderTeamSchedule = function() {
+    const container = document.getElementById('schedule-scroll-container');
+    if (!container) return false;
+
+    const schedule = [
+        { day: 6, title: 'LSD Run', desc: 'جري طويل', icon: '🔥', color: '#3b82f6' },
+        { day: 0, title: 'Rest', desc: 'راحة سلبية', icon: '💤', color: '#64748b' },
+        { day: 1, title: 'Easy Run', desc: '5 كم هادي', icon: '🏃', color: '#10b981' },
+        { day: 2, title: 'Intervals', desc: 'سرعات', icon: '⚡', color: '#ef4444' },
+        { day: 3, title: 'Tempo', desc: 'رتم متوسط', icon: '🍂', color: '#f59e0b' },
+        { day: 4, title: 'Strength', desc: 'تقويات', icon: '💪', color: '#8b5cf6' },
+        { day: 5, title: 'Team Run', desc: 'تجمعة', icon: '🏆', color: '#eab308' }
+    ];
+
+    const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+    const todayIdx = new Date().getDay(); 
+    const order = [6, 0, 1, 2, 3, 4, 5];
+    
+    let html = '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px;">';
+    
+    order.forEach(dIdx => {
+        const item = schedule.find(s => s.day === dIdx);
+        const isToday = (todayIdx === dIdx);
+        const border = isToday ? item.color : 'rgba(255,255,255,0.1)';
+        const bg = isToday ? `${item.color}15` : 'rgba(255,255,255,0.03)';
+
+        html += `
+        <div style="min-width:125px; padding:15px; border-radius:16px; background:${bg}; border:1px solid ${border}; display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:11px; color:#9ca3af;">${daysAr[dIdx]}</span>
+                ${isToday ? `<span style="font-size:9px; background:${item.color}; color:#000; padding:1px 5px; border-radius:4px; font-weight:bold;">اليوم</span>` : ''}
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <div style="font-size:24px;">${item.icon}</div>
+                <div>
+                    <div style="font-size:13px; font-weight:bold; color:#fff;">${item.title}</div>
+                    <div style="font-size:10px; color:${item.color}; filter:brightness(1.2);">${item.desc}</div>
+                </div>
+            </div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    return true;
+};
+
+// 2. رسم المكتبة
+window.renderCoachLibrary = function() {
+    const container = document.getElementById('library-types-container');
+    if (!container) return false;
+
+    const categories = [
+        { id: 'warmup', name: 'Warmup', icon: '🧘‍♂️', color: '#f59e0b' },
+        { id: 'strength', name: 'Strength', icon: '💪', color: '#ef4444' },
+        { id: 'drills', name: 'Drills', icon: '⚙️', color: '#3b82f6' },
+        { id: 'injuries', name: 'Rehab', icon: '❤️‍🩹', color: '#10b981' }
+    ];
+
+    let html = '<div style="display:flex; gap:12px; overflow-x:auto; padding-bottom:5px;">';
+    categories.forEach(cat => {
+        const count = window.ELITE_WORKOUTS_DATA[cat.id]?.length || 0;
+        html += `
+        <div onclick="openEliteWorkoutsModal('${cat.id}', '${cat.name}')" 
+             style="min-width:110px; padding:15px; border-radius:16px; background:rgba(255,255,255,0.03); border-bottom:3px solid ${cat.color}; cursor:pointer; text-align:center;">
+            <div style="font-size:24px; margin-bottom:5px;">${cat.icon}</div>
+            <div style="font-size:13px; font-weight:bold; color:#fff;">${cat.name}</div>
+            <div style="font-size:9px; color:#9ca3af; margin-top:2px;">${count} exercises</div>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+    return true;
+};
+
+// 3. فتح مودال التمارين (مع زر المدرب الذكي)
+window.openEliteWorkoutsModal = function(catId, catName) {
+    const workouts = window.ELITE_WORKOUTS_DATA[catId] || [];
+    let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+
+    if(workouts.length > 0) {
+        html += `
+        <button onclick="closeModal('modal-daily-workout'); window.SmartTrainer.startSession('${catId}')" 
+                class="btn btn-primary" style="width:100%; height:50px; font-size:16px; margin-bottom:10px; font-weight:bold; box-shadow:0 4px 15px rgba(16,185,129,0.3);">
+            <i class="ri-play-circle-line" style="font-size:20px; vertical-align:middle; margin-right:5px;"></i> Start Smart Trainer
+        </button>`;
+    } else {
+        html += `<div style="text-align:center; color:#999;">Coming Soon...</div>`;
+    }
+
+    workouts.forEach(w => {
+        html += `
+        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:10px; border-left:3px solid var(--primary);">
+            <div style="font-weight:bold; color:#fff; font-size:14px;">${w.name}</div>
+            <div style="font-size:11px; color:#cbd5e1; margin-top:2px;">${w.desc}</div>
+        </div>`;
+    });
+    html += `</div>`;
+    
+    fillAndOpenModal(catName, html);
+};
+
+// 4. فتح المكتبة الأساسية (الكود الكامل)
+window.openBasicLibrary = function() {
+    let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+    window.BASIC_RUNS_DATA.forEach(run => {
+        html += `
+        <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:16px; overflow:hidden; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:12px;">
+            <div style="font-size:28px;">${run.icon}</div>
+            <div>
+                <div style="font-weight:bold; color:#fff; font-size:15px;">${run.title}</div>
+                <div style="font-size:11px; color:#cbd5e1; line-height:1.4;">${run.desc}</div>
+            </div>
+        </div>`;
+    });
+    html += `</div>`;
+    fillAndOpenModal("Basic Run Types", html);
+};
+
+// Helper
+function fillAndOpenModal(title, content) {
+    const tEl = document.getElementById('daily-modal-title');
+    const bEl = document.getElementById('daily-modal-body');
+    if (tEl && bEl) {
+        tEl.innerText = title;
+        bEl.innerHTML = content;
+        if(typeof openModal === 'function') openModal('modal-daily-workout');
+    }
+}
+
+// ==================== 🚀 Force Start (Ignition) ====================
+(function forceStartCoach() {
+    let attempts = 0;
+    const tryRender = () => {
+        attempts++;
+        const s = window.renderTeamSchedule();
+        const l = window.renderCoachLibrary();
+        if (s && l) console.log("✅ Coach System Fully Loaded!");
+        else if (attempts < 15) setTimeout(tryRender, 300);
+    };
+    
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryRender);
+    else tryRender();
+})();
