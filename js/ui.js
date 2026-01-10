@@ -234,139 +234,71 @@ async function calculatePersonalBests() {
 /* Community Feed (pagination) */
 
 
-function loadGlobalFeedInitial(){
-    const list = document.getElementById('global-feed-list');
-    const btn = document.getElementById('global-feed-load-more');
-    if(!list) return;
-
-    globalFeedLastDoc = null;
-    globalFeedHasMore = true;
-    globalFeedLoading = false;
-
-    list.innerHTML = getSkeletonHTML('feed');
-    if(btn){ btn.style.display = 'none'; btn.disabled = false; btn.innerText = 'إظهار المزيد'; }
-
-    loadMoreGlobalFeed(true);
-}
- 
-// Alias for legacy init code (auth.js calls loadGlobalFeed)
-function loadGlobalFeed(){
-    return loadGlobalFeedInitial();
-}
-window.loadGlobalFeed = window.loadGlobalFeed || loadGlobalFeed;
-
-
-async function loadMoreGlobalFeed(isInitial=false){
-    const list = document.getElementById('global-feed-list');
-    const btn = document.getElementById('global-feed-load-more');
-    if(!list || !db) return;
-    if(globalFeedLoading) return;
-    if(!globalFeedHasMore && !isInitial) return;
-
-    globalFeedLoading = true;
-    if(btn){
-        btn.style.display = 'block';
-        btn.disabled = true;
-        btn.innerText = '...';
-        btn.style.opacity = '0.8';
-    }
-
-    try{
-        let q = db.collection('activity_feed').orderBy('timestamp','desc').limit(GLOBAL_FEED_PAGE_SIZE);
-        if(globalFeedLastDoc) q = q.startAfter(globalFeedLastDoc);
-
-        const snap = await q.get();
-
-        if(snap.empty){
-            globalFeedHasMore = false;
-            if(btn){ btn.style.display = 'none'; }
-            if(isInitial){
-                list.innerHTML = '<div style="text-align:center; font-size:12px; color:#6b7280;">لا توجد أنشطة مسجلة بعد<br>كن أول من يسجل!</div>';
-            }
-            return;
-        }
-
-        globalFeedLastDoc = snap.docs[snap.docs.length-1];
-        if(snap.size < GLOBAL_FEED_PAGE_SIZE) globalFeedHasMore = false;
-
-        let html = '';
+let html = '';
         snap.forEach(doc => {
             const p = doc.data();
+            // صمامات أمان عشان الداتا تظهر مهما كان فيها نقص
+            const userName = p.userName || 'عداء مجهول';
+            const userRegion = p.userRegion || 'الجمهورية';
+            const dist = parseFloat(p.dist || 0).toFixed(2);
+            const time = p.time || '--';
+            const type = p.type === 'Run' ? 'جري' : (p.type === 'Walk' ? 'مشي' : 'نشاط');
+            
+            // معالجة التاريخ بذكاء
+            let timeAgo = 'منذ فترة';
+            if (p.timestamp) {
+                try {
+                    timeAgo = getArabicTimeAgo(p.timestamp);
+                } catch(e) { timeAgo = 'نشاط حديث'; }
+            }
+
+            const pace = (p.dist > 0 && p.time > 0) ? (p.time / p.dist).toFixed(2) : '--';
             const isLiked = p.likes && currentUser && p.likes.includes(currentUser.uid);
-            const commentsCount = p.commentsCount || 0; 
-            const timeAgo = getArabicTimeAgo(p.timestamp);
+            
+            // تحويل البيانات لنص آمن للمودال
+            const safeData = JSON.stringify({
+                ...p,
+                id: doc.id,
+                timestamp: null // بنمسحه هنا عشان ميعملش مشاكل في الـ JSON
+            }).replace(/"/g, '&quot;');
 
             html += `
-            <div class="feed-card-compact">
-                <div class="feed-compact-content">
-                    <div class="feed-compact-avatar">${(p.userName||"?").charAt(0)}</div>
-                    <div>
-                        <div class="feed-compact-text">
-                            <strong>${p.userName||''}</strong> <span style="opacity:0.7">(${p.userRegion||'-'})</span>
+            <div class="feed-card-premium" onclick="openRunDetailFromFeed('${doc.id}', ${safeData})" 
+                 style="background:rgba(31, 41, 55, 0.4); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:15px; margin-bottom:15px; cursor:pointer;">
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="width:32px; height:32px; border-radius:50%; background:var(--primary); color:#000; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px;">
+                                ${userName.charAt(0)}
+                            </div>
+                            <div>
+                                <div style="font-size:13px; font-weight:bold; color:#fff;">${userName}</div>
+                                <div style="font-size:10px; color:var(--text-muted);">${timeAgo} • ${userRegion}</div>
+                            </div>
                         </div>
-                        <div class="feed-compact-text" style="margin-top:2px;">
-                            ${p.type === 'Run' ? 'جري' : (p.type||'')} <span style="color:#10b981; font-weight:bold;">${formatNumber(p.dist)} كم</span>
+                        <div style="display:flex; gap:15px; margin-bottom:12px;">
+                            <div>
+                                <small style="display:block; color:var(--text-muted); font-size:9px;">المسافة</small>
+                                <strong style="font-size:16px; color:var(--primary);">${dist} <small>كم</small></strong>
+                            </div>
+                            <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:15px;">
+                                <small style="display:block; color:var(--text-muted); font-size:9px;">البيس</small>
+                                <strong style="font-size:16px; color:var(--accent);">${pace}</strong>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:12px; opacity:0.8;">
+                             <span style="font-size:12px; color:#9ca3af;"><i class="ri-heart-line"></i> ${(p.likes||[]).length}</span>
+                             <span style="font-size:12px; color:#9ca3af;"><i class="ri-chat-3-line"></i> ${p.commentsCount || 0}</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="feed-compact-action">
-                    ${p.link ? `<a href="${p.link}" target="_blank" style="text-decoration:none; color:#3b82f6; font-size:14px;"><i class="ri-link"></i></a>` : ''}
-
-                    ${p.img ? `
-                        <button onclick="window.open('${p.img}', '_blank')" style="background:none; border:none; cursor:pointer; color:#8b5cf6; font-size:14px; display:flex; align-items:center; gap:3px;">
-                            <i class="ri-image-2-fill"></i> <span style="font-size:10px;">إثبات</span>
-                        </button>
-                    ` : ''}
-
-                    <button class="feed-compact-btn" onclick="openReportModal('${doc.id}')" style="margin-right:auto; color:#ef4444;">
-                        <i class="ri-flag-line"></i>
-                    </button>
-
-                    <button class="feed-compact-btn ${isLiked?'liked':''}" onclick="toggleLike('${doc.id}', '${p.uid||''}')">
-                        <i class="${isLiked?'ri-heart-fill':'ri-heart-line'}"></i>
-                        <span class="feed-compact-count">${(p.likes||[]).length || ''}</span>
-                    </button>
-
-                    ${p.commentsDisabled ? `<span class="feed-compact-meta" style="margin-right:8px; color:#9ca3af;"><i class="ri-lock-line"></i> التعليقات مغلقة</span>` : `<button class="feed-compact-btn" onclick="openComments('${doc.id}', '${p.uid||''}')" style="margin-right:8px;"><i class="ri-chat-3-line"></i><span class="feed-compact-count">${commentsCount > 0 ? commentsCount : ''}</span></button>`}
-
-                    <span class="feed-compact-meta" style="margin-right:5px;">${timeAgo}</span>
+                    <div style="width:80px; height:80px; border-radius:15px; background:#111827; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
+                        <img src="${p.polyline ? 'https://www.strava.com/assets/images/google_static_map_placeholder.png' : (p.img || 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=200&auto=format&fit=crop')}" 
+                             style="width:100%; height:100%; object-fit:cover; opacity:0.6;">
+                    </div>
                 </div>
             </div>`;
         });
-
-        if(isInitial){
-            list.innerHTML = html;
-        }else{
-            list.insertAdjacentHTML('beforeend', html);
-        }
-
-        if(btn){
-            if(globalFeedHasMore){
-                btn.disabled = false;
-                btn.innerText = 'إظهار المزيد';
-                btn.style.opacity = '1';
-                btn.style.display = 'block';
-            }else{
-                btn.style.display = 'none';
-            }
-        }
-    }catch(e){
-        console.error("Feed Error:", e);
-        if(btn){
-            btn.disabled = false;
-            btn.innerText = 'إظهار المزيد';
-            btn.style.opacity = '1';
-        }
-        if(isInitial){
-            const list = document.getElementById('global-feed-list');
-            if(list) list.innerHTML = '<div style="text-align:center; color:#ef4444; font-size:12px;">تعذر تحميل الأنشطة.</div>';
-        }
-    }finally{
-        globalFeedLoading = false;
-    }
-}
-
+        list.innerHTML = html;
 // ==================== 10. Utils & Listeners ====================
 function openLogModal() { document.getElementById('modal-log').style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -848,219 +780,124 @@ function generateShareCard(dist, time, dateStr) {
 // (e.g., challenges.js) also reference the same global.
 var allChallengesCache = window.allChallengesCache || (window.allChallengesCache = []);
 
-// Alias for legacy init code (auth.js calls loadGlobalFeed)
-function loadGlobalFeed(){
-    return loadGlobalFeedInitial();
-}
-window.loadGlobalFeed = window.loadGlobalFeed || loadGlobalFeed;
+// ==================== تحميل الخلاصة العالمية ====================
+async function loadGlobalFeed() {
+    const list = document.getElementById('global-feed-list');
+    if (!list) return;
 
-
-// تحميل وعرض التحديات (Fixed V6.2)
-async function loadActiveChallenges() {
-    const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges'); 
-    
-    if(!list) return;
-    
-    // عرض الهيكل العظمي فقط إذا كانت القائمة فارغة تماماً
-    if(allChallengesCache.length === 0) {
-        list.innerHTML = getSkeletonHTML('challenges');
-    }
-
-    db.collection('challenges')
-      .where('active', '==', true)
-      .get()
-      .then(async snap => {
-        if(snap.empty) { 
-            list.innerHTML = "<div class='empty-state-fun'><span class='fun-icon'>👻</span><div class='fun-title'>مفيش تحديات</div></div>"; 
-            if(mini) mini.innerHTML="<div class='empty-state-mini'>لا تحديات</div>"; 
-            return; 
-        }
-
-        allChallengesCache = []; // تصفير الكاش
-        let miniHtml = '';
-
-        for(const doc of snap.docs) {
-            const ch = doc.data();
-            let isJoined = false, progress = 0, completed = false;
-            
-            if(currentUser) {
-                const p = await doc.ref.collection('participants').doc(currentUser.uid).get();
-                if(p.exists) { 
-                    const pData = p.data();
-                    isJoined = true; 
-                    progress = pData.progress || 0; 
-                    completed = pData.completed === true;
-                }
-            }
-            
-            allChallengesCache.push({ id: doc.id, ...ch, isJoined, progress, completed });
-
-            // تجميع المصغرات للصفحة الرئيسية
-            if (isJoined && mini) {
-                let perc = 0;
-                // حماية من القسمة على صفر
-                const safeTarget = ch.target > 0 ? ch.target : 1; 
-                
-                if (ch.type === 'speed') perc = completed ? 100 : 0;
-                else perc = Math.min((progress / safeTarget) * 100, 100);
-
-                // 🔥 التعديل هنا: عند الضغط، نذهب لصفحة التحديات ونفتح تبويب التحديات النشطة
-                miniHtml += `
-                <div class="mini-challenge-card" onclick="switchView('challenges'); setTab('active-challenges');" style="cursor:pointer; border-left: 3px solid ${completed?'#10b981':'var(--accent)'}">
-                    <div class="mini-ch-title">${ch.title}</div>
-                    <div class="mini-ch-progress">
-                        <div class="mini-ch-fill" style="width:${perc}%; background:${completed?'#10b981':'var(--primary)'}"></div>
-                    </div>
-                    <div style="font-size:9px; color:#9ca3af; display:flex; justify-content:space-between; margin-top:4px;">
-                        <span>${ch.type === 'speed' ? (completed?'نجحت!':'حاول') : Math.floor(progress)}</span>
-                        <span>${ch.target}</span>
-                    </div>
-                </div>`;
-            }
-        }
-
-        // 🔥 الإصلاح هنا: إعادة تعيين الفلتر وتحديث العرض فوراً
-        currentChallengeFilter = 'all'; 
-        
-        // تنشيط زر "الكل" بصرياً
-        document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-        const allBtn = document.querySelector('.filter-pill:first-child'); 
-        if(allBtn) allBtn.classList.add('active');
-
-        renderChallenges(); // رسم القائمة فوراً
-
-        if (mini) {
-            mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
-        }
-    });
-}
-
-// Shared report-feed cursor across files.
-// IMPORTANT: use `var` + window to avoid "Identifier has already been declared"
-// when challenges.js also defines/uses the same global.
-var currentReportFeedId = window.currentReportFeedId || null;
-window.currentReportFeedId = currentReportFeedId;
-
-// فتح نافذة تفاصيل التحدي
-// ==================== V5.4 Challenge Details (Rank Fixed) ====================
-
-async function openChallengeDetails(chId) {
-    const modal = document.getElementById('modal-challenge-details');
-    const header = document.getElementById('ch-modal-header');
-    const list = document.getElementById('ch-leaderboard-list');
-    
-    if(!modal) return;
-
-    // 1. فتح المودال وعرض لودر
-    modal.style.display = 'flex';
-    list.innerHTML = '<div class="loader-placeholder">جاري سحب الأبطال...</div>';
-    header.innerHTML = ''; // تنظيف الهيدر مؤقتاً
+    list.innerHTML = `
+        <div style="text-align:center; padding:30px; color:var(--text-muted);">
+            <i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i>
+            <div style="font-size:12px; margin-top:10px;">جاري تحديث الأخبار...</div>
+        </div>`;
 
     try {
-        // 2. جلب بيانات التحدي الأساسية
-        const chDoc = await db.collection('challenges').doc(chId).get();
-        if (!chDoc.exists) return showToast("التحدي غير موجود", "error");
-        
-        const ch = chDoc.data();
-        const target = parseFloat(ch.target) || 1; // لتجنب القسمة على صفر
-        document.getElementById('ch-modal-title').innerText = ch.title;
-
-        // 3. رسم كارت الهيدر الفخم (نفس الستايل الذهبي)
-        let typeIcon = ch.type === 'speed' ? '⚡' : '🛣️';
-        let typeText = ch.type === 'speed' ? 'تحدي سرعة' : 'سباق مسافات';
-        
-        header.innerHTML = `
-            <div style="text-align:center; width:100%;">
-                <div style="font-size:14px; color:#fff; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:5px;">
-                    <span>${typeIcon}</span> ${typeText}
-                </div>
-                
-                <div style="font-size:11px; color:#9ca3af; margin-top:5px; display:flex; gap:10px; justify-content:center;">
-                    <span><i class="ri-flag-line"></i> هدف: ${ch.target} ${ch.type==='frequency'?'مرة':'كم'}</span>
-                    <span><i class="ri-time-line"></i> المدة: ${ch.durationDays || 30} يوم</span>
-                </div>
-
-                <div style="margin-top:15px; font-size:32px; font-weight:900; color:var(--primary); text-shadow:0 0 20px rgba(16,185,129,0.3);">
-                    ${ch.target} <span style="font-size:14px; font-weight:normal;">كم</span>
-                </div>
-            </div>
-        `;
-
-        // 4. جلب وترتيب المشاركين (إصلاح الـ NaN)
-        const snap = await db.collection('challenges').doc(chId).collection('participants')
-            .orderBy('progress', 'desc').limit(50).get();
+        const snap = await db.collection('activity_feed')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .get();
 
         if (snap.empty) {
-            list.innerHTML = '<div style="text-align:center; padding:30px; color:#6b7280;">لا يوجد مشاركين بعد.<br>كن أنت الأول! 🚀</div>';
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد أنشطة حالياً.</div>';
             return;
         }
 
         let html = '';
-        snap.docs.forEach((doc, index) => {
+        snap.forEach(doc => {
             const p = doc.data();
-            const rank = index + 1;
-            const isMe = (currentUser && doc.id === currentUser.uid);
             
-            // 🔥🔥🔥 الإصلاح الجذري للـ NaN 🔥🔥🔥
-            // نحاول تحويل القيمة لرقم، ولو فشل نستخدم صفر
-            let safeProgress = parseFloat(p.progress);
-            if (isNaN(safeProgress)) safeProgress = 0;
+            // --- 1. منطق الألوان والتمييز (إصلاح جذري) ---
+            const rawType = String(p.type || '').trim().toLowerCase();
+            const isWalk = rawType.includes('walk') || rawType.includes('hike');
+            
+            // ألوان صريحة لضمان الظهور
+            // أزرق سماوي للمشي | أخضر زمردي للجري
+            const themeColor = isWalk ? '#0ea5e9' : '#10b981'; 
+            const typeIcon = isWalk ? 'ri-walk-line' : 'ri-run-line';
+            const typeLabel = isWalk ? 'تمشية' : 'جري';
 
-            // حساب النسبة المئوية
-            let percent = Math.min((safeProgress / target) * 100, 100);
-            if (ch.type === 'speed' && p.completed) percent = 100;
+            // --- 2. تجهيز البيانات ---
+            const userName = p.userName || 'عداء';
+            const userRegion = p.userRegion || 'مصر';
+            const dist = parseFloat(p.dist || 0).toFixed(2);
+            const pace = (p.dist > 0 && p.time > 0) ? (p.time / p.dist).toFixed(2) : '--';
+            
+            let timeAgo = 'الآن';
+            try {
+                if (p.timestamp && typeof getArabicTimeAgo === 'function') {
+                    timeAgo = getArabicTimeAgo(p.timestamp);
+                }
+            } catch(e) {}
 
-            // تحديد شكل الأفاتار
-            let avatarHtml = '';
-            if (p.photoUrl) {
-                avatarHtml = `<div class="avatar-col" style="background-image:url('${p.photoUrl}'); background-size:cover; border:1px solid #444;"></div>`;
-            } else {
-                let initial = p.name ? p.name.charAt(0).toUpperCase() : '?';
-                avatarHtml = `<div class="avatar-col" style="background:#374151; display:flex; align-items:center; justify-content:center; color:#fff;">${initial}</div>`;
-            }
+            const isLiked = p.likes && currentUser && p.likes.includes(currentUser.uid);
+            const likesCount = (p.likes || []).length;
+            const commentsCount = p.commentsCount || 0;
 
-            // ستايل الصف (تمييز نفسي)
-            let rowStyle = isMe 
-                ? 'border:1px solid var(--primary); background:rgba(16,185,129,0.05);' 
-                : 'border-bottom:1px solid rgba(255,255,255,0.05);';
+            // بيانات المودال (Safe JSON)
+            const safeDataJson = JSON.stringify({
+                ...p,
+                id: doc.id,
+                timestamp: null 
+            }).replace(/"/g, '&quot;');
 
-            // تلوين المراكز الأولى
-            let rankBadge = `<span style="font-weight:bold; color:#9ca3af;">#${rank}</span>`;
-            if (rank === 1) rankBadge = '🥇';
-            if (rank === 2) rankBadge = '🥈';
-            if (rank === 3) rankBadge = '🥉';
-
+            // --- 3. بناء الكارت ---
             html += `
-            <div class="leader-row" style="${rowStyle} padding:12px; border-radius:12px; margin-bottom:8px;">
-                <div class="rank-col" style="font-size:16px;">${rankBadge}</div>
-                ${avatarHtml}
+            <div class="feed-card-premium" onclick="openRunDetailFromFeed('${doc.id}', ${safeDataJson})" 
+                 style="background:rgba(30, 41, 59, 0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:15px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden;">
                 
-                <div class="info-col">
-                    <div class="name" style="color:#fff; font-size:13px;">
-                        ${p.name || 'مستخدم'} ${isMe ? '<span style="color:var(--primary); font-size:10px;">(أنت)</span>' : ''}
-                    </div>
-                    
-                    <div style="width:100%; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; margin-top:5px; overflow:hidden;">
-                        <div style="width:${percent}%; height:100%; background:${p.completed ? '#10b981' : 'var(--accent)'};"></div>
-                    </div>
-                </div>
+                <div style="position:absolute; right:0; top:0; bottom:0; width:4px; background:${themeColor};"></div>
 
-                <div class="dist-col" style="text-align:left;">
-                    <span style="display:block; font-size:14px; font-weight:bold; color:#fff;">${safeProgress.toFixed(1)}</span>
-                    <span style="font-size:10px; color:#9ca3af;">${ch.type==='frequency'?'مرة':'كم'}</span>
+                <div style="display:flex; gap:12px; align-items:flex-start;">
+                    
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                            <div style="width:36px; height:36px; border-radius:10px; background:${themeColor}20; color:${themeColor}; display:flex; align-items:center; justify-content:center; border:1px solid ${themeColor}40;">
+                                <i class="${typeIcon}" style="font-size:18px;"></i>
+                            </div>
+                            <div>
+                                <div style="font-size:14px; font-weight:bold; color:#f1f5f9; line-height:1.2;">${userName}</div>
+                                <div style="font-size:11px; color:#94a3b8;">${timeAgo} • ${userRegion}</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:15px; margin-bottom:12px; padding-right:5px;">
+                            <div>
+                                <span style="font-size:10px; color:#64748b; display:block;">المسافة</span>
+                                <span style="font-size:18px; font-weight:800; color:${themeColor}; letter-spacing:-0.5px;">${dist}</span>
+                                <span style="font-size:10px; color:${themeColor};">كم</span>
+                            </div>
+                            <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:15px;">
+                                <span style="font-size:10px; color:#64748b; display:block;">السرعة</span>
+                                <span style="font-size:16px; font-weight:700; color:#cbd5e1;">${pace}</span>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:18px; align-items:center;" onclick="event.stopPropagation()">
+                             <div id="like-wrap-${doc.id}" onclick="handleLikeClick('${doc.id}')" style="display:flex; align-items:center; gap:6px; cursor:pointer; transition:transform 0.1s;">
+                                <i class="${isLiked ? 'ri-heart-fill' : 'ri-heart-line'}" style="font-size:18px; color:${isLiked ? '#ef4444' : '#94a3b8'};"></i> 
+                                <span style="font-size:13px; font-weight:600; color:${isLiked ? '#ef4444' : '#94a3b8'};">${likesCount}</span>
+                             </div>
+                             <div onclick="openComments('${doc.id}', '${p.uid}')" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                <i class="ri-chat-3-line" style="font-size:18px; color:#94a3b8;"></i> 
+                                <span style="font-size:13px; font-weight:600; color:#94a3b8;">${commentsCount}</span>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div style="width:85px; height:85px; border-radius:12px; background:#0f172a; overflow:hidden; border:1px solid rgba(255,255,255,0.1); flex-shrink:0;">
+                        <img src="${p.polyline ? 'https://www.strava.com/assets/images/google_static_map_placeholder.png' : (p.img || 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=200&auto=format&fit=crop')}" 
+                             style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
+                    </div>
                 </div>
             </div>`;
         });
-
         list.innerHTML = html;
 
     } catch (e) {
-        console.error(e);
-        list.innerHTML = '<div style="text-align:center; color:#ef4444; padding:20px;">حدث خطأ في تحميل البيانات</div>';
+        console.error("Feed Error:", e);
+        list.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444">فشل تحميل الأخبار</div>';
     }
 }
-
 // ==================== Community Reporting System (V5.0) ====================
 
 function openReportModal(feedId) {
@@ -1685,4 +1522,114 @@ function switchLogTab(tab) {
     // 3. إظهار المحتوى المطلوب
     const target = document.getElementById('log-tab-' + tab);
     if (target) target.style.display = 'block';
+}
+
+
+function openRunDetailFromFeed(docId, data) {
+    // 1. ملء بيانات المودال الموحد (modal-run-detail)
+    const typeLabel = data.type === 'Run' ? 'نشاط جري 🏃‍♂️' : (data.type === 'Walk' ? 'تمشية 🚶' : 'تمرين عداء');
+    document.getElementById('detail-type').innerText = typeLabel;
+    document.getElementById('detail-dist').innerText = data.dist || '0';
+    document.getElementById('detail-time').innerText = data.time || '--';
+    
+    // تنسيق التاريخ من الـ Timestamp
+    const timeAgo = typeof getArabicTimeAgo === 'function' ? getArabicTimeAgo(data.timestamp) : 'نشاط من الفريق';
+    document.getElementById('detail-date').innerText = timeAgo;
+    
+    const pace = data.dist > 0 && data.time > 0 ? (data.time / data.dist).toFixed(2) : '--';
+    document.getElementById('detail-pace').innerText = pace;
+
+    const mapEl = document.getElementById('detail-map');
+    const imgEl = document.getElementById('detail-img');
+    
+    // إخفاء العناصر القديمة
+    mapEl.style.display = 'none';
+    imgEl.style.display = 'none';
+
+    // 2. التحقق من وجود خريطة أو صورة
+    if (data.polyline) {
+        mapEl.style.display = 'block';
+        setTimeout(() => {
+            if (window._feedDetailMap) window._feedDetailMap.remove();
+            window._feedDetailMap = L.map('detail-map', { zoomControl: false }).setView([0,0], 13);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(window._feedDetailMap);
+            const coords = L.Polyline.fromEncoded(data.polyline).getLatLngs();
+            const poly = L.polyline(coords, { color: '#10b981', weight: 4 }).addTo(window._feedDetailMap);
+            window._feedDetailMap.fitBounds(poly.getBounds());
+        }, 300);
+    } else if (data.img) {
+        imgEl.src = data.img;
+        imgEl.style.display = 'block';
+    }
+
+    // 3. فتح المودال
+    openModal('modal-run-detail');
+}
+
+
+// ==================== Like Button Optimization ====================
+// متغير لتخزين "آخر حالة" عشان نمنع تضارب الطلبات
+window._likeDebounceTimer = null;
+
+async function handleLikeClick(postId) {
+    const wrapper = document.getElementById(`like-wrap-${postId}`);
+    if (!wrapper) return;
+
+    const icon = wrapper.querySelector('i');
+    const countSpan = wrapper.querySelector('span');
+    let currentCount = parseInt(countSpan.innerText || '0');
+    
+    // 1. تحديد الحالة الجديدة المتوقعة (عكس الحالة الحالية فوراً)
+    const wasLiked = icon.classList.contains('ri-heart-fill');
+    const newIsLiked = !wasLiked;
+
+    // 2. تحديث الواجهة فوراً (بدون انتظار أي حاجة)
+    if (newIsLiked) {
+        icon.className = 'ri-heart-fill';
+        icon.style.color = '#ef4444';
+        countSpan.style.color = '#ef4444';
+        countSpan.innerText = currentCount + 1;
+        // تأثير النبضة
+        wrapper.style.transform = 'scale(1.3)';
+        setTimeout(() => wrapper.style.transform = 'scale(1)', 200);
+    } else {
+        icon.className = 'ri-heart-line';
+        icon.style.color = '#94a3b8';
+        countSpan.style.color = '#94a3b8';
+        countSpan.innerText = Math.max(0, currentCount - 1);
+    }
+
+    // 3. (Debounce) إرسال الطلب للسيرفر بعد هدوء الضغطات
+    // لو المستخدم داس 10 مرات، هننفذ آخر وضع وصله بس
+    if (window._likeDebounceTimer) clearTimeout(window._likeDebounceTimer);
+    
+    window._likeDebounceTimer = setTimeout(async () => {
+        try {
+            // نبعت الحالة النهائية للسيرفر
+            await toggleLike(postId, newIsLiked); 
+        } catch (e) {
+            console.error("Server sync failed", e);
+            // لو فشل بس، نرجع الواجهة لأصلها (Silent Fail)
+            loadGlobalFeed();
+        }
+    }, 500); // ننتظر نص ثانية قبل الإرسال الفعلي
+}
+
+
+async function toggleLike(docId, shouldLike) {
+    if (!currentUser) return;
+
+    const uid = currentUser.uid;
+    const feedRef = db.collection('activity_feed').doc(docId);
+    
+    // إرسال الأمر المباشر (يا ضيف يا احذف) بناء على آخر وضع الزرار وصله
+    if (shouldLike) {
+        return feedRef.update({
+            likes: firebase.firestore.FieldValue.arrayUnion(uid)
+        });
+    } else {
+        return feedRef.update({
+            likes: firebase.firestore.FieldValue.arrayRemove(uid)
+        });
+    }
 }

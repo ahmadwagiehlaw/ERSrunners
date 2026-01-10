@@ -785,12 +785,32 @@
         </div>
     </div>
 
-            <div class="section-title-row" style="margin-top:22px;">
-                    <h4>أخبار الفريق ⚡</h4>
-                </div>
-                <div id="global-feed-list" class="feed-list-compact">
-                    <div style="text-align:center; padding:10px; color:#6b7280;">جاري التحميل...</div>
-                </div>         
+    
+
+<div class="feed-section" style="margin-top:25px;">
+    <div class="section-title-row" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h4 style="margin:0;">أخبار الفريق ⚡</h4>
+        <button onclick="loadGlobalFeed()" style="background:none; border:none; color:var(--primary); cursor:pointer; font-size:18px;">
+            <i class="ri-refresh-line"></i>
+        </button>
+    </div>
+    
+    <div id="global-feed-list" class="feed-list-v2">
+        <div style="text-align:center; padding:30px; color:var(--text-muted); opacity:0.6;">
+            <i class="ri-loader-4-line ri-spin" style="font-size:24px; display:block; margin-bottom:10px;"></i>
+            جاري استكشاف أنشطة الأبطال...
+        </div>
+    </div>
+</div>
+
+
+
+
+
+
+
+
+
 
                        </section>
 

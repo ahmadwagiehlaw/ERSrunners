@@ -6414,3 +6414,46 @@ body {
 .weekly-challenge-card .btn-primary { background: #059669 !important; }
 
 
+
+
+.feed-card-premium {
+    transition: all 0.3s ease;
+}
+.feed-card-premium:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--primary) !important;
+}
+
+
+
+/* ==================== 🛠️ FIX ANDROID OVERFLOW  حل سحري لمشكلة زيادة عرض الهيدر==================== */
+
+/* 1. إجبار المتصفح على حساب العرض بدقة (بما فيه الـ Padding) */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. منع السكرول الجانبي نهائياً في الصفحة */
+html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; /* هذا السطر هو الحل السحري */
+    margin: 0;
+    padding: 0;
+    position: relative;
+}
+
+/* 3. إصلاح الهيدر تحديداً */
+/* استبدل .navbar باسم الكلاس الخاص بالهيدر عندك لو مختلف */
+.navbar, header, .header-container {
+    width: 100%;      /* استخدم % بدلاً من vw */
+    max-width: 100vw; /* ضمان عدم تجاوز الشاشة */
+    padding-left: 15px; /* مسافات آمنة */
+    padding-right: 15px;
+    
+    /* لو بتستخدم position fixed */
+    left: 0;
+    right: 0;
+}

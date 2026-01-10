@@ -185,10 +185,9 @@ document.getElementById('log-dist').value = dist;
         if(preview) { preview.src = ''; preview.style.display = 'none'; }
     }
 
-    // 4. فتح النافذة (مرة واحدة فقط)
-    openLogModal();
-}
-
+// 4. فتح النافذة (التصحيح: استخدام اسم المودال الصحيح)
+    openModal('modal-log'); // ✅ الدالة الصحيحة
+}; // إغلاق الدالة بشكل سليم
 
 // ================================================================= 
 
@@ -282,6 +281,80 @@ async function openChallengeDetails(chId) {
         list.innerHTML = '<div style="text-align:center; color:#ef4444;">حدث خطأ في تحميل البيانات</div>';
     }
 }
+
+
+
+// ==================== وظيفة التعديل الذكية (Smart Edit) ====================
+window.prepareEditRun = function(runId) {
+    // 1. البحث عن النشاط في الذاكرة
+    const run = (window._ersRunsCache || []).find(r => r.id === runId);
+    
+    if (!run) {
+        // محاولة طوارئ: لو الكاش مش جاهز، نجيب البيانات من HTML لو أمكن (أو نكتفي بالتنبيه)
+        alert("بيانات النشاط غير محملة، حاول تحديث الصفحة.");
+        return;
+    }
+
+    // 2. تحديث المتغيرات العامة للتعديل
+    editingRunId = runId;
+    editingOldDist = run.dist || 0;
+    editingOldType = run.type || 'Run';
+
+    // 3. ملء حقول المودال
+    const distInput = document.getElementById('log-dist');
+    const timeInput = document.getElementById('log-time');
+    const typeInput = document.getElementById('log-type');
+    const dateInput = document.getElementById('log-date');
+    const imgInput = document.getElementById('uploaded-img-url');
+    const preview = document.getElementById('img-preview');
+    const saveBtn = document.getElementById('save-run-btn');
+    const modalTitle = document.querySelector('#modal-log h3'); // عنوان المودال
+
+    if (distInput) distInput.value = run.dist;
+    if (timeInput) timeInput.value = run.time;
+    
+    if (typeInput) {
+        typeInput.value = run.type || 'Run';
+        // تفعيل حدث التغيير لضبط الحقول (جري/تمرين)
+        try { typeInput.dispatchEvent(new Event('change')); } catch(e){}
+    }
+
+    // ضبط التاريخ (معالجة صيغ التاريخ المختلفة)
+    if (dateInput) {
+        let dateStr = '';
+        if (run.dateStr) dateStr = run.dateStr;
+        else if (run.timestamp && run.timestamp.toDate) dateStr = run.timestamp.toDate().toISOString().split('T')[0];
+        else if (run.date) dateStr = new Date(run.date).toISOString().split('T')[0];
+        
+        dateInput.value = dateStr;
+    }
+
+    // معالجة الصورة
+    const imgUrl = run.img || run.imgUrl;
+    if (imgInput) imgInput.value = imgUrl || '';
+    if (preview) {
+        if (imgUrl) {
+            preview.src = imgUrl;
+            preview.style.display = 'block';
+        } else {
+            preview.src = '';
+            preview.style.display = 'none';
+        }
+    }
+
+    // 4. تغيير نصوص الزر والعنوان
+    if (saveBtn) saveBtn.innerText = "حفظ التعديلات";
+    if (modalTitle) modalTitle.innerText = "تعديل النشاط ✏️";
+
+    // 5. فتح المودال
+    if (typeof openModal === 'function') {
+        openModal('modal-log');
+    } else {
+        // Fallback لو دالة openModal مش موجودة
+        const modal = document.getElementById('modal-log');
+        if (modal) modal.style.display = 'flex';
+    }
+};
 // ==================== 6. سجل الأنشطة (تصميم كروت احترافي V3.0) ====================
 // ==================== 6. سجل الأنشطة (New Badge Logic) ====================
 function loadActivityLog() {
@@ -299,6 +372,7 @@ function loadActivityLog() {
           const runs = []; 
           let maxDist = 0, maxTime = 0, bestPace = 999;
 
+          // 1. استخراج البيانات وحساب الأرقام القياسية بدقة (لحماية الإحصائيات)
           snap.forEach(doc => {
               const r = doc.data(); r.id = doc.id;
               runs.push(r);
@@ -312,19 +386,13 @@ function loadActivityLog() {
               }
           });
 
-          // 1. تحديث الكاش العالمي
+          // ✅ تحديث الكاش العالمي (مهم جداً للتحديات والكوتش)
           window._ersRunsCache = runs; 
-
-          // 🔥 2. السطر السحري الأول: تحديث مسافة الأسبوع (الزرقاء)
           if (typeof updateHeroWeekDist === 'function') updateHeroWeekDist();
-
-          // 🔥 3. السطر السحري الثاني: تحديث واجهة المستخدم بالكامل (الإحصائيات الشهرية)
           if (typeof updateUI === 'function') updateUI();
-          
-          // تحديث محرك الكوتش
           if (typeof updateCoachDecisionUI === 'function') updateCoachDecisionUI(runs);
 
-          // --- كود بناء الـ HTML (زي ما هو بدون تغيير) ---
+          // 2. تجميع حسب الشهر للعرض البصري
           const groups = {};
           runs.forEach(r => {
               const date = r.timestamp ? r.timestamp.toDate() : new Date();
@@ -344,32 +412,50 @@ function loadActivityLog() {
                       <span style="color:var(--text-muted);">إجمالي: ${monthTotal} كم</span>
                   </div>`;
 
+              // 3. عرض الجريات (الشكل الجديد المطور)
               monthRuns.forEach(r => {
                   const dateObj = r.timestamp ? r.timestamp.toDate() : new Date();
                   const dayName = dateObj.toLocaleDateString('ar-EG', { weekday: 'short' });
                   const dayNum = dateObj.getDate();
                   const pace = (r.dist > 0 && r.time > 0) ? (r.time / r.dist).toFixed(2) : '-';
+                  const isWalk = String(r.type).toLowerCase().includes('walk');
                   
-                  const hasMap = r.polyline ? '<i class="ri-map-2-line" style="color:var(--primary)"></i>' : '';
-                  const hasImg = r.imgUrl ? '<i class="ri-image-line" style="color:var(--accent)"></i>' : '';
+                  // تمييز الألوان والأيقونات
+                  const themeColor = isWalk ? '#3b82f6' : 'var(--primary)'; 
+                  const icon = isWalk ? 'ri-walk-line' : 'ri-run-line';
+                  const hasMap = r.polyline ? `<i class="ri-map-2-line" style="color:var(--primary)"></i>` : '';
+                 const hasImg = (r.img || r.imgUrl) ? `<i class="ri-image-line" style="color:var(--accent)"></i>` : '';
 
+                  // --- التصحيح: إعادة بناء كارت السجل الشخصي ---
                   html += `
-                  <div class="activity-item-foldable" onclick="openRunDetail('${r.id}')" style="background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer;">
-                      <div style="display:flex; align-items:center; gap:12px;">
-                          <div style="width:50px; height:50px; border-radius:8px; background:#111827; overflow:hidden; display:flex; align-items:center; justify-content:center; border:1px solid rgba(255,255,255,0.05);">
-                              ${r.imgUrl ? `<img src="${r.imgUrl}" style="width:100%; height:100%; object-fit:cover;">` : `<i class="${r.type === 'Walk' ? 'ri-walk-line' : 'ri-run-line'}" style="font-size:20px; opacity:0.5;"></i>`}
+                  <div class="log-item" onclick="openRunDetail('${r.id}')" style="display:flex; align-items:center; gap:12px; padding:12px; background:rgba(255,255,255,0.03); border-radius:12px; margin-bottom:8px; border-right:3px solid ${themeColor}; cursor:pointer; position:relative;">
+                      
+                      <div style="display:flex; flex-direction:column; align-items:center; min-width:40px; text-align:center;">
+                          <span style="font-size:10px; color:var(--text-muted);">${dayName}</span>
+                          <span style="font-size:16px; font-weight:bold; color:#e5e7eb;">${dayNum}</span>
+                      </div>
+                  
+                      <div style="width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; color:${themeColor}; font-size:18px;">
+                          <i class="${icon}"></i>
+                      </div>
+                  
+                      <div style="flex:1;">
+                          <div style="font-size:14px; color:#fff; font-weight:bold;">
+                              ${r.dist} <span style="font-size:10px; font-weight:normal; color:var(--text-muted);">كم</span>
                           </div>
-                          
-                          <div style="flex:1;">
-                              <div style="display:flex; justify-content:space-between; align-items:start;">
-                                  <div style="font-weight:900; font-size:16px;">${r.dist} <small style="font-size:10px; color:var(--text-muted);">كم</small></div>
-                                  <div style="font-size:12px; color:var(--primary); font-family:monospace;">${pace} <small>بيس</small></div>
-                              </div>
-                              <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
-                                  <div style="font-size:11px; color:var(--text-muted);">${dayNum} ${dayName} • ${r.time} دقيقة</div>
-                                  <div style="display:flex; gap:8px;">${hasMap}${hasImg}</div>
-                              </div>
+                          <div style="font-size:11px; color:var(--text-muted);">
+                              ${pace} د/كم • ${r.time} دقيقة ${hasMap} ${hasImg}
                           </div>
+                      </div>
+                  
+                      <div style="display:flex; gap:8px;" onclick="event.stopPropagation();">
+<button onclick="window.prepareEditRun('${r.id}')" style="background:none; border:none; color:#9ca3af; cursor:pointer; padding:4px;">
+    <i class="ri-pencil-line"></i>
+</button>
+</button>
+                          <button onclick="deleteRun('${r.id}', '${r.dist}')" style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px;">
+                              <i class="ri-delete-bin-line"></i>
+                          </button>
                       </div>
                   </div>`;
               });
@@ -378,7 +464,6 @@ function loadActivityLog() {
           list.innerHTML = html;
       });
 }
-
 // ==================== 7. حذف نشاط ====================
 async function deleteRun(id, dist) {
     dist = parseFloat(dist);
@@ -724,23 +809,7 @@ async function uploadToImgBB(input) {
     } catch (e) { status.innerText = "❌ فشل الرفع"; }
 }
 
-// 2. دالة التعديل (إصلاح زر التعديل)
-function editRun(runId) {
-    const run = window._ersRunsCache.find(r => r.id === runId);
-    if (!run) return;
 
-    editingRunId = runId;
-    editingOldDist = run.dist;
-    
-    document.getElementById('log-dist').value = run.dist;
-    document.getElementById('log-time').value = run.time;
-    document.getElementById('log-type').value = run.type || 'Run';
-    document.getElementById('log-date').value = run.dateStr || '';
-    document.getElementById('uploaded-img-url').value = run.imgUrl || '';
-    
-    document.getElementById('log-modal-title').innerText = "تعديل النشاط ✏️";
-    openModal('modal-log');
-}
 
 // =================. دالة فتح التفاصيل عند الضغط على الكارت
 function openRunDetail(runId) {
