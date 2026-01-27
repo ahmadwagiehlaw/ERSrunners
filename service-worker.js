@@ -1,10 +1,9 @@
 // ERS Runners - Service Worker (V2.5.0)
-const CACHE_NAME = 'ers-cache-v4.1.0'; // تحديث رقم النسخة // تحديث رقم النسخة
+const CACHE_NAME = 'ers-cache-v4.1.1'; // تحديث رقم النسخة // تحديث رقم النسخة
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
   './style.css',
-  './electric-blue.css',
   './manifest.json',
   './icon.png',
   './ers-logo.png',
@@ -18,7 +17,6 @@ const ASSETS_TO_CACHE = [
   './js/challenges.js',
   './js/admin.js',
   './js/main.js',
-  './app.js',
 ];
 
 // 1. التثبيت (Install)
@@ -51,17 +49,17 @@ self.addEventListener('activate', (event) => {
 // 3. استراتيجية السرعة القصوى (Stale-While-Revalidate)
 self.addEventListener('fetch', (event) => {
   // استثناء طلبات الفايربيس (يجب أن تكون مباشرة دائماً)
-  if (event.request.url.includes('firestore') || 
-      event.request.url.includes('googleapis') || 
-      event.request.url.includes('auth')) {
-    return; 
+  if (event.request.url.includes('firestore') ||
+    event.request.url.includes('googleapis') ||
+    event.request.url.includes('auth')) {
+    return;
   }
 
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
       // 1. حاول العثور على الملف في الكاش أولاً
       const cachedResponse = await cache.match(event.request);
-      
+
       // 2. قم بطلب تحديث من الشبكة في الخلفية للمرة القادمة
       const networkFetch = fetch(event.request).then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {

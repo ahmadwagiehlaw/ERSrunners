@@ -1,0 +1,22 @@
+{
+  "name": "ers-runners-v4",
+  "version": "4.0.0",
+  "description": "ERS Runners Elite App - Native Android Version",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx capacitor open android",
+    "build": "echo 'No build step needed for static site'",
+    "sync": "npx capacitor sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/geolocation": "^5.0.0",
+    "@capacitor/status-bar": "^5.0.0",
+    "@capacitor/local-notifications": "^5.0.0",
+    "@capacitor/app": "^5.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^5.0.0"
+  }
+}

@@ -19,23 +19,23 @@ async function loadLeaderboard(filterType = 'all') {
 
     let teamTotal = 0;
     displayUsers.forEach(u => teamTotal += (u.totalDist || 0));
-    if(teamTotalEl) teamTotalEl.innerText = teamTotal.toFixed(0);
-    if(teamBar) teamBar.style.width = `${Math.min((teamTotal / 1000) * 100, 100)}%`;
+    if (teamTotalEl) teamTotalEl.innerText = teamTotal.toFixed(0);
+    if (teamBar) teamBar.style.width = `${Math.min((teamTotal / 1000) * 100, 100)}%`;
 
     if (podiumContainer) {
         let podiumHtml = '';
         const u1 = displayUsers[0];
         const u2 = displayUsers[1];
         const u3 = displayUsers[2];
-        if(u2) podiumHtml += createPodiumItem(u2, 2);
-        if(u1) podiumHtml += createPodiumItem(u1, 1);
-        if(u3) podiumHtml += createPodiumItem(u3, 3);
+        if (u2) podiumHtml += createPodiumItem(u2, 2);
+        if (u1) podiumHtml += createPodiumItem(u1, 1);
+        if (u3) podiumHtml += createPodiumItem(u3, 3);
         podiumContainer.innerHTML = podiumHtml || '<div style="color:#9ca3af; font-size:12px;">...</div>';
     }
 
     list.innerHTML = '';
-    const restUsers = displayUsers.slice(3); 
-    
+    const restUsers = displayUsers.slice(3);
+
     if (restUsers.length === 0 && displayUsers.length > 3) {
         list.innerHTML = '<div style="text-align:center; padding:10px;">لا يوجد المزيد</div>';
     }
@@ -51,7 +51,7 @@ async function loadLeaderboard(filterType = 'all') {
                     <div class="name">${u.name} ${isMe ? '(أنت)' : ''}</div>
                     <div class="region">${u.region}</div>
                 </div>
-                <div class="dist-col">${(u.totalDist||0).toFixed(1)}</div>
+                <div class="dist-col">${(u.totalDist || 0).toFixed(1)}</div>
             </div>`;
     });
 }
@@ -64,14 +64,14 @@ function createPodiumItem(user, rank) {
             ${crown}
             <div class="podium-avatar">${avatarChar}</div>
             <div class="podium-name">${user.name}</div>
-            <div class="podium-dist">${(user.totalDist||0).toFixed(1)}</div>
+            <div class="podium-dist">${(user.totalDist || 0).toFixed(1)}</div>
         </div>`;
 }
 
 
 function filterLeaderboard(type) {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    if(event && event.target) event.target.classList.add('active');
+    if (event && event.target) event.target.classList.add('active');
     loadLeaderboard(type);
 }
 
@@ -81,7 +81,7 @@ function viewUserProfile(targetUid) {
 
     document.getElementById('view-name').innerText = user.name;
     document.getElementById('view-region').innerText = user.region;
-    
+
     const rankData = calculateRank(user.totalDist || 0);
     document.getElementById('view-avatar').innerText = getUserAvatar(user);
     document.getElementById('view-rank').innerText = rankData.name;
@@ -94,15 +94,15 @@ function viewUserProfile(targetUid) {
     // 🔥 عرض البادجات في بروفايل العضو (ميزة جديدة)
     const badgesContainer = document.createElement('div');
     badgesContainer.style.cssText = "margin-top:15px; display:flex; gap:5px; justify-content:center; flex-wrap:wrap;";
-    
+
     if (user.badges && user.badges.length > 0) {
         user.badges.forEach(bId => {
             const badgeConfig = BADGES_CONFIG.find(x => x.id === bId);
-            if(badgeConfig) {
+            if (badgeConfig) {
                 // لو أنا أدمن، أضيف زر الحذف عند الضغط
                 const action = userData.isAdmin ? `onclick="adminRevokeBadge('${user.uid}', '${bId}')"` : '';
                 const cursor = userData.isAdmin ? 'cursor:pointer; border:1px dashed #ef4444;' : '';
-                
+
                 badgesContainer.innerHTML += `
                     <div title="${userData.isAdmin ? 'اضغط للحذف' : badgeConfig.name}" ${action} 
                          style="background:rgba(255,255,255,0.1); padding:5px; border-radius:8px; font-size:16px; ${cursor}">
@@ -117,8 +117,8 @@ function viewUserProfile(targetUid) {
 
     // تنظيف أي حاوية بادجات قديمة وإضافة الجديدة
     const existingBadges = document.getElementById('view-user-badges');
-    if(existingBadges) existingBadges.remove();
-    
+    if (existingBadges) existingBadges.remove();
+
     badgesContainer.id = 'view-user-badges';
     // إضافة البادجات بعد الـ stats-grid
     document.querySelector('#modal-view-user .stats-grid').after(badgesContainer);
@@ -138,13 +138,13 @@ window.currentReportFeedId = currentReportFeedId;
 // --- (دالة التحديات المحدثة التي قررنا استخدامها) ---
 async function loadActiveChallenges() {
     const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges'); 
-    
-    if(!list || !currentUser) return;
+    const mini = document.getElementById('my-active-challenges');
+
+    if (!list || !currentUser) return;
 
     // 1. جلب التحديات من قاعدة البيانات
     const snap = await db.collection('challenges').where('active', '==', true).get();
-    if(snap.empty) {
+    if (snap.empty) {
         list.innerHTML = "<div class='empty-state-fun'>لا توجد تحديات حالياً</div>";
         return;
     }
@@ -153,16 +153,16 @@ async function loadActiveChallenges() {
     let miniHtml = '';
     const allRuns = window._ersRunsCache || []; // 🔥 المصدر الوحيد للحقيقة
 
-    for(const doc of snap.docs) {
+    for (const doc of snap.docs) {
         const ch = { id: doc.id, ...doc.data() };
-        
+
         // جلب وثيقة المشارك
         const pDoc = await doc.ref.collection('participants').doc(currentUser.uid).get();
-        if(pDoc.exists) {
+        if (pDoc.exists) {
             // 🔥 إعادة حساب التقدم بناءً على الكاش (بما يغطي الجريات القديمة)
             const startDate = ch.startDate ? new Date(ch.startDate) : new Date(2026, 0, 1);
             const endDate = ch.endDate ? ch.endDate.toDate() : new Date(2026, 0, 31);
-            
+
             const validRuns = allRuns.filter(r => {
                 const rDate = r.timestamp ? r.timestamp.toDate() : null;
                 return rDate && rDate >= startDate && rDate <= endDate && r.type === 'Run';
@@ -197,7 +197,7 @@ async function loadActiveChallenges() {
     }
 
     if (mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
-    renderChallenges(); 
+    renderChallenges();
 }// ==================== Community Reporting System (V5.0) ====================
 
 function openReportModal(feedId) {
@@ -207,11 +207,11 @@ function openReportModal(feedId) {
 
 async function submitReport() {
     const reason = document.getElementById('report-reason').value;
-    if(!currentReportFeedId) return;
-    
+    if (!currentReportFeedId) return;
+
     const btn = event.target;
     btn.innerText = "جاري الإرسال...";
-    
+
     try {
         // إضافة البلاغ في كولكشن منفصل
         await db.collection('reports').add({
@@ -222,7 +222,7 @@ async function submitReport() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'pending' // pending, resolved
         });
-        
+
         // يمكننا أيضاً إضافة علامة على البوست نفسه
         /* await db.collection('activity_feed').doc(currentReportFeedId).update({
             flags: firebase.firestore.FieldValue.increment(1)
@@ -230,7 +230,7 @@ async function submitReport() {
 
         showToast("تم استلام البلاغ، شكراً لحرصك 👮‍♂️", "success");
         closeModal('modal-report');
-    } catch(e) {
+    } catch (e) {
         showToast("حدث خطأ", "error");
     } finally {
         btn.innerText = "إرسال البلاغ";
@@ -242,11 +242,11 @@ async function submitReport() {
 //==========================================
 function setChallengeFilter(filter, btn) {
     currentChallengeFilter = filter;
-    
+
     // تحديث شكل الأزرار
     document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    
+
     // إعادة الرسم
     renderChallenges(currentChartMode); // تمرير أي قيمة، الفلترة ستتم بالداخل
 }
@@ -254,7 +254,7 @@ function setChallengeFilter(filter, btn) {
 //==========================================
 function renderChallenges(dummy) {
     const list = document.getElementById('challenges-list');
-    
+
     // 1. تطبيق الفلترة
     let displayList = allChallengesCache;
 
@@ -300,7 +300,7 @@ function renderChallenges(dummy) {
             end.setDate(end.getDate() + (ch.durationDays || 30));
             const diffTime = end - new Date();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            
+
             if (diffDays < 0) daysLeftText = "انتهى";
             else if (diffDays <= 3) { daysLeftText = `🔥 باقي ${diffDays} يوم`; isUrgent = true; }
             else daysLeftText = `⏳ باقي ${diffDays} يوم`;
@@ -309,7 +309,7 @@ function renderChallenges(dummy) {
         // إعداد الفوتر
         let timeIcon = isUrgent ? "ri-fire-fill" : "ri-hourglass-2-fill";
         let timeClass = isUrgent ? "time urgent" : (daysLeftText === "انتهى" ? "time done" : "time");
-        if(daysLeftText === "انتهى") timeIcon = "ri-checkbox-circle-fill";
+        if (daysLeftText === "انتهى") timeIcon = "ri-checkbox-circle-fill";
 
         const metaFooter = `
             <div class="ch-meta-footer">
@@ -356,7 +356,7 @@ function renderChallenges(dummy) {
         if (ch.type === 'speed') {
             const isDone = ch.completed;
             fullHtml += `
-            <div class="ch-card speed-mode ${isDone?'done':''}" ${cardAttribs}>
+            <div class="ch-card speed-mode ${isDone ? 'done' : ''}" ${cardAttribs}>
                 ${adminControls} ${rankBadge}
                 <div style="margin-top: 45px;">
                     <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
@@ -368,12 +368,12 @@ function renderChallenges(dummy) {
         }
         else if (ch.type === 'frequency') {
             let dotsHtml = '';
-            const maxDots = Math.min(ch.target, 14); 
-            for(let i=0; i<maxDots; i++) {
+            const maxDots = Math.min(ch.target, 14);
+            for (let i = 0; i < maxDots; i++) {
                 const filled = i < ch.progress ? 'filled' : '';
                 dotsHtml += `<div class="habit-dot ${filled}"></div>`;
             }
-            if(ch.target > 14) dotsHtml += `<span style="font-size:10px; color:#fff; align-self:center;">+${ch.target-14}</span>`;
+            if (ch.target > 14) dotsHtml += `<span style="font-size:10px; color:#fff; align-self:center;">+${ch.target - 14}</span>`;
 
             fullHtml += `
             <div class="ch-card habit-mode" ${cardAttribs}>
@@ -416,12 +416,12 @@ async function openChallengeDetails(chId) {
     const modal = document.getElementById('modal-challenge-details');
     const header = document.getElementById('ch-modal-header');
     const list = document.getElementById('ch-leaderboard-list');
-    
-    if(!modal) return;
+
+    if (!modal) return;
 
     modal.style.display = 'flex';
     list.innerHTML = '<div class="loader-placeholder">جاري بناء المنصة...</div>';
-    header.innerHTML = ''; 
+    header.innerHTML = '';
     header.style.padding = '0'; // إزالة الحواف للتصميم الجديد
     header.style.background = 'none';
     header.style.border = 'none';
@@ -430,17 +430,17 @@ async function openChallengeDetails(chId) {
         // 1. جلب بيانات التحدي
         const chDoc = await db.collection('challenges').doc(chId).get();
         if (!chDoc.exists) return showToast("التحدي غير موجود", "error");
-        
+
         const ch = chDoc.data();
-        const target = parseFloat(ch.target) || 1; 
+        const target = parseFloat(ch.target) || 1;
         document.getElementById('ch-modal-title').innerText = ch.title;
 
         // 2. جلب بياناتي أنا في هذا التحدي (للعرض في الهيدر)
         let myProgress = 0;
         let amIJoined = false;
-        if(currentUser) {
+        if (currentUser) {
             const myEntry = await db.collection('challenges').doc(chId).collection('participants').doc(currentUser.uid).get();
-            if(myEntry.exists) {
+            if (myEntry.exists) {
                 amIJoined = true;
                 // 🔥 الفلتر القوي لعلاج NaN
                 let raw = myEntry.data().progress;
@@ -455,7 +455,7 @@ async function openChallengeDetails(chId) {
         // 3. رسم الهيدر الثوري (الدائرة الكبيرة)
         let headerHtml = `
             <div class="rev-modal-header">
-                <div class="rev-progress-circle" style="--prog:${deg}deg; --primary:${ch.type==='speed'?'#ef4444':'#10b981'}">
+                <div class="rev-progress-circle" style="--prog:${deg}deg; --primary:${ch.type === 'speed' ? '#ef4444' : '#10b981'}">
                     <div class="rev-progress-content">
                         <span class="rev-val">${amIJoined ? myProgress.toFixed(1) : '0'}</span>
                         <span class="rev-unit">${ch.type === 'frequency' ? 'مرات' : 'كم'}</span>
@@ -465,15 +465,15 @@ async function openChallengeDetails(chId) {
                     ${amIJoined ? (myPerc >= 100 ? '🎉 التحدي مكتمل!' : '🔥 متكسلش يا بطل!') : 'انضم الآن للتحدي'}
                 </div>
                 <div style="font-size:11px; color:#9ca3af; margin-top:5px;">
-                    الهدف النهائي: ${ch.target} ${ch.type==='frequency'?'مرة':'كم'}
+                    الهدف النهائي: ${ch.target} ${ch.type === 'frequency' ? 'مرة' : 'كم'}
                 </div>
         `;
-        
+
         // إضافة زر الانضمام داخل الهيدر لو لم يكن مشتركاً
-        if(!amIJoined) {
+        if (!amIJoined) {
             headerHtml += `<button onclick="joinChallenge('${chId}')" class="btn btn-primary" style="margin-top:15px; padding:10px; font-size:12px;">قبول التحدي 🚀</button>`;
         }
-        
+
         headerHtml += `</div>`; // إغلاق الهيدر
         header.innerHTML = headerHtml;
 
@@ -488,25 +488,25 @@ async function openChallengeDetails(chId) {
         }
 
         let listHtml = '<div class="rev-list">';
-        
+
         snap.docs.forEach((doc, index) => {
             const p = doc.data();
             const rank = index + 1;
             const isMe = (currentUser && doc.id === currentUser.uid);
-            
+
             // 🔥 الفلتر القوي لعلاج NaN في القائمة
             let safeProg = (typeof p.progress === 'number' && !isNaN(p.progress)) ? p.progress : 0;
-            
+
             // تحديد الميدالية
             let medal = `<span style="font-size:12px; font-weight:bold; color:#6b7280;">#${rank}</span>`;
             let rankClass = '';
-            if(rank === 1) { medal = '🥇'; rankClass = 'rank-1'; }
-            if(rank === 2) { medal = '🥈'; rankClass = 'rank-2'; }
-            if(rank === 3) { medal = '🥉'; rankClass = 'rank-3'; }
+            if (rank === 1) { medal = '🥇'; rankClass = 'rank-1'; }
+            if (rank === 2) { medal = '🥈'; rankClass = 'rank-2'; }
+            if (rank === 3) { medal = '🥉'; rankClass = 'rank-3'; }
 
             // لون البار حسب الترتيب
             let barColor = rank === 1 ? '#f59e0b' : (rank === 2 ? '#9ca3af' : (rank === 3 ? '#cd7f32' : 'var(--primary)'));
-            if(ch.type === 'speed') barColor = '#ef4444';
+            if (ch.type === 'speed') barColor = '#ef4444';
 
             // نسبة البار
             let barPerc = Math.min((safeProg / target) * 100, 100);
@@ -530,7 +530,7 @@ async function openChallengeDetails(chId) {
                 
                 <div class="rev-stat">
                     <span class="rev-stat-val">${safeProg.toFixed(1)}</span>
-                    <span class="rev-stat-lbl">${ch.type==='frequency'?'مرة':'كم'}</span>
+                    <span class="rev-stat-lbl">${ch.type === 'frequency' ? 'مرة' : 'كم'}</span>
                 </div>
             </div>`;
         });
@@ -600,21 +600,21 @@ async function joinChallenge(chId) {
 
 // 2. دالة حذف التحدي (لزر الحذف في الأدمن وفي الكروت)
 async function deleteChallenge(id) {
-    if(!confirm("هل أنت متأكد من حذف هذا التحدي نهائياً؟")) return;
-    
+    if (!confirm("هل أنت متأكد من حذف هذا التحدي نهائياً؟")) return;
+
     try {
         await db.collection('challenges').doc(id).delete();
         showToast("تم حذف التحدي 🗑️", "success");
-        
+
         // تحديث الكاش والواجهة
         allChallengesCache = allChallengesCache.filter(c => c.id !== id);
-        
+
         // تحديث المكانين (صفحة المنافسة وصفحة الأدمن)
         renderChallenges('all');
-        if(document.getElementById('admin-active-challenges-list')) {
+        if (document.getElementById('admin-active-challenges-list')) {
             loadAdminChallengesList();
         }
-    } catch(e) {
+    } catch (e) {
         console.error(e);
         showToast("فشل الحذف", "error");
     }
@@ -624,7 +624,7 @@ async function deleteChallenge(id) {
 // ==================== ENGINE: Challenge Studio V8.0 (Final) ====================
 
 // 1. تعريف المتغير العام (Global)
-var editingChallengeId = null; 
+var editingChallengeId = null;
 
 // 2. دالة تهيئة التعديل (عند الضغط على القلم)
 async function editChallenge(id) {
@@ -637,7 +637,7 @@ async function editChallenge(id) {
     try {
         // جلب البيانات
         const doc = await db.collection('challenges').doc(id).get();
-        
+
         // إعادة الشفافية للأزرار
         allEditBtns.forEach(icon => icon.parentElement.style.opacity = '1');
 
@@ -646,7 +646,7 @@ async function editChallenge(id) {
 
         // 1. الانتقال للواجهة أولاً
         switchView('admin');
-        
+
         // 2. تفعيل تبويب الستوديو (سيقوم الكود الجديد بالتعامل معه دون أخطاء)
         switchAdminTab('studio');
 
@@ -655,12 +655,12 @@ async function editChallenge(id) {
         document.getElementById('adv-ch-type').value = ch.type || 'distance';
         document.getElementById('adv-ch-target').value = ch.target || '';
         document.getElementById('adv-ch-days').value = ch.durationDays || '';
-        
+
         // معالجة التاريخ
-        if(ch.startDate) {
+        if (ch.startDate) {
             let dateVal = ch.startDate;
             // لو التاريخ مخزن بصيغة ISO نأخذ الجزء الأول فقط
-            if(dateVal.includes('T')) dateVal = dateVal.split('T')[0];
+            if (dateVal.includes('T')) dateVal = dateVal.split('T')[0];
             document.getElementById('adv-ch-start').value = dateVal;
         }
 
@@ -670,7 +670,7 @@ async function editChallenge(id) {
             document.getElementById('rule-time-start').value = (ch.rules.validHourStart !== undefined) ? ch.rules.validHourStart : '';
             document.getElementById('rule-time-end').value = (ch.rules.validHourEnd !== undefined) ? ch.rules.validHourEnd : '';
             document.getElementById('rule-require-img').checked = ch.rules.requireImg || false;
-            
+
             // فتح قائمة القواعد إذا كان هناك بيانات
             const rulesContent = document.getElementById('rules-content');
             rulesContent.style.display = 'block';
@@ -681,17 +681,17 @@ async function editChallenge(id) {
 
         // 4. تفعيل وضع التعديل (تغيير أزرار الحفظ)
         editingChallengeId = id; // تخزين الآيدي في المتغير العام
-        
+
         const submitBtn = document.getElementById('btn-create-challenge');
         const cancelBtn = document.getElementById('btn-cancel-edit');
-        
-        if(submitBtn) {
+
+        if (submitBtn) {
             submitBtn.innerHTML = `حفظ التغييرات 💾`;
             submitBtn.style.background = "#f59e0b"; // لون برتقالي للتعديل
             submitBtn.style.color = "#000";
         }
-        
-        if(cancelBtn) {
+
+        if (cancelBtn) {
             cancelBtn.style.display = 'flex'; // إظهار زر الإلغاء
         }
 
@@ -714,7 +714,7 @@ async function createGeniusChallenge() {
     const days = parseInt(document.getElementById('adv-ch-days').value);
     const startDateVal = document.getElementById('adv-ch-start').value;
 
-    if(!title || !target || !days) return showToast("البيانات ناقصة", "error");
+    if (!title || !target || !days) return showToast("البيانات ناقصة", "error");
 
     const startDate = startDateVal ? new Date(startDateVal).toISOString() : new Date().toISOString();
 
@@ -722,7 +722,7 @@ async function createGeniusChallenge() {
         minDistPerRun: parseFloat(document.getElementById('rule-min-dist').value) || 0,
         requireImg: document.getElementById('rule-require-img').checked
     };
-    
+
     const startHour = document.getElementById('rule-time-start').value;
     const endHour = document.getElementById('rule-time-end').value;
     if (startHour !== "" && endHour !== "") {
@@ -743,7 +743,7 @@ async function createGeniusChallenge() {
             // 🔥 مسار التعديل
             await db.collection('challenges').doc(editingChallengeId).update(challengeData);
             showToast("تم حفظ التعديلات ✅", "success");
-            cancelEditMode(); 
+            cancelEditMode();
         } else {
             // 🔥 مسار الإنشاء الجديد
             challengeData.active = true;
@@ -751,13 +751,13 @@ async function createGeniusChallenge() {
             challengeData.createdStr = new Date().toLocaleDateString('ar-EG');
             await db.collection('challenges').add(challengeData);
             showToast("تم إطلاق التحدي 🚀", "success");
-            cancelEditMode(); 
+            cancelEditMode();
         }
-        
-        loadAdminChallengesList(); 
-        if(typeof renderChallenges === 'function') renderChallenges('all');
-        
-    } catch(e) {
+
+        loadAdminChallengesList();
+        if (typeof renderChallenges === 'function') renderChallenges('all');
+
+    } catch (e) {
         console.error(e);
         showToast("حدث خطأ", "error");
     } finally {
@@ -770,7 +770,7 @@ async function createGeniusChallenge() {
 // 5. دالة عرض القائمة (لضمان وجود زر التعديل)
 function loadAdminChallengesList() {
     const list = document.getElementById('admin-active-challenges-list');
-    if(!list) return;
+    if (!list) return;
 
     db.collection('challenges').where('active', '==', true).get().then(snap => {
         let html = '';
@@ -806,12 +806,12 @@ function openPlanWizard() {
     document.getElementById('wizard-step-input').style.display = 'block';
     document.getElementById('wizard-step-thinking').style.display = 'none';
     document.getElementById('wizard-step-result').style.display = 'none';
-    
+
     // تصفير الاختيارات
     document.querySelectorAll('.sel-option').forEach(el => el.classList.remove('selected'));
     document.getElementById('plan-days').value = '';
     document.getElementById('plan-target').value = '';
-    
+
     document.getElementById('modal-plan-wizard').style.display = 'flex';
 }
 
@@ -829,8 +829,8 @@ function selectPlanOption(el, type, value) {
 function startPlanGeneration() {
     const days = document.getElementById('plan-days').value;
     const target = document.getElementById('plan-target').value;
-    
-    if(!days || !target) return showToast("يرجى اختيار الأيام والهدف", "error");
+
+    if (!days || !target) return showToast("يرجى اختيار الأيام والهدف", "error");
 
     // 1. الانتقال لشاشة التفكير
     document.getElementById('wizard-step-input').style.display = 'none';
@@ -843,14 +843,14 @@ function startPlanGeneration() {
         "تصميم جدول الجريات الطويلة...",
         "ضبط اللمسات الأخيرة..."
     ];
-    
+
     const textEl = document.getElementById('thinking-text');
     const barEl = document.getElementById('thinking-bar');
     let step = 0;
 
     // 2. تشغيل الأنيميشن (محاكاة الذكاء الاصطناعي)
     const interval = setInterval(() => {
-        if(step >= thinkingTexts.length) {
+        if (step >= thinkingTexts.length) {
             clearInterval(interval);
             showPlanResult(days, target); // إظهار النتيجة
         } else {
@@ -865,10 +865,10 @@ function startPlanGeneration() {
 function showPlanResult(days, target) {
     document.getElementById('wizard-step-thinking').style.display = 'none';
     document.getElementById('wizard-step-result').style.display = 'block';
-    
+
     // تحديث النصوص في النتيجة
     document.getElementById('res-target').innerText = target === '21k' ? 'نصف ماراثون' : target;
-    
+
     // هنا يمكننا مستقبلاً حفظ الخطة الحقيقية في المتغيرات
     // let planDuration = target === '5k' ? 8 : 12; // أسابيع
     // document.getElementById('res-weeks').innerText = planDuration + " أسابيع";
@@ -881,10 +881,10 @@ async function confirmPlan() {
     const days = document.getElementById('plan-days').value;
     const target = document.getElementById('plan-target').value;
     const level = document.getElementById('plan-level').value;
-    
+
     const btn = event.target;
     btn.innerText = "جاري إنشاء الجدول...";
-    
+
     // 🔥 التعديل هنا: تحديد تاريخ البدء ليكون بداية اليوم الحالي
     const startDate = new Date();
     startDate.setHours(0, 0, 0, 0); // تصفير الوقت ليحسب أي جرية تمت اليوم
@@ -903,7 +903,7 @@ async function confirmPlan() {
         await db.collection('users').doc(currentUser.uid).update({
             activePlan: newPlanData
         });
-        
+
         // 2. تحديث البيانات المحلية فوراً
         userData.activePlan = newPlanData;
 
@@ -912,10 +912,10 @@ async function confirmPlan() {
 
         showToast("تم تفعيل الخطة بنجاح! 🚀", "success");
         closeModal('modal-plan-wizard');
-        
-        setTimeout(() => openMyPlan(), 500); 
 
-    } catch(e) {
+        setTimeout(() => openMyPlan(), 500);
+
+    } catch (e) {
         console.error(e);
         showToast("خطأ في الحفظ", "error");
     } finally {
@@ -992,8 +992,8 @@ function showRunAnalysis(dist, time, kind = 'Run', paceOverride = null) {
 
 // دالة للأدمن فقط: سحب إنجاز
 async function adminRevokeBadge(targetUid, badgeId) {
-    if(!userData.isAdmin) return;
-    if(!confirm(`هل أنت متأكد من سحب إنجاز (${badgeId}) من هذا العضو؟`)) return;
+    if (!userData.isAdmin) return;
+    if (!confirm(`هل أنت متأكد من سحب إنجاز (${badgeId}) من هذا العضو؟`)) return;
 
     try {
         await db.collection('users').doc(targetUid).update({
@@ -1002,7 +1002,7 @@ async function adminRevokeBadge(targetUid, badgeId) {
         showToast("تم سحب الإنجاز 🚫", "success");
         // تحديث الواجهة فوراً
         closeModal('modal-view-user');
-    } catch(e) {
+    } catch (e) {
         showToast("خطأ في العملية", "error");
     }
 }
@@ -1017,11 +1017,11 @@ function openBugReport() {
 
 async function submitBug() {
     const txt = document.getElementById('bug-text').value;
-    if(!txt.trim()) return showToast("اكتب شيئاً أولاً", "error");
-    
+    if (!txt.trim()) return showToast("اكتب شيئاً أولاً", "error");
+
     const btn = event.target;
     btn.innerText = "جاري الإرسال...";
-    
+
     try {
         await db.collection('app_feedback').add({
             uid: currentUser.uid,
@@ -1032,7 +1032,7 @@ async function submitBug() {
         });
         showToast("وصلنا، شكراً لك! 🫡", "success");
         closeModal('modal-bug-report');
-    } catch(e) {
+    } catch (e) {
         showToast("فشل الإرسال", "error");
     } finally {
         btn.innerText = "إرسال";
@@ -1043,10 +1043,10 @@ async function submitBug() {
 function openMyPlan() {
     const modal = document.getElementById('modal-my-plan');
     if (!userData.activePlan) return showToast("لا توجد خطة نشطة!", "error");
-    
+
     // إظهار المودال
-    if(modal) modal.style.display = 'flex';
-    
+    if (modal) modal.style.display = 'flex';
+
     renderWeeklySchedule();
 }
 
@@ -1055,24 +1055,24 @@ function openMyPlan() {
 async function renderWeeklySchedule() {
     const container = document.getElementById('plan-schedule-list');
     const plan = userData.activePlan;
-    
+
     // عرض رسالة تحميل مؤقتة
     container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">جاري مراجعة التمارين... ⏳</div>';
 
     // 1. حساب تواريخ الأسبوع الحالي
     const planStartDate = new Date(plan.startDate);
     const now = new Date();
-    
+
     // تصحيح التوقيت لضمان دقة الأيام
-    planStartDate.setHours(0,0,0,0);
-    now.setHours(0,0,0,0);
+    planStartDate.setHours(0, 0, 0, 0);
+    now.setHours(0, 0, 0, 0);
 
     const diffTime = now - planStartDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
-    
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
     // تحديد رقم الأسبوع الحالي
     const currentWeek = Math.floor(diffDays / 7) + 1;
-    
+
     // تحديد تاريخ بداية هذا الأسبوع (يوم 1 في الأسبوع الحالي)
     const startOfCurrentWeek = new Date(planStartDate);
     startOfCurrentWeek.setDate(planStartDate.getDate() + ((currentWeek - 1) * 7));
@@ -1087,14 +1087,14 @@ async function renderWeeklySchedule() {
             .where('timestamp', '>=', startOfCurrentWeek)
             .where('timestamp', '<', endOfCurrentWeek)
             .get();
-        
+
         snapshot.forEach(doc => {
             const data = doc.data();
             // نحول التاريخ لنص بسيط للمقارنة (YYYY-MM-DD)
             const dateKey = data.timestamp.toDate().toISOString().split('T')[0];
             weeklyRuns.push({ date: dateKey, dist: data.dist });
         });
-    } catch(e) {
+    } catch (e) {
         console.error("Error fetching weekly runs", e);
     }
 
@@ -1105,13 +1105,13 @@ async function renderWeeklySchedule() {
     // 3. بناء الجدول
     let html = '';
     const daysCount = parseInt(plan.daysPerWeek) || 3;
-    
+
     // نمط توزيع أيام الراحة
     let runDays = [];
-    if(daysCount === 3) runDays = [1, 3, 5]; 
-    else if(daysCount === 4) runDays = [1, 2, 4, 6];
-    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
-    else runDays = [1, 2, 3, 4, 5, 6]; 
+    if (daysCount === 3) runDays = [1, 3, 5];
+    else if (daysCount === 4) runDays = [1, 2, 4, 6];
+    else if (daysCount === 5) runDays = [1, 2, 3, 5, 6];
+    else runDays = [1, 2, 3, 4, 5, 6];
 
     for (let i = 1; i <= 7; i++) {
         // حساب تاريخ هذا اليوم (i)
@@ -1121,7 +1121,7 @@ async function renderWeeklySchedule() {
         const isToday = (thisDayDateStr === now.toISOString().split('T')[0]);
 
         const isRunDay = runDays.includes(i);
-        
+
         // فحص هل تم إنجاز التمرين؟
         // نبحث هل يوجد جرية في هذا التاريخ ومسافتها أكبر من 1 كم (لتجنب الجريات الخاطئة)
         const isCompleted = weeklyRuns.some(r => r.date === thisDayDateStr && r.dist >= 1);
@@ -1131,20 +1131,20 @@ async function renderWeeklySchedule() {
         let desc = "رحرح جسمك النهاردة.";
         let icon = "ri-cup-line";
         let statusClass = "rest";
-        
+
         if (isRunDay) {
-            let baseDist = parseInt(plan.target) / daysCount; 
-            if (i === runDays[0]) { 
+            let baseDist = parseInt(plan.target) / daysCount;
+            if (i === runDays[0]) {
                 title = `جري مسافة ${baseDist.toFixed(1)} كم`;
                 desc = "جري مريح لبناء الأساس الهوائي.";
                 icon = "ri-run-line";
                 statusClass = "run";
-            } else if (i === runDays[runDays.length-1]) { 
+            } else if (i === runDays[runDays.length - 1]) {
                 title = `جري طويل ${(baseDist * 1.2).toFixed(1)} كم`;
                 desc = "تحدي نهاية الأسبوع.";
                 icon = "ri-speed-line";
                 statusClass = "long-run";
-            } else { 
+            } else {
                 title = `جري سرعات ${(baseDist * 0.8).toFixed(1)} كم`;
                 desc = "جري سريع لرفع كفاءة القلب.";
                 icon = "ri-flashlight-fill";
@@ -1152,15 +1152,15 @@ async function renderWeeklySchedule() {
             }
         }
 
-// ... داخل Loop الأيام في دالة renderWeeklySchedule ...
+        // ... داخل Loop الأيام في دالة renderWeeklySchedule ...
 
         // إضافة كلاس الإنجاز وتغيير المحتوى ليكون احتفالياً
         if (isCompleted && isRunDay) {
-            statusClass += " done"; 
-            
+            statusClass += " done";
+
             // تغيير الأيقونة لعلامة صح مزدوجة أو كأس
-            icon = "ri-checkbox-circle-fill"; 
-            
+            icon = "ri-checkbox-circle-fill";
+
             // نصوص تشجيعية متنوعة
             const praiseMessages = [
                 "عاش يا وحش! 💪",
@@ -1170,16 +1170,16 @@ async function renderWeeklySchedule() {
             ];
             // اختيار رسالة عشوائية (اختياري) أو ثابتة
             title = praiseMessages[Math.floor(Math.random() * praiseMessages.length)];
-            
+
             desc = `سجلت تمرين اليوم بنجاح. ارتاح واستعد للي جاي!`;
         }
 
         // تصميم الكارت (كما هو)
-        
+
         html += `
         <div class="plan-day-card ${isToday ? 'today' : ''} ${statusClass}">
             <div class="day-indicator">
-                <span class="d-name">يوم ${i} (${thisDayDate.toLocaleDateString('ar-EG', {weekday:'long'})})</span>
+                <span class="d-name">يوم ${i} (${thisDayDate.toLocaleDateString('ar-EG', { weekday: 'long' })})</span>
                 ${isToday ? '<span class="today-badge">اليوم</span>' : ''}
             </div>
             <div class="day-content">
@@ -1201,9 +1201,9 @@ async function renderWeeklySchedule() {
 // ==================== Coach Zone UI Helpers (V3.3) ====================
 
 
-function renderPlanCard(){
+function renderPlanCard() {
     // Backward-compat: old home card removed in v3.6
-    if(typeof renderPlanHero === 'function') renderPlanHero();
+    if (typeof renderPlanHero === 'function') renderPlanHero();
 }
 
 
@@ -1307,7 +1307,7 @@ function openRunCatalog(type) {
         titleEl.innerText = 'مكتبة التمارين الأساسية 📚';
         bodyEl.innerHTML = `
             <div class="catalog-grid">
-                ${keys.map(k=>`
+                ${keys.map(k => `
                     <button class="catalog-card" onclick="openRunCatalog('${k}')">
                         <div class="catalog-card-title">${items[k].title}</div>
                         <div class="catalog-card-sub">افتح التفاصيل 👈</div>
@@ -1324,7 +1324,7 @@ function openRunCatalog(type) {
     const item = items[type];
     titleEl.innerText = item.title;
     bodyEl.innerHTML = `
-        <div class="catalog-body-text">${(item.body||'').replace(/\n/g,'<br>')}</div>
+        <div class="catalog-body-text">${(item.body || '').replace(/\n/g, '<br>')}</div>
         <div style="margin-top:14px; display:flex; gap:10px;">
             <button class="btn-secondary" onclick="openRunCatalog('all')">⬅️ رجوع للمكتبة</button>
             <button class="btn-primary" onclick="closeModal('modal-catalog')">تم</button>
@@ -1363,10 +1363,10 @@ async function loadHallOfFame() {
         const rows = top5.map((u, idx) => {
             const rank = idx + 1;
             // اختيار الأيقونة أو الصورة
-            const avatar = (u.photoUrl) 
+            const avatar = (u.photoUrl)
                 ? `<div style="width:100%; height:100%; background:url('${u.photoUrl}') center/cover; border-radius:50%;"></div>`
                 : (u.name ? u.name.charAt(0) : '🏃');
-            
+
             const name = u.name || 'عضو';
             const region = u.region || 'غير محدد';
             // قراءة المسافة بدقة (مع التعامل مع الأرقام الصغيرة)
@@ -1374,9 +1374,9 @@ async function loadHallOfFame() {
 
             // تمييز الأول بميدالية
             let rankDisplay = rank;
-            if(rank === 1) rankDisplay = '🥇';
-            if(rank === 2) rankDisplay = '🥈';
-            if(rank === 3) rankDisplay = '🥉';
+            if (rank === 1) rankDisplay = '🥇';
+            if (rank === 2) rankDisplay = '🥈';
+            if (rank === 3) rankDisplay = '🥉';
 
             return `
                 <div class="hof-row" onclick="viewUserProfile('${u.uid || ''}')" style="display:flex; align-items:center; padding:10px; border-bottom:1px solid rgba(255,255,255,0.05); cursor:pointer;">
@@ -1401,17 +1401,17 @@ async function loadHallOfFame() {
 
 
 
-document.addEventListener('DOMContentLoaded', ()=>{ setupCoachHomeTabs(); setupLogTypeUI(); });
+document.addEventListener('DOMContentLoaded', () => { setupCoachHomeTabs(); setupLogTypeUI(); });
 
-document.addEventListener('DOMContentLoaded', ()=>{
+document.addEventListener('DOMContentLoaded', () => {
     setupCoachHomeTabs();
     setupLogTypeUI();
     // Initial render for coach hero stats (may be updated again once runs load)
-    try{ renderCoachHeroStats(); }catch(e){}
+    try { renderCoachHeroStats(); } catch (e) { }
 });
 
 // Re-render coach hero stats whenever runs cache updates
-window.addEventListener('ers:runs-updated', ()=>{ try{ renderCoachHeroStats(); }catch(e){} });
+window.addEventListener('ers:runs-updated', () => { try { renderCoachHeroStats(); } catch (e) { } });
 
 
 // === دالة تحديث بيانات الكوتش (الهيرو) ===
@@ -1433,7 +1433,7 @@ window.renderCoachHeroStats = function () {
                 const d = val.toDate();
                 return (d instanceof Date && !isNaN(d)) ? d : null;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         // Firestore Timestamp-like object {seconds, nanoseconds}
         try {
@@ -1441,7 +1441,7 @@ window.renderCoachHeroStats = function () {
                 const d = new Date(val.seconds * 1000);
                 return !isNaN(d) ? d : null;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         // number (ms) or string (ISO)
         if (typeof val === 'number' || typeof val === 'string') {
@@ -1486,21 +1486,21 @@ window.renderCoachHeroStats = function () {
         if (dist > 0) activeDayKeys.add(d.toISOString().slice(0, 10));
     });
 
-    function computeStreakFromKeys(keysSet){
-        if(!keysSet || keysSet.size === 0) return 0;
+    function computeStreakFromKeys(keysSet) {
+        if (!keysSet || keysSet.size === 0) return 0;
         const cursor = new Date();
-        cursor.setHours(0,0,0,0);
-        let k = cursor.toISOString().slice(0,10);
+        cursor.setHours(0, 0, 0, 0);
+        let k = cursor.toISOString().slice(0, 10);
         // لو مفيش نشاط النهارده، نبدأ من امبارح
-        if(!keysSet.has(k)){
-            cursor.setDate(cursor.getDate()-1);
-            k = cursor.toISOString().slice(0,10);
+        if (!keysSet.has(k)) {
+            cursor.setDate(cursor.getDate() - 1);
+            k = cursor.toISOString().slice(0, 10);
         }
         let streak = 0;
-        while(keysSet.has(k)){
+        while (keysSet.has(k)) {
             streak++;
-            cursor.setDate(cursor.getDate()-1);
-            k = cursor.toISOString().slice(0,10);
+            cursor.setDate(cursor.getDate() - 1);
+            k = cursor.toISOString().slice(0, 10);
         }
         return streak;
     }
@@ -1515,14 +1515,14 @@ window.renderCoachHeroStats = function () {
 };
 
 
-function computeHeroStatsFromRuns(runs){
+function computeHeroStatsFromRuns(runs) {
     const now = new Date();
     let weekDist = 0;
     let monthDist = 0;
     let daysSet = new Set();
 
     runs.forEach(r => {
-        if(!r.timestamp || !r.dist) return;
+        if (!r.timestamp || !r.dist) return;
 
         const d = r.timestamp.toDate();
         const diffDays = (now - d) / 86400000;
@@ -1541,7 +1541,7 @@ function computeHeroStatsFromRuns(runs){
         }
 
         // ستريك (يوم فيه أي نشاط)
-        daysSet.add(d.toISOString().slice(0,10));
+        daysSet.add(d.toISOString().slice(0, 10));
     });
 
     return {
@@ -1550,7 +1550,7 @@ function computeHeroStatsFromRuns(runs){
         streak: daysSet.size
     };
 }
- 
+
 
 
 
@@ -1572,7 +1572,7 @@ async function loadRegionBattle(mode) {
 
     try {
         // 1. Force Refresh
-        allUsersCache = []; 
+        allUsersCache = [];
         await fetchTopRunners();
 
         // 2. مفتاح الشهر الحالي (للتصفير التلقائي)
@@ -1580,14 +1580,14 @@ async function loadRegionBattle(mode) {
         const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
         // 3. الثوابت
-        const QUORUM = 5; 
-        const REGION_AR = { 
-            "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة", 
-            "Dakahlia": "الدقهلية", "Sharkia": "الشرقية", "Gharbia": "الغربية", "Menofia": "المنوفية", 
-            "Beheira": "البحيرة", "Kafr El Sheikh": "كفر الشيخ", "Qalyubia": "القليوبية", "Damietta": "دمياط", 
-            "Port Said": "بورسعيد", "Ismailia": "الإسماعيلية", "Suez": "السويس", "Red Sea": "البحر الأحمر", 
-            "South Sinai": "جنوب سيناء", "North Sinai": "شمال سيناء", "Sinai": "سيناء", "Beni Suef": "بني سويف", 
-            "Fayoum": "الفيوم", "Minya": "المنيا", "Assiut": "أسيوط", "Sohag": "سوهاج", "Qena": "قنا", 
+        const QUORUM = 5;
+        const REGION_AR = {
+            "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة",
+            "Dakahlia": "الدقهلية", "Sharkia": "الشرقية", "Gharbia": "الغربية", "Menofia": "المنوفية",
+            "Beheira": "البحيرة", "Kafr El Sheikh": "كفر الشيخ", "Qalyubia": "القليوبية", "Damietta": "دمياط",
+            "Port Said": "بورسعيد", "Ismailia": "الإسماعيلية", "Suez": "السويس", "Red Sea": "البحر الأحمر",
+            "South Sinai": "جنوب سيناء", "North Sinai": "شمال سيناء", "Sinai": "سيناء", "Beni Suef": "بني سويف",
+            "Fayoum": "الفيوم", "Minya": "المنيا", "Assiut": "أسيوط", "Sohag": "سوهاج", "Qena": "قنا",
             "Luxor": "الأقصر", "Aswan": "أسوان", "Matrouh": "مطروح", "New Valley": "الوادي الجديد"
         };
 
@@ -1596,7 +1596,7 @@ async function loadRegionBattle(mode) {
         // 4. تجميع البيانات
         allUsersCache.forEach(user => {
             let dist = 0;
-            let userKey = user.lastMonthKey || ""; 
+            let userKey = user.lastMonthKey || "";
 
             if (currentLeagueMode === 'current') {
                 // 🔥 التصفير التلقائي: هل مفتاحك هو نفس الشهر الحالي؟
@@ -1617,7 +1617,7 @@ async function loadRegionBattle(mode) {
                 let govName = REGION_AR[rawGov] || rawGov;
 
                 if (!govStats[govName]) {
-                    govStats[govName] = { 
+                    govStats[govName] = {
                         name: govName, totalDist: 0, players: 0,
                         // 🔥 حفظنا الـ UID هنا عشان نعرف نفتح بروفايله
                         mvp: { name: 'غير معروف', dist: 0, pic: null, uid: null }
@@ -1630,9 +1630,9 @@ async function loadRegionBattle(mode) {
 
                 // تحديث الـ MVP
                 if (dist > g.mvp.dist) {
-                    g.mvp = { 
-                        name: user.name, 
-                        dist: dist, 
+                    g.mvp = {
+                        name: user.name,
+                        dist: dist,
                         pic: user.photoUrl,
                         uid: user.uid // 👈 مهم جداً للضغط
                     };
@@ -1658,8 +1658,8 @@ async function loadRegionBattle(mode) {
             </div>
 
             <div class="filter-controls">
-                <div class="f-btn ${currentLeagueMode==='current'?'active':''}" onclick="loadRegionBattle('current')">الشهر الحالي 🔥</div>
-                <div class="f-btn ${currentLeagueMode==='prev'?'active':''}" onclick="loadRegionBattle('prev')">الأرشيف 📂</div>
+                <div class="f-btn ${currentLeagueMode === 'current' ? 'active' : ''}" onclick="loadRegionBattle('current')">الشهر الحالي 🔥</div>
+                <div class="f-btn ${currentLeagueMode === 'prev' ? 'active' : ''}" onclick="loadRegionBattle('prev')">الأرشيف 📂</div>
             </div>
         `;
 
@@ -1667,7 +1667,7 @@ async function loadRegionBattle(mode) {
             html += `
                 <div style="text-align:center; padding:40px; opacity:0.6;">
                     <div style="font-size:40px; margin-bottom:10px;">📅</div>
-                    <div>لا توجد بيانات ${currentLeagueMode==='current' ? 'لهذا الشهر' : 'للشهر السابق'}</div>
+                    <div>لا توجد بيانات ${currentLeagueMode === 'current' ? 'لهذا الشهر' : 'للشهر السابق'}</div>
                     <div style="font-size:11px; color:#9ca3af; margin-top:5px;">الميدان ينتظر الأبطال!</div>
                 </div>`;
             list.innerHTML = html;
@@ -1677,27 +1677,27 @@ async function loadRegionBattle(mode) {
         // --- رسم البوديوم (Top 3) ---
         html += `<div class="podium-wrapper">`;
         const top3 = [leagueData[0], leagueData[1], leagueData[2]];
-        const displayOrder = [1, 0, 2]; 
+        const displayOrder = [1, 0, 2];
 
         displayOrder.forEach(idx => {
             const gov = top3[idx];
             if (gov) {
                 const rank = idx + 1;
                 const crown = rank === 1 ? '<div class="mvp-crown">👑</div>' : '';
-                
+
                 // تقصير الاسم
                 const nameParts = gov.mvp.name.split(' ');
                 const shortName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1][0]}.` : nameParts[0];
 
                 // تجهيز الصورة والحدث (Click Event)
-                const mvpImgStyle = gov.mvp.pic 
-                    ? `background:url('${gov.mvp.pic}') center/cover;` 
+                const mvpImgStyle = gov.mvp.pic
+                    ? `background:url('${gov.mvp.pic}') center/cover;`
                     : `background:var(--bg-card); display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:bold;`;
                 const mvpContent = gov.mvp.pic ? '' : shortName.charAt(0);
-                
+
                 // 🔥 إضافة onclick لفتح البروفايل
-// التعديل الجديد: استدعاء دالة البطل
-const clickAttr = gov.mvp.uid ? `onclick="openLeagueHero('${gov.mvp.uid}')" style="cursor:pointer;"` : '';
+                // التعديل الجديد: استدعاء دالة البطل
+                const clickAttr = gov.mvp.uid ? `onclick="openLeagueHero('${gov.mvp.uid}')" style="cursor:pointer;"` : '';
 
                 html += `
                 <div class="p-column p-${rank}">
@@ -1730,7 +1730,7 @@ const clickAttr = gov.mvp.uid ? `onclick="openLeagueHero('${gov.mvp.uid}')" styl
         leagueData.slice(3).forEach((gov, idx) => {
             const rank = idx + 4;
             const percent = (gov.score / maxScore) * 100;
-            const infoBadge = gov.isPenalized 
+            const infoBadge = gov.isPenalized
                 ? `<span style="font-size:9px; color:#ef4444; background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:4px;">دعم مطلوب (<${QUORUM})</span>`
                 : `<span style="font-size:9px; color:#9ca3af;">${gov.players} لاعب • ${gov.totalDist.toFixed(0)} كم</span>`;
 
@@ -1771,40 +1771,40 @@ const clickAttr = gov.mvp.uid ? `onclick="openLeagueHero('${gov.mvp.uid}')" styl
 
 
 
- // ==================== 🦸‍♂️ LEAGUE HERO DETAILS (Glass Edition) ====================
+// ==================== 🦸‍♂️ LEAGUE HERO DETAILS (Glass Edition) ====================
 
 async function openLeagueHero(uid) {
     const modal = document.getElementById('modal-view-user');
-    if(!modal) return;
+    if (!modal) return;
 
     // Reset UI
     document.getElementById('view-name').innerText = "جاري التحميل...";
     document.getElementById('view-region').innerText = "";
     document.getElementById('view-total-dist').innerText = "...";
-    
+
     // Clean old logs
     const existingList = document.getElementById('hero-month-logs');
-    if(existingList) existingList.remove();
+    if (existingList) existingList.remove();
 
     modal.style.display = 'flex';
 
     try {
         // 1. Get User Data
         const userDoc = await db.collection('users').doc(uid).get();
-        if(!userDoc.exists) return;
+        if (!userDoc.exists) return;
         const u = userDoc.data();
 
         document.getElementById('view-name').innerText = u.name;
         document.getElementById('view-region').innerText = u.region || "غير محدد";
         document.getElementById('view-avatar').innerText = u.name.charAt(0);
-        
+
         // 2. Get Month Runs
         const now = new Date();
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1); 
-        
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
         const runsSnap = await db.collection('users').doc(uid).collection('runs')
             .orderBy('timestamp', 'desc')
-            .limit(50) 
+            .limit(50)
             .get();
 
         let monthRuns = [];
@@ -1813,7 +1813,7 @@ async function openLeagueHero(uid) {
         runsSnap.forEach(doc => {
             const r = doc.data();
             const rDate = r.timestamp ? r.timestamp.toDate() : new Date(r.date);
-            
+
             if (rDate >= startOfMonth) {
                 monthRuns.push({ ...r, dateObj: rDate });
                 monthTotal += parseFloat(r.dist || 0);
@@ -1849,7 +1849,7 @@ async function openLeagueHero(uid) {
             monthRuns.forEach(r => {
                 const day = r.dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
                 const pace = r.time ? ((r.time / r.dist)).toFixed(2) : '--';
-                
+
                 // هنا استخدمنا hero-log-row
                 logsHtml += `
                     <div class="hero-log-row">
@@ -1867,7 +1867,7 @@ async function openLeagueHero(uid) {
         logsHtml += `</div></div>`; // أغلق السكرول والكارت
 
         const statsGrid = document.querySelector('#modal-view-user .stats-grid');
-        if(statsGrid) {
+        if (statsGrid) {
             statsGrid.insertAdjacentHTML('afterend', logsHtml);
         }
 
@@ -1878,4 +1878,3 @@ async function openLeagueHero(uid) {
 
 
 
- 

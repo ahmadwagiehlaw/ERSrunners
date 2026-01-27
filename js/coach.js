@@ -27,24 +27,24 @@ const BADGES_CONFIG = [
     { id: 'night_owl', name: 'ساهر الليل', icon: '🦉', desc: 'تمرين بعد 10 مساءً' },
     { id: 'social_star', name: 'نجم الفريق', icon: '🌟', desc: 'عضو نشط في التحديات' },
     { id: 'elite_club', name: 'نادي النخبة', icon: '💎', desc: 'أداء استثنائي مستمر' }
-];async function checkNewBadges(dist, time, dateObj) {
-    const myBadges = userData.badges || []; 
+]; async function checkNewBadges(dist, time, dateObj) {
+    const myBadges = userData.badges || [];
     let newBadgesEarned = [];
     const runDate = dateObj || new Date();
     const h = runDate.getHours();
-    const d = runDate.getDay(); 
+    const d = runDate.getDay();
 
     if (!myBadges.includes('first_step')) newBadgesEarned.push('first_step');
     if (!myBadges.includes('early_bird') && h >= 5 && h <= 8) newBadgesEarned.push('early_bird');
     if (!myBadges.includes('night_owl') && (h >= 22 || h <= 3)) newBadgesEarned.push('night_owl');
     if (!myBadges.includes('weekend_warrior') && d === 5) newBadgesEarned.push('weekend_warrior');
     if (!myBadges.includes('half_marathon') && dist >= 20) newBadgesEarned.push('half_marathon');
-    if (!myBadges.includes('club_100') && userData.totalDist >= 100) newBadgesEarned.push('club_100');
-    if (!myBadges.includes('club_500') && userData.totalDist >= 500) newBadgesEarned.push('club_500');
+    if (!myBadges.includes('club_100') && (userData.totalDist || 0) >= 100) newBadgesEarned.push('club_100');
+    if (!myBadges.includes('club_500') && (userData.totalDist || 0) >= 500) newBadgesEarned.push('club_500');
 
     if (newBadgesEarned.length > 0) {
         await db.collection('users').doc(currentUser.uid).update({ badges: firebase.firestore.FieldValue.arrayUnion(...newBadgesEarned) });
-        if(!userData.badges) userData.badges = [];
+        if (!userData.badges) userData.badges = [];
         userData.badges.push(...newBadgesEarned);
         const badgeNames = newBadgesEarned.map(b => BADGES_CONFIG.find(x => x.id === b).name).join(" و ");
         alert(`🎉 إنجاز جديد: ${badgeNames}`);
@@ -53,15 +53,15 @@ const BADGES_CONFIG = [
 
 function renderBadges() {
     const grid = document.getElementById('badges-grid');
-    if(!grid) return;
-    
+    if (!grid) return;
+
     const myBadges = userData.badges || [];
     let html = '';
-    
+
     BADGES_CONFIG.forEach(badge => {
         const isUnlocked = myBadges.includes(badge.id);
         const stateClass = isUnlocked ? 'unlocked' : 'locked';
-        
+
         html += `
             <div class="badge-item ${stateClass}" onclick="showToast('${isUnlocked ? badge.desc : '🔒 ' + badge.desc}', 'info')">
                 <span class="badge-icon">${badge.icon}</span>
@@ -72,74 +72,74 @@ function renderBadges() {
 }
 
 // ==================== V4.0 Helpers (Coach Tabs + Cross Training) ====================
-const ERS_CORE_TYPES = ['Run','Walk','Race'];
-const ERS_XT_TYPES = ['Bike','Cardio','Strength','Yoga'];
+const ERS_CORE_TYPES = ['Run', 'Walk', 'Race'];
+const ERS_XT_TYPES = ['Bike', 'Cardio', 'Strength', 'Yoga'];
 
-window.openExternal = function(url){
-  try { window.open(url, '_blank', 'noopener'); } catch(e){ location.href = url; }
+window.openExternal = function (url) {
+    try { window.open(url, '_blank', 'noopener'); } catch (e) { location.href = url; }
 };
 
-window.setCoachHomeTab = function(tab){
-  const tabs = ['today','plan','community'];
-  tabs.forEach(t=>{
-    const pane = document.getElementById('coach-home-tab-'+t);
-    if(pane) pane.classList.toggle('active', t===tab);
-  });
-  document.querySelectorAll('.coach-tab-btn').forEach(btn=>{
-    btn.classList.toggle('active', btn.getAttribute('data-tab')===tab);
-  });
+window.setCoachHomeTab = function (tab) {
+    const tabs = ['today', 'plan', 'community'];
+    tabs.forEach(t => {
+        const pane = document.getElementById('coach-home-tab-' + t);
+        if (pane) pane.classList.toggle('active', t === tab);
+    });
+    document.querySelectorAll('.coach-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+    });
 
-  if (tab === 'today') {
-    // ✅ الأهم: حمّل تمرين اليوم (ده اللي بيملا _coachDailyWorkout)
-    if (typeof setupCoachFeedOnce === 'function') {
-      setupCoachFeedOnce();
-    } else {
-      // fallback لو مشروعك لسه فيه renderTeamWorkout فقط
-      if (typeof renderTeamWorkout === 'function') renderTeamWorkout();
+    if (tab === 'today') {
+        // ✅ الأهم: حمّل تمرين اليوم (ده اللي بيملا _coachDailyWorkout)
+        if (typeof setupCoachFeedOnce === 'function') {
+            setupCoachFeedOnce();
+        } else {
+            // fallback لو مشروعك لسه فيه renderTeamWorkout فقط
+            if (typeof renderTeamWorkout === 'function') renderTeamWorkout();
+        }
+
+        // ✅ التحدي الأسبوعي
+        if (typeof loadCoachWeeklyChallenge === 'function') {
+            loadCoachWeeklyChallenge();
+        } else if (typeof loadWeeklyChallenge === 'function') {
+            loadWeeklyChallenge();
+        }
     }
 
-    // ✅ التحدي الأسبوعي
-    if (typeof loadCoachWeeklyChallenge === 'function') {
-      loadCoachWeeklyChallenge();
-    } else if (typeof loadWeeklyChallenge === 'function') {
-      loadWeeklyChallenge();
-    }
-  }
-
-  try{ localStorage.setItem('ers_coach_home_tab', tab); }catch(e){}
+    try { localStorage.setItem('ers_coach_home_tab', tab); } catch (e) { }
 };
 // ========================
-function setupLogTypeUI(){
-  const typeSel = document.getElementById('log-type');
-  const distWrap = document.getElementById('log-dist')?.closest('.input-wrap');
-  const distInput = document.getElementById('log-dist');
-  const timeInput = document.getElementById('log-time');
+function setupLogTypeUI() {
+    const typeSel = document.getElementById('log-type');
+    const distWrap = document.getElementById('log-dist')?.closest('.input-wrap');
+    const distInput = document.getElementById('log-dist');
+    const timeInput = document.getElementById('log-time');
 
-  function apply(){
-    const t = typeSel ? typeSel.value : 'Run';
-    const isCore = _ersIsCoreType(t);
+    function apply() {
+        const t = typeSel ? typeSel.value : 'Run';
+        const isCore = _ersIsCoreType(t);
 
-    if(distWrap){
-      distWrap.style.display = isCore ? '' : 'none';
-    }
-    if(distInput){
-      distInput.required = isCore;
-      if(!isCore && !distInput.value) distInput.value = '';
-    }
-    if(timeInput){
-      timeInput.required = true;
+        if (distWrap) {
+            distWrap.style.display = isCore ? '' : 'none';
+        }
+        if (distInput) {
+            distInput.required = isCore;
+            if (!isCore && !distInput.value) distInput.value = '';
+        }
+        if (timeInput) {
+            timeInput.required = true;
+        }
+
+        const modalTitle = document.querySelector('#modal-log h3');
+        if (modalTitle) {
+            modalTitle.textContent = isCore ? 'تسجيل نشاط 🏃‍♂️' : 'تسجيل نشاط (Cross Training) 🧩';
+        }
     }
 
-    const modalTitle = document.querySelector('#modal-log h3');
-    if(modalTitle){
-      modalTitle.textContent = isCore ? 'تسجيل نشاط 🏃‍♂️' : 'تسجيل نشاط (Cross Training) 🧩';
+    if (typeSel) {
+        typeSel.addEventListener('change', apply);
+        apply();
     }
-  }
-
-  if(typeSel){
-    typeSel.addEventListener('change', apply);
-    apply();
-  }
 }
 
 // ==================== V8.0 Pro Coach Engine (Training Planner) 🧠 ====================
@@ -196,12 +196,12 @@ const COACH_DB = {
 
 // إلغاء الخطة الحالية والبدء من جديد
 async function resetActivePlan(btnElement) {
-    if(!confirm("⚠️ هل أنت متأكد من حذف الخطة الحالية؟\nسيتم فقدان تقدمك في الجدول وتعود لنقطة الصفر.")) return;
+    if (!confirm("⚠️ هل أنت متأكد من حذف الخطة الحالية؟\nسيتم فقدان تقدمك في الجدول وتعود لنقطة الصفر.")) return;
 
     // ضمان التقاط الزر الصحيح حتى لو لم يتم تمريره (Fallout)
     const btn = btnElement || event.target.closest('button');
     const originalContent = btn.innerHTML; // حفظ المحتوى الأصلي (أيقونة + نص)
-    
+
     btn.innerHTML = "جاري الحذف...";
     btn.style.opacity = "0.5";
     btn.disabled = true; // تعطيل الزر لمنع التكرار
@@ -220,10 +220,10 @@ async function resetActivePlan(btnElement) {
 
         showToast("تم إلغاء الخطة بنجاح 🗑️", "success");
 
-    } catch(e) {
+    } catch (e) {
         console.error(e);
         showToast("حدث خطأ أثناء الحذف", "error");
-        
+
         // استعادة الزر في حالة الخطأ
         btn.innerHTML = originalContent;
         btn.style.opacity = "1";
@@ -235,28 +235,28 @@ async function resetActivePlan(btnElement) {
 function updateCoachAdvice() {
     const msgEl = document.getElementById('coach-message');
     const labelEl = document.querySelector('.coach-label');
-    if(!msgEl) return;
+    if (!msgEl) return;
 
     const name = (userData.name || "يا بطل").split(' ')[0];
     const hasPlan = userData?.activePlan && userData.activePlan.status === 'active';
 
     // العنوان ثابت لتقليل اللخبطة
-    if(labelEl) labelEl.innerText = "قرار الكوتش اليوم";
+    if (labelEl) labelEl.innerText = "قرار الكوتش اليوم";
 
     // ملاحظة قصيرة "تلمس" المستخدم — بدون أزرار هنا لتقليل الزحمة
     let note = '';
-    try{
-        if(hasPlan){
+    try {
+        if (hasPlan) {
             const s = getPlanTodaySession(userData.activePlan);
             note = s?.isRunDay
                 ? `يا ${name}… النهارده من خطتك. خلّيك ثابت واشتغل على السرعة بهدوء.`
                 : `يا ${name}… يوم خفيف من الخطة. الاستشفاء جزء من التدريب مش راحة وخلاص.`;
-        }else{
+        } else {
             const runs = window._ersRunsCache || [];
             const d = computeDecisionFromRuns(runs);
             note = `يا ${name}… ${d.why}`;
         }
-    }catch(e){
+    } catch (e) {
         note = `يا ${name}… الاستمرارية هي سر النجاح.`;
     }
 
@@ -270,17 +270,17 @@ function updateCoachAdvice() {
 }
 
 
-function openBasicLibrary(){
+function openBasicLibrary() {
     // المكتبة الأساسية مرجع — نفتحها في مودال واحد
-    try{ openRunCatalog('all'); }catch(e){}
+    try { openRunCatalog('all'); } catch (e) { }
 }
 
-function _formatPlanTarget(target){
-    if(!target) return '';
+function _formatPlanTarget(target) {
+    if (!target) return '';
     const t = String(target).toLowerCase();
-    if(t.includes('21') || t.includes('half')) return '21K';
-    if(t.includes('10')) return '10K';
-    if(t.includes('5')) return '5K';
+    if (t.includes('21') || t.includes('half')) return '21K';
+    if (t.includes('10')) return '10K';
+    if (t.includes('5')) return '5K';
     // fallback numeric
     return String(target).toUpperCase();
 }
@@ -292,7 +292,7 @@ function renderPlanHero(planData) {
 
     // محاولة الوصول للبيانات من عدة مصادر
     // window.userData هو المتغير العام الذي يحتوي بيانات المستخدم
-    const user = window.userData || userData || {}; 
+    const user = window.userData || userData || {};
     const plan = planData || user.activePlan;
 
     // هام: إذا لم تكن البيانات قد حملت بعد (user فارغ)، لا تعرض شاشة الإنشاء فوراً
@@ -303,8 +303,8 @@ function renderPlanHero(planData) {
     }
 
     // حالة فعلاً لا توجد خطة (البيانات حملت ولكن لا يوجد activePlan)
-   if (!plan || (!plan.target && !plan.name)) {
-    container.innerHTML = `
+    if (!plan || (!plan.target && !plan.name)) {
+        container.innerHTML = `
         <div class="plan-create-card ers-blue-glass">
             <h3 class="plan-create-title">🎯 هدفك القادم؟</h3>
             <p class="plan-create-sub">ابدأ رحلة تدريبية احترافية الآن.</p>
@@ -313,14 +313,14 @@ function renderPlanHero(planData) {
             </button>
         </div>
     `;
-    return;
-}
+        return;
+    }
 
     // --- باقي كود الرسم كما هو (التصميم الجديد) ---
-    const targetTitle = plan.target || plan.name || "خطة تدريبية"; 
+    const targetTitle = plan.target || plan.name || "خطة تدريبية";
     const currentWeek = plan.currentWeek || 1;
     const totalWeeks = plan.totalWeeks || 8;
-    
+
     let progress = plan.progress || 0;
     if (!progress && totalWeeks > 0) {
         progress = Math.round(((currentWeek - 1) / totalWeeks) * 100);
@@ -368,66 +368,66 @@ const ERS_PACE_RUN_MAX = 10.5;   // min/km and faster => Run
 const ERS_PACE_WALK_MIN = 10.75; // above this is usually Walk
 const ERS_MIN_DIST_FOR_SPEED = 5; // km
 
-function _ersPace(distKm, timeMin){
-    const d = parseFloat(distKm||0);
-    const t = parseFloat(timeMin||0);
-    if(!d || !t) return null;
+function _ersPace(distKm, timeMin) {
+    const d = parseFloat(distKm || 0);
+    const t = parseFloat(timeMin || 0);
+    if (!d || !t) return null;
     return t / d; // min per km
 }
-function _ersFormatPace(p){
-    if(p === null || p === undefined || !isFinite(p)) return '—';
+function _ersFormatPace(p) {
+    if (p === null || p === undefined || !isFinite(p)) return '—';
     const mm = Math.floor(p);
-    const ss = Math.round((p - mm)*60);
-    return `${mm}:${String(ss).padStart(2,'0')} د/كم`;
+    const ss = Math.round((p - mm) * 60);
+    return `${mm}:${String(ss).padStart(2, '0')} د/كم`;
 }
-function _ersAutoKind(selectedType, pace){
+function _ersAutoKind(selectedType, pace) {
     // Race always treated as Run
-    const t = String(selectedType||'').toLowerCase();
-    if(t === 'race') return 'Run';
-    if(pace === null || pace === undefined || !isFinite(pace)) return (t === 'walk' ? 'Walk' : 'Run');
+    const t = String(selectedType || '').toLowerCase();
+    if (t === 'race') return 'Run';
+    if (pace === null || pace === undefined || !isFinite(pace)) return (t === 'walk' ? 'Walk' : 'Run');
     return (pace <= ERS_PACE_RUN_MAX ? 'Run' : 'Walk');
 }
-function _ersInferChallengeActivityKind(ch){
+function _ersInferChallengeActivityKind(ch) {
     // explicit
     const explicit = ch?.rules?.activityKind;
-    if(explicit === 'Run' || explicit === 'Walk' || explicit === 'Any') return explicit;
+    if (explicit === 'Run' || explicit === 'Walk' || explicit === 'Any') return explicit;
     const title = String(ch?.title || ch?.name || '').toLowerCase();
-    if(title.includes('مشي') || title.includes('walk') || title.includes('steps')) return 'Walk';
-    if(ch?.type === 'speed') return 'Run';
-    if(title.includes('جري') || title.includes('run') || title.includes('race') || title.includes('ماراثون') || title.includes('half')) return 'Run';
+    if (title.includes('مشي') || title.includes('walk') || title.includes('steps')) return 'Walk';
+    if (ch?.type === 'speed') return 'Run';
+    if (title.includes('جري') || title.includes('run') || title.includes('race') || title.includes('ماراثون') || title.includes('half')) return 'Run';
     return 'Any';
 }
-function _ersEligibleForChallenge(ch, effectiveKind){
+function _ersEligibleForChallenge(ch, effectiveKind) {
     const kind = _ersInferChallengeActivityKind(ch);
-    if(kind === 'Any') return true;
-    return String(effectiveKind||'') === kind;
+    if (kind === 'Any') return true;
+    return String(effectiveKind || '') === kind;
 }
-function _ersLoadPrefs(){
-    try{
+function _ersLoadPrefs() {
+    try {
         const raw = localStorage.getItem('ers_prefs');
         return raw ? JSON.parse(raw) : {};
-    }catch(e){ return {}; }
+    } catch (e) { return {}; }
 }
-function _ersSavePrefs(prefs){
-    try{ localStorage.setItem('ers_prefs', JSON.stringify(prefs||{})); }catch(e){}
+function _ersSavePrefs(prefs) {
+    try { localStorage.setItem('ers_prefs', JSON.stringify(prefs || {})); } catch (e) { }
 }
-function getUserPref(key, fallback){
+function getUserPref(key, fallback) {
     const prefs = (userData && userData.prefs) ? userData.prefs : _ersLoadPrefs();
-    if(prefs && Object.prototype.hasOwnProperty.call(prefs, key)) return prefs[key];
+    if (prefs && Object.prototype.hasOwnProperty.call(prefs, key)) return prefs[key];
     return fallback;
 }
-async function setUserPref(key, value){
-    const prefs = Object.assign({}, _ersLoadPrefs(), (userData?.prefs||{}), { [key]: value });
+async function setUserPref(key, value) {
+    const prefs = Object.assign({}, _ersLoadPrefs(), (userData?.prefs || {}), { [key]: value });
     _ersSavePrefs(prefs);
-    if(userData) userData.prefs = prefs;
-    try{
-        if(db && auth?.currentUser){
-            await db.collection('users').doc(auth.currentUser.uid).set({ prefs }, { merge:true });
+    if (userData) userData.prefs = prefs;
+    try {
+        if (db && auth?.currentUser) {
+            await db.collection('users').doc(auth.currentUser.uid).set({ prefs }, { merge: true });
         }
-    }catch(e){}
-    try{ applyUserPrefsToUI(); }catch(e){}
+    } catch (e) { }
+    try { applyUserPrefsToUI(); } catch (e) { }
 }
-function applyUserPrefsToUI(){
+function applyUserPrefsToUI() {
     const hideTeam = !!getUserPref('hideTeamWorkout', false);
     const hideWeekly = !!getUserPref('hideWeeklyChallenge', false);
     const hideLib = !!getUserPref('hideBasicLibrary', false);
@@ -438,19 +438,19 @@ function applyUserPrefsToUI(){
     const libEl = document.getElementById('basic-library-section');
     const speedBtn = document.getElementById('coach-speed-btn');
 
-    if(teamEl) teamEl.style.display = hideTeam ? 'none' : '';
-    if(weeklyEl) weeklyEl.style.display = hideWeekly ? 'none' : '';
-    if(libEl) libEl.style.display = hideLib ? 'none' : '';
+    if (teamEl) teamEl.style.display = hideTeam ? 'none' : '';
+    if (weeklyEl) weeklyEl.style.display = hideWeekly ? 'none' : '';
+    if (libEl) libEl.style.display = hideLib ? 'none' : '';
 
-    if(speedBtn && hideSpeed) speedBtn.style.display = 'none';
+    if (speedBtn && hideSpeed) speedBtn.style.display = 'none';
 }
 
-function openCoachPreferences(){
+function openCoachPreferences() {
     const modal = document.getElementById('modal-coach-prefs');
-    if(!modal) return;
+    if (!modal) return;
 
     // Fill UI from prefs
-    const setChk = (id, val) => { const el=document.getElementById(id); if(el) el.checked = !!val; };
+    const setChk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
     setChk('pref-hide-team', getUserPref('hideTeamWorkout', false));
     setChk('pref-hide-weekly', getUserPref('hideWeeklyChallenge', false));
     setChk('pref-hide-lib', getUserPref('hideBasicLibrary', false));
@@ -458,14 +458,14 @@ function openCoachPreferences(){
     setChk('pref-disable-comments', getUserPref('disableComments', false));
 
     const focusSel = document.getElementById('pref-goal-focus');
-    if(focusSel) focusSel.value = getUserPref('goalFocus', 'general');
+    if (focusSel) focusSel.value = getUserPref('goalFocus', 'general');
 
     modal.style.display = 'flex';
 }
 
-async function saveCoachPreferences(){
-    try{
-        const getChk = (id) => { const el=document.getElementById(id); return !!(el && el.checked); };
+async function saveCoachPreferences() {
+    try {
+        const getChk = (id) => { const el = document.getElementById(id); return !!(el && el.checked); };
 
         setUserPref('hideTeamWorkout', getChk('pref-hide-team'));
         setUserPref('hideWeeklyChallenge', getChk('pref-hide-weekly'));
@@ -478,17 +478,17 @@ async function saveCoachPreferences(){
         setUserPref('goalFocus', focus);
 
         // Persist to Firestore (merge)
-        if(currentUser && db){
+        if (currentUser && db) {
             await db.collection('users').doc(currentUser.uid).set({
                 uiPrefs: userData.uiPrefs || {}
-            }, {merge:true});
+            }, { merge: true });
         }
 
         applyUserPrefsToUI();
         showToast("تم حفظ تفضيلاتك ✅", "success");
         closeModal('modal-coach-prefs');
         updateUI();
-    }catch(e){
+    } catch (e) {
         console.error(e);
         showToast("تعذر حفظ التفضيلات", "error");
     }
@@ -496,28 +496,28 @@ async function saveCoachPreferences(){
 
 
 
-function openExternal(url){
-    if(!url) return;
+function openExternal(url) {
+    if (!url) return;
     try { window.open(url, '_blank', 'noopener,noreferrer'); }
-    catch(e) { location.href = url; }
+    catch (e) { location.href = url; }
 }
 
-function getPlanTodaySession(plan){
-    if(!plan) return null;
+function getPlanTodaySession(plan) {
+    if (!plan) return null;
 
     const startDate = new Date(plan.startDate);
     const today = new Date();
-    startDate.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-    const diffDays = Math.floor((today - startDate) / (1000*60*60*24));
+    startDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
     const dayNum = diffDays + 1;
     const dayInWeek = ((dayNum - 1) % 7) + 1; // 1..7
 
     const daysCount = parseInt(plan.daysPerWeek) || 3;
     let runDays = [];
-    if(daysCount === 3) runDays = [1, 3, 5];
-    else if(daysCount === 4) runDays = [1, 2, 4, 6];
-    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
+    if (daysCount === 3) runDays = [1, 3, 5];
+    else if (daysCount === 4) runDays = [1, 2, 4, 6];
+    else if (daysCount === 5) runDays = [1, 2, 3, 5, 6];
     else runDays = [1, 2, 3, 4, 5, 6];
 
     const isRunDay = runDays.includes(dayInWeek);
@@ -533,7 +533,7 @@ function getPlanTodaySession(plan){
             title = `جري مريح (Easy)`;
             sub = `${(baseDist).toFixed(1)} كم • تنفّس مريح (RPE 3–4).`;
             mode = 'build';
-        } else if (dayInWeek === runDays[runDays.length-1]) {
+        } else if (dayInWeek === runDays[runDays.length - 1]) {
             title = `لونج رن (Long)`;
             sub = `${(baseDist * 1.2).toFixed(1)} كم • ثابت وبهدوء + جرعة ماء.`;
             mode = 'push';
@@ -547,9 +547,9 @@ function getPlanTodaySession(plan){
     return { title, sub, mode, isRunDay };
 }
 
-function computeDecisionFromRuns(runs){
+function computeDecisionFromRuns(runs) {
     const now = new Date();
-    const msDay = 24*3600*1000;
+    const msDay = 24 * 3600 * 1000;
 
     // Robust date parsing for legacy runs (older versions stored date/timestamp in different shapes)
     function _ersToDate(val) {
@@ -559,7 +559,7 @@ function computeDecisionFromRuns(runs){
                 const d = val.toDate();
                 return (d instanceof Date && !isNaN(d)) ? d : null;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         // Firestore Timestamp-like object {seconds, nanoseconds}
         try {
@@ -567,7 +567,7 @@ function computeDecisionFromRuns(runs){
                 const d = new Date(val.seconds * 1000);
                 return !isNaN(d) ? d : null;
             }
-        } catch (e) {}
+        } catch (e) { }
 
         if (typeof val === 'number' || typeof val === 'string') {
             const d = new Date(val);
@@ -591,7 +591,7 @@ function computeDecisionFromRuns(runs){
         );
     }
 
-    const sorted = (runs||[]).slice().sort((a,b)=>{
+    const sorted = (runs || []).slice().sort((a, b) => {
         const ta = (_ersGetRunDate(a) || new Date(0)).getTime();
         const tb = (_ersGetRunDate(b) || new Date(0)).getTime();
         return tb - ta;
@@ -599,51 +599,51 @@ function computeDecisionFromRuns(runs){
 
     const last = sorted[0] || null;
     const lastDate = last ? (_ersGetRunDate(last) || now) : null;
-    const daysSince = lastDate ? Math.floor((now - lastDate)/msDay) : 999;
+    const daysSince = lastDate ? Math.floor((now - lastDate) / msDay) : 999;
 
-    const lastDist = last ? (parseFloat(last.dist)||0) : 0;
-    const lastTime = last ? (parseFloat(last.time)||0) : 0;
+    const lastDist = last ? (parseFloat(last.dist) || 0) : 0;
+    const lastTime = last ? (parseFloat(last.time) || 0) : 0;
     const lastPace = last ? (last.pace || _ersPace(lastDist, lastTime) || 0) : 0;
-    const lastKind = last ? (last.autoKind || _ersAutoKind(last.type||'Run', lastPace)) : 'Run';
+    const lastKind = last ? (last.autoKind || _ersAutoKind(last.type || 'Run', lastPace)) : 'Run';
 
     // آخر 7 أيام
     const since7 = new Date(now.getTime() - 7 * msDay);
-    const weekRuns = sorted.filter(r=>{
+    const weekRuns = sorted.filter(r => {
         const d = _ersGetRunDate(r);
         return d ? (d >= since7) : false;
     });
 
-    const weekDist = weekRuns.reduce((s,r)=>s+(parseFloat(r.dist)||0),0);
+    const weekDist = weekRuns.reduce((s, r) => s + (parseFloat(r.dist) || 0), 0);
 
     // Month dist + streak computed from runs as a safe fallback (in case userData fields are missing/outdated)
     let monthDistFromRuns = 0;
     const activeDayKeys = new Set();
-    sorted.forEach(r=>{
+    sorted.forEach(r => {
         const d = _ersGetRunDate(r);
-        if(!d) return;
+        if (!d) return;
         const dist = parseFloat(r.dist) || 0;
         if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
             monthDistFromRuns += dist;
         }
         // streak considers core activities only (dist > 0)
-        if (dist > 0) activeDayKeys.add(d.toISOString().slice(0,10));
+        if (dist > 0) activeDayKeys.add(d.toISOString().slice(0, 10));
     });
 
-    function computeStreakFromKeys(keysSet){
-        if(!keysSet || keysSet.size === 0) return 0;
+    function computeStreakFromKeys(keysSet) {
+        if (!keysSet || keysSet.size === 0) return 0;
         const cursor = new Date();
-        cursor.setHours(0,0,0,0);
-        let k = cursor.toISOString().slice(0,10);
+        cursor.setHours(0, 0, 0, 0);
+        let k = cursor.toISOString().slice(0, 10);
         // لو مفيش نشاط النهارده، نبدأ من امبارح (تعريف عملي للستريك)
-        if(!keysSet.has(k)){
-            cursor.setDate(cursor.getDate()-1);
-            k = cursor.toISOString().slice(0,10);
+        if (!keysSet.has(k)) {
+            cursor.setDate(cursor.getDate() - 1);
+            k = cursor.toISOString().slice(0, 10);
         }
         let streak = 0;
-        while(keysSet.has(k)){
+        while (keysSet.has(k)) {
             streak++;
-            cursor.setDate(cursor.getDate()-1);
-            k = cursor.toISOString().slice(0,10);
+            cursor.setDate(cursor.getDate() - 1);
+            k = cursor.toISOString().slice(0, 10);
         }
         return streak;
     }
@@ -655,27 +655,27 @@ function computeDecisionFromRuns(runs){
     const safeStreak = (Number.isFinite(userStreak) && userStreak > 0) ? userStreak : streakFromRuns;
 
     // V4 Hero quick stats
-    try{
-      const wEl = document.getElementById('hero-week-dist');
-      if(wEl) wEl.textContent = (weekDist||0).toFixed(1);
-      const mEl = document.getElementById('hero-month-dist');
-      if(mEl) mEl.textContent = (safeMonth||0).toFixed(1);
-      const sEl = document.getElementById('hero-streak');
-      if(sEl) sEl.textContent = String(safeStreak || 0);
-      const gEl = document.getElementById('coach-greeting');
-      if(gEl){
-        const h = (new Date()).getHours();
-        const name = (userData?.name || 'يا كابتن').split(' ')[0];
-        const greet = (h < 12) ? 'صباح الخير' : (h < 17 ? 'مساء الخير' : 'مساء النور');
-        gEl.textContent = `${greet} يا ${name} 👋`;
-      }
-    }catch(e){}
+    try {
+        const wEl = document.getElementById('hero-week-dist');
+        if (wEl) wEl.textContent = (weekDist || 0).toFixed(1);
+        const mEl = document.getElementById('hero-month-dist');
+        if (mEl) mEl.textContent = (safeMonth || 0).toFixed(1);
+        const sEl = document.getElementById('hero-streak');
+        if (sEl) sEl.textContent = String(safeStreak || 0);
+        const gEl = document.getElementById('coach-greeting');
+        if (gEl) {
+            const h = (new Date()).getHours();
+            const name = (userData?.name || 'يا كابتن').split(' ')[0];
+            const greet = (h < 12) ? 'صباح الخير' : (h < 17 ? 'مساء الخير' : 'مساء النور');
+            gEl.textContent = `${greet} يا ${name} 👋`;
+        }
+    } catch (e) { }
 
-    const weekHard = weekRuns.filter(r=>{
-        const d = parseFloat(r.dist)||0;
-        const t = parseFloat(r.time)||0;
-        const p = r.pace || _ersPace(d,t) || 0;
-        return (d >= 10) || (p>0 && p <= 5.3);
+    const weekHard = weekRuns.filter(r => {
+        const d = parseFloat(r.dist) || 0;
+        const t = parseFloat(r.time) || 0;
+        const p = r.pace || _ersPace(d, t) || 0;
+        return (d >= 10) || (p > 0 && p <= 5.3);
     }).length;
 
     // قرار الكوتش اليوم (Coach Brain v1)
@@ -694,7 +694,7 @@ function computeDecisionFromRuns(runs){
         summary = `آخر نشاط من ${daysSince} أيام… هنرجّع الإيقاع بهدوء: 25–35 دقيقة سهل (RPE 2–3) + مشي دقيقتين في النص لو احتجت.`;
         tone = "warn";
         actionKey = "return";
-    } else if (lastKind === 'Run' && (lastDist >= 10 || (lastPace>0 && lastPace<=5.3))) {
+    } else if (lastKind === 'Run' && (lastDist >= 10 || (lastPace > 0 && lastPace <= 5.3))) {
         title = "استشفاء ذكي 🫶";
         summary = "أمس/آخر مرة كان فيها شغل تقيل… النهارده جسمك محتاج يوم سهل: 20–40 دقيقة Recovery أو راحة نشطة + Mobility.";
         tone = "good";
@@ -719,11 +719,11 @@ function computeDecisionFromRuns(runs){
     return { title, summary, tone, actionKey, weekDist: weekDist.toFixed(1), weekHard };
 }
 
-function updateCoachDecisionUI(runsOverride){
+function updateCoachDecisionUI(runsOverride) {
     const pill = document.getElementById('coach-mode-pill');
     const tEl = document.getElementById('coach-command-title');
     const sEl = document.getElementById('coach-command-sub');
-    if(!pill || !tEl || !sEl) return;
+    if (!pill || !tEl || !sEl) return;
 
     // 1) لو فيه خطة نشطة: القرار يطلع منها
     const hasPlan = userData?.activePlan && userData.activePlan.status === 'active';
@@ -743,7 +743,7 @@ function updateCoachDecisionUI(runsOverride){
     const d = computeDecisionFromRuns(runs);
     const tone = d.tone || 'neutral';
     pill.className = `coach-mode-pill ${tone}`;
-    pill.textContent = (tone==='good') ? 'Stable' : (tone==='warn' ? 'Reset' : 'Focus');
+    pill.textContent = (tone === 'good') ? 'Stable' : (tone === 'warn' ? 'Reset' : 'Focus');
     tEl.textContent = d.title;
     const w = (d.weekDist != null) ? ` • أسبوعك: ${d.weekDist} كم` : '';
     sEl.textContent = `${d.summary}${w}`;
@@ -755,50 +755,50 @@ function updateCoachDecisionUI(runsOverride){
 let _coachFeedReady = false;
 let _coachDailyWorkout = null;
 let _coachWeeklyChallenge = null;
-let _coachUnsubs = { override:null, schedule:null, workout:null, challenge:null, myChallenge:null };
+let _coachUnsubs = { override: null, schedule: null, workout: null, challenge: null, myChallenge: null };
 
-function _ersDateKey(d=new Date()){
+function _ersDateKey(d = new Date()) {
     const z = new Date(d);
     const y = z.getFullYear();
-    const m = String(z.getMonth()+1).padStart(2,'0');
-    const day = String(z.getDate()).padStart(2,'0');
+    const m = String(z.getMonth() + 1).padStart(2, '0');
+    const day = String(z.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
 }
-function _ersDayKey(d=new Date()){
-    const map = ['sun','mon','tue','wed','thu','fri','sat'];
+function _ersDayKey(d = new Date()) {
+    const map = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     return map[d.getDay()];
 }
 
-function setupCoachFeedOnce(){
-    if(_coachFeedReady) return;
-    if(!db || !currentUser) return;
+function setupCoachFeedOnce() {
+    if (_coachFeedReady) return;
+    if (!db || !currentUser) return;
     _coachFeedReady = true;
     setupCoachFeed();
 }
 
-function setupCoachFeed(){
-    try{
+function setupCoachFeed() {
+    try {
         const dateKey = _ersDateKey(new Date());
 
         // override for "today" (coach can publish a special workout)
-        if(_coachUnsubs.override) _coachUnsubs.override();
+        if (_coachUnsubs.override) _coachUnsubs.override();
         _coachUnsubs.override = db.collection('coachOverrides').doc(dateKey)
             .onSnapshot(() => loadCoachDailyWorkout());
 
         // weekly schedule (fallback if no override)
-        if(!_coachUnsubs.schedule){
+        if (!_coachUnsubs.schedule) {
             _coachUnsubs.schedule = db.collection('coachConfig').doc('weeklySchedule')
                 .onSnapshot(() => loadCoachDailyWorkout());
         }
 
         // weekly challenge (global)
-        if(!_coachUnsubs.challenge){
+        if (!_coachUnsubs.challenge) {
             _coachUnsubs.challenge = db.collection('coachConfig').doc('weeklyChallenge')
                 .onSnapshot(() => loadCoachWeeklyChallenge());
         }
 
         // my completion status (per user)
-        if(!_coachUnsubs.myChallenge){
+        if (!_coachUnsubs.myChallenge) {
             _coachUnsubs.myChallenge = db.collection('users').doc(currentUser.uid)
                 .collection('coachWeekly').doc('current')
                 .onSnapshot(() => loadCoachWeeklyChallenge());
@@ -806,15 +806,15 @@ function setupCoachFeed(){
 
         loadCoachDailyWorkout();
         loadCoachWeeklyChallenge();
-    }catch(e){
+    } catch (e) {
         console.error(e);
     }
 }
 
-function _resetCoachFeed(){
+function _resetCoachFeed() {
     _coachFeedReady = false;
-    Object.keys(_coachUnsubs).forEach(k=>{
-        if(typeof _coachUnsubs[k] === 'function') _coachUnsubs[k]();
+    Object.keys(_coachUnsubs).forEach(k => {
+        if (typeof _coachUnsubs[k] === 'function') _coachUnsubs[k]();
         _coachUnsubs[k] = null;
     });
     _coachDailyWorkout = null;
@@ -823,10 +823,10 @@ function _resetCoachFeed(){
 
 /* -------------------- Daily Workout -------------------- */
 
-async function loadCoachDailyWorkout(){
+async function loadCoachDailyWorkout() {
     const card = document.getElementById('coach-daily-card') || document.getElementById('team-workout-container');
-    if(!card) return;
-    if(!db) return;
+    if (!card) return;
+    if (!db) return;
 
     const dateKey = _ersDateKey(new Date());
     const dayKey = _ersDayKey(new Date());
@@ -834,40 +834,40 @@ async function loadCoachDailyWorkout(){
     let workoutId = null;
     let source = 'weekly';
 
-    try{
+    try {
         const ov = await db.collection('coachOverrides').doc(dateKey).get();
-        if(ov.exists && ov.data()?.workoutId){
+        if (ov.exists && ov.data()?.workoutId) {
             workoutId = ov.data().workoutId;
             source = 'override';
-        }else{
+        } else {
             const sched = await db.collection('coachConfig').doc('weeklySchedule').get();
-            if(sched.exists){
+            if (sched.exists) {
                 workoutId = sched.data()?.[dayKey] || null;
                 source = 'weekly';
             }
         }
 
-        if(workoutId){
+        if (workoutId) {
             // subscribe to workout live updates (edit from admin)
-            if(_coachUnsubs.workout) _coachUnsubs.workout();
+            if (_coachUnsubs.workout) _coachUnsubs.workout();
             _coachUnsubs.workout = db.collection('coachWorkouts').doc(workoutId)
-                .onSnapshot(snap=>{
-                    if(!snap.exists) return;
-                    _coachDailyWorkout = { id:snap.id, ...snap.data(), _source: source };
+                .onSnapshot(snap => {
+                    if (!snap.exists) return;
+                    _coachDailyWorkout = { id: snap.id, ...snap.data(), _source: source };
                     renderCoachDailyCard();
                 });
-        }else{
+        } else {
             _coachDailyWorkout = _getFallbackWorkout(dayKey);
             _coachDailyWorkout._source = 'fallback';
             renderCoachDailyCard();
         }
 
         const pill = document.getElementById('coach-daily-pill');
-        if(pill){
+        if (pill) {
             pill.style.display = 'inline-flex';
             pill.innerText = (source === 'override') ? 'مُحدث اليوم ✨' : 'من جدول الأسبوع ♻️';
         }
-    }catch(e){
+    } catch (e) {
         console.error(e);
         card.innerHTML = `
         <div class="team-goal-card" onclick="openDailyWorkoutModal();">
@@ -877,34 +877,35 @@ async function loadCoachDailyWorkout(){
                 <div class="team-goal-sub">${title} • ${load}${(load && rpe) ? ' • ' : ''}${rpe}${hasYT ? ' • 🎥' : ''}</div>
             </div>
             <div class="team-goal-actions" style="margin-left:auto; display:flex; gap:8px;">
-                ${(w.startUrl || w.link) ? `<button class="btn btn-primary" style="padding:8px 10px; font-size:11px;" onclick="event.stopPropagation(); window.open('${(w.startUrl||w.link).replace(/'/g,"&#39;")}', '_blank');">ابدأ التدريب</button>` : ''}
+                ${(w.startUrl || w.link) ? `<button class="btn btn-primary" style="padding:8px 10px; font-size:11px;" onclick="event.stopPropagation(); window.open('${(w.startUrl || w.link).replace(/'/g, "&#39;")}', '_blank');">ابدأ التدريب</button>` : ''}
                 <button class="btn btn-ghost" style="padding:8px 10px; font-size:11px;" onclick="event.stopPropagation(); openDailyWorkoutModal();">التفاصيل</button>
             </div>
         </div>
-    `;    }
+    `;
+    }
 }
 
-function _getFallbackWorkout(dayKey){
+function _getFallbackWorkout(dayKey) {
     const defaults = {
-        sat: { emoji:'🫁', title:'استشفائي أو راحة', type:'recovery', load:'20–35 دقيقة', rpe:'2–3', structure:'Warmup: 5 دقائق مشي/جري خفيف\nMain: جري سهل جدًا\nCooldown: إطالة 8 دقائق', notes:'خفّفها… الهدف إنك تقوم تاني بكرة.' },
-        sun: { emoji:'🏔️', title:'تمرين هيلز', type:'hills', load:'30–45 دقيقة', rpe:'6–7', structure:'Warmup: 10 دقائق\nMain: 6×(40ث صعود + 70ث نزول)\nCooldown: 8 دقائق', notes:'الصعود قوي بس قصير… والنزول مرن.' },
-        mon: { emoji:'🧘‍♂️', title:'موبيلتي / يوجا', type:'mobility', load:'20–30 دقيقة', rpe:'1–2', structure:'Mobility: كاحل + فخذ + حوض\nYoga: تنفّس + إطالات', notes:'ده مش رفاهية… ده صيانة.' },
-        tue: { emoji:'⚡', title:'انترفال', type:'intervals', load:'35–55 دقيقة', rpe:'7–8', structure:'Warmup: 10 دقائق\nMain: 8×(1د سريع + 1د سهل)\nCooldown: 8 دقائق', notes:'سرعاتك "متحكم فيها" مش سباق.' },
-        wed: { emoji:'🎲', title:'فارتلك أو استشفائي', type:'fartlek', load:'25–45 دقيقة', rpe:'4–6', structure:'Warmup: 10 دقائق\nMain: 10×(1د أسرع + 1د سهل)\nCooldown: 6 دقائق', notes:'إلعبها… وانهى وأنت قادر تزود.' },
-        thu: { emoji:'🏋️', title:'كروس تريننج', type:'strength', load:'25–40 دقيقة', rpe:'4–6', structure:'Strength: سكوات خفيف + كور\nأو: عجلة/سباحة/إليبتكال', notes:'قوة = حماية للركبة + سرعة أسرع.' },
-        fri: { emoji:'🐢', title:'لونج رن', type:'long', load:'60–90 دقيقة', rpe:'3–5', structure:'Warmup: 8 دقائق\nMain: جري ثابت\nCooldown: 6 دقائق + سوائل', notes:'خليها "مريحة"… اللونج يبنيك.' }
+        sat: { emoji: '🫁', title: 'استشفائي أو راحة', type: 'recovery', load: '20–35 دقيقة', rpe: '2–3', structure: 'Warmup: 5 دقائق مشي/جري خفيف\nMain: جري سهل جدًا\nCooldown: إطالة 8 دقائق', notes: 'خفّفها… الهدف إنك تقوم تاني بكرة.' },
+        sun: { emoji: '🏔️', title: 'تمرين هيلز', type: 'hills', load: '30–45 دقيقة', rpe: '6–7', structure: 'Warmup: 10 دقائق\nMain: 6×(40ث صعود + 70ث نزول)\nCooldown: 8 دقائق', notes: 'الصعود قوي بس قصير… والنزول مرن.' },
+        mon: { emoji: '🧘‍♂️', title: 'موبيلتي / يوجا', type: 'mobility', load: '20–30 دقيقة', rpe: '1–2', structure: 'Mobility: كاحل + فخذ + حوض\nYoga: تنفّس + إطالات', notes: 'ده مش رفاهية… ده صيانة.' },
+        tue: { emoji: '⚡', title: 'انترفال', type: 'intervals', load: '35–55 دقيقة', rpe: '7–8', structure: 'Warmup: 10 دقائق\nMain: 8×(1د سريع + 1د سهل)\nCooldown: 8 دقائق', notes: 'سرعاتك "متحكم فيها" مش سباق.' },
+        wed: { emoji: '🎲', title: 'فارتلك أو استشفائي', type: 'fartlek', load: '25–45 دقيقة', rpe: '4–6', structure: 'Warmup: 10 دقائق\nMain: 10×(1د أسرع + 1د سهل)\nCooldown: 6 دقائق', notes: 'إلعبها… وانهى وأنت قادر تزود.' },
+        thu: { emoji: '🏋️', title: 'كروس تريننج', type: 'strength', load: '25–40 دقيقة', rpe: '4–6', structure: 'Strength: سكوات خفيف + كور\nأو: عجلة/سباحة/إليبتكال', notes: 'قوة = حماية للركبة + سرعة أسرع.' },
+        fri: { emoji: '🐢', title: 'لونج رن', type: 'long', load: '60–90 دقيقة', rpe: '3–5', structure: 'Warmup: 8 دقائق\nMain: جري ثابت\nCooldown: 6 دقائق + سوائل', notes: 'خليها "مريحة"… اللونج يبنيك.' }
     };
     return defaults[dayKey] || defaults.sun;
 }
 
 
-function renderCoachDailyCard(){
+function renderCoachDailyCard() {
     // Extra workout card مستقل (بدون خلطه بقرار الكوتش اليوم)
     const container = document.getElementById('team-workout-container') || document.getElementById('coach-daily-card');
-    if(!container) return;
+    if (!container) return;
 
     const w = _coachDailyWorkout;
-    if(!w){
+    if (!w) {
         container.innerHTML = `
             <div class="team-goal-card" style="opacity:0.85;">
                 <div class="team-goal-icon">⏳</div>
@@ -922,18 +923,18 @@ function renderCoachDailyCard(){
     const rpe = w.rpe ? `RPE ${w.rpe}` : '';
     const hasYT = !!_toYouTubeEmbed(w.youtubeUrl || w.youtube);
     const startUrlRaw = (w.startUrl || w.link || '').trim();
-    const startUrl = startUrlRaw.replace(/'/g,"&#39;");
+    const startUrl = startUrlRaw.replace(/'/g, "&#39;");
 
     const left = (w.imageUrl && String(w.imageUrl).trim())
-        ? `<img src="${String(w.imageUrl).trim().replace(/"/g,'&quot;')}" alt="workout" style="width:44px;height:44px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,0.10);" />`
+        ? `<img src="${String(w.imageUrl).trim().replace(/"/g, '&quot;')}" alt="workout" style="width:44px;height:44px;border-radius:14px;object-fit:cover;border:1px solid rgba(255,255,255,0.10);" />`
         : `<div class="team-goal-icon">${emoji}</div>`;
 
     const meta = `${load}${(load && rpe) ? ' • ' : ''}${rpe}${hasYT ? ' • 🎥' : ''}`.trim();
 
-const imgRaw = (w.imageUrl && String(w.imageUrl).trim()) ? String(w.imageUrl).trim() : '';
-const imgSafe = imgRaw.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const imgRaw = (w.imageUrl && String(w.imageUrl).trim()) ? String(w.imageUrl).trim() : '';
+    const imgSafe = imgRaw.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-container.innerHTML = `
+    container.innerHTML = `
 
   <div class="coach-workout-card" onclick="openDailyWorkoutModal();">
     <div class="cw-media ${imgRaw ? 'has-img' : ''}" ${imgRaw ? `style="--cw-img:url('${imgSafe}')"` : ''}>
@@ -959,28 +960,28 @@ container.innerHTML = `
 }
 
 
-function openDailyWorkoutModal(){
-  const w = _coachDailyWorkout;
-  if(!w) return;
+function openDailyWorkoutModal() {
+    const w = _coachDailyWorkout;
+    if (!w) return;
 
-  const titleEl = document.getElementById('daily-modal-title');
-  const bodyEl  = document.getElementById('daily-modal-body');
-  if(titleEl) titleEl.innerText = `${w.emoji || '🔥'} ${w.title || w.name || 'جرية اليوم'}`;
+    const titleEl = document.getElementById('daily-modal-title');
+    const bodyEl = document.getElementById('daily-modal-body');
+    if (titleEl) titleEl.innerText = `${w.emoji || '🔥'} ${w.title || w.name || 'جرية اليوم'}`;
 
-  const embed     = _toYouTubeEmbed(w.youtubeUrl || w.youtube);
-  const structure = (w.structure || '').trim();
-  const notes     = (w.notes || '').trim();
-  const load      = w.load || '';
-  const rpe       = w.rpe ? `RPE ${w.rpe}` : '';
+    const embed = _toYouTubeEmbed(w.youtubeUrl || w.youtube);
+    const structure = (w.structure || '').trim();
+    const notes = (w.notes || '').trim();
+    const load = w.load || '';
+    const rpe = w.rpe ? `RPE ${w.rpe}` : '';
 
-  const imgRaw  = (w.imageUrl && String(w.imageUrl).trim()) ? String(w.imageUrl).trim() : '';
-  const imgSafe = imgRaw.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    const imgRaw = (w.imageUrl && String(w.imageUrl).trim()) ? String(w.imageUrl).trim() : '';
+    const imgSafe = imgRaw.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-  let html = '';
+    let html = '';
 
-  // ✅ صورة التمرين + فتحها
-  if(imgRaw){
-    html += `
+    // ✅ صورة التمرين + فتحها
+    if (imgRaw) {
+        html += `
       <div style="margin-bottom:12px;">
         <div
           style="
@@ -1001,77 +1002,77 @@ function openDailyWorkoutModal(){
         </div>
       </div>
     `;
-  }
+    }
 
-  html += `<div style="margin-bottom:10px; color:#9ca3af; font-size:12px;">${load}${(load && rpe) ? ' • ' : ''}${rpe}</div>`;
+    html += `<div style="margin-bottom:10px; color:#9ca3af; font-size:12px;">${load}${(load && rpe) ? ' • ' : ''}${rpe}</div>`;
 
-  if(structure){
-    html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; white-space:pre-wrap; line-height:1.7; color:#e5e7eb; font-size:12px;">${_escapeHtml(structure)}</div>`;
-  }else{
-    html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; color:#e5e7eb; font-size:12px;">ابدأ بإحماء 8–10 دقائق… ثم نفّذ الجزء الرئيسي… وأنهِ بتهدئة وإطالة.</div>`;
-  }
+    if (structure) {
+        html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; white-space:pre-wrap; line-height:1.7; color:#e5e7eb; font-size:12px;">${_escapeHtml(structure)}</div>`;
+    } else {
+        html += `<div style="background:rgba(0,0,0,0.18); border:1px solid rgba(255,255,255,0.08); border-radius:14px; padding:12px; color:#e5e7eb; font-size:12px;">ابدأ بإحماء 8–10 دقائق… ثم نفّذ الجزء الرئيسي… وأنهِ بتهدئة وإطالة.</div>`;
+    }
 
-  if(notes){
-    html += `<div style="margin-top:10px; font-size:12px; color:#dbeafe; line-height:1.7;"><b>كلمة الكوتش:</b> ${_escapeHtml(notes)}</div>`;
-  }
+    if (notes) {
+        html += `<div style="margin-top:10px; font-size:12px; color:#dbeafe; line-height:1.7;"><b>كلمة الكوتش:</b> ${_escapeHtml(notes)}</div>`;
+    }
 
-  if(embed){
-    html += `<div style="margin-top:12px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.10);">
+    if (embed) {
+        html += `<div style="margin-top:12px; border-radius:14px; overflow:hidden; border:1px solid rgba(255,255,255,0.10);">
       <iframe src="${embed}" style="width:100%; aspect-ratio:16/9; border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
     </div>`;
-    html += `<div style="margin-top:6px; font-size:11px; color:#9ca3af;">لو الفيديو مفيد… احفظه وكرره. ✅</div>`;
-  }
+        html += `<div style="margin-top:6px; font-size:11px; color:#9ca3af;">لو الفيديو مفيد… احفظه وكرره. ✅</div>`;
+    }
 
-  if(bodyEl) bodyEl.innerHTML = html;
+    if (bodyEl) bodyEl.innerHTML = html;
 
-  // استخدم نظام المودالات الموحد لو موجود
-  if(typeof openModal === 'function') openModal('modal-daily-workout');
-  else document.getElementById('modal-daily-workout').style.display = 'flex';
+    // استخدم نظام المودالات الموحد لو موجود
+    if (typeof openModal === 'function') openModal('modal-daily-workout');
+    else document.getElementById('modal-daily-workout').style.display = 'flex';
 }
 
 
-function openLogFromCoach(suggestedType){
+function openLogFromCoach(suggestedType) {
     // يفتح Modal تسجيل نشاط (بدون لمس الداتا القديمة)
-    try{
+    try {
         openNewRun(); // <--- تم التعديل من openLog() إلى openNewRun()
         const t = document.getElementById('log-type');
-        if(t && suggestedType){
+        if (t && suggestedType) {
             // هنا يمكن إضافة منطق لاحقاً لتحديد النوع تلقائياً
         }
-    }catch(e){
+    } catch (e) {
         console.error(e);
     }
 }
 /* -------------------- Weekly Challenge -------------------- */
 
-async function loadCoachWeeklyChallenge(){
+async function loadCoachWeeklyChallenge() {
     const card = document.getElementById('coach-weekly-card') || document.getElementById('weekly-challenge-section');
-    if(!card || !db || !currentUser) return;
+    if (!card || !db || !currentUser) return;
 
-    try{
+    try {
         const snap = await db.collection('coachConfig').doc('weeklyChallenge').get();
-        if(!snap.exists){
+        if (!snap.exists) {
             _coachWeeklyChallenge = null;
             card.innerHTML = `<div style="text-align:center; color:#9ca3af;">لا يوجد تحدي أسبوعي منشور حالياً.</div>`;
             return;
         }
-        _coachWeeklyChallenge = { id:snap.id, ...snap.data() };
+        _coachWeeklyChallenge = { id: snap.id, ...snap.data() };
 
         const mine = await db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').get();
         const completed = mine.exists && !!mine.data()?.completed;
         renderCoachWeeklyCard(completed, mine.exists ? mine.data() : null);
-    }catch(e){
+    } catch (e) {
         console.error(e);
         card.innerHTML = `<div style="text-align:center; color:#ef4444;">تعذر تحميل تحدي الأسبوع.</div>`;
     }
 }
 
-function renderCoachWeeklyCard(completed, mineData){
+function renderCoachWeeklyCard(completed, mineData) {
     const card = document.getElementById('coach-weekly-card') || document.getElementById('weekly-challenge-section');
-    if(!card) return;
+    if (!card) return;
 
     const ch = _coachWeeklyChallenge;
-    if(!ch){
+    if (!ch) {
         card.innerHTML = `<div style="text-align:center; color:#9ca3af;">لا يوجد تحدي أسبوعي منشور حالياً.</div>`;
         return;
     }
@@ -1083,7 +1084,7 @@ function renderCoachWeeklyCard(completed, mineData){
     const status = completed ? 'مكتمل ✅' : (requireImg ? 'محتاج إثبات 📸' : 'جاهز للتنفيذ 🚀');
 
     const meta = document.getElementById('coach-weekly-meta');
-    if(meta){
+    if (meta) {
         meta.style.display = 'inline';
         meta.innerText = status;
     }
@@ -1101,7 +1102,7 @@ function renderCoachWeeklyCard(completed, mineData){
             </div>
          </div>
           
-        <p class="wc-notes">${_escapeHtml(desc).replace(/\n/g,'<br>')}</p>
+        <p class="wc-notes">${_escapeHtml(desc).replace(/\n/g, '<br>')}</p>
         <div class="wc-actions">
             <button class="btn btn-primary" onclick="openWeeklyChallengeModal(); event.stopPropagation();" ${completed ? 'disabled style="opacity:.6;"' : ''}>
                 ${completed ? 'تم ✅' : 'تفاصيل التحدي'}
@@ -1110,13 +1111,13 @@ function renderCoachWeeklyCard(completed, mineData){
     `;
 }
 
-function openWeeklyChallengeModal(){
+function openWeeklyChallengeModal() {
     const ch = _coachWeeklyChallenge;
-    if(!ch) return;
+    if (!ch) return;
 
     const titleEl = document.getElementById('weekly-modal-title');
     const bodyEl = document.getElementById('weekly-modal-body');
-    if(titleEl) titleEl.innerText = `${ch.emoji || '🏁'} ${ch.title || 'تحدي الأسبوع'}`;
+    if (titleEl) titleEl.innerText = `${ch.emoji || '🏁'} ${ch.title || 'تحدي الأسبوع'}`;
 
     const requireImg = (ch.requireImage !== false);
     const desc = (ch.desc || ch.description || '').trim();
@@ -1128,10 +1129,10 @@ function openWeeklyChallengeModal(){
     bodyEl.innerHTML = html;
 
     // update button availability
-    db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').get().then(mine=>{
+    db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').get().then(mine => {
         const completed = mine.exists && !!mine.data()?.completed;
         const btn = document.getElementById('weekly-complete-btn');
-        if(btn){
+        if (btn) {
             btn.disabled = completed;
             btn.style.opacity = completed ? 0.6 : 1;
             btn.innerText = completed ? 'مكتمل ✅' : 'أكملت التحدي ✅';
@@ -1141,37 +1142,37 @@ function openWeeklyChallengeModal(){
     document.getElementById('modal-weekly-challenge').style.display = 'flex';
 }
 
-function openWeeklyProof(){
+function openWeeklyProof() {
     const ch = _coachWeeklyChallenge;
-    if(!ch) return;
+    if (!ch) return;
 
     // reset proof UI
     const status = document.getElementById('weekly-upload-status');
     const prev = document.getElementById('weekly-img-preview');
     const hid = document.getElementById('weekly-uploaded-img-url');
     const note = document.getElementById('weekly-proof-note');
-    if(status) status.innerText = '';
-    if(prev){ prev.style.display = 'none'; prev.src = ''; }
-    if(hid) hid.value = '';
-    if(note) note.value = '';
+    if (status) status.innerText = '';
+    if (prev) { prev.style.display = 'none'; prev.src = ''; }
+    if (hid) hid.value = '';
+    if (note) note.value = '';
 
     document.getElementById('modal-weekly-proof').style.display = 'flex';
 }
 
-async function saveWeeklyProof(){
+async function saveWeeklyProof() {
     const ch = _coachWeeklyChallenge;
-    if(!ch || !db || !currentUser) return;
+    if (!ch || !db || !currentUser) return;
 
     const requireImg = (ch.requireImage !== false);
     const imgUrl = document.getElementById('weekly-uploaded-img-url')?.value || '';
     const note = document.getElementById('weekly-proof-note')?.value || '';
 
-    if(requireImg && !imgUrl){
+    if (requireImg && !imgUrl) {
         showToast('لازم ترفع صورة إثبات 📸');
         return;
     }
 
-    try{
+    try {
         await db.collection('users').doc(currentUser.uid).collection('coachWeekly').doc('current').set({
             completed: true,
             photoUrl: imgUrl || null,
@@ -1184,115 +1185,115 @@ async function saveWeeklyProof(){
         closeModal('modal-weekly-proof');
         showToast('مبروك! التحدي اتسجل ✅');
         loadCoachWeeklyChallenge();
-    }catch(e){
+    } catch (e) {
         console.error(e);
         showToast('حصل خطأ… حاول تاني');
     }
 }
 
-function shareWeeklyText(){
+function shareWeeklyText() {
     const ch = _coachWeeklyChallenge;
-    if(!ch) return;
+    if (!ch) return;
 
     const title = ch.title || 'تحدي الأسبوع';
     const desc = (ch.desc || ch.description || '').trim();
     const msg = `🏁 ${title}\n\n${desc}\n\n#ERS #EgyRunnerSquad`;
 
-    if(navigator.share){
-        navigator.share({ title: title, text: msg }).catch(()=>{});
-    }else{
-        try{
+    if (navigator.share) {
+        navigator.share({ title: title, text: msg }).catch(() => { });
+    } else {
+        try {
             navigator.clipboard.writeText(msg);
             showToast('تم نسخ نص التحدي ✅');
-        }catch(e){
+        } catch (e) {
             alert(msg);
         }
     }
 }
 
 /* Weekly proof upload (ImgBB) */
-async function uploadWeeklyProofToImgBB(){
+async function uploadWeeklyProofToImgBB() {
     const fileInput = document.getElementById('weekly-img-file');
     const status = document.getElementById('weekly-upload-status');
     const preview = document.getElementById('weekly-img-preview');
     const hidden = document.getElementById('weekly-uploaded-img-url');
     const saveBtn = document.getElementById('weekly-save-proof-btn');
 
-    if(!fileInput || !fileInput.files || !fileInput.files[0]) return;
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
 
     const file = fileInput.files[0];
-    if(saveBtn) saveBtn.disabled = true;
-    if(status) status.innerText = 'جاري رفع الصورة...';
+    if (saveBtn) saveBtn.disabled = true;
+    if (status) status.innerText = 'جاري رفع الصورة...';
 
-    try{
+    try {
         const apiKey = IMG_BB_KEY;
-        if(!apiKey) throw new Error('IMG_BB_KEY missing');
+        if (!apiKey) throw new Error('IMG_BB_KEY missing');
 
         const formData = new FormData();
         formData.append('image', file);
 
-        const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method:'POST', body: formData });
+        const res = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, { method: 'POST', body: formData });
         const json = await res.json();
-        if(!json || !json.success) throw new Error('upload failed');
+        if (!json || !json.success) throw new Error('upload failed');
 
         const url = json.data.url;
-        if(hidden) hidden.value = url;
+        if (hidden) hidden.value = url;
 
-        if(preview){
+        if (preview) {
             preview.src = url;
             preview.style.display = 'block';
         }
-        if(status) status.innerText = 'تم رفع الصورة ✅';
-    }catch(e){
+        if (status) status.innerText = 'تم رفع الصورة ✅';
+    } catch (e) {
         console.error(e);
-        if(status) status.innerText = 'فشل رفع الصورة ❌';
-    }finally{
-        if(saveBtn) saveBtn.disabled = false;
+        if (status) status.innerText = 'فشل رفع الصورة ❌';
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
     }
 }
 
 
 
 
-function openCoachWorkoutLog(){
-  const w = _coachDailyWorkout;
+function openCoachWorkoutLog() {
+    const w = _coachDailyWorkout;
 
-  // ✅ لو تمرين اليوم لسه ماتحمّلاش، حاول تهيئة الفيد وقل للمستخدم يجرب تاني
-  if(!w){
-    try{
-      if (typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
-    }catch(e){
-      console.warn('[openCoachWorkoutLog] setupCoachFeedOnce failed:', e);
+    // ✅ لو تمرين اليوم لسه ماتحمّلاش، حاول تهيئة الفيد وقل للمستخدم يجرب تاني
+    if (!w) {
+        try {
+            if (typeof setupCoachFeedOnce === 'function') setupCoachFeedOnce();
+        } catch (e) {
+            console.warn('[openCoachWorkoutLog] setupCoachFeedOnce failed:', e);
+        }
+        showToast('تمرين الكوتش لسه بيتحمّل… جرّب تاني بعد ثانية ⏳', 'error');
+        return;
     }
-    showToast('تمرين الكوتش لسه بيتحمّل… جرّب تاني بعد ثانية ⏳', 'error');
-    return;
-  }
 
-  // context for submitRun()
-  window._ersCoachLogCtx = {
-    kind: 'coachDaily',
-    workoutId: w.id || null,
-    title: (w.title || w.name || 'تمرينة الكوتش'),
-    emoji: (w.emoji || '📣'),
-    dateKey: (typeof _ersDateKey === 'function') ? _ersDateKey(new Date()) : null,
-    requireImage: true,
-    startUrl: (w.startUrl || w.link || '').trim() || null
-  };
+    // context for submitRun()
+    window._ersCoachLogCtx = {
+        kind: 'coachDaily',
+        workoutId: w.id || null,
+        title: (w.title || w.name || 'تمرينة الكوتش'),
+        emoji: (w.emoji || '📣'),
+        dateKey: (typeof _ersDateKey === 'function') ? _ersDateKey(new Date()) : null,
+        requireImage: true,
+        startUrl: (w.startUrl || w.link || '').trim() || null
+    };
 
-  try{
-    openNewRun();
+    try {
+        openNewRun();
 
-    // tweak modal header
-    const h = document.querySelector('#modal-log h3');
-    if(h) h.innerText = `${window._ersCoachLogCtx.emoji} سجل تمرينة الكوتش`;
+        // tweak modal header
+        const h = document.querySelector('#modal-log h3');
+        if (h) h.innerText = `${window._ersCoachLogCtx.emoji} سجل تمرينة الكوتش`;
 
-    // optional: put startUrl into link field
-    const linkEl = document.getElementById('log-link');
-    if(linkEl && window._ersCoachLogCtx.startUrl) linkEl.value = window._ersCoachLogCtx.startUrl;
+        // optional: put startUrl into link field
+        const linkEl = document.getElementById('log-link');
+        if (linkEl && window._ersCoachLogCtx.startUrl) linkEl.value = window._ersCoachLogCtx.startUrl;
 
-   }catch(e){
-    console.error(e);
-  }
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 
@@ -1302,37 +1303,37 @@ function openCoachWorkoutLog(){
 
 // ==================== 1. 📚 مكتبة الجريات الأساسية (الموسوعة) ====================
 const BASIC_RUNS_DATA = [
-    { 
+    {
         title: 'Easy Run', sub: 'الجري السهل', icon: '😌', color: '#10b981',
         desc: 'جري مريح جداً، تقدر تتكلم فيه بجمل كاملة بدون نهجان.',
         goal: 'بناء القاعدة الهوائية (Endurance) وتعويد الجسم.',
         zone: 'Zone 2'
     },
-    { 
+    {
         title: 'LSD Run', sub: 'الجري الطويل', icon: '🐢', color: '#3b82f6',
         desc: 'Long Slow Distance. جري لمسافة طويلة برتم بطيء وثابت.',
         goal: 'زيادة التحمل العضلي وحرق الدهون كمصدر طاقة.',
         zone: 'Zone 2'
     },
-    { 
+    {
         title: 'Tempo Run', sub: 'جري التمبو', icon: '⚡', color: '#f59e0b',
         desc: 'جري "مجهد بس مريح" (Comfortably Hard). رتم أسرع من العادي.',
         goal: 'رفع عتبة اللاكتيك (تجري أسرع لفترة أطول بدون تعب).',
         zone: 'Zone 3-4'
     },
-    { 
+    {
         title: 'Intervals', sub: 'الانترفل', icon: '🔥', color: '#ef4444',
         desc: 'فترات جري بأقصى سرعة متبوعة بفترات راحة (مشى/وقوف).',
         goal: 'زيادة السرعة القصوى وقوة القلب (VO2 Max).',
         zone: 'Zone 5'
     },
-    { 
+    {
         title: 'Fartlek', sub: 'لعب السرعات', icon: '🔀', color: '#8b5cf6',
         desc: 'جري عشوائي ممتع (سريع ثم بطيء) حسب الشعور والأرض.',
         goal: 'كسر الروتين وتحسين تغيير السرعات.',
         zone: 'Mix'
     },
-    { 
+    {
         title: 'Recovery Run', sub: 'جري الاستشفاء', icon: '💤', color: '#64748b',
         desc: 'جري بطيء جداً جداً (أبطأ من الإيزي) لمدة قصيرة.',
         goal: 'فك العضلات بعد السباقات أو التمارين الشاقة.',
@@ -1374,7 +1375,7 @@ const ELITE_WORKOUTS_DATA = {
 // ==================== 🛠️ محركات الرسم (Rendering Engines) ====================
 
 // 1. محرك الجدول (Team Schedule)
-window.renderTeamSchedule = function() {
+window.renderTeamSchedule = function () {
     const container = document.getElementById('schedule-scroll-container');
     if (!container) return false;
 
@@ -1392,16 +1393,16 @@ window.renderTeamSchedule = function() {
     ];
 
     const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-    const todayIdx = new Date().getDay(); 
+    const todayIdx = new Date().getDay();
     const order = [6, 0, 1, 2, 3, 4, 5];
-    
+
     let html = '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px;">';
-    
+
     order.forEach(dIdx => {
         const item = schedule.find(s => s.day === dIdx);
         const dayName = daysAr[dIdx];
         const isToday = (todayIdx === dIdx);
-        
+
         // تصميم الكارت
         const border = isToday ? item.color : 'rgba(255,255,255,0.1)';
         const bg = isToday ? `${item.color}15` : 'rgba(255,255,255,0.03)'; // 15 for low opacity
@@ -1426,7 +1427,7 @@ window.renderTeamSchedule = function() {
 };
 
 // 2. محرك مكتبة التمارين (Coach Library) - التصميم الجديد
-window.renderCoachLibrary = function() {
+window.renderCoachLibrary = function () {
     const container = document.getElementById('library-types-container');
     if (!container) return false;
 
@@ -1457,13 +1458,13 @@ window.renderCoachLibrary = function() {
 };
 
 // 3. دالة فتح مودال التمارين الذكية (Premium Cards)
-window.openEliteWorkoutsModal = function(catId, catName) {
+window.openEliteWorkoutsModal = function (catId, catName) {
     const workouts = ELITE_WORKOUTS_DATA[catId] || [];
-    
-let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
+
+    let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
 
     // 🔥 زرار المدرب الذكي (الجديد)
-    if(workouts.length > 0) {
+    if (workouts.length > 0) {
         html += `
         <button onclick="closeModal('modal-daily-workout'); SmartTrainer.startSession('${catId}')" 
                 class="btn btn-primary" style="width:100%; height:50px; font-size:16px; margin-bottom:10px; box-shadow:0 4px 15px rgba(16,185,129,0.3);">
@@ -1471,9 +1472,9 @@ let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
         </button>
         `;
     }
-        
-    if(workouts.length === 0) html += `<div style="text-align:center; padding:20px; color:#999;">جاري إضافة التمارين قريباً...</div>`;
-    
+
+    if (workouts.length === 0) html += `<div style="text-align:center; padding:20px; color:#999;">جاري إضافة التمارين قريباً...</div>`;
+
     workouts.forEach(w => {
         html += `
         <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; gap:15px;">
@@ -1495,7 +1496,7 @@ let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
 };
 
 // 4. دالة فتح المكتبة الأساسية (Basic Library - Premium)
-window.openBasicLibrary = function() {
+window.openBasicLibrary = function () {
     let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
     BASIC_RUNS_DATA.forEach(run => {
         html += `
@@ -1537,7 +1538,7 @@ function fillAndOpenModal(title, content) {
     if (tEl && bEl) {
         tEl.innerHTML = title; // innerHTML عشان لو في ايموجي
         bEl.innerHTML = content;
-        if(typeof openModal === 'function') openModal('modal-daily-workout');
+        if (typeof openModal === 'function') openModal('modal-daily-workout');
     }
 }
 
@@ -1614,7 +1615,7 @@ window.BASIC_RUNS_DATA = [
 // ==================== 🔊 محرك الصوت (Sound FX) ====================
 window.SoundFX = {
     ctx: null,
-    init: function() {
+    init: function () {
         if (!this.ctx) {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -1622,33 +1623,33 @@ window.SoundFX = {
             this.ctx.resume();
         }
     },
-    tick: function() {
+    tick: function () {
         if (!this.ctx) return;
-        const o = this.ctx.createOscillator(); 
+        const o = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         o.connect(g); g.connect(this.ctx.destination);
-        o.frequency.value = 800; 
+        o.frequency.value = 800;
         g.gain.setValueAtTime(0.05, this.ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.05);
         o.start(); o.stop(this.ctx.currentTime + 0.05);
     },
-    beep: function() {
+    beep: function () {
         if (!this.ctx) return;
-        const o = this.ctx.createOscillator(); 
+        const o = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         o.connect(g); g.connect(this.ctx.destination);
-        o.type = 'square'; 
-        o.frequency.value = 600; 
+        o.type = 'square';
+        o.frequency.value = 600;
         g.gain.setValueAtTime(0.1, this.ctx.currentTime);
         g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
         o.start(); o.stop(this.ctx.currentTime + 0.1);
     },
-    whistle: function() {
+    whistle: function () {
         if (!this.ctx) return;
-        const o = this.ctx.createOscillator(); 
+        const o = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         o.connect(g); g.connect(this.ctx.destination);
-        o.type = 'triangle'; 
+        o.type = 'triangle';
         o.frequency.setValueAtTime(1200, this.ctx.currentTime);
         o.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.3);
         g.gain.setValueAtTime(0.3, this.ctx.currentTime);
@@ -1666,7 +1667,7 @@ window.SmartTrainer = {
     totalTime: 0,
     isPaused: false,
     lang: 'en', // Default Language
-    
+
     texts: {
         en: {
             startEx: "Start",
@@ -1696,7 +1697,7 @@ window.SmartTrainer = {
         }
     },
 
-    startSession: function(categoryName) {
+    startSession: function (categoryName) {
         window.SoundFX.init();
         const workouts = window.ELITE_WORKOUTS_DATA[categoryName] || [];
         if (workouts.length === 0) {
@@ -1716,10 +1717,10 @@ window.SmartTrainer = {
             if (index < workouts.length - 1) {
                 this.queue.push({
                     type: 'rest',
-                    name: 'Rest', 
+                    name: 'Rest',
                     duration: 10,
                     color: '#f59e0b',
-                    nextName: workouts[index+1].name
+                    nextName: workouts[index + 1].name
                 });
             }
         });
@@ -1727,12 +1728,12 @@ window.SmartTrainer = {
 
         this.currentIndex = 0;
         this.isPaused = false;
-        
+
         const modal = document.getElementById('modal-smart-trainer');
-        if(modal) {
+        if (modal) {
             modal.style.display = 'flex';
             this.injectLangButton();
-            try { if(navigator.wakeLock) navigator.wakeLock.request('screen'); } catch(e){}
+            try { if (navigator.wakeLock) navigator.wakeLock.request('screen'); } catch (e) { }
             this.speak(this.texts[this.lang].ready);
             setTimeout(() => this.playStep(), 2000);
         } else {
@@ -1740,7 +1741,7 @@ window.SmartTrainer = {
         }
     },
 
-    playStep: function() {
+    playStep: function () {
         const step = this.queue[this.currentIndex];
         const T = this.texts[this.lang];
 
@@ -1783,7 +1784,7 @@ window.SmartTrainer = {
         this.startTimer();
     },
 
-    startTimer: function() {
+    startTimer: function () {
         if (this.timer) clearInterval(this.timer);
         this.timer = setInterval(() => {
             if (this.isPaused) return;
@@ -1804,69 +1805,69 @@ window.SmartTrainer = {
         }, 1000);
     },
 
-    updateTimerUI: function() {
+    updateTimerUI: function () {
         const tEl = document.getElementById('trainer-timer');
         const rEl = document.getElementById('timer-progress-ring');
-        if(tEl) tEl.innerText = this.timeLeft;
-        if(rEl) {
+        if (tEl) tEl.innerText = this.timeLeft;
+        if (rEl) {
             const circumference = 754;
             const offset = circumference - (this.timeLeft / this.totalTime) * circumference;
             rEl.style.strokeDashoffset = offset;
         }
     },
 
-    togglePause: function() {
+    togglePause: function () {
         this.isPaused = !this.isPaused;
         const icon = document.querySelector('#btn-trainer-pause i');
         const T = this.texts[this.lang];
-        
+
         if (this.isPaused) {
-            if(icon) icon.className = 'ri-play-fill';
+            if (icon) icon.className = 'ri-play-fill';
             this.speak(T.pause);
         } else {
-            if(icon) icon.className = 'ri-pause-fill';
+            if (icon) icon.className = 'ri-pause-fill';
             this.speak(T.resume);
         }
     },
 
-    toggleLang: function() {
+    toggleLang: function () {
         this.lang = (this.lang === 'en') ? 'ar' : 'en';
         const btn = document.getElementById('trainer-lang-btn');
-        if(btn) btn.innerText = this.texts[this.lang].btn;
-        
+        if (btn) btn.innerText = this.texts[this.lang].btn;
+
         const T = this.texts[this.lang];
         const step = this.queue[this.currentIndex];
-        
+
         document.getElementById('trainer-status').innerText = (step.type === 'work') ? T.statusWork : T.statusRest;
-        if(step.type === 'rest') {
+        if (step.type === 'rest') {
             document.getElementById('trainer-ex-name').innerText = T.rest;
             document.getElementById('trainer-next').innerText = `${T.next} ${step.nextName}`;
         } else {
             const nextWork = this.queue[this.currentIndex + 2];
-            if(nextWork) document.getElementById('trainer-next').innerText = `${T.next} ${nextWork.name}`;
+            if (nextWork) document.getElementById('trainer-next').innerText = `${T.next} ${nextWork.name}`;
         }
         this.speak(this.lang === 'en' ? "Language changed" : "تم تغيير اللغة");
     },
 
-    quit: function() {
+    quit: function () {
         if (this.timer) clearInterval(this.timer);
         const modal = document.getElementById('modal-smart-trainer');
-        if(modal) modal.style.display = 'none';
-        if(window.speechSynthesis) window.speechSynthesis.cancel();
+        if (modal) modal.style.display = 'none';
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
     },
 
-    speak: function(text) {
+    speak: function (text) {
         if (!window.speechSynthesis) return;
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = (this.lang === 'en') ? 'en-US' : 'ar-SA';
-        utterance.rate = 1;     
+        utterance.rate = 1;
         window.speechSynthesis.speak(utterance);
     },
 
-    injectLangButton: function() {
+    injectLangButton: function () {
         const container = document.querySelector('.trainer-header');
-        if(container && !document.getElementById('trainer-lang-btn')) {
+        if (container && !document.getElementById('trainer-lang-btn')) {
             const btn = document.createElement('button');
             btn.id = 'trainer-lang-btn';
             btn.innerText = this.texts[this.lang].btn;
@@ -1875,8 +1876,8 @@ window.SmartTrainer = {
             container.insertBefore(btn, container.firstChild);
         }
     },
-    
-    skip: function() {
+
+    skip: function () {
         clearInterval(this.timer);
         this.currentIndex++;
         this.playStep();
@@ -1886,7 +1887,7 @@ window.SmartTrainer = {
 // ==================== 🛠️ دوال الرسم والربط (Rendering Functions) ====================
 
 // 1. رسم جدول التدريب
-window.renderTeamSchedule = function() {
+window.renderTeamSchedule = function () {
     const container = document.getElementById('schedule-scroll-container');
     if (!container) return false;
 
@@ -1901,11 +1902,11 @@ window.renderTeamSchedule = function() {
     ];
 
     const daysAr = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-    const todayIdx = new Date().getDay(); 
+    const todayIdx = new Date().getDay();
     const order = [6, 0, 1, 2, 3, 4, 5];
-    
+
     let html = '<div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:5px;">';
-    
+
     order.forEach(dIdx => {
         const item = schedule.find(s => s.day === dIdx);
         const isToday = (todayIdx === dIdx);
@@ -1933,7 +1934,7 @@ window.renderTeamSchedule = function() {
 };
 
 // 2. رسم المكتبة
-window.renderCoachLibrary = function() {
+window.renderCoachLibrary = function () {
     const container = document.getElementById('library-types-container');
     if (!container) return false;
 
@@ -1961,11 +1962,11 @@ window.renderCoachLibrary = function() {
 };
 
 // 3. فتح مودال التمارين (مع زر المدرب الذكي)
-window.openEliteWorkoutsModal = function(catId, catName) {
+window.openEliteWorkoutsModal = function (catId, catName) {
     const workouts = window.ELITE_WORKOUTS_DATA[catId] || [];
     let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
 
-    if(workouts.length > 0) {
+    if (workouts.length > 0) {
         html += `
         <button onclick="closeModal('modal-daily-workout'); window.SmartTrainer.startSession('${catId}')" 
                 class="btn btn-primary" style="width:100%; height:50px; font-size:16px; margin-bottom:10px; font-weight:bold; box-shadow:0 4px 15px rgba(16,185,129,0.3);">
@@ -1983,12 +1984,12 @@ window.openEliteWorkoutsModal = function(catId, catName) {
         </div>`;
     });
     html += `</div>`;
-    
+
     fillAndOpenModal(catName, html);
 };
 
 // 4. فتح المكتبة الأساسية (الكود الكامل)
-window.openBasicLibrary = function() {
+window.openBasicLibrary = function () {
     let html = `<div style="display:flex; flex-direction:column; gap:12px;">`;
     window.BASIC_RUNS_DATA.forEach(run => {
         html += `
@@ -2011,7 +2012,7 @@ function fillAndOpenModal(title, content) {
     if (tEl && bEl) {
         tEl.innerText = title;
         bEl.innerHTML = content;
-        if(typeof openModal === 'function') openModal('modal-daily-workout');
+        if (typeof openModal === 'function') openModal('modal-daily-workout');
     }
 }
 
@@ -2025,7 +2026,7 @@ function fillAndOpenModal(title, content) {
         if (s && l) console.log("✅ Coach System Fully Loaded!");
         else if (attempts < 15) setTimeout(tryRender, 300);
     };
-    
+
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', tryRender);
     else tryRender();
 })();
