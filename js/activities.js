@@ -85,7 +85,7 @@ async function handleFileSelect(input) {
         // نبحث عن تنسيق H:MM:SS او MM:SS
         // لكن نحذر من Pace (D:CC /km)
         // الحل: نبحث عن الوقت الكلي، عادة بيكون أكبر رقم زمني أو بجوار كلمة Duration/Time
-        
+
         // 1. تجميع كل التوقيتات
         const timeRegex = /(\d{1,2})[:.](\d{2})(?:[:.](\d{2}))?/g;
         let potentialTimes = [];
@@ -100,9 +100,9 @@ async function handleFileSelect(input) {
                 h = parseInt(match[1]);
                 m = parseInt(match[2]);
             } else { // MM:SS (Assume minutes unless very large)
-                 m = parseInt(match[1]);
+                m = parseInt(match[1]);
             }
-            
+
             // تحويل للدقائق
             let totalMins = (h * 60) + m;
             if (totalMins > 0 && totalMins < 600) potentialTimes.push(totalMins);
@@ -123,7 +123,7 @@ async function handleFileSelect(input) {
 }
 
 // --- B. Smart Text Paste (From WhatsApp/Strava Share) ---
-window.handleSmartPaste = function() {
+window.handleSmartPaste = function () {
     // نطلب من المستخدم اللصق (بسبب قيود المتصفح لازم هو اللي يعمل Paste أحياناً)
     // هنا هنعمل خدعة: نفتح prompt بسيط
     navigator.clipboard.readText().then(text => {
@@ -131,35 +131,35 @@ window.handleSmartPaste = function() {
     }).catch(err => {
         // Fallback: prompt
         const userText = prompt("الزق النص هنا (Paste Text):");
-        if(userText) parseActivityText(userText);
+        if (userText) parseActivityText(userText);
     });
 }
 
 function parseActivityText(text) {
-    if(!text) return;
-    
+    if (!text) return;
+
     // 1. Distance (look for "5.02 km" etc)
     let dist = null;
     const distMatch = text.match(/(\d+[.,]?\d*)\s*(?:km|k|mi|كيلو)/i);
-    if(distMatch) dist = parseFloat(distMatch[1].replace(',', '.'));
+    if (distMatch) dist = parseFloat(distMatch[1].replace(',', '.'));
 
     // 2. Time (look for "Time: 30:00" or just "30:00")
     // Similar logic to OCR but text is usually cleaner
     let time = null;
     const timeMatch = text.match(/(?:time|duration|الوقت)[\s:]*(\d{1,2}:)?(\d{1,2}):(\d{2})/i) || text.match(/(\d{1,2}):(\d{2})/);
-    
-    if(timeMatch) {
-         // rough parsing logic fallback
-         let parts = timeMatch[0].split(':').map(p => parseInt(p.replace(/\D/g,''))); // naive clean
-         // Refined logic needs strict regex capture groups usage (implemented simply here for strict types)
-         
-         // Let's use the captured groups correctly
-         // Group 1: Hours (optional), Group 2: Mins, Group 3: Secs (optional)
-         // Actually, let's just parse the full string found like "1:30:00"
-         const tStr = timeMatch[0].replace(/[^\d:]/g,'');
-         const tParts = tStr.split(':').map(Number);
-         if(tParts.length === 3) time = tParts[0]*60 + tParts[1];
-         else if(tParts.length === 2) time = tParts[0]; // Assume MM:SS
+
+    if (timeMatch) {
+        // rough parsing logic fallback
+        let parts = timeMatch[0].split(':').map(p => parseInt(p.replace(/\D/g, ''))); // naive clean
+        // Refined logic needs strict regex capture groups usage (implemented simply here for strict types)
+
+        // Let's use the captured groups correctly
+        // Group 1: Hours (optional), Group 2: Mins, Group 3: Secs (optional)
+        // Actually, let's just parse the full string found like "1:30:00"
+        const tStr = timeMatch[0].replace(/[^\d:]/g, '');
+        const tParts = tStr.split(':').map(Number);
+        if (tParts.length === 3) time = tParts[0] * 60 + tParts[1];
+        else if (tParts.length === 2) time = tParts[0]; // Assume MM:SS
     }
 
     const status = document.getElementById('ocr-status');
@@ -167,26 +167,26 @@ function parseActivityText(text) {
 }
 
 // --- Helper: Fill Inputs & Validate ---
-function fillLogInputs(dist, time, statusEl, isPaste=false) {
+function fillLogInputs(dist, time, statusEl, isPaste = false) {
     const distInput = document.getElementById('log-dist');
     const timeInput = document.getElementById('log-time');
     let filled = false;
 
     if (dist && distInput) {
-        distInput.value = dist; 
+        distInput.value = dist;
         filled = true;
     }
     if (time && timeInput) {
         timeInput.value = time;
         filled = true;
     }
-    
+
     // Trigger calculation
-    calcPace(); 
+    calcPace();
 
     if (statusEl && filled) {
         const icon = isPaste ? '📋' : '✅';
-        const src  = isPaste ? 'النص' : 'الصورة';
+        const src = isPaste ? 'النص' : 'الصورة';
         statusEl.innerHTML = `<span style="color:#10b981;">${icon} تم التقاط البيانات من ${src}!</span>`;
         statusEl.style.display = 'block';
     } else if (statusEl && !filled) {
@@ -196,17 +196,17 @@ function fillLogInputs(dist, time, statusEl, isPaste=false) {
 }
 
 // --- C. Real-time Pace Calculator ---
-window.calcPace = function() {
+window.calcPace = function () {
     const d = parseFloat(document.getElementById('log-dist').value);
     const t = parseFloat(document.getElementById('log-time').value);
     const lbl = document.getElementById('live-pace-lbl');
-    
-    if(d > 0 && t > 0) {
+
+    if (d > 0 && t > 0) {
         const paceDec = t / d;
         const pMin = Math.floor(paceDec);
         const pSec = Math.round((paceDec - pMin) * 60);
-        const pSecStr = pSec < 10 ? '0'+pSec : pSec;
-        
+        const pSecStr = pSec < 10 ? '0' + pSec : pSec;
+
         lbl.innerText = `${pMin}:${pSecStr} /km`;
         lbl.style.color = (paceDec < 3) ? '#ef4444' : (paceDec > 15 ? '#f59e0b' : '#10b981'); // Warn if unnatural
     } else {
@@ -496,7 +496,8 @@ function loadActivityLog() {
                           <div style="font-size:14px; color:#fff; font-weight:bold;">${r.dist} كم <span style="font-size:10px; font-weight:normal; color:#9ca3af;">(${r.type})</span></div>
                           <div style="font-size:11px; color:#9ca3af;">${r.time} دقيقة</div>
                       </div>
-                       <button onclick="event.stopPropagation(); window.prepareEditRun('${r.id}')" style="background:none; border:none; color:#9ca3af;"><i class="ri-pencil-line"></i></button>
+                       <button onclick="event.stopPropagation(); window.prepareEditRun('${r.id}')" style="background:none; border:none; color:#9ca3af; margin-left:8px;"><i class="ri-pencil-line"></i></button>
+                       <button onclick="event.stopPropagation(); deleteRun('${r.id}', ${r.dist})" style="background:none; border:none; color:#ef4444;"><i class="ri-delete-bin-line"></i></button>
                   </div>`;
                 });
             }

@@ -1,0 +1,16 @@
+{
+    "appId": "com.ers.runners.elite",
+    "appName": "ERS Runners",
+    "webDir": ".",
+    "bundledWebRuntime": false,
+    "plugins": {
+        "SplashScreen": {
+            "launchShowDuration": 2000,
+            "backgroundColor": "#111827"
+        },
+        "StatusBar": {
+            "style": "DARK",
+            "backgroundColor": "#111827"
+        }
+    }
+}
