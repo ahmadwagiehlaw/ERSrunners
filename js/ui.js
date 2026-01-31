@@ -263,7 +263,7 @@ snap.forEach(doc => {
     }).replace(/"/g, '&quot;');
 
     html += `
-            <div class="feed-card-premium" onclick="openRunDetailFromFeed('${doc.id}', ${safeData})" 
+            <div class="feed-card-premium" data-post-id="${doc.id}" onclick="openRunDetailFromFeed('${doc.id}', ${safeData})" 
                  style="background:rgba(31, 41, 55, 0.4); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:15px; margin-bottom:15px; cursor:pointer;">
                 <div style="display:flex; gap:15px; align-items:center;">
                     <div style="flex:1;">
@@ -288,7 +288,7 @@ snap.forEach(doc => {
                         </div>
                         <div style="display:flex; gap:12px; opacity:0.8;">
                              <span style="font-size:12px; color:#9ca3af;"><i class="ri-heart-line"></i> ${(p.likes || []).length}</span>
-                             <span style="font-size:12px; color:#9ca3af;"><i class="ri-chat-3-line"></i> ${p.commentsCount || 0}</span>
+                             <span style="font-size:12px; color:#9ca3af;"><i class="ri-chat-3-line"></i> <span class="comment-count">${p.commentsCount || 0}</span></span>
                         </div>
                     </div>
                     <div style="width:80px; height:80px; border-radius:15px; background:#111827; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
@@ -633,6 +633,14 @@ async function sendComment() {
         text: text, userId: currentUser.uid, userName: userData.name, timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
     await db.collection('activity_feed').doc(currentPostId).update({ commentsCount: firebase.firestore.FieldValue.increment(1) });
+
+    // Update UI comment counter immediately
+    const commentCountElements = document.querySelectorAll(`[data-post-id="${currentPostId}"] .comment-count`);
+    commentCountElements.forEach(el => {
+        const currentCount = parseInt(el.textContent) || 0;
+        el.textContent = currentCount + 1;
+    });
+
     if (currentPostOwner !== currentUser.uid) sendNotification(currentPostOwner, `علق ${userData.name}: "${text.substring(0, 20)}..."`);
 }
 
@@ -857,7 +865,7 @@ async function loadGlobalFeed() {
 
             // --- 3. بناء الكارت ---
             html += `
-            <div class="feed-card-premium" onclick="openRunDetailFromFeed('${doc.id}', ${safeDataJson})" 
+            <div class="feed-card-premium" data-post-id="${doc.id}" onclick="openRunDetailFromFeed('${doc.id}', ${safeDataJson})" 
                  style="background:rgba(30, 41, 59, 0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:15px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden;">
                 
                 <div style="position:absolute; right:0; top:0; bottom:0; width:4px; background:${themeColor};"></div>
@@ -894,7 +902,7 @@ async function loadGlobalFeed() {
                              </div>
                              <div onclick="openComments('${doc.id}', '${p.uid}')" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
                                 <i class="ri-chat-3-line" style="font-size:18px; color:#94a3b8;"></i> 
-                                <span style="font-size:13px; font-weight:600; color:#94a3b8;">${commentsCount}</span>
+                                <span class="comment-count" style="font-size:13px; font-weight:600; color:#94a3b8;">${commentsCount}</span>
                              </div>
                         </div>
                     </div>
