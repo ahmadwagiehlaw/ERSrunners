@@ -7253,3 +7253,89 @@ body {
     padding: 0;
 }
 
+
+/* Auto Pause Visual Indicator */
+.blink-pause {
+    animation: blinker 1.5s linear infinite;
+    background-color: #f59e0b !important; /* Orange warning */
+    border-color: #f59e0b !important;
+}
+
+@keyframes blinker {
+    50% { opacity: 0.5; }
+}
+
+
+/* ==================== Podcast Episode List ==================== */
+.episode-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.episode-item:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(30,215,96,0.3);
+    transform: translateX(-3px);
+}
+
+.episode-item.active {
+    background: rgba(30,215,96,0.1);
+    border-color: rgba(30,215,96,0.4);
+}
+
+.episode-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(30,215,96,0.15);
+    color: #1ed760;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.episode-item.active .episode-number {
+    background: rgba(30,215,96,0.25);
+    color: #fff;
+}
+
+.episode-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.episode-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.episode-desc {
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.episode-item i {
+    font-size: 24px;
+    color: rgba(30,215,96,0.6);
+    flex-shrink: 0;
+}
+
+.episode-item.active i {
+    color: #1ed760;
+}

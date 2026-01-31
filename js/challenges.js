@@ -135,69 +135,105 @@ const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandr
 var currentReportFeedId = window.currentReportFeedId || null;
 window.currentReportFeedId = currentReportFeedId;
 
+// 🔒 Lock to prevent multiple concurrent loads
+var isLoadingChallenges = false;
+
 // --- (دالة التحديات المحدثة التي قررنا استخدامها) ---
 async function loadActiveChallenges() {
-    const list = document.getElementById('challenges-list');
-    const mini = document.getElementById('my-active-challenges');
-
-    if (!list || !currentUser) return;
-
-    // 1. جلب التحديات من قاعدة البيانات
-    const snap = await db.collection('challenges').where('active', '==', true).get();
-    if (snap.empty) {
-        list.innerHTML = "<div class='empty-state-fun'>لا توجد تحديات حالياً</div>";
+    // 🔒 Prevent concurrent executions
+    if (isLoadingChallenges) {
+        console.log('[DEBUG] loadActiveChallenges already running, skipping...');
         return;
     }
 
-    allChallengesCache = [];
-    let miniHtml = '';
-    const allRuns = window._ersRunsCache || []; // 🔥 المصدر الوحيد للحقيقة
+    isLoadingChallenges = true;
+    console.log('[DEBUG] 🔒 Lock acquired');
 
-    for (const doc of snap.docs) {
-        const ch = { id: doc.id, ...doc.data() };
+    try {
+        const list = document.getElementById('challenges-list');
+        const mini = document.getElementById('my-active-challenges');
 
-        // جلب وثيقة المشارك
-        const pDoc = await doc.ref.collection('participants').doc(currentUser.uid).get();
-        if (pDoc.exists) {
-            // 🔥 إعادة حساب التقدم بناءً على الكاش (بما يغطي الجريات القديمة)
-            const startDate = ch.startDate ? new Date(ch.startDate) : new Date(2026, 0, 1);
-            const endDate = ch.endDate ? ch.endDate.toDate() : new Date(2026, 0, 31);
+        if (!list || !currentUser) {
+            console.log('[DEBUG] Missing list or currentUser, aborting');
+            return;
+        }
 
-            const validRuns = allRuns.filter(r => {
-                const rDate = r.timestamp ? r.timestamp.toDate() : null;
-                return rDate && rDate >= startDate && rDate <= endDate && r.type === 'Run';
-            });
+        // 1. جلب التحديات من قاعدة البيانات
+        const snap = await db.collection('challenges').where('active', '==', true).get();
+        if (snap.empty) {
+            list.innerHTML = "<div class='empty-state-fun'>لا توجد تحديات حالياً</div>";
+            return;
+        }
 
-            let currentProgress = 0;
-            if (ch.type === 'distance') {
-                currentProgress = validRuns.reduce((sum, r) => sum + (parseFloat(r.dist) || 0), 0);
-            } else if (ch.type === 'frequency') {
-                currentProgress = validRuns.length;
-            }
+        console.log('[DEBUG] loadActiveChallenges starting, found', snap.size, 'challenges');
+        console.log('[DEBUG] Documents IDs:', snap.docs.map(d => d.id));
+        console.log('[DEBUG] Cache BEFORE reset:', window.allChallengesCache ? window.allChallengesCache.length : 'undefined');
 
-            // تحديث قاعدة البيانات في الخلفية إذا اختلف الرقم
-            if (Math.abs(currentProgress - (pDoc.data().progress || 0)) > 0.01) {
-                doc.ref.collection('participants').doc(currentUser.uid).update({ progress: currentProgress });
-            }
+        // Reset the GLOBAL cache
+        window.allChallengesCache = [];
+        allChallengesCache = window.allChallengesCache; // Sync local reference
 
-            allChallengesCache.push({ ...ch, isJoined: true, progress: currentProgress });
+        console.log('[DEBUG] Cache AFTER reset:', allChallengesCache.length);
 
-            // تحديث شريط التقدم في الصفحة الرئيسية
-            if (mini) {
-                const perc = Math.min((currentProgress / (ch.target || 1)) * 100, 100);
-                miniHtml += `
+        let miniHtml = '';
+        const allRuns = window._ersRunsCache || []; // 🔥 المصدر الوحيد للحقيقة
+
+        for (const doc of snap.docs) {
+            const ch = { id: doc.id, ...doc.data() };
+            console.log('[DEBUG] Processing challenge:', ch.title, '(', ch.id, ')');
+
+            // جلب وثيقة المشارك
+            const pDoc = await doc.ref.collection('participants').doc(currentUser.uid).get();
+            if (pDoc.exists) {
+                console.log('[DEBUG] User is participant in:', ch.title);
+                // 🔥 إعادة حساب التقدم بناءً على الكاش (بما يغطي الجريات القديمة)
+                const startDate = ch.startDate ? new Date(ch.startDate) : new Date(2026, 0, 1);
+                const endDate = ch.endDate ? ch.endDate.toDate() : new Date(2026, 0, 31);
+
+                const validRuns = allRuns.filter(r => {
+                    const rDate = r.timestamp ? r.timestamp.toDate() : null;
+                    return rDate && rDate >= startDate && rDate <= endDate && r.type === 'Run';
+                });
+
+                let currentProgress = 0;
+                if (ch.type === 'distance') {
+                    currentProgress = validRuns.reduce((sum, r) => sum + (parseFloat(r.dist) || 0), 0);
+                } else if (ch.type === 'frequency') {
+                    currentProgress = validRuns.length;
+                }
+
+                // تحديث قاعدة البيانات في الخلفية إذا اختلف الرقم
+                if (Math.abs(currentProgress - (pDoc.data().progress || 0)) > 0.01) {
+                    doc.ref.collection('participants').doc(currentUser.uid).update({ progress: currentProgress });
+                }
+
+                allChallengesCache.push({ ...ch, isJoined: true, progress: currentProgress });
+                console.log('[DEBUG] Added to cache as JOINED. Cache size now:', allChallengesCache.length);
+
+                // تحديث شريط التقدم في الصفحة الرئيسية
+                if (mini) {
+                    const perc = Math.min((currentProgress / (ch.target || 1)) * 100, 100);
+                    miniHtml += `
                 <div class="mini-challenge-card" onclick="switchView('challenges');">
                     <div class="mini-ch-title">${ch.title}</div>
                     <div class="mini-ch-progress"><div class="mini-ch-fill" style="width:${perc}%"></div></div>
                 </div>`;
+                }
+            } else {
+                console.log('[DEBUG] User is NOT participant in:', ch.title);
+                allChallengesCache.push({ ...ch, isJoined: false, progress: 0 });
+                console.log('[DEBUG] Added to cache as NOT JOINED. Cache size now:', allChallengesCache.length);
             }
-        } else {
-            allChallengesCache.push({ ...ch, isJoined: false, progress: 0 });
         }
-    }
 
-    if (mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
-    renderChallenges();
+        if (mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
+        console.log('[DEBUG] About to call renderChallenges. Final cache size:', allChallengesCache.length);
+        renderChallenges();
+    } finally {
+        // 🔓 Always release lock
+        isLoadingChallenges = false;
+        console.log('[DEBUG] 🔓 Lock released');
+    }
 }// ==================== Community Reporting System (V5.0) ====================
 
 function openReportModal(feedId) {
@@ -253,7 +289,15 @@ function setChallengeFilter(filter, btn) {
 
 //==========================================
 function renderChallenges(dummy) {
+    // Ensure we're using the global cache
+    allChallengesCache = window.allChallengesCache || [];
+
+    console.log('[DEBUG] renderChallenges called, cache size:', allChallengesCache.length);
     const list = document.getElementById('challenges-list');
+    if (!list) {
+        console.error('[DEBUG] challenges-list element not found!');
+        return;
+    }
 
     // 1. تطبيق الفلترة
     let displayList = allChallengesCache;
@@ -600,24 +644,24 @@ async function joinChallenge(chId) {
 
 // 2. دالة حذف التحدي (لزر الحذف في الأدمن وفي الكروت)
 async function deleteChallenge(id) {
-    if (!confirm("هل أنت متأكد من حذف هذا التحدي نهائياً؟")) return;
+    showConfirm("هل أنت متأكد من حذف هذا التحدي نهائياً؟", async () => {
+        try {
+            await db.collection('challenges').doc(id).delete();
+            showToast("تم حذف التحدي 🗑️", "success");
 
-    try {
-        await db.collection('challenges').doc(id).delete();
-        showToast("تم حذف التحدي 🗑️", "success");
+            // تحديث الكاش والواجهة
+            allChallengesCache = allChallengesCache.filter(c => c.id !== id);
 
-        // تحديث الكاش والواجهة
-        allChallengesCache = allChallengesCache.filter(c => c.id !== id);
-
-        // تحديث المكانين (صفحة المنافسة وصفحة الأدمن)
-        renderChallenges('all');
-        if (document.getElementById('admin-active-challenges-list')) {
-            loadAdminChallengesList();
+            // تحديث المكانين (صفحة المنافسة وصفحة الأدمن)
+            renderChallenges('all');
+            if (document.getElementById('admin-active-challenges-list')) {
+                loadAdminChallengesList();
+            }
+        } catch (e) {
+            console.error(e);
+            showToast("فشل الحذف", "error");
         }
-    } catch (e) {
-        console.error(e);
-        showToast("فشل الحذف", "error");
-    }
+    });
 }
 
 
@@ -991,20 +1035,21 @@ function showRunAnalysis(dist, time, kind = 'Run', paceOverride = null) {
 }
 
 // دالة للأدمن فقط: سحب إنجاز
+// دالة للأدمن فقط: سحب إنجاز
 async function adminRevokeBadge(targetUid, badgeId) {
     if (!userData.isAdmin) return;
-    if (!confirm(`هل أنت متأكد من سحب إنجاز (${badgeId}) من هذا العضو؟`)) return;
-
-    try {
-        await db.collection('users').doc(targetUid).update({
-            badges: firebase.firestore.FieldValue.arrayRemove(badgeId)
-        });
-        showToast("تم سحب الإنجاز 🚫", "success");
-        // تحديث الواجهة فوراً
-        closeModal('modal-view-user');
-    } catch (e) {
-        showToast("خطأ في العملية", "error");
-    }
+    showConfirm(`هل أنت متأكد من سحب إنجاز (${badgeId}) من هذا العضو؟`, async () => {
+        try {
+            await db.collection('users').doc(targetUid).update({
+                badges: firebase.firestore.FieldValue.arrayRemove(badgeId)
+            });
+            showToast("تم سحب الإنجاز 🚫", "success");
+            // تحديث الواجهة فوراً
+            closeModal('modal-view-user');
+        } catch (e) {
+            showToast("خطأ في العملية", "error");
+        }
+    });
 }
 
 
@@ -1401,10 +1446,9 @@ async function loadHallOfFame() {
 
 
 
-document.addEventListener('DOMContentLoaded', () => { setupCoachHomeTabs(); setupLogTypeUI(); });
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    setupCoachHomeTabs();
     setupLogTypeUI();
     // Initial render for coach hero stats (may be updated again once runs load)
     try { renderCoachHeroStats(); } catch (e) { }

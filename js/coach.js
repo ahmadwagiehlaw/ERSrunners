@@ -47,7 +47,7 @@ const BADGES_CONFIG = [
         if (!userData.badges) userData.badges = [];
         userData.badges.push(...newBadgesEarned);
         const badgeNames = newBadgesEarned.map(b => BADGES_CONFIG.find(x => x.id === b).name).join(" و ");
-        alert(`🎉 إنجاز جديد: ${badgeNames}`);
+        showToast(`🎉 إنجاز جديد: ${badgeNames}`, "success");
     }
 }
 
@@ -196,7 +196,16 @@ const COACH_DB = {
 
 // إلغاء الخطة الحالية والبدء من جديد
 async function resetActivePlan(btnElement) {
-    if (!confirm("⚠️ هل أنت متأكد من حذف الخطة الحالية؟\nسيتم فقدان تقدمك في الجدول وتعود لنقطة الصفر.")) return;
+    showConfirm("⚠️ هل أنت متأكد من حذف الخطة الحالية؟\nسيتم فقدان تقدمك في الجدول وتعود لنقطة الصفر.", async () => {
+        try {
+            await db.collection('users').doc(currentUser.uid).update({
+                activePlan: firebase.firestore.FieldValue.delete()
+            });
+            showToast("تم حذف الخطة. نراك في خطة جديدة! 💪", "success");
+            userData.activePlan = null;
+            loadCoachTab();
+        } catch (e) { showToast("خطأ في الحذف", "error"); }
+    });
 
     // ضمان التقاط الزر الصحيح حتى لو لم يتم تمريره (Fallout)
     const btn = btnElement || event.target.closest('button');
@@ -1206,7 +1215,7 @@ function shareWeeklyText() {
             navigator.clipboard.writeText(msg);
             showToast('تم نسخ نص التحدي ✅');
         } catch (e) {
-            alert(msg);
+            showToast(msg, "info");
         }
     }
 }
@@ -1701,7 +1710,7 @@ window.SmartTrainer = {
         window.SoundFX.init();
         const workouts = window.ELITE_WORKOUTS_DATA[categoryName] || [];
         if (workouts.length === 0) {
-            alert("No workouts available in this category.");
+            showToast("No workouts available in this category.", "warning");
             return;
         }
 

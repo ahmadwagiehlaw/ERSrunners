@@ -847,8 +847,41 @@
                         <h4>ERS Podcast</h4>
                         <span class="club-card-hint">شغّل الحلقة من جوّا التطبيق</span>
                     </div>
+
+                    <!-- Episode Navigation -->
+                    <div class="podcast-controls"
+                        style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding: 0 5px;">
+                        <button id="podcast-prev" onclick="podcastPrevious()"
+                            style="background: rgba(255,255,255,0.1); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: all 0.2s;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                            <i class="ri-arrow-right-s-line" style="font-size: 20px; transform: rotate(180deg);"></i>
+                        </button>
+
+                        <div style="flex: 1; text-align: center;">
+                            <div id="current-episode-title"
+                                style="font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 3px;">الحلقة 1
+                            </div>
+                            <div id="episode-count" style="font-size: 11px; color: rgba(255,255,255,0.6);">1 / 3</div>
+                        </div>
+
+                        <button id="podcast-next" onclick="podcastNext()"
+                            style="background: rgba(255,255,255,0.1); border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; transition: all 0.2s;"
+                            onmouseover="this.style.background='rgba(255,255,255,0.2)'"
+                            onmouseout="this.style.background='rgba(255,255,255,0.1)'">
+                            <i class="ri-arrow-left-s-line" style="font-size: 20px; transform: rotate(180deg);"></i>
+                        </button>
+
+                        <button onclick="showEpisodeList()"
+                            style="background: rgba(30,215,96,0.15); border: 1px solid rgba(30,215,96,0.3); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: #1ed760; font-size: 11px; font-weight: 600; transition: all 0.2s; white-space: nowrap;"
+                            onmouseover="this.style.background='rgba(30,215,96,0.25)'"
+                            onmouseout="this.style.background='rgba(30,215,96,0.15)'">
+                            <i class="ri-list-check"></i> كل الحلقات
+                        </button>
+                    </div>
+
                     <iframe class="spotify-embed" style="border-radius:14px"
-                        src="https://open.spotify.com/embed/show/4cYIPTsFZa3cBIyHLTgcui" width="100%" height="152"
+                        src="https://open.spotify.com/embed/episode/64p0iWxrrnWsH6GUGSkjkA" width="100%" height="152"
                         frameBorder="0"
                         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                         loading="lazy"></iframe>
@@ -1101,6 +1134,20 @@
 
 
 
+    <div id="modal-confirm" class="modal-overlay" style="z-index: 9999;">
+        <div class="modal-box" style="max-width:350px; text-align:center;">
+            <div id="confirm-icon" style="font-size:40px; margin-bottom:10px;">⚠️</div>
+            <h3 id="confirm-title" style="margin-top:0; margin-bottom:10px;">تأكيد</h3>
+            <p id="confirm-msg" style="color:#9ca3af; font-size:14px; margin-bottom:20px; line-height:1.6;">...</p>
+            <div style="display:flex; gap:10px; justify-content: center;">
+                <button id="btn-confirm-yes" class="btn btn-primary"
+                    style="background:#ef4444; min-width:80px;">نعم</button>
+                <button onclick="closeModal('modal-confirm')" class="btn btn-text"
+                    style="min-width:80px;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
     </main>
 
     <nav class="bottom-nav">
@@ -1220,6 +1267,11 @@
                     <div id="upload-status"
                         style="font-size:10px; text-align:center; margin-top:2px; color:var(--text-muted);"></div>
                 </div>
+
+                <button class="btn" onclick="generatePreviewCard()"
+                    style="width:100%; height:40px; margin-bottom:10px; background:rgba(255,255,255,0.05); border:1px dashed rgba(255,255,255,0.2); color:#9ca3af; border-radius:10px; font-size:13px;">
+                    <i class="ri-share-forward-2-line"></i> إنشاء بطاقة مشاركة (ستوري) 📸
+                </button>
 
                 <button class="btn btn-primary" onclick="submitRun()"
                     style="width:100%; height:45px; font-weight:bold; font-size:15px; border-radius:10px;">
@@ -1738,6 +1790,21 @@
         </div>
     </div>
 
+    <!-- Episode List Modal -->
+    <div id="modal-episodes" class="modal-overlay">
+        <div class="modal-box" style="max-width: 500px;">
+            <div class="modal-head">
+                <h3>🎧 حلقات البودكاست</h3>
+                <button class="modal-close-btn" onclick="closeModal('modal-episodes')">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div id="episode-list" style="max-height: 400px; overflow-y: auto;">
+                <!-- Episodes will be rendered here by podcast.js -->
+            </div>
+        </div>
+    </div>
+
     <script src="js/config.js"></script>
     <script src="env.js"></script>
 
@@ -1750,6 +1817,7 @@
     <script src="js/coach.js"></script>
 
     <script src="js/challenges.js"></script>
+    <script src="js/podcast.js"></script>
     <script src="js/tracker.js"></script>
     <script src="js/admin.js"></script>
     <script src="js/native-bridge.js"></script>
@@ -2153,7 +2221,12 @@
                         <i class="ri-lock-unlock-line" id="icon-lock"></i>
                     </button>
 
-                    <button id="track-btn-start" onclick="startTracking()"
+                    <button id="btn-audio-toggle" onclick="toggleAudioCoach()"
+                        style="width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.1); border:none; color:#fff;">
+                        <i class="ri-volume-up-line" id="icon-audio"></i>
+                    </button>
+
+                    <button id="track-btn-start" onclick="startTrackingFlow()"
                         style="width:70px; height:70px; border-radius:50%; background:#10b981; border:none; color:#fff; font-size:24px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);">
                         <i class="ri-play-fill"></i>
                     </button>
@@ -2183,6 +2256,13 @@
                     <i class="ri-lock-2-fill" style="font-size:30px; color:#fff;"></i>
                 </div>
                 <div style="color:#fff; margin-top:10px; font-size:14px;">اضغط ضغطة مطولة لفك القفل</div>
+            </div>
+
+            <!-- Countdown Overlay -->
+            <div id="countdown-overlay"
+                style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(17, 24, 39, 0.95); z-index:200; justify-content:center; align-items:center;">
+                <div id="countdown-number"
+                    style="font-size:120px; font-weight:900; color:#fff; text-shadow: 0 0 30px var(--primary);">3</div>
             </div>
         </div>
     </div>

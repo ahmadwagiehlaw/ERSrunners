@@ -512,11 +512,6 @@ function setTab(tabName) {
 
     if (tabName === 'leaderboard') loadLeaderboard('all');
     if (tabName === 'squads') loadRegionBattle();
-
-    // 🔥 أضف هذا السطر: إعادة رسم التحديات عند فتح التبويب
-    if (tabName === 'active-challenges') {
-        renderChallenges();
-    }
 }
 
 function getSkeletonHTML(type) {
@@ -720,41 +715,60 @@ async function saveProfileChanges() {
 }
 
 // Force Update
+// Force Update
 async function forceUpdateApp() {
-    if (!confirm("تحديث التطبيق الآن؟")) return;
-    const btn = event.target.closest('button'); if (btn) btn.innerText = "جاري التحديث...";
-    try {
-        if ('serviceWorker' in navigator) {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            for (let reg of regs) await reg.unregister();
-        }
-        if ('caches' in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(key => caches.delete(key)));
-        }
-    } catch (e) { }
-    window.location.reload(true);
+    showConfirm("تحديث التطبيق الآن؟", async () => {
+        const btn = (typeof event !== 'undefined' && event.target) ? event.target.closest('button') : null;
+        if (btn) btn.innerText = "جاري التحديث...";
+        try {
+            if ('serviceWorker' in navigator) {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (let reg of regs) await reg.unregister();
+            }
+            if ('caches' in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map(key => caches.delete(key)));
+            }
+        } catch (e) { }
+        window.location.reload(true);
+    });
 }
 
 // Delete Account
+// Delete Account
 async function deleteFullAccount() {
-    if (!confirm("⚠️ حذف الحساب نهائياً؟")) return;
-    const checkWord = prompt("للتأكيد اكتب (حذف):");
-    if (checkWord !== "حذف") return;
+    showConfirm("⚠️ حذف الحساب نهائياً؟", async () => {
+        const checkWord = prompt("للتأكيد اكتب (حذف):");
+        if (checkWord !== "حذف") return;
 
-    try {
-        const uid = currentUser.uid;
-        // حذف الجريات
-        const runs = await db.collection('users').doc(uid).collection('runs').get();
-        await Promise.all(runs.docs.map(d => d.ref.delete()));
-        // حذف البروفايل
-        await db.collection('users').doc(uid).delete();
-        await currentUser.delete();
-        alert("تم الحذف 👋"); window.location.reload();
-    } catch (e) { alert("خطأ: " + e.message); }
+        try {
+            const uid = currentUser.uid;
+            // حذف الجريات
+            const runs = await db.collection('users').doc(uid).collection('runs').get();
+            await Promise.all(runs.docs.map(d => d.ref.delete()));
+            // حذف البروفايل
+            await db.collection('users').doc(uid).delete();
+            await currentUser.delete();
+            showToast("تم الحذف 👋", "success");
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (e) { showToast("خطأ: " + e.message, "error"); }
+    });
 }
 
 // Share Logic
+function generatePreviewCard() {
+    const dist = parseFloat(document.getElementById('log-dist').value) || 0;
+    const time = parseFloat(document.getElementById('log-time').value) || 0;
+
+    if (dist === 0 || time === 0) {
+        showToast("يرجى إدخال المسافة والوقت أولاً", "error");
+        return;
+    }
+
+    generateShareCard(dist.toFixed(2), time, new Date().toLocaleDateString());
+}
+
+// Share Logic (Core)
 function generateShareCard(dist, time, dateStr) {
     document.getElementById('share-name').innerText = userData.name;
     const rank = calculateRank(userData.totalDist || 0);
@@ -939,172 +953,6 @@ async function submitReport() {
 }
 
 
-
-//==========================================
-function setChallengeFilter(filter, btn) {
-    currentChallengeFilter = filter;
-
-    // تحديث شكل الأزرار
-    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-
-    // إعادة الرسم
-    renderChallenges(currentChartMode); // تمرير أي قيمة، الفلترة ستتم بالداخل
-}
-
-//==========================================
-function renderChallenges(dummy) {
-    const list = document.getElementById('challenges-list');
-
-    // 1. تطبيق الفلترة
-    let displayList = allChallengesCache;
-
-    if (currentChallengeFilter === 'joined') {
-        displayList = displayList.filter(ch => ch.isJoined && !ch.completed);
-    } else if (currentChallengeFilter === 'new') {
-        displayList = displayList.filter(ch => !ch.isJoined);
-    } else if (currentChallengeFilter === 'completed') {
-        displayList = displayList.filter(ch => ch.completed);
-    }
-
-    // 2. الحالة الفارغة
-    if (displayList.length === 0) {
-        let funIcon = "👻";
-        let funTitle = "المكان مهجور يا كابتن!";
-        let funDesc = "مفيش تحديات هنا حالياً.. ارجع بعدين";
-
-        if (currentChallengeFilter === 'joined') {
-            funIcon = "🐢"; funTitle = "إيه الكسل ده؟"; funDesc = "أنت مش مشترك في أي تحدي لسه!<br>روح على <b>'جديدة'</b> واشترك يا بطل.";
-        } else if (currentChallengeFilter === 'new') {
-            funIcon = "✅"; funTitle = "خلصت كل حاجة!"; funDesc = "يا جامد! مفيش تحديات جديدة قدامك.";
-        } else if (currentChallengeFilter === 'completed') {
-            funIcon = "🏆"; funTitle = "لسه بدري ع الكؤوس"; funDesc = "شد حيلك شوية يا وحش عايزين نشوف ميداليات!";
-        }
-
-        list.innerHTML = `
-            <div class="empty-state-fun">
-                <span class="fun-icon">${funIcon}</span>
-                <div class="fun-title">${funTitle}</div>
-                <div class="fun-desc">${funDesc}</div>
-            </div>`;
-        return;
-    }
-
-    // 3. عرض الكروت (القابلة للضغط بالكامل)
-    let fullHtml = '';
-    displayList.forEach(ch => {
-        let daysLeftText = "مستمر";
-        let isUrgent = false;
-        if (ch.startDate) {
-            const start = new Date(ch.startDate);
-            const end = new Date(start);
-            end.setDate(end.getDate() + (ch.durationDays || 30));
-            const diffTime = end - new Date();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-            if (diffDays < 0) daysLeftText = "انتهى";
-            else if (diffDays <= 3) { daysLeftText = `🔥 باقي ${diffDays} يوم`; isUrgent = true; }
-            else daysLeftText = `⏳ باقي ${diffDays} يوم`;
-        }
-
-        // إعداد الفوتر
-        let timeIcon = isUrgent ? "ri-fire-fill" : "ri-hourglass-2-fill";
-        let timeClass = isUrgent ? "time urgent" : (daysLeftText === "انتهى" ? "time done" : "time");
-        if (daysLeftText === "انتهى") timeIcon = "ri-checkbox-circle-fill";
-
-        const metaFooter = `
-            <div class="ch-meta-footer">
-                <div class="meta-pill social" title="عدد الأبطال">
-                    <i class="ri-group-fill"></i> <span>${ch.participantsCount || 0} مشارك</span>
-                </div>
-                <div class="meta-pill ${timeClass}">
-                    <span>${daysLeftText}</span> <i class="${timeIcon}"></i>
-                </div>
-            </div>
-        `;
-
-        // أزرار الأدمن (مع stopPropagation لمنع فتح المودال عند الحذف)
-        let adminControls = '';
-        if (userData.isAdmin) {
-            adminControls = `
-            <div style="position:absolute; top:15px; left:15px; display:flex; gap:8px; z-index:50;">
-                <div class="admin-del-btn" onclick="event.stopPropagation(); editChallenge('${ch.id}')" title="تعديل" style="position:static; background:rgba(245, 158, 11, 0.15); color:#f59e0b; border-color:rgba(245, 158, 11, 0.3); width:32px; height:32px;"><i class="ri-pencil-line"></i></div>
-                <div class="admin-del-btn" onclick="event.stopPropagation(); deleteChallenge('${ch.id}')" title="حذف" style="position:static; width:32px; height:32px;"><i class="ri-delete-bin-line"></i></div>
-            </div>`;
-        }
-
-        // زر الترتيب (لم يعد له داعي كبير لأن الكارت كله يفتح، لكن سنبقيه كعنصر جمالي أو نحذفه، سأبقيه كأيقونة فقط)
-        const rankBadge = `
-            <div class="ch-leaderboard-btn" style="pointer-events:none;">
-                <i class="ri-trophy-fill"></i> الترتيب
-            </div>
-        `;
-
-        // زر الحالة أو الانضمام
-        let actionBtn = '';
-        if (!ch.isJoined) {
-            // انتبه: stopPropagation هنا ضروري لكي يعمل زر الانضمام دون فتح التفاصيل فوراً (اختياري)
-            // لكن الأفضل أن يفتح التفاصيل ومن هناك ينضم، ولكن سأترك الزر يعمل مباشرة
-            actionBtn = `<button class="ch-join-btn" onclick="event.stopPropagation(); joinChallenge('${ch.id}')" style="position:relative; z-index:20;">قبول التحدي</button>`;
-        } else if (ch.completed) {
-            actionBtn = `<div style="margin-top:15px; text-align:center; color:#10b981; font-weight:bold; font-size:12px; background:rgba(16,185,129,0.1); padding:8px; border-radius:8px;">🎉 التحدي مكتمل</div>`;
-        }
-
-        // السمة المشتركة للكارت (onclick يفتح التفاصيل)
-        const cardAttribs = `onclick="openChallengeDetails('${ch.id}')" style="cursor:pointer;"`;
-
-        // بناء الكارت حسب النوع
-        if (ch.type === 'speed') {
-            const isDone = ch.completed;
-            fullHtml += `
-            <div class="ch-card speed-mode ${isDone ? 'done' : ''}" ${cardAttribs}>
-                ${adminControls} ${rankBadge}
-                <div style="margin-top: 45px;">
-                    <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
-                    <div class="speed-gauge" style="margin-top:10px;">${ch.target} <span style="font-size:12px">د/كم</span></div>
-                </div>
-                ${ch.isJoined ? (isDone ? `<span class="speed-status" style="background:rgba(16,185,129,0.2); color:#10b981">🚀 حطمت الرقم!</span>` : `<span class="speed-status">أسرع بيس لك: --</span>`) : actionBtn}
-                ${metaFooter}
-            </div>`;
-        }
-        else if (ch.type === 'frequency') {
-            let dotsHtml = '';
-            const maxDots = Math.min(ch.target, 14);
-            for (let i = 0; i < maxDots; i++) {
-                const filled = i < ch.progress ? 'filled' : '';
-                dotsHtml += `<div class="habit-dot ${filled}"></div>`;
-            }
-            if (ch.target > 14) dotsHtml += `<span style="font-size:10px; color:#fff; align-self:center;">+${ch.target - 14}</span>`;
-
-            fullHtml += `
-            <div class="ch-card habit-mode" ${cardAttribs}>
-                ${adminControls} ${rankBadge}
-                <div class="ch-header-centered" style="margin-top:40px;">
-                    <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
-                    <span style="font-size:10px; color:#c4b5fd; margin-top:5px;">هدف: ${ch.target} جرية</span>
-                </div>
-                ${ch.isJoined ? `<div class="habit-grid">${dotsHtml}</div><span class="habit-counter">${Math.floor(ch.progress)} / ${ch.target}</span>` : actionBtn}
-                ${metaFooter}
-            </div>`;
-        }
-        else {
-            const perc = Math.min((ch.progress / ch.target) * 100, 100);
-            fullHtml += `
-            <div class="ch-card dist-mode" ${cardAttribs}>
-                ${adminControls} ${rankBadge}
-                <div class="ch-header-centered" style="margin-top:40px;">
-                    <h3 style="margin:0; font-size:16px; color:#fff;">${ch.title}</h3>
-                    <div style="display:flex; gap:10px; align-items:center; margin-top:5px; justify-content:center;">
-                        <span style="font-size:14px; font-weight:bold; color:#fff;">${Math.floor(ch.progress)} <span style="font-size:10px; opacity:0.6">/ ${ch.target} كم</span></span>
-                    </div>
-                </div>
-                ${ch.isJoined ? `<div class="road-track"><div class="road-fill" style="width:${perc}%"></div></div>` : actionBtn}
-                ${metaFooter}
-            </div>`;
-        }
-    });
-    list.innerHTML = fullHtml;
-}
 
 
 /* Avatar System */

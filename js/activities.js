@@ -393,7 +393,7 @@ async function submitRun() {
 
 window.prepareEditRun = function (runId) {
     const run = (window._ersRunsCache || []).find(r => r.id === runId);
-    if (!run) return alert("بيانات النشاط غير محملة");
+    if (!run) return showToast("بيانات النشاط غير محملة", "error");
 
     editingRunId = runId;
     editingOldDist = run.dist || 0;
@@ -462,6 +462,7 @@ function loadActivityLog() {
             window._ersRunsCache = runs;
             if (typeof updateHeroWeekDist === 'function') updateHeroWeekDist();
             if (typeof updateUI === 'function') updateUI();
+            if (typeof loadActiveChallenges === 'function') loadActiveChallenges(); // 🔥 Auto-sync challenges
 
             // تجميع حسب الشهر
             const groups = {};
@@ -506,21 +507,41 @@ function loadActivityLog() {
 }
 
 // ==================== 6. حذف نشاط ====================
-async function deleteRun(id, dist) {
-    if (!confirm("هل أنت متأكد من الحذف؟")) return;
-    try {
-        const uid = currentUser.uid;
-        await db.collection('users').doc(uid).collection('runs').doc(id).delete();
+async function deleteRun(id, dist, timestamp) {
+    showConfirm("هل أنت متأكد من حذف هذا النشاط نهائياً؟ \n(سيتم خصم المسافة من رصيدك وتحديث التحديات)", async () => {
+        try {
+            const uid = currentUser.uid;
+            const runDoc = await db.collection('users').doc(uid).collection('runs').doc(id).get();
+            if (!runDoc.exists) return; // Already deleted
 
-        // تعديل الإجماليات بالسالب (تقريبي، الأفضل إعادة الحساب بالكامل)
-        await db.collection('users').doc(uid).update({
-            totalDist: firebase.firestore.FieldValue.increment(-dist),
-            totalRuns: firebase.firestore.FieldValue.increment(-1)
-        });
+            const runData = runDoc.data();
+            const dateObj = runData.timestamp ? runData.timestamp.toDate() : new Date();
 
-        showToast("تم الحذف", "success");
-        loadActivityLog();
-    } catch (e) { showToast("فشل الحذف", "error"); }
+            await db.collection('users').doc(uid).collection('runs').doc(id).delete();
+
+            // 1. خصم الإجماليات
+            const updateLoad = {
+                totalDist: firebase.firestore.FieldValue.increment(-dist),
+                totalRuns: firebase.firestore.FieldValue.increment(-1)
+            };
+
+            // 2. خصم من الشهر الحالي لو الجرية في نفس الشهر
+            const now = new Date();
+            if (dateObj.getMonth() === now.getMonth() && dateObj.getFullYear() === now.getFullYear()) {
+                updateLoad.monthDist = firebase.firestore.FieldValue.increment(-dist);
+            }
+
+            await db.collection('users').doc(uid).update(updateLoad);
+
+            showToast("تم الحذف بنجاح 🗑️", "success");
+            closeModal('modal-run-detail'); // Close detail modal if open
+            // loadActivityLog() is triggered automatically by onSnapshot
+
+        } catch (e) {
+            console.error(e);
+            showToast("فشل الحذف", "error");
+        }
+    });
 }
 
 // ==================== 7. عرض التفاصيل (Modal) ====================
@@ -552,6 +573,23 @@ function openRunDetail(runId) {
         imgEl.src = run.img || run.imgUrl;
         imgEl.style.display = 'block';
     }
+
+    // إضافة زر الحذف
+    const modalBox = document.querySelector('#modal-run-detail .modal-box');
+    // Remove old delete button if exists
+    const oldBtn = document.getElementById('btn-delete-run-detail');
+    if (oldBtn) oldBtn.remove();
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.id = 'btn-delete-run-detail';
+    deleteBtn.className = 'btn';
+    deleteBtn.innerHTML = '<i class="ri-delete-bin-line"></i> حذف النشاط';
+    deleteBtn.style.cssText = "width:100%; margin-top:15px; background:rgba(239, 68, 68, 0.1); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.2);";
+    deleteBtn.onclick = () => deleteRun(run.id, run.dist);
+
+    // Append to padding container
+    const paddingDiv = modalBox.querySelector('div[style*="padding: 20px"]');
+    if (paddingDiv) paddingDiv.appendChild(deleteBtn);
 
     openModal('modal-run-detail');
 }
@@ -629,3 +667,40 @@ async function syncFromStrava(count = 30) {
         if (btn) btn.innerText = "مزامنة تلقائية";
     }
 }
+
+// ==================== 8. Ghost Runner Helper ====================
+window.fetchBestPace = async function () {
+    if (!currentUser) return null;
+    try {
+        // Fetch last 20 runs to find the best pace
+        const snapshot = await db.collection('users').doc(currentUser.uid).collection('runs')
+            .orderBy('date', 'desc')
+            .limit(20)
+            .get();
+
+        if (snapshot.empty) return null;
+
+        let bestPace = Infinity; // Seconds per km
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const dist = parseFloat(data.dist);
+            const time = parseFloat(data.time); // minutes
+
+            if (dist > 0 && time > 0) {
+                // Calculate Pace (Seconds per km)
+                const paceSeconds = (time * 60) / dist;
+
+                // Filter: Ignore impossible/walking paces (e.g. < 2 min/km or > 15 min/km)
+                if (paceSeconds > 120 && paceSeconds < 900) {
+                    if (paceSeconds < bestPace) bestPace = paceSeconds;
+                }
+            }
+        });
+
+        return bestPace === Infinity ? null : bestPace;
+    } catch (e) {
+        console.error("Ghost Runner Error:", e);
+        return null;
+    }
+};

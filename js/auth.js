@@ -7,7 +7,7 @@ function toggleAuthMode() {
     const fields = document.getElementById('signup-fields');
     const btn = document.getElementById('toggleAuthBtn');
     const mainBtn = document.querySelector('.auth-box .btn-primary');
-    
+
     if (fields) fields.style.display = isSignupMode ? 'block' : 'none';
     if (btn) btn.innerText = isSignupMode ? "لديك حساب بالفعل؟ تسجيل الدخول" : "ليس لديك حساب؟ سجل الآن";
     if (mainBtn) mainBtn.innerText = isSignupMode ? "إنشاء حساب جديد" : "دخول";
@@ -18,15 +18,15 @@ async function handleAuth() {
     const emailEl = document.getElementById('email');
     const passEl = document.getElementById('password');
     const msgEl = document.getElementById('auth-msg');
-    
+
     // 🔥 هنا التغيير المهم: بنختار الزرار بالاسم الجديد
     const activeBtn = document.querySelector('.btn-auth-glass');
     const btnTextSpan = document.getElementById('btn-auth-text');
-    
+
     if (!emailEl || !passEl) return;
     const email = emailEl.value;
     const pass = passEl.value;
-    
+
     if (msgEl) msgEl.innerText = "";
 
     // حفظ النص الأصلي
@@ -65,12 +65,12 @@ async function handleAuth() {
     } catch (err) {
         console.error("Auth Error:", err);
         if (msgEl) {
-            if(err.code === 'auth/email-already-in-use') msgEl.innerText = "هذا البريد مسجل بالفعل.";
-            else if(err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة.";
-            else if(err.code === 'auth/user-not-found') msgEl.innerText = "غير مسجل.";
+            if (err.code === 'auth/email-already-in-use') msgEl.innerText = "هذا البريد مسجل بالفعل.";
+            else if (err.code === 'auth/wrong-password') msgEl.innerText = "كلمة المرور خاطئة.";
+            else if (err.code === 'auth/user-not-found') msgEl.innerText = "غير مسجل.";
             else msgEl.innerText = "خطأ: " + err.message;
         }
-        
+
         // إرجاع الزر لحالته
         if (btnTextSpan) btnTextSpan.innerText = originalText;
         if (activeBtn) {
@@ -88,11 +88,11 @@ async function handleAuth() {
 
 
 function logout() {
-    if(confirm("تسجيل خروج؟")) {
-        try{ if(typeof _resetCoachFeed === 'function') _resetCoachFeed(); }catch(e){}
+    showConfirm("تسجيل خروج؟", () => {
+        try { if (typeof _resetCoachFeed === 'function') _resetCoachFeed(); } catch (e) { }
         auth.signOut();
         window.location.reload();
-    }
+    });
 }
 
 // مراقب الدخول (تم دمج المنطق هنا وحذف التكرار)
@@ -103,15 +103,15 @@ auth.onAuthStateChanged(async (user) => {
             const doc = await db.collection('users').doc(user.uid).get();
             if (doc.exists) {
                 userData = doc.data();
-                
+
                 // --- نظام الحظر (V3.0) ---
                 if (userData.isBanned === true) {
                     auth.signOut();
-                    alert("⛔ تم حظر حسابك لمخالفة القوانين.");
+                    showToast("⛔ تم حظر حسابك لمخالفة القوانين.", "error");
                     window.location.reload();
                     return;
                 }
-                
+
                 if (!userData.badges) userData.badges = [];
                 initApp();
             } else {
@@ -141,13 +141,13 @@ function connectStrava() {
     }
 
     // بناء الرابط بشكل ديناميكي ليتوافق مع جيت هب
-    const REDIRECT_URI = window.location.origin + window.location.pathname; 
-    
+    const REDIRECT_URI = window.location.origin + window.location.pathname;
+
     // تأكد من أن الـ scope يغطي قراءة الأنشطة
     const scope = "activity:read_all,profile:read_all";
-    
+
     const authUrl = `https://www.strava.com/oauth/authorize?client_id=${clientID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&approval_prompt=force&scope=${scope}`;
-    
+
     localStorage.setItem('ers_is_linking_strava', 'true');
     window.location.href = authUrl;
 }

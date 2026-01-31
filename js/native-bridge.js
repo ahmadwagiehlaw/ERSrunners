@@ -23,7 +23,7 @@ const ERS_NATIVE = {
     startBackgroundTracker: async function () {
         if (!this.isNative) {
             // Fallback for browser (works only if screen is on)
-            alert("تنبيه: في المتصفح، يجب إبقاء الشاشة مفتوحة ليعمل الـ GPS بدقة.");
+            showToast("تنبيه: في المتصفح، يجب إبقاء الشاشة مفتوحة ليعمل الـ GPS بدقة.", "warning");
             // navigator.geolocation code handles this in main.js
             return;
         }
@@ -57,7 +57,16 @@ const ERS_NATIVE = {
             try {
                 const { KeepAwake } = capacitorExports;
                 if (KeepAwake) await KeepAwake.keep();
-            } catch (e) { }
+
+                // Cordvoa Background Mode (The Real Fix)
+                if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
+                    window.cordova.plugins.backgroundMode.enable();
+                    window.cordova.plugins.backgroundMode.on('activate', function () {
+                        window.cordova.plugins.backgroundMode.disableWebViewOptimizations();
+                    });
+                    console.log("🔋 Background Mode Enabled");
+                }
+            } catch (e) { console.warn("Background Mode Config Error", e); }
 
             showToast("تم تفعيل تتبع GPS (وضع Android) 🛰️", "success");
 
@@ -104,6 +113,24 @@ const ERS_NATIVE = {
                 }]
             });
         } catch (e) { console.error("Notif Error", e); }
+    },
+
+    // Haptic Feedback
+    triggerHaptic: function (type = 'medium') {
+        if (typeof navigator === 'undefined' || !navigator.vibrate) return;
+
+        // Patterns (ms)
+        const patterns = {
+            'light': 15,          // Tick, Switch
+            'medium': 40,         // Button Press
+            'heavy': 100,         // Alert, Stop
+            'success': [50, 50, 50],
+            'warning': [100, 50, 100]
+        };
+
+        try {
+            navigator.vibrate(patterns[type] || 40);
+        } catch (e) { /* Ignore */ }
     }
 };
 
