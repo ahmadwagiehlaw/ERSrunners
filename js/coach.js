@@ -104,6 +104,11 @@ window.setCoachHomeTab = function (tab) {
         } else if (typeof loadWeeklyChallenge === 'function') {
             loadWeeklyChallenge();
         }
+
+        // ✅ الكوتش الذكي (AI)
+        if (typeof renderAICoachCard === 'function') {
+            setTimeout(renderAICoachCard, 500);
+        }
     }
 
     try { localStorage.setItem('ers_coach_home_tab', tab); } catch (e) { }
