@@ -666,6 +666,130 @@ function openAdminAuth() {
 function loadAdminDashboard() {
     loadAllUsersTable();
     detectSuspiciousActivity();
+    if (typeof loadAdminGrowthStats === 'function') loadAdminGrowthStats();
+}
+
+// ==================== 8.1 Live Admin Feed (Command Center) ====================
+let _adminFeedUnsubscribe = null;
+
+function openAdminFeed() {
+    // 1. إنشاء واجهة الفيد
+    const modalId = 'modal-admin-feed';
+    let modal = document.getElementById(modalId);
+
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = modalId;
+        modal.className = 'modal active';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-height:90vh; display:flex; flex-direction:column; padding:0;">
+                <div class="modal-header" style="padding:15px; border-bottom:1px solid rgba(255,255,255,0.1); background:#1e1e1e;">
+                    <h3 style="margin:0; display:flex; align-items:center; gap:8px;">
+                        <span style="width:10px; height:10px; background:#10b981; border-radius:50%; box-shadow:0 0 10px #10b981;"></span>
+                        Live Activity Feed
+                    </h3>
+                    <button class="close-btn" onclick="closeAdminFeed()">&times;</button>
+                </div>
+                <div id="admin-feed-list" style="flex:1; overflow-y:auto; padding:15px; background:#121212;">
+                    <div style="text-align:center; padding:20px; color:#9ca3af;">Connecting to satellite... 📡</div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    } else {
+        modal.classList.add('active');
+    }
+
+    // 2. تشغيل المستمع اللحظي (Real-time Listener)
+    const list = document.getElementById('admin-feed-list');
+
+    if (_adminFeedUnsubscribe) _adminFeedUnsubscribe(); // إلغاء أي مستمع سابق
+
+    _adminFeedUnsubscribe = db.collection('activity_feed')
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .onSnapshot(snapshot => {
+            if (snapshot.empty) {
+                list.innerHTML = '<div style="text-align:center; padding:20px;">No activity yet.</div>';
+                return;
+            }
+
+            let html = '';
+            snapshot.forEach(doc => {
+                const item = doc.data();
+                const isRun = item.type === 'Run';
+                const timeAgo = _getTimeAgo(item.createdAt ? item.createdAt.toDate() : new Date());
+
+                // تحديد الشك
+                let suspicious = false;
+                if (item.dist > 30 || (item.dist / item.time * 60) > 20) suspicious = true; // > 20km/h
+
+                html += `
+                <div style="display:flex; align-items:flex-start; gap:10px; padding:12px; margin-bottom:10px; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid ${suspicious ? '#ef4444' : '#10b981'};">
+                    <img src="${item.userPhoto || 'assets/avatar.png'}" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:bold; color:#fff;">
+                            ${item.userName} <span style="font-weight:normal; color:#9ca3af;">• ${item.userRegion || 'No Region'}</span>
+                        </div>
+                        <div style="font-size:12px; color:#e5e7eb; margin:2px 0;">
+                            ${item.type} • <strong>${item.dist} km</strong> • ${item.time} min
+                        </div>
+                        <div style="font-size:10px; color:#6b7280;">${timeAgo}</div>
+                    </div>
+                     <div style="display:flex; flex-direction:column; gap:5px;">
+                        <button onclick="viewUserProfile('${item.uid}')" style="font-size:10px; padding:4px 8px; background:rgba(255,255,255,0.1); border:none; border-radius:4px; color:#fff; cursor:pointer;">Profile</button>
+                        ${suspicious ? `<button onclick="adminDeleteActivity('${doc.id}', '${item.uid}', ${item.dist})" style="font-size:10px; padding:4px 8px; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.5); border-radius:4px; color:#ef4444; cursor:pointer;">BAN & DEL</button>` : ''}
+                    </div>
+                </div>`;
+            });
+            list.innerHTML = html;
+        }, error => {
+            console.error("Feed Error:", error);
+            list.innerHTML = `<div style="color:red; text-align:center;">Feed disconnect: ${error.message}</div>`;
+        });
+}
+
+function closeAdminFeed() {
+    const modal = document.getElementById('modal-admin-feed');
+    if (modal) modal.classList.remove('active');
+    if (_adminFeedUnsubscribe) {
+        _adminFeedUnsubscribe();
+        _adminFeedUnsubscribe = null;
+    }
+}
+
+// مساعد لحذف نشاط من الفيد (Admin Only)
+async function adminDeleteActivity(feedId, uid, dist) {
+    if (!confirm('هل أنت متأكد من حذف هذا النشاط وحظر المستخدم مؤقتاً؟')) return;
+
+    try {
+        // حذف من الفيد
+        await db.collection('activity_feed').doc(feedId).delete();
+        // يمكن هنا استدعاء adminForceDelete الموجودة سابقاً لحذف النشاط الأصلي
+        if (typeof adminForceDelete === 'function') {
+            await adminForceDelete(feedId, uid, dist);
+        } else {
+            // Fallback logic if needed
+            showToast("تم الحذف من الفيد فقط.", "warning");
+        }
+    } catch (e) {
+        showToast("خطأ: " + e.message, "error");
+    }
+}
+
+function _getTimeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    let interval = seconds / 31536000;
+    if (interval > 1) return Math.floor(interval) + " years ago";
+    interval = seconds / 2592000;
+    if (interval > 1) return Math.floor(interval) + " months ago";
+    interval = seconds / 86400;
+    if (interval > 1) return Math.floor(interval) + " days ago";
+    interval = seconds / 3600;
+    if (interval > 1) return Math.floor(interval) + " hours ago";
+    interval = seconds / 60;
+    if (interval > 1) return Math.floor(interval) + " minutes ago";
+    return Math.floor(seconds) + " seconds ago";
 }
 
 async function loadAllUsersTable() {
@@ -1098,12 +1222,15 @@ async function loadLeagueDiagnostics() {
                     <button class="btn btn-warning" onclick="archiveLastMonth()" style="flex:1; min-width:150px; background:rgba(245,158,11,0.1); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);">
                         📦 أرشفة الشهر
                     </button>
+                    <button class="btn btn-info" onclick="migrateLeagueToAggregatedStats()" style="flex:1; min-width:150px; background:rgba(59,130,246,0.1); color:#3b82f6; border:1px solid rgba(59,130,246,0.3);">
+                        🚀 ترحيل للنظام المجمع
+                    </button>
                     <button class="btn btn-ghost" onclick="loadLeagueDiagnostics()" style="flex:1; min-width:150px;">
                         🔃 تحديث
                     </button>
                 </div>
                 <div style="margin-top:10px; font-size:10px; color:#9ca3af;">
-                    💡 <strong>ملاحظة:</strong> إعادة الحساب لإصلاح البيانات • الأرشفة لحفظ الشهر السابق
+                    💡 <strong>ملاحظة:</strong> الترحيل للنظام المجمع يحسن سرعة تحميل الدوري 100 مرة!
                 </div>
             </div>
         `;
@@ -1263,5 +1390,124 @@ async function archiveLastMonth() {
     } finally {
         btn.innerText = '📦 أرشفة الشهر';
         btn.disabled = false;
+    }
+}
+
+// ==================== V5.0 Aggregated Stats Migration ====================
+async function migrateLeagueToAggregatedStats() {
+    if (!confirm('هل تريد ترحيل بيانات الدوري لنظام الإحصائيات المجمع؟ (Aggregated Stats)\n\nهذا سيحسن الأداء بشكل كبير.')) return;
+
+    const btn = event.target;
+    // const oldText = btn.innerText; 
+    btn.innerText = 'جاري الترحيل...';
+    btn.disabled = true;
+
+    try {
+        const usersSnap = await db.collection('users').get();
+        let govStats = {};
+
+        // 1. تجميع البيانات محلياً
+        usersSnap.forEach(doc => {
+            const u = doc.data();
+            if (u.region && parseFloat(u.monthDist) > 0) {
+                const region = u.region.trim();
+                const dist = parseFloat(u.monthDist);
+
+                // استخدام نفس مفاتيح REGION_AR الموجودة في challenges.js لتوحيد الأسماء
+                // لكن هنا سنخزن بالمفتاح الإنجليزي (مثل Cairo) للتناسق
+                if (!govStats[region]) {
+                    govStats[region] = { totalDist: 0, players: 0 };
+                }
+
+                govStats[region].totalDist += dist;
+                govStats[region].players += 1;
+            }
+        });
+
+        // 2. الحفظ في وثيقة واحدة (stats/league)
+        // سنستخدم set لإنشاء الوثيقة من الصفر
+        await db.collection('stats').doc('league').set({
+            ...govStats,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        showToast('✅ تم الترحيل بنجاح!', 'success');
+
+        // تحديث الواجهة إذا كنا في صفحة الدوري
+        if (typeof loadRegionBattle === 'function') loadRegionBattle('current');
+
+    } catch (e) {
+        console.error('Migration Error:', e);
+        showToast('فشل الترحيل: ' + e.message, 'error');
+    } finally {
+        btn.innerText = '🚀 ترحيل للنظام المجمع';
+        btn.disabled = false;
+    }
+}
+
+// ==================== V5.1 Advanced Stats (Growth Chart) ====================
+async function loadAdminGrowthStats() {
+    const chartEl = document.getElementById('admin-growth-chart');
+    if (!chartEl) return;
+
+    try {
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 6);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
+
+        const snap = await db.collection('activity_feed')
+            .where('timestamp', '>=', sevenDaysAgo)
+            .orderBy('timestamp', 'asc')
+            .get();
+
+        // 1. Group by Date
+        let dailyStats = {};
+        // Fill last 7 days with 0
+        for (let i = 0; i < 7; i++) {
+            const d = new Date();
+            d.setDate(today.getDate() - i);
+            const key = d.toISOString().split('T')[0];
+            dailyStats[key] = { count: 0, dateObj: d };
+        }
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            if (data.timestamp) {
+                const dateStr = data.timestamp.toDate().toISOString().split('T')[0];
+                if (dailyStats[dateStr]) {
+                    dailyStats[dateStr].count++;
+                }
+            }
+        });
+
+        // 2. Determine Max for scaling
+        const statsArray = Object.values(dailyStats).sort((a, b) => a.dateObj - b.dateObj);
+        const maxVal = Math.max(...statsArray.map(s => s.count), 1); // Avoid 0 division
+
+        // 3. Render
+        let html = '';
+        statsArray.forEach(stat => {
+            const height = Math.max((stat.count / maxVal) * 100, 5); // Min 5% height
+            const dayName = stat.dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+
+            // Color based on intensity
+            let barColor = '#3b82f6';
+            if (stat.count > maxVal * 0.8) barColor = '#10b981'; // High
+            if (stat.count < maxVal * 0.2) barColor = '#6b7280'; // Low
+
+            html += `
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center;">
+                <div style="font-size:10px; color:#fff; margin-bottom:4px; font-weight:bold;">${stat.count}</div>
+                <div style="width:100%; height:${height}%; background:${barColor}; border-radius:4px 4px 0 0; opacity:0.8; transition: height 0.5s ease;"></div>
+                <div style="font-size:9px; color:#9ca3af; margin-top:4px;">${dayName}</div>
+            </div>`;
+        });
+
+        chartEl.innerHTML = html;
+
+    } catch (e) {
+        console.error("Chart Error", e);
+        chartEl.innerHTML = '<div style="color:red; font-size:10px;">Chart Failed</div>';
     }
 }

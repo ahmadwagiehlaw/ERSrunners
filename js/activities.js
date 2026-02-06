@@ -333,6 +333,17 @@ async function submitRun() {
                         monthDist: firebase.firestore.FieldValue.increment(isRun ? distDiff : 0),
                         lastMonthKey: currentMonthKey
                     });
+
+                    // 🔥 Aggregated Stats Update (Edit)
+                    if (userData.region && isRun) {
+                        const regionKey = userData.region.trim();
+                        await db.collection('stats').doc('league').set({
+                            [regionKey]: {
+                                totalDist: firebase.firestore.FieldValue.increment(distDiff)
+                            },
+                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }
                 }
             }
             showToast("تم تعديل النشاط بنجاح ✏️", "success");
@@ -363,6 +374,20 @@ async function submitRun() {
                 updateFields.monthDist = firebase.firestore.FieldValue.increment(isRun ? dist : 0);
                 updateFields.lastMonthKey = currentMonthKey;
                 updateFields.lastRunDate = dateVal; // لتحديث الـ Streak
+
+                // 🔥 Aggregated Stats Update (New Run)
+                if (userData.region && isRun) {
+                    const regionKey = userData.region.trim();
+                    const isNewActivePlayer = (userData.monthDist || 0) === 0; // تقريبي، لكن فعال
+
+                    await db.collection('stats').doc('league').set({
+                        [regionKey]: {
+                            totalDist: firebase.firestore.FieldValue.increment(dist),
+                            players: firebase.firestore.FieldValue.increment(isNewActivePlayer ? 1 : 0)
+                        },
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
             }
 
             await db.collection('users').doc(uid).set(updateFields, { merge: true });
@@ -535,6 +560,19 @@ async function deleteRun(id, dist, timestamp) {
                 const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 updateLoad.monthDist = firebase.firestore.FieldValue.increment(-dist);
                 updateLoad.lastMonthKey = currentMonthKey;
+
+                // 🔥 Aggregated Stats Update (Delete)
+                if (userData.region) {
+                    const regionKey = userData.region.trim();
+                    await db.collection('stats').doc('league').set({
+                        [regionKey]: {
+                            totalDist: firebase.firestore.FieldValue.increment(-dist)
+                            // Note: We don't decrement players here safely without knowing if it was their only run.
+                            // For MVP, we accept player count might be slightly off until next migration.
+                        },
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
             }
 
             await db.collection('users').doc(uid).update(updateLoad);

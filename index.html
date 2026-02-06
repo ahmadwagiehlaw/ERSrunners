@@ -462,6 +462,29 @@
 
                 <div id="admin-overview" class="admin-content-section active">
 
+                    <button onclick="openAdminFeed()"
+                        style="width:100%; padding:15px; margin-bottom:15px; background:linear-gradient(135deg, #1f2937, #111827); border:1px solid rgba(255,255,255,0.1); border-radius:12px; color:#fff; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:10px; cursor:pointer; box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <span
+                            style="display:inline-block; width:10px; height:10px; background:#ef4444; border-radius:50%; box-shadow:0 0 0 2px rgba(239,68,68,0.3); animation: pulse 2s infinite;"></span>
+                        Open Live Command Center
+                        <i class="ri-arrow-right-line" style="margin-right:auto;"></i>
+                    </button>
+
+                    <style>
+                        @keyframes pulse {
+                            0% {
+                                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                            }
+
+                            70% {
+                                box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+                            }
+
+                            100% {
+                                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                            }
+                        }
+                    </style>
 
                     <div class="stats-grid-4">
                         <div class="stat-card-mini">
@@ -479,6 +502,18 @@
                         <div class="stat-card-mini">
                             <span class="stat-val-big" id="adm-total-users">0</span>
                             <span class="stat-lbl-mini">إجمالي الأعضاء</span>
+                        </div>
+                    </div>
+
+                    <div class="admin-panel-box" style="margin-bottom:15px; padding:15px;">
+                        <h5 style="margin:0 0 15px 0; color:#fff; display:flex; justify-content:space-between;">
+                            <span>📊 نشاط السباقات (آخر 7 أيام)</span>
+                            <span style="font-size:10px; color:#9ca3af; font-weight:normal;">Daily Activity
+                                Volume</span>
+                        </h5>
+                        <div id="admin-growth-chart"
+                            style="height:120px; display:flex; align-items:flex-end; gap:8px; padding-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1);">
+                            <div class="loader-placeholder">جاري تحليل البيانات...</div>
                         </div>
                     </div>
 

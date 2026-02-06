@@ -1630,15 +1630,6 @@ async function loadRegionBattle(mode) {
         </div>`;
 
     try {
-        // 1. Force Refresh
-        allUsersCache = [];
-        await fetchTopRunners();
-
-        // 2. مفتاح الشهر الحالي (للتصفير التلقائي)
-        const now = new Date();
-        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-        // 3. الثوابت
         const QUORUM = 5;
         const REGION_AR = {
             "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة",
@@ -1652,47 +1643,81 @@ async function loadRegionBattle(mode) {
 
         let govStats = {};
 
-        // 4. تجميع البيانات
-        allUsersCache.forEach(user => {
-            let dist = 0;
-            let userKey = user.lastMonthKey || "";
+        // 🔥 V5.0: محاولة جلب الإحصائيات المجمعة (Aggregated Stats) أولاً
+        // هذا يوفر تحميل آلاف المستخدمين
+        let usedAggregated = false;
+        if (currentLeagueMode === 'current') {
+            try {
+                const statsDoc = await db.collection('stats').doc('league').get();
+                if (statsDoc.exists) {
+                    const data = statsDoc.data();
 
-            if (currentLeagueMode === 'current') {
-                // استخدام monthDist مباشرة (بعد تحديث lastMonthKey)
-                dist = parseFloat(user.monthDist) || 0;
-            } else {
-                // الأرشيف
-                dist = parseFloat(user.lastMonthDist) || 0;
+                    // تحويل البيانات المجمعة للشكل المطلوب
+                    for (const [engName, stat] of Object.entries(data)) {
+                        if (engName === 'lastUpdated') continue; // تخطي حقل التحديث
+
+                        const arName = REGION_AR[engName] || engName;
+                        govStats[arName] = {
+                            name: arName,
+                            totalDist: stat.totalDist || 0,
+                            players: stat.players || 0,
+                            // MVP قد يكون قديم قليلاً، لكنه مقبول للسرعة
+                            mvp: stat.mvp || { name: 'غير معروف', dist: 0, pic: null, uid: null }
+                        };
+                    }
+                    usedAggregated = true;
+                    // console.log("✅ Using Aggregated League Stats!");
+                }
+            } catch (e) {
+                console.warn("⚠️ Failed to load aggregated stats, falling back to legacy...", e);
             }
+        }
 
-            // إضافة المستخدم للمحافظة (حتى لو المسافة = 0)
-            if (user.region) {
-                let rawGov = user.region.trim();
-                let govName = REGION_AR[rawGov] || rawGov;
+        // Fallback: الطريقة القديمة (تجميع جميع المستخدمين)
+        // يتم استخدامها إذا فشل المجمع أو كنا في وضع الأرشيف (لأن الأرشيف غير مدعوم في المجمع بعد)
+        if (!usedAggregated) {
+            // 1. Force Refresh
+            allUsersCache = [];
+            await fetchTopRunners();
 
-                if (!govStats[govName]) {
-                    govStats[govName] = {
-                        name: govName, totalDist: 0, players: 0,
-                        // 🔥 حفظنا الـ UID هنا عشان نعرف نفتح بروفايله
-                        mvp: { name: 'غير معروف', dist: 0, pic: null, uid: null }
-                    };
+            const now = new Date();
+            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            allUsersCache.forEach(user => {
+                let dist = 0;
+
+                if (currentLeagueMode === 'current') {
+                    dist = parseFloat(user.monthDist) || 0;
+                } else {
+                    dist = parseFloat(user.lastMonthDist) || 0;
                 }
 
-                let g = govStats[govName];
-                g.totalDist += dist;
-                g.players += 1;
+                if (user.region) {
+                    let rawGov = user.region.trim();
+                    let govName = REGION_AR[rawGov] || rawGov;
 
-                // تحديث الـ MVP
-                if (dist > g.mvp.dist) {
-                    g.mvp = {
-                        name: user.name,
-                        dist: dist,
-                        pic: user.photoUrl,
-                        uid: user.uid // 👈 مهم جداً للضغط
-                    };
+                    if (!govStats[govName]) {
+                        govStats[govName] = {
+                            name: govName, totalDist: 0, players: 0,
+                            mvp: { name: 'غير معروف', dist: 0, pic: null, uid: null }
+                        };
+                    }
+
+                    let g = govStats[govName];
+                    g.totalDist += dist;
+                    g.players += 1;
+
+                    if (dist > g.mvp.dist) {
+                        g.mvp = {
+                            name: user.name,
+                            dist: dist,
+                            pic: user.photoUrl,
+                            uid: user.uid
+                        };
+                    }
                 }
-            }
-        });
+            });
+        }
 
         // 5. الحسابات والترتيب الذكي
         let leagueData = Object.values(govStats).map(g => {
@@ -1701,9 +1726,7 @@ async function loadRegionBattle(mode) {
             g.isPenalized = g.players < QUORUM;
             return g;
         }).sort((a, b) => {
-            // ترتيب أساسي: حسب المسافة (Score)
             if (b.score !== a.score) return b.score - a.score;
-            // ترتيب ثانوي: لو المسافة متساوية (أو صفر)، نرتب حسب عدد الأعضاء
             return b.players - a.players;
         });
 
