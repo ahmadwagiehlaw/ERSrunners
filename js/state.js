@@ -3,7 +3,7 @@
 
 /* ==================== 🛠️ APP VERSION CONTROL ==================== */
 // عدل البيانات دي كل ما ترفع تحديث جديد
-const APP_VERSION = "V2.1.0"; 
+const APP_VERSION = "V2.1.0";
 const APP_CHANGELOG = [
     "🏆 إضافة دوري المحافظات الجديد (ERS League)",
     "💎 تحسين تصميم النافبار (Crystal Glass)",
@@ -16,7 +16,7 @@ function initUpdateCheck() {
     // 1. كتابة البيانات في المودال
     document.getElementById('new-version-num').innerText = APP_VERSION;
     const list = document.getElementById('update-notes-list');
-    if(list) {
+    if (list) {
         list.innerHTML = APP_CHANGELOG.map(note => `<li>${note}</li>`).join('');
     }
 }
@@ -37,26 +37,26 @@ let editingOldDist = 0;
 let allUsersCache = [];
 let deferredPrompt;
 let isLiking = false; // Debounce variable
-let currentChallengeFilter = 'all'; // 🔥 هذا السطر مهم جداً ليعرف التطبيق البداية
+let currentChallengeFilter = 'current'; // 🔥 هذا السطر مهم جداً ليعرف التطبيق البداية
 
 
 // ==================== 2. Initialization ====================// ==================== 2. Initialization (Final Stable) ====================
 function initApp() {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('app-content').style.display = 'block';
-    
+
     const dateInput = document.getElementById('log-date');
-    if(dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
+    if (dateInput && typeof getLocalInputDate === 'function') dateInput.value = getLocalInputDate();
 
     updateUI();
     loadActivityLog();
-    
-    loadActiveChallenges(); 
+
+    loadActiveChallenges();
     loadGlobalFeed();
     listenForNotifications();
-    loadChart('week'); 
+    loadChart('week');
     initNetworkMonitor();
-    
+
     // ❌ (تم التعطيل) كانت تسبب توقف التطبيق سابقاً
     // checkSharedData(); 
 
@@ -78,7 +78,7 @@ function initApp() {
     if (currentUser) {
         const now = new Date();
         const todayStr = now.toISOString().slice(0, 10);
-        
+
         db.collection('users').doc(currentUser.uid).update({
             lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
             lastLoginDate: todayStr
@@ -86,11 +86,11 @@ function initApp() {
     }
 
     // ✅ 1. تشغيل جدول الفريق (الجديد)
-    if(typeof renderTeamSchedule === 'function') renderTeamSchedule();
+    if (typeof renderTeamSchedule === 'function') renderTeamSchedule();
 
     // ✅ 2. (مهم جداً) تهيئة تبويبات البروفايل على "نشاطي"
     // عشان لما تفتح البروفايل متلاقيش الصفحة فاضية
-    if(typeof switchProfileTab === 'function') switchProfileTab('activity');
+    if (typeof switchProfileTab === 'function') switchProfileTab('activity');
     // أضف السطر ده في آخر الدالة
-if(typeof renderCoachLibrary === 'function') renderCoachLibrary();
+    if (typeof renderCoachLibrary === 'function') renderCoachLibrary();
 }

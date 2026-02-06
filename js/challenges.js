@@ -299,15 +299,28 @@ function renderChallenges(dummy) {
         return;
     }
 
-    // 1. تطبيق الفلترة
+    // 1. تطبيق الفلترة مع منطق انتهاء التحديات
     let displayList = allChallengesCache;
 
-    if (currentChallengeFilter === 'joined') {
-        displayList = displayList.filter(ch => ch.isJoined && !ch.completed);
+    // دالة مساعدة للتحقق من انتهاء التحدي
+    const isChallengeExpired = (ch) => {
+        if (!ch.startDate) return false;
+        const start = new Date(ch.startDate);
+        const end = new Date(start);
+        end.setDate(end.getDate() + (ch.durationDays || 30));
+        const diffDays = Math.ceil((end - new Date()) / (1000 * 60 * 60 * 24));
+        return diffDays < 0;
+    };
+
+    if (currentChallengeFilter === 'all' || currentChallengeFilter === 'current') {
+        // فلتر "الحالي" - فقط التحديات النشطة (غير منتهية)
+        displayList = displayList.filter(ch => !isChallengeExpired(ch));
+    } else if (currentChallengeFilter === 'joined') {
+        displayList = displayList.filter(ch => ch.isJoined && !ch.completed && !isChallengeExpired(ch));
     } else if (currentChallengeFilter === 'new') {
-        displayList = displayList.filter(ch => !ch.isJoined);
+        displayList = displayList.filter(ch => !ch.isJoined && !isChallengeExpired(ch));
     } else if (currentChallengeFilter === 'completed') {
-        displayList = displayList.filter(ch => ch.completed);
+        displayList = displayList.filter(ch => ch.completed || isChallengeExpired(ch));
     }
 
     // 2. الحالة الفارغة
@@ -316,7 +329,9 @@ function renderChallenges(dummy) {
         let funTitle = "المكان مهجور يا كابتن!";
         let funDesc = "مفيش تحديات هنا حالياً.. ارجع بعدين";
 
-        if (currentChallengeFilter === 'joined') {
+        if (currentChallengeFilter === 'all' || currentChallengeFilter === 'current') {
+            funIcon = "✨"; funTitle = "مفيش تحديات حالياً"; funDesc = "استنى تحديات جديدة قريب!";
+        } else if (currentChallengeFilter === 'joined') {
             funIcon = "🐢"; funTitle = "إيه الكسل ده؟"; funDesc = "أنت مش مشترك في أي تحدي لسه!<br>روح على <b>'جديدة'</b> واشترك يا بطل.";
         } else if (currentChallengeFilter === 'new') {
             funIcon = "✅"; funTitle = "خلصت كل حاجة!"; funDesc = "يا جامد! مفيش تحديات جديدة قدامك.";

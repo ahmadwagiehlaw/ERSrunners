@@ -19,6 +19,7 @@ function switchAdminTab(tabName) {
     if (tabName === 'inspector') loadAdminRuns();
     if (tabName === 'studio') loadAdminChallengesList();
     if (tabName === 'coach') loadCoachAdmin();
+    if (tabName === 'league') loadLeagueDiagnostics();
     if (tabName === 'users') loadAllUsersTable();
 }
 async function loadAdminStats() {
