@@ -17,20 +17,29 @@ const ERS_AI_CONFIG = {
  * @returns {Promise<{success: boolean, insight: string, error?: string}>}
  */
 async function getAICoachInsight(forceRefresh = false) {
+    console.log('[AI Coach] getAICoachInsight called, forceRefresh:', forceRefresh);
     try {
         // 1. Check cache first
         if (!forceRefresh) {
             const cached = getAIInsightFromCache();
-            if (cached) return { success: true, insight: cached, fromCache: true };
+            if (cached) {
+                console.log('[AI Coach] Returning cached insight');
+                return { success: true, insight: cached, fromCache: true };
+            }
         }
 
         // 2. Gather user data
+        console.log('[AI Coach] Gathering weekly data...');
         const weeklyData = await gatherWeeklyData();
+        console.log('[AI Coach] runCount:', weeklyData?.runCount);
+
+        // If no runs, show encouraging default message
         if (!weeklyData || weeklyData.runs.length === 0) {
+            console.log('[AI Coach] No runs found, showing default advice');
             return {
-                success: false,
-                insight: 'مفيش بيانات كافية. سجّل 3 جريات على الأقل عشان الكوتش يقدر يحللك! 🏃‍♂️',
-                error: 'insufficient_data'
+                success: true,
+                insight: `يا ${weeklyData?.userName || 'بطل'}! 🏃‍♂️\n\nمشوفناش نشاط الأسبوع ده!\n\n**اقتراحاتي ليك:**\n- ابدأ بـ 20-30 دقيقة مشي سريع\n- جرب جرية خفيفة 2-3 كم\n- الأهم من المسافة: الاستمرارية!\n\n💪 أول خطوة هي أصعب خطوة. يلا نبدأ!`,
+                fromCache: false
             };
         }
 
@@ -58,21 +67,59 @@ async function getAICoachInsight(forceRefresh = false) {
  * Gather weekly training data for AI analysis
  */
 async function gatherWeeklyData() {
-    const runs = window._ersRunsCache || [];
+    console.log('[AI Coach] Gathering weekly data...');
+
+    // Try to get runs from cache or userData
+    let runs = window._ersRunsCache || [];
+
+    // Fallback: if cache is empty, try to get from userData
+    if (runs.length === 0 && window.userData && window.userData.runs) {
+        runs = window.userData.runs;
+    }
+
+    console.log('[AI Coach] Found', runs.length, 'runs in cache');
+
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
+    // Safe date parser
+    function safeGetDate(r) {
+        try {
+            if (r.timestamp) {
+                if (typeof r.timestamp.toDate === 'function') {
+                    return r.timestamp.toDate();
+                } else if (r.timestamp.seconds) {
+                    return new Date(r.timestamp.seconds * 1000);
+                } else if (typeof r.timestamp === 'string' || typeof r.timestamp === 'number') {
+                    return new Date(r.timestamp);
+                }
+            }
+            if (r.date) {
+                return new Date(r.date);
+            }
+            return null;
+        } catch (e) {
+            console.warn('[AI Coach] Date parse error:', e);
+            return null;
+        }
+    }
+
     // Filter runs from last 7 days
     const weekRuns = runs.filter(r => {
-        const d = r.timestamp ? (r.timestamp.toDate ? r.timestamp.toDate() : new Date(r.timestamp)) : null;
+        const d = safeGetDate(r);
         return d && d >= weekAgo;
-    }).map(r => ({
-        date: r.timestamp ? r.timestamp.toDate().toLocaleDateString('ar-EG', { weekday: 'long' }) : 'غير محدد',
-        dist: parseFloat(r.dist) || 0,
-        time: parseFloat(r.time) || 0,
-        type: r.type || 'Run',
-        pace: r.pace || (r.dist && r.time ? (r.time / r.dist).toFixed(2) : null)
-    }));
+    }).map(r => {
+        const d = safeGetDate(r);
+        return {
+            date: d ? d.toLocaleDateString('ar-EG', { weekday: 'long' }) : 'غير محدد',
+            dist: parseFloat(r.dist) || 0,
+            time: parseFloat(r.time) || 0,
+            type: r.type || 'Run',
+            pace: r.pace || (r.dist && r.time ? (r.time / r.dist).toFixed(2) : null)
+        };
+    });
+
+    console.log('[AI Coach] Week runs:', weekRuns.length);
 
     // Calculate totals
     const totalDist = weekRuns.reduce((sum, r) => sum + r.dist, 0);
