@@ -1658,20 +1658,15 @@ async function loadRegionBattle(mode) {
             let userKey = user.lastMonthKey || "";
 
             if (currentLeagueMode === 'current') {
-                // 🔥 التصفير التلقائي: هل مفتاحك هو نفس الشهر الحالي؟
-                if (userKey === currentMonthKey) {
-                    dist = parseFloat(user.monthDist) || 0;
-                } else {
-                    dist = 0; // شهر جديد = تصفير العداد
-                }
-                // Fallback للمبتدئين
-                if (!userKey && parseFloat(user.monthDist) > 0) dist = parseFloat(user.monthDist);
+                // استخدام monthDist مباشرة (بعد تحديث lastMonthKey)
+                dist = parseFloat(user.monthDist) || 0;
             } else {
-                // الأرشيف (محاكاة حالياً)
+                // الأرشيف
                 dist = parseFloat(user.lastMonthDist) || 0;
             }
 
-            if (user.region && dist > 0) {
+            // إضافة المستخدم للمحافظة (حتى لو المسافة = 0)
+            if (user.region) {
                 let rawGov = user.region.trim();
                 let govName = REGION_AR[rawGov] || rawGov;
 
@@ -1699,13 +1694,18 @@ async function loadRegionBattle(mode) {
             }
         });
 
-        // 5. الحسابات والترتيب
+        // 5. الحسابات والترتيب الذكي
         let leagueData = Object.values(govStats).map(g => {
             const divisor = Math.max(g.players, QUORUM);
             g.score = g.totalDist / divisor;
             g.isPenalized = g.players < QUORUM;
             return g;
-        }).sort((a, b) => b.score - a.score);
+        }).sort((a, b) => {
+            // ترتيب أساسي: حسب المسافة (Score)
+            if (b.score !== a.score) return b.score - a.score;
+            // ترتيب ثانوي: لو المسافة متساوية (أو صفر)، نرتب حسب عدد الأعضاء
+            return b.players - a.players;
+        });
 
         // 6. تجهيز الـ HTML
         let html = `

@@ -328,8 +328,10 @@ async function submitRun() {
             if (selectedDate.getMonth() === now.getMonth() && selectedDate.getFullYear() === now.getFullYear()) {
                 const distDiff = dist - editingOldDist;
                 if (distDiff !== 0) {
+                    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                     await db.collection('users').doc(uid).update({
-                        monthDist: firebase.firestore.FieldValue.increment(isRun ? distDiff : 0)
+                        monthDist: firebase.firestore.FieldValue.increment(isRun ? distDiff : 0),
+                        lastMonthKey: currentMonthKey
                     });
                 }
             }
@@ -357,7 +359,9 @@ async function submitRun() {
 
             // لو الجرية في الشهر الحالي، زود عداد الشهر
             if (selectedDate.getMonth() === now.getMonth() && selectedDate.getFullYear() === now.getFullYear()) {
+                const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 updateFields.monthDist = firebase.firestore.FieldValue.increment(isRun ? dist : 0);
+                updateFields.lastMonthKey = currentMonthKey;
                 updateFields.lastRunDate = dateVal; // لتحديث الـ Streak
             }
 
@@ -528,7 +532,9 @@ async function deleteRun(id, dist, timestamp) {
             // 2. خصم من الشهر الحالي لو الجرية في نفس الشهر
             const now = new Date();
             if (dateObj.getMonth() === now.getMonth() && dateObj.getFullYear() === now.getFullYear()) {
+                const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
                 updateLoad.monthDist = firebase.firestore.FieldValue.increment(-dist);
+                updateLoad.lastMonthKey = currentMonthKey;
             }
 
             await db.collection('users').doc(uid).update(updateLoad);
