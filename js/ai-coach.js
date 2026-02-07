@@ -2,7 +2,7 @@
 
 // ==================== 1. Configuration ====================
 const ERS_AI_CONFIG = {
-    apiKey: 'AIzaSyBuEcrZxHgDapTBJuFHGwNnibghW9JCKCY',
+    apiKey: 'AIzaSyAQ_4A1JoYLSSpjV271a7SAwVaiaGW9nps',
     model: 'gemini-2.0-flash',
     endpoint: 'https://generativelanguage.googleapis.com/v1beta/models',
     cacheKey: 'ers_ai_insight',
@@ -54,7 +54,8 @@ async function getAICoachInsight(forceRefresh = false) {
             saveAIInsightToCache(response.text);
             return { success: true, insight: response.text };
         } else {
-            return { success: false, insight: 'تعذر الاتصال بالكوتش الذكي', error: response.error };
+            console.error('[AI Coach] API call failed:', response.error);
+            return { success: false, insight: 'تعذر الاتصال بالكوتش الذكي: ' + (response.error || 'خطأ غير معروف'), error: response.error };
         }
 
     } catch (e) {
@@ -126,8 +127,33 @@ async function gatherWeeklyData() {
     const totalTime = weekRuns.reduce((sum, r) => sum + r.time, 0);
     const avgPace = totalDist > 0 ? (totalTime / totalDist) : 0;
 
-    // Get user info
+    // Get user info from multiple sources
     const user = window.userData || {};
+
+    // Try to get username from multiple fallbacks
+    let userName = 'بطل';
+    if (user.name) {
+        userName = user.name.split(' ')[0];
+    } else if (user.displayName) {
+        userName = user.displayName.split(' ')[0];
+    } else {
+        // Try to get from the header element
+        const headerName = document.querySelector('.user-greeting-box h3');
+        if (headerName && headerName.textContent) {
+            userName = headerName.textContent.split(' ')[0];
+        } else {
+            // Try localStorage
+            try {
+                const storedUser = localStorage.getItem('ers_user');
+                if (storedUser) {
+                    const parsed = JSON.parse(storedUser);
+                    if (parsed.name) userName = parsed.name.split(' ')[0];
+                }
+            } catch (e) { }
+        }
+    }
+
+    console.log('[AI Coach] userName:', userName);
 
     return {
         runs: weekRuns,
@@ -135,7 +161,7 @@ async function gatherWeeklyData() {
         totalTime: Math.round(totalTime),
         avgPace: avgPace.toFixed(2),
         runCount: weekRuns.length,
-        userName: (user.name || 'يا بطل').split(' ')[0],
+        userName: userName,
         userGoal: user.trainingGoal || 'general',
         userLevel: user.manualLevel || 'beginner',
         currentStreak: user.currentStreak || 0,
@@ -196,8 +222,10 @@ ${runsText}
  * Call Gemini API
  */
 async function callGeminiAPI(prompt) {
+    console.log('[AI Coach] callGeminiAPI starting...');
     try {
         const url = `${ERS_AI_CONFIG.endpoint}/${ERS_AI_CONFIG.model}:generateContent?key=${ERS_AI_CONFIG.apiKey}`;
+        console.log('[AI Coach] API URL:', url.substring(0, 80) + '...');
 
         const response = await fetch(url, {
             method: 'POST',
@@ -212,23 +240,33 @@ async function callGeminiAPI(prompt) {
             })
         });
 
+        console.log('[AI Coach] API response status:', response.status);
+
         if (!response.ok) {
             const err = await response.text();
-            console.error('[Gemini] API Error:', err);
-            return { success: false, error: `API Error: ${response.status}` };
+            console.error('[Gemini] API Error Response:', err);
+            return { success: false, error: `خطأ ${response.status}: ${err.substring(0, 100)}` };
         }
 
         const data = await response.json();
+        console.log('[AI Coach] API response received, candidates:', data?.candidates?.length);
+
         const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (text) {
+            console.log('[AI Coach] Got response text, length:', text.length);
             return { success: true, text: text.trim() };
         } else {
-            return { success: false, error: 'Empty response from API' };
+            console.error('[AI Coach] Empty text in response:', JSON.stringify(data).substring(0, 200));
+            return { success: false, error: 'رد فارغ من الـ API' };
         }
 
     } catch (e) {
-        console.error('[Gemini] Fetch Error:', e);
+        console.error('[Gemini] Fetch Error:', e.name, e.message);
+        // Check if it's a network error (likely blocked by ad blocker)
+        if (e.name === 'TypeError' && e.message.includes('fetch')) {
+            return { success: false, error: 'الطلب محظور - جرب غلق الـ Ad Blocker' };
+        }
         return { success: false, error: e.message };
     }
 }
@@ -399,16 +437,60 @@ function checkOvertrainingRisk(thisWeekDist, lastWeekDist) {
 
 // ==================== 6. Initialize ====================
 
-// Auto-render when coach tab is opened
-document.addEventListener('DOMContentLoaded', () => {
-    // Listen for coach tab activation
-    const coachTab = document.querySelector('[data-tab="today"]');
-    if (coachTab) {
-        coachTab.addEventListener('click', () => {
-            setTimeout(renderAICoachCard, 500);
-        });
+// Flag to prevent double-loading
+let _aiCoachRendered = false;
+
+// Main trigger function
+function triggerAICoachIfVisible() {
+    const container = document.getElementById('ai-coach-card');
+    const coachView = document.getElementById('coach-view') || document.getElementById('view-coach');
+
+    console.log('[AI Coach] triggerAICoachIfVisible called');
+    console.log('[AI Coach] container exists:', !!container);
+    console.log('[AI Coach] _aiCoachRendered:', _aiCoachRendered);
+
+    if (container && !_aiCoachRendered) {
+        // Just render if container exists - don't check visibility
+        // The container may be in a tab that's not visually showing yet
+        _aiCoachRendered = true;
+        console.log('[AI Coach] Triggering render...');
+        renderAICoachCard();
     }
+}
+
+// Auto-render when page loads (if coach tab is default)
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('[AI Coach] DOMContentLoaded fired');
+
+    // Delay to allow page to fully render
+    setTimeout(() => {
+        console.log('[AI Coach] Initial check after 1s');
+        triggerAICoachIfVisible();
+    }, 1000);
+
+    // Also listen for coach tab clicks
+    document.querySelectorAll('[data-tab="today"], .coach-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            console.log('[AI Coach] Tab clicked');
+            _aiCoachRendered = false; // Allow re-render
+            setTimeout(triggerAICoachIfVisible, 300);
+        });
+    });
 });
+
+// Also trigger when switchView is called to 'coach'
+const _originalSwitchView = window.switchView;
+if (typeof _originalSwitchView === 'function') {
+    window.switchView = function (view) {
+        const result = _originalSwitchView.apply(this, arguments);
+        if (view === 'coach') {
+            console.log('[AI Coach] switchView to coach detected');
+            _aiCoachRendered = false;
+            setTimeout(triggerAICoachIfVisible, 500);
+        }
+        return result;
+    };
+}
 
 // Export functions for global access
 window.getAICoachInsight = getAICoachInsight;
@@ -416,5 +498,6 @@ window.renderAICoachCard = renderAICoachCard;
 window.refreshAIInsight = refreshAIInsight;
 window.analyzeSessionCompletion = analyzeSessionCompletion;
 window.checkOvertrainingRisk = checkOvertrainingRisk;
+window.triggerAICoachIfVisible = triggerAICoachIfVisible;
 
 console.log('[ERS AI Coach] Module loaded ✅');

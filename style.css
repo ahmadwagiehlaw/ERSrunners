@@ -11245,6 +11245,18 @@ body {
     overflow: hidden;
 }
 
+/* Integrated style - connects visually to main coach card */
+.ai-coach-card.ai-coach-integrated {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(59, 130, 246, 0.05));
+    border-top: 1px dashed rgba(139, 92, 246, 0.3);
+    border-left: 1px solid rgba(139, 92, 246, 0.15);
+    border-right: 1px solid rgba(139, 92, 246, 0.15);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 0 0 16px 16px;
+    margin-top: -1px;
+    padding: 15px 20px;
+}
+
 .ai-coach-card::before {
     content: '';
     position: absolute;
