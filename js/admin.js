@@ -19,7 +19,7 @@ function switchAdminTab(tabName) {
     if (tabName === 'inspector') loadAdminRuns();
     if (tabName === 'studio') loadAdminChallengesList();
     if (tabName === 'coach') loadCoachAdmin();
-    if (tabName === 'league') loadLeagueDiagnostics();
+    if (tabName === 'league') { adminLoadLeagueStatus(); loadLeagueDiagnostics(); }
     if (tabName === 'users') loadAllUsersTable();
 }
 async function loadAdminStats() {
@@ -1511,3 +1511,171 @@ async function loadAdminGrowthStats() {
         chartEl.innerHTML = '<div style="color:red; font-size:10px;">Chart Failed</div>';
     }
 }
+
+// ==================== League Management (Admin) ====================
+
+async function adminLoadLeagueStatus() {
+    const container = document.getElementById('admin-league-status');
+    if (!container || !window.LeagueService) {
+        if (container) container.innerHTML = '<div style="color:#ef4444; text-align:center; padding:15px;">LeagueService غير متاح</div>';
+        return;
+    }
+
+    container.innerHTML = '<div style="text-align:center; padding:15px; color:#9ca3af;"><span class="loader-btn"></span></div>';
+
+    try {
+        const league = await LeagueService.getActiveLeague(true);
+
+        if (!league) {
+            container.innerHTML = `
+                <div style="background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:20px; text-align:center;">
+                    <div style="font-size:36px; margin-bottom:8px;">🏁</div>
+                    <div style="color:#fff; font-size:14px; font-weight:bold;">لا يوجد دوري نشط حالياً</div>
+                    <div style="color:#9ca3af; font-size:11px; margin-top:4px;">أنشئ دوري جديد من النموذج أدناه</div>
+                </div>`;
+            return;
+        }
+
+        const start = league.startDate ? league.startDate.toDate().toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+        const end = league.endDate ? league.endDate.toDate().toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+
+        // Get standings summary
+        const standings = await LeagueService.getLeagueStandings(league.id);
+        const totalPlayers = standings.reduce((sum, g) => sum + (g.playerCount || 0), 0);
+        const totalDist = standings.reduce((sum, g) => sum + (g.totalDist || 0), 0);
+        const topGov = standings.length > 0 ? standings[0].name : '—';
+
+        container.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.1)); border:1px solid rgba(16,185,129,0.3); border-radius:16px; padding:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div>
+                        <h4 style="margin:0; color:#10b981; font-size:16px;">🟢 ${league.title}</h4>
+                        <div style="font-size:10px; color:#9ca3af; margin-top:4px;">${start} → ${end}</div>
+                    </div>
+                    <span style="font-size:9px; background:rgba(16,185,129,0.2); color:#10b981; padding:3px 10px; border-radius:10px;">نشط</span>
+                </div>
+
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:15px;">
+                    <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:10px; text-align:center;">
+                        <div style="font-size:18px; font-weight:900; color:#fff;">${standings.length}</div>
+                        <div style="font-size:9px; color:#9ca3af;">محافظة</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:10px; text-align:center;">
+                        <div style="font-size:18px; font-weight:900; color:#fff;">${totalPlayers}</div>
+                        <div style="font-size:9px; color:#9ca3af;">لاعب</div>
+                    </div>
+                    <div style="background:rgba(0,0,0,0.2); border-radius:10px; padding:10px; text-align:center;">
+                        <div style="font-size:18px; font-weight:900; color:#fff;">${totalDist.toFixed(0)}</div>
+                        <div style="font-size:9px; color:#9ca3af;">كم إجمالي</div>
+                    </div>
+                </div>
+
+                <div style="font-size:11px; color:#9ca3af; margin-bottom:12px;">🏆 المتصدر: <strong style="color:#f59e0b;">${topGov}</strong> | النصاب: ${league.quorum || 5} لاعبين</div>
+
+                <button onclick="adminEndLeague()" class="btn" style="background:rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3); padding:8px 20px; font-size:12px;">
+                    ⛔ إنهاء الدوري الحالي
+                </button>
+            </div>`;
+
+    } catch (e) {
+        console.error('League status error:', e);
+        container.innerHTML = '<div style="color:#ef4444; text-align:center; padding:15px;">خطأ في تحميل حالة الدوري</div>';
+    }
+}
+
+async function adminCreateLeague() {
+    if (!(userData && userData.isAdmin === true)) {
+        showToast('⛔ للمشرفين فقط', 'error');
+        return;
+    }
+
+    const title = document.getElementById('league-title')?.value?.trim();
+    const startStr = document.getElementById('league-start')?.value;
+    const endStr = document.getElementById('league-end')?.value;
+    const quorum = parseInt(document.getElementById('league-quorum')?.value) || 5;
+
+    if (!title) { showToast('اكتب عنوان الدوري'); return; }
+    if (!startStr || !endStr) { showToast('حدد تاريخ البداية والنهاية'); return; }
+
+    const startDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
+    if (endDate <= startDate) { showToast('تاريخ النهاية لازم يكون بعد البداية'); return; }
+
+    if (!confirm(`إنشاء دوري "${title}"؟\nمن ${startStr} إلى ${endStr}\nنصاب: ${quorum} لاعب`)) return;
+
+    try {
+        showToast('جاري الإنشاء...');
+        const leagueId = await LeagueService.createLeague(title, startDate, endDate, quorum);
+        showToast('✅ تم إنشاء الدوري بنجاح!');
+
+        // Clear form
+        document.getElementById('league-title').value = '';
+        document.getElementById('league-start').value = '';
+        document.getElementById('league-end').value = '';
+        document.getElementById('league-quorum').value = '5';
+
+        // Refresh status
+        adminLoadLeagueStatus();
+    } catch (e) {
+        console.error('Create league error:', e);
+        showToast('خطأ في إنشاء الدوري: ' + e.message, 'error');
+    }
+}
+
+async function adminEndLeague() {
+    if (!(userData && userData.isAdmin === true)) {
+        showToast('⛔ للمشرفين فقط', 'error');
+        return;
+    }
+
+    if (!confirm('⚠️ هل أنت متأكد من إنهاء الدوري الحالي؟\nهذا الإجراء لا يمكن التراجع عنه.')) return;
+
+    try {
+        showToast('جاري الإنهاء...');
+        await LeagueService.endActiveLeague();
+        showToast('✅ تم إنهاء الدوري');
+        adminLoadLeagueStatus();
+    } catch (e) {
+        console.error('End league error:', e);
+        showToast('خطأ في إنهاء الدوري: ' + e.message, 'error');
+    }
+}
+
+async function adminRecalculateLeague() {
+    if (!confirm("⚠️ تنبيه هام!\nسيتم إعادة حساب جميع النقاط وإحصائيات المحافظات من الصفر بناءً على تاريخ بداية الدوري.\n\nاستخدم هذا فقط إذا كانت البيانات غير ظاهرة للدوري الحالي.\n\nهل تريد المتابعة؟")) return;
+
+    // Try to find the button locally or query it
+    const btn = document.querySelector('button[onclick="adminRecalculateLeague()"]');
+    let originalText = btn ? btn.innerHTML : "🔄 إعادة حساب إحصائيات الدوري";
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle;"></div> جاري المعالجة...';
+    }
+
+    try {
+        const league = await LeagueService.getActiveLeague();
+        if (!league) {
+            showToast("لا يوجد دوري نشط حالياً", "error");
+            return;
+        }
+
+        await LeagueService.recalculateLeagueStats(league.id, (msg) => {
+            if (btn) btn.innerHTML = '⏳ ' + msg;
+        });
+
+        showToast("✅ تم تحديث البيانات بنجاح!", "success");
+        await adminLoadLeagueStatus(); // Refresh status panel
+
+    } catch (e) {
+        console.error("Recalculate Error:", e);
+        showToast("❌ حدث خطأ أثناء التحديث: " + e.message, "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+}
+

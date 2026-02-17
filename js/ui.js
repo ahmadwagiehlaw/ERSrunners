@@ -231,79 +231,7 @@ async function calculatePersonalBests() {
 
 
 
-/* Community Feed (pagination) */
-
-
-let html = '';
-snap.forEach(doc => {
-    const p = doc.data();
-    // صمامات أمان عشان الداتا تظهر مهما كان فيها نقص
-    const userName = p.userName || 'عداء مجهول';
-    const userRegion = p.userRegion || 'الجمهورية';
-    const dist = parseFloat(p.dist || 0).toFixed(2);
-    const time = p.time || '--';
-    const type = p.type === 'Run' ? 'جري' : (p.type === 'Walk' ? 'مشي' : 'نشاط');
-
-    // معالجة التاريخ بذكاء
-    let timeAgo = 'منذ فترة';
-    if (p.timestamp) {
-        try {
-            timeAgo = getArabicTimeAgo(p.timestamp);
-        } catch (e) { timeAgo = 'نشاط حديث'; }
-    }
-
-    const pace = (p.dist > 0 && p.time > 0) ? (p.time / p.dist).toFixed(2) : '--';
-    const isLiked = p.likes && currentUser && p.likes.includes(currentUser.uid);
-
-    // تحويل البيانات لنص آمن للمودال
-    const safeData = JSON.stringify({
-        ...p,
-        id: doc.id,
-        timestamp: null // بنمسحه هنا عشان ميعملش مشاكل في الـ JSON
-    }).replace(/"/g, '&quot;');
-
-    html += `
-            <div class="feed-card-premium" data-post-id="${doc.id}" onclick="openRunDetailFromFeed('${doc.id}', ${safeData})" 
-                 style="background:rgba(31, 41, 55, 0.4); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.05); border-radius:20px; padding:15px; margin-bottom:15px; cursor:pointer;">
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <div style="flex:1;">
-                        <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
-                            <div style="width:32px; height:32px; border-radius:50%; background:var(--primary); color:#000; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:12px;">
-                                ${userName.charAt(0)}
-                            </div>
-                            <div>
-                                <div style="font-size:13px; font-weight:bold; color:#fff;">${userName}</div>
-                                <div style="font-size:10px; color:var(--text-muted);">${timeAgo} • ${userRegion}</div>
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:15px; margin-bottom:12px;">
-                            <div>
-                                <small style="display:block; color:var(--text-muted); font-size:9px;">المسافة</small>
-                                <strong style="font-size:16px; color:var(--primary);">${dist} <small>كم</small></strong>
-                            </div>
-                            <div style="border-right:1px solid rgba(255,255,255,0.1); padding-right:15px;">
-                                <small style="display:block; color:var(--text-muted); font-size:9px;">البيس</small>
-                                <strong style="font-size:16px; color:var(--accent);">${pace}</strong>
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:12px; opacity:0.8;">
-                             <span style="font-size:12px; color:#9ca3af;"><i class="ri-heart-line"></i> ${(p.likes || []).length}</span>
-                             <span style="font-size:12px; color:#9ca3af;"><i class="ri-chat-3-line"></i> <span class="comment-count">${p.commentsCount || 0}</span></span>
-                        </div>
-                    </div>
-                    <div style="width:80px; height:80px; border-radius:15px; background:#111827; overflow:hidden; border:1px solid rgba(255,255,255,0.08);">
-                        <img src="${p.polyline ? 'https://www.strava.com/assets/images/google_static_map_placeholder.png' : (p.img || 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=200&auto=format&fit=crop')}" 
-                             style="width:100%; height:100%; object-fit:cover; opacity:0.6;">
-                    </div>
-                </div>
-            </div>`;
-});
-list.innerHTML = html;
-// ==================== 10. Utils & Listeners ====================
-
-
-
-// ==================== Coach Brain v1: Speed Radar ====================
+// ==================== Coach Brain v1: Speed Radar ======================================
 function _ersGetRecentRunsForSpeed() {
     const runs = (window._ersRunsCache || []).slice().filter(r => {
         const kind = r.autoKind || _ersAutoKind(r.type, _ersPace(r.dist, r.time));
@@ -478,7 +406,7 @@ function switchView(viewId) {
     const map = { 'home': 0, 'profile': 1, 'club': 2, 'challenges': 3 };
     if (navItems[map[viewId]]) navItems[map[viewId]].classList.add('active');
 
-    if (view === 'admin' && !(userData && userData.isAdmin === true)) {
+    if (viewId === 'admin' && !(userData && userData.isAdmin === true)) {
         showToast("⛔ غير مسموح لك بالدخول هنا", "error");
         return;
     }
@@ -803,31 +731,82 @@ function generateShareCard(dist, time, dateStr) {
 // (e.g., challenges.js) also reference the same global.
 var allChallengesCache = window.allChallengesCache || (window.allChallengesCache = []);
 
-// ==================== تحميل الخلاصة العالمية ====================
-async function loadGlobalFeed() {
+// ==================== تحميل الخلاصة العالمية (مع Pagination) ====================
+let _lastFeedDoc = null;     // Cursor for pagination
+let _feedSeenKeys = new Set(); // Dedup across pages
+
+async function loadGlobalFeed(appendMode = false) {
     const list = document.getElementById('global-feed-list');
     if (!list) return;
 
-    list.innerHTML = `
+    const PAGE_SIZE = 20;
+
+    if (!appendMode) {
+        // Fresh load — reset everything
+        _lastFeedDoc = null;
+        _feedSeenKeys = new Set();
+        list.innerHTML = `
         <div style="text-align:center; padding:30px; color:var(--text-muted);">
             <i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i>
             <div style="font-size:12px; margin-top:10px;">جاري تحديث الأخبار...</div>
         </div>`;
+    } else {
+        // Remove old "Load More" button before appending
+        const oldBtn = document.getElementById('feed-load-more-btn');
+        if (oldBtn) oldBtn.outerHTML = `
+        <div id="feed-loading-indicator" style="text-align:center; padding:15px; color:var(--text-muted);">
+            <i class="ri-loader-4-line ri-spin" style="font-size:18px;"></i>
+        </div>`;
+    }
 
     try {
-        const snap = await db.collection('activity_feed')
+        let query = db.collection('activity_feed')
             .orderBy('timestamp', 'desc')
-            .limit(20)
-            .get();
+            .limit(PAGE_SIZE);
 
-        if (snap.empty) {
+        if (appendMode && _lastFeedDoc) {
+            query = query.startAfter(_lastFeedDoc);
+        }
+
+        const snap = await query.get();
+
+        // Remove loading indicator
+        const loadingEl = document.getElementById('feed-loading-indicator');
+        if (loadingEl) loadingEl.remove();
+
+        if (snap.empty && !appendMode) {
+            list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد أنشطة حالياً.</div>';
+            return;
+        }
+
+        if (snap.empty && appendMode) {
+            list.insertAdjacentHTML('beforeend',
+                '<div style="text-align:center; padding:15px; color:#64748b; font-size:12px;">🏁 وصلت لآخر الأنشطة</div>');
+            return;
+        }
+
+        // Save cursor for next page
+        _lastFeedDoc = snap.docs[snap.docs.length - 1];
+
+        // 🔥 فلترة المكررات: نحتفظ بأول ظهور فقط لكل uid+dist+timestamp
+        const uniqueDocs = [];
+        snap.forEach(doc => {
+            const p = doc.data();
+            const ts = p.timestamp?.seconds || 0;
+            const dedupeKey = `${p.uid || ''}_${p.dist || 0}_${ts}`;
+            if (!_feedSeenKeys.has(dedupeKey)) {
+                _feedSeenKeys.add(dedupeKey);
+                uniqueDocs.push({ id: doc.id, data: p });
+            }
+        });
+
+        if (uniqueDocs.length === 0 && !appendMode) {
             list.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">لا توجد أنشطة حالياً.</div>';
             return;
         }
 
         let html = '';
-        snap.forEach(doc => {
-            const p = doc.data();
+        uniqueDocs.forEach(({ id: docId, data: p }) => {
 
             // --- 1. منطق الألوان والتمييز (إصلاح جذري) ---
             const rawType = String(p.type || '').trim().toLowerCase();
@@ -856,16 +835,15 @@ async function loadGlobalFeed() {
             const likesCount = (p.likes || []).length;
             const commentsCount = p.commentsCount || 0;
 
-            // بيانات المودال (Safe JSON)
             const safeDataJson = JSON.stringify({
                 ...p,
-                id: doc.id,
+                id: docId,
                 timestamp: null
             }).replace(/"/g, '&quot;');
 
             // --- 3. بناء الكارت ---
             html += `
-            <div class="feed-card-premium" data-post-id="${doc.id}" onclick="openRunDetailFromFeed('${doc.id}', ${safeDataJson})" 
+            <div class="feed-card-premium" data-post-id="${docId}" onclick="openRunDetailFromFeed('${docId}', ${safeDataJson})" 
                  style="background:rgba(30, 41, 59, 0.6); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:15px; margin-bottom:12px; cursor:pointer; position:relative; overflow:hidden;">
                 
                 <div style="position:absolute; right:0; top:0; bottom:0; width:4px; background:${themeColor};"></div>
@@ -896,11 +874,11 @@ async function loadGlobalFeed() {
                         </div>
 
                         <div style="display:flex; gap:18px; align-items:center;" onclick="event.stopPropagation()">
-                             <div id="like-wrap-${doc.id}" onclick="handleLikeClick('${doc.id}')" style="display:flex; align-items:center; gap:6px; cursor:pointer; transition:transform 0.1s;">
+                             <div id="like-wrap-${docId}" onclick="handleLikeClick('${docId}')" style="display:flex; align-items:center; gap:6px; cursor:pointer; transition:transform 0.1s;">
                                 <i class="${isLiked ? 'ri-heart-fill' : 'ri-heart-line'}" style="font-size:18px; color:${isLiked ? '#ef4444' : '#94a3b8'};"></i> 
                                 <span style="font-size:13px; font-weight:600; color:${isLiked ? '#ef4444' : '#94a3b8'};">${likesCount}</span>
                              </div>
-                             <div onclick="openComments('${doc.id}', '${p.uid}')" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                             <div onclick="openComments('${docId}', '${p.uid}')" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
                                 <i class="ri-chat-3-line" style="font-size:18px; color:#94a3b8;"></i> 
                                 <span class="comment-count" style="font-size:13px; font-weight:600; color:#94a3b8;">${commentsCount}</span>
                              </div>
@@ -914,11 +892,29 @@ async function loadGlobalFeed() {
                 </div>
             </div>`;
         });
-        list.innerHTML = html;
+
+        // Add "Load More" button if we got a full page
+        if (snap.size >= PAGE_SIZE) {
+            html += `
+            <div id="feed-load-more-btn" onclick="loadGlobalFeed(true)" 
+                 style="text-align:center; padding:12px; margin:8px 0; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:12px; cursor:pointer; color:#10b981; font-size:13px; font-weight:600; transition:all 0.2s;">
+                <i class="ri-arrow-down-line"></i> عرض المزيد
+            </div>`;
+        } else {
+            html += '<div style="text-align:center; padding:15px; color:#64748b; font-size:12px;">🏁 نهاية الأنشطة</div>';
+        }
+
+        if (appendMode) {
+            list.insertAdjacentHTML('beforeend', html);
+        } else {
+            list.innerHTML = html;
+        }
 
     } catch (e) {
         console.error("Feed Error:", e);
-        list.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444">فشل تحميل الأخبار</div>';
+        if (!appendMode) {
+            list.innerHTML = '<div style="padding:20px; text-align:center; color:#ef4444">فشل تحميل الأخبار</div>';
+        }
     }
 }
 // ==================== Community Reporting System (V5.0) ====================

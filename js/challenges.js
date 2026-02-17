@@ -126,7 +126,6 @@ function viewUserProfile(targetUid) {
     // ... (باقي الكود)
 }
 
-const REGION_AR = { "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة", "Tanta": "طنطا", "Luxor": "الأقصر", "Aswan": "أسوان", "Red Sea": "البحر الأحمر", "Sinai": "سيناء", "Sharkia": "الشرقية", "Dakahlia": "الدقهلية", "Menofia": "المنوفية", "Gharbia": "الغربية", "Beni Suef": "بني سويف" };
 
 
 /* Challenge Engine */
@@ -141,22 +140,13 @@ var isLoadingChallenges = false;
 // --- (دالة التحديات المحدثة التي قررنا استخدامها) ---
 async function loadActiveChallenges() {
     // 🔒 Prevent concurrent executions
-    if (isLoadingChallenges) {
-        console.log('[DEBUG] loadActiveChallenges already running, skipping...');
-        return;
-    }
-
+    if (isLoadingChallenges) return;
     isLoadingChallenges = true;
-    console.log('[DEBUG] 🔒 Lock acquired');
 
     try {
         const list = document.getElementById('challenges-list');
         const mini = document.getElementById('my-active-challenges');
-
-        if (!list || !currentUser) {
-            console.log('[DEBUG] Missing list or currentUser, aborting');
-            return;
-        }
+        if (!list || !currentUser) return;
 
         // 1. جلب التحديات من قاعدة البيانات
         const snap = await db.collection('challenges').where('active', '==', true).get();
@@ -165,50 +155,52 @@ async function loadActiveChallenges() {
             return;
         }
 
-        console.log('[DEBUG] loadActiveChallenges starting, found', snap.size, 'challenges');
-        console.log('[DEBUG] Documents IDs:', snap.docs.map(d => d.id));
-        console.log('[DEBUG] Cache BEFORE reset:', window.allChallengesCache ? window.allChallengesCache.length : 'undefined');
-
         // Reset the GLOBAL cache
         window.allChallengesCache = [];
-        allChallengesCache = window.allChallengesCache; // Sync local reference
+        allChallengesCache = window.allChallengesCache;
 
-        console.log('[DEBUG] Cache AFTER reset:', allChallengesCache.length);
+        // 🔥 تحسين الأداء: حساب تواريخ الجريات مرة واحدة فقط
+        const allRuns = window._ersRunsCache || [];
+        const preparedRuns = allRuns
+            .filter(r => r.type === 'Run')
+            .map(r => ({
+                date: r.timestamp ? r.timestamp.toDate() : null,
+                dist: parseFloat(r.dist) || 0
+            }))
+            .filter(r => r.date !== null);
+
+        // 🔥 تحسين الأداء: جلب كل المشاركين بالتوازي بدل التتابع
+        const participantPromises = snap.docs.map(doc =>
+            doc.ref.collection('participants').doc(currentUser.uid).get()
+        );
+        const participantDocs = await Promise.all(participantPromises);
 
         let miniHtml = '';
-        const allRuns = window._ersRunsCache || []; // 🔥 المصدر الوحيد للحقيقة
 
-        for (const doc of snap.docs) {
+        snap.docs.forEach((doc, index) => {
             const ch = { id: doc.id, ...doc.data() };
-            console.log('[DEBUG] Processing challenge:', ch.title, '(', ch.id, ')');
+            const pDoc = participantDocs[index];
 
-            // جلب وثيقة المشارك
-            const pDoc = await doc.ref.collection('participants').doc(currentUser.uid).get();
             if (pDoc.exists) {
-                console.log('[DEBUG] User is participant in:', ch.title);
-                // 🔥 إعادة حساب التقدم بناءً على الكاش (بما يغطي الجريات القديمة)
+                // حساب التقدم من الكاش المحسّن
                 const startDate = ch.startDate ? new Date(ch.startDate) : new Date(2026, 0, 1);
                 const endDate = ch.endDate ? ch.endDate.toDate() : new Date(2026, 0, 31);
 
-                const validRuns = allRuns.filter(r => {
-                    const rDate = r.timestamp ? r.timestamp.toDate() : null;
-                    return rDate && rDate >= startDate && rDate <= endDate && r.type === 'Run';
-                });
+                const validRuns = preparedRuns.filter(r => r.date >= startDate && r.date <= endDate);
 
                 let currentProgress = 0;
                 if (ch.type === 'distance') {
-                    currentProgress = validRuns.reduce((sum, r) => sum + (parseFloat(r.dist) || 0), 0);
+                    currentProgress = validRuns.reduce((sum, r) => sum + r.dist, 0);
                 } else if (ch.type === 'frequency') {
                     currentProgress = validRuns.length;
                 }
 
-                // تحديث قاعدة البيانات في الخلفية إذا اختلف الرقم
+                // تحديث قاعدة البيانات في الخلفية إذا اختلف الرقم (fire-and-forget)
                 if (Math.abs(currentProgress - (pDoc.data().progress || 0)) > 0.01) {
                     doc.ref.collection('participants').doc(currentUser.uid).update({ progress: currentProgress });
                 }
 
                 allChallengesCache.push({ ...ch, isJoined: true, progress: currentProgress });
-                console.log('[DEBUG] Added to cache as JOINED. Cache size now:', allChallengesCache.length);
 
                 // تحديث شريط التقدم في الصفحة الرئيسية
                 if (mini) {
@@ -220,19 +212,15 @@ async function loadActiveChallenges() {
                 </div>`;
                 }
             } else {
-                console.log('[DEBUG] User is NOT participant in:', ch.title);
                 allChallengesCache.push({ ...ch, isJoined: false, progress: 0 });
-                console.log('[DEBUG] Added to cache as NOT JOINED. Cache size now:', allChallengesCache.length);
             }
-        }
+        });
 
         if (mini) mini.innerHTML = miniHtml || "<div class='empty-state-mini'>لم تنضم لتحديات بعد</div>";
-        console.log('[DEBUG] About to call renderChallenges. Final cache size:', allChallengesCache.length);
         renderChallenges();
     } finally {
         // 🔓 Always release lock
         isLoadingChallenges = false;
-        console.log('[DEBUG] 🔓 Lock released');
     }
 }// ==================== Community Reporting System (V5.0) ====================
 
@@ -1610,19 +1598,18 @@ function computeHeroStatsFromRuns(runs) {
     };
 }
 
+let _currentLeagueId = null; // Track which league we're viewing
 
-
-
-// ==================== 🏛️ ERS EMPIRE LEAGUE V10 (Clickable & Auto-Reset) ====================
-
-let currentLeagueMode = 'current';
-
-async function loadRegionBattle(mode) {
-    if (mode) currentLeagueMode = mode;
+async function loadRegionBattle(leagueId) {
     const list = document.getElementById('region-battle-list');
     if (!list) return;
 
-    // لودر
+    if (!window.LeagueService) {
+        list.innerHTML = '<div style="text-align:center; padding:40px; color:#ef4444;">خطأ: خدمة الدوري غير متاحة</div>';
+        return;
+    }
+
+    // Loader
     list.innerHTML = `
         <div style="padding:60px 20px; text-align:center;">
             <div class="spinner" style="margin:0 auto 15px; border-top-color:#f59e0b;"></div>
@@ -1630,232 +1617,294 @@ async function loadRegionBattle(mode) {
         </div>`;
 
     try {
-        const QUORUM = 5;
-        const REGION_AR = {
-            "Cairo": "القاهرة", "Giza": "الجيزة", "Alexandria": "الإسكندرية", "Mansoura": "المنصورة",
-            "Dakahlia": "الدقهلية", "Sharkia": "الشرقية", "Gharbia": "الغربية", "Menofia": "المنوفية",
-            "Beheira": "البحيرة", "Kafr El Sheikh": "كفر الشيخ", "Qalyubia": "القليوبية", "Damietta": "دمياط",
-            "Port Said": "بورسعيد", "Ismailia": "الإسماعيلية", "Suez": "السويس", "Red Sea": "البحر الأحمر",
-            "South Sinai": "جنوب سيناء", "North Sinai": "شمال سيناء", "Sinai": "سيناء", "Beni Suef": "بني سويف",
-            "Fayoum": "الفيوم", "Minya": "المنيا", "Assiut": "أسيوط", "Sohag": "سوهاج", "Qena": "قنا",
-            "Luxor": "الأقصر", "Aswan": "أسوان", "Matrouh": "مطروح", "New Valley": "الوادي الجديد"
-        };
-
-        let govStats = {};
-
-        // 🔥 V5.0: محاولة جلب الإحصائيات المجمعة (Aggregated Stats) أولاً
-        // هذا يوفر تحميل آلاف المستخدمين
-        let usedAggregated = false;
-        if (currentLeagueMode === 'current') {
-            try {
-                const statsDoc = await db.collection('stats').doc('league').get();
-                if (statsDoc.exists) {
-                    const data = statsDoc.data();
-
-                    // تحويل البيانات المجمعة للشكل المطلوب
-                    for (const [engName, stat] of Object.entries(data)) {
-                        if (engName === 'lastUpdated') continue; // تخطي حقل التحديث
-
-                        const arName = REGION_AR[engName] || engName;
-                        govStats[arName] = {
-                            name: arName,
-                            totalDist: stat.totalDist || 0,
-                            players: stat.players || 0,
-                            // MVP قد يكون قديم قليلاً، لكنه مقبول للسرعة
-                            mvp: stat.mvp || { name: 'غير معروف', dist: 0, pic: null, uid: null }
-                        };
-                    }
-                    usedAggregated = true;
-                    // console.log("✅ Using Aggregated League Stats!");
-                }
-            } catch (e) {
-                console.warn("⚠️ Failed to load aggregated stats, falling back to legacy...", e);
-            }
+        // Determine which league to show
+        let league;
+        if (leagueId && leagueId !== 'active') {
+            league = await LeagueService.getLeagueInfo(leagueId);
+            _currentLeagueId = leagueId;
+        } else {
+            league = await LeagueService.getActiveLeague(true);
+            _currentLeagueId = league ? league.id : null;
         }
 
-        // Fallback: الطريقة القديمة (تجميع جميع المستخدمين)
-        // يتم استخدامها إذا فشل المجمع أو كنا في وضع الأرشيف (لأن الأرشيف غير مدعوم في المجمع بعد)
-        if (!usedAggregated) {
-            // 1. Force Refresh
-            allUsersCache = [];
-            await fetchTopRunners();
+        // Get archive for dropdown
+        const allLeagues = await LeagueService.getLeagueArchive();
 
-            const now = new Date();
-            const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        // Build header (Premium 2.0 with Custom Dropdown)
+        let html = buildLeagueHeader(league, allLeagues);
 
-            allUsersCache.forEach(user => {
-                let dist = 0;
-
-                if (currentLeagueMode === 'current') {
-                    dist = parseFloat(user.monthDist) || 0;
-                } else {
-                    dist = parseFloat(user.lastMonthDist) || 0;
-                }
-
-                if (user.region) {
-                    let rawGov = user.region.trim();
-                    let govName = REGION_AR[rawGov] || rawGov;
-
-                    if (!govStats[govName]) {
-                        govStats[govName] = {
-                            name: govName, totalDist: 0, players: 0,
-                            mvp: { name: 'غير معروف', dist: 0, pic: null, uid: null }
-                        };
-                    }
-
-                    let g = govStats[govName];
-                    g.totalDist += dist;
-                    g.players += 1;
-
-                    if (dist > g.mvp.dist) {
-                        g.mvp = {
-                            name: user.name,
-                            dist: dist,
-                            pic: user.photoUrl,
-                            uid: user.uid
-                        };
-                    }
-                }
-            });
-        }
-
-        // 5. الحسابات والترتيب الذكي
-        let leagueData = Object.values(govStats).map(g => {
-            const divisor = Math.max(g.players, QUORUM);
-            g.score = g.totalDist / divisor;
-            g.isPenalized = g.players < QUORUM;
-            return g;
-        }).sort((a, b) => {
-            if (b.score !== a.score) return b.score - a.score;
-            return b.players - a.players;
-        });
-
-        // 6. تجهيز الـ HTML
-        let html = `
-            <div class="league-header">
-                <h3 style="margin:0; color:#fff; font-size:18px;">🏆 دوري المحافظات</h3>
-                <div style="font-size:11px; color:#9ca3af; margin-top:5px;">
-                    الدوري الشهري • النصاب: ${QUORUM} لاعبين
-                </div>
-            </div>
-
-            <div class="filter-controls">
-                <div class="f-btn ${currentLeagueMode === 'current' ? 'active' : ''}" onclick="loadRegionBattle('current')">الشهر الحالي 🔥</div>
-                <div class="f-btn ${currentLeagueMode === 'prev' ? 'active' : ''}" onclick="loadRegionBattle('prev')">الأرشيف 📂</div>
-            </div>
-        `;
-
-        if (leagueData.length === 0) {
+        if (!league) {
             html += `
-                <div style="text-align:center; padding:40px; opacity:0.6;">
-                    <div style="font-size:40px; margin-bottom:10px;">📅</div>
-                    <div>لا توجد بيانات ${currentLeagueMode === 'current' ? 'لهذا الشهر' : 'للشهر السابق'}</div>
-                    <div style="font-size:11px; color:#9ca3af; margin-top:5px;">الميدان ينتظر الأبطال!</div>
+                <div class="league-empty-state">
+                    <div class="league-empty-icon">🏆</div>
+                    <div style="font-size:16px; font-weight:bold; color:#fff; margin-bottom:8px;">لا يوجد دوري نشط</div>
+                    <div style="font-size:12px;">ترقب انطلاق الموسم الجديد قريباً!</div>
                 </div>`;
             list.innerHTML = html;
             return;
         }
 
-        // --- رسم البوديوم (Top 3) ---
-        html += `<div class="podium-wrapper">`;
-        const top3 = [leagueData[0], leagueData[1], leagueData[2]];
-        const displayOrder = [1, 0, 2];
+        // --- User Status Card ---
+        const myRegion = (typeof userData !== 'undefined' && userData.region) ? userData.region : null;
+        const myRegionAr = (typeof REGION_AR !== 'undefined' && myRegion) ? REGION_AR[myRegion] : null;
 
-        displayOrder.forEach(idx => {
-            const gov = top3[idx];
-            if (gov) {
-                const rank = idx + 1;
-                const crown = rank === 1 ? '<div class="mvp-crown">👑</div>' : '';
+        if (myRegion && myRegionAr) {
+            html += `
+            <div class="user-league-status">
+                <div>
+                    <div style="font-size:10px; color:#10b981; margin-bottom:4px; font-weight:bold;">فريقك الحالي</div>
+                    <div style="font-size:16px; font-weight:900; color:#fff;">محافظة ${myRegionAr}</div>
+                </div>
+                <div style="width:40px; height:40px; background:rgba(16,185,129,0.2); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                    <i class="ri-flag-2-fill" style="color:#10b981; font-size:20px;"></i>
+                </div>
+            </div>`;
+        } else {
+            html += `
+            <div class="user-league-status" onclick="openProfileSettings()" style="cursor:pointer;">
+                <div>
+                    <div style="font-size:10px; color:#f59e0b; margin-bottom:4px; font-weight:bold;">تنبيه</div>
+                    <div style="font-size:13px; font-weight:bold; color:#fff;">لم تقم بتحديد محافظتك بعد!</div>
+                </div>
+                <i class="ri-arrow-left-s-line" style="color:#f59e0b;"></i>
+            </div>`;
+        }
 
-                // تقصير الاسم
-                const nameParts = gov.mvp.name.split(' ');
-                const shortName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1][0]}.` : nameParts[0];
+        // Get standings
+        const standings = await LeagueService.getLeagueStandings(league.id);
 
-                // تجهيز الصورة والحدث (Click Event)
-                const mvpImgStyle = gov.mvp.pic
-                    ? `background:url('${gov.mvp.pic}') center/cover;`
-                    : `background:var(--bg-card); display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; font-weight:bold;`;
-                const mvpContent = gov.mvp.pic ? '' : shortName.charAt(0);
+        if (standings.length === 0) {
+            html += `
+                <div class="league-empty-state">
+                    <div class="league-empty-icon">👟</div>
+                    <h3 style="color:#fff; margin:0 0 10px;">الميدان ينتظر الأبطال!</h3>
+                    <p style="font-size:12px; margin-bottom:20px;">الدوري بدأ ولكن لم يتم تسجيل أي جريات حتى الآن.</p>
+                    <button onclick="switchView('tracking')" class="btn btn-primary" style="margin:0 auto; display:block; width:fit-content; background:linear-gradient(45deg, #3b82f6, #2563eb);">
+                        سجل أول جرية الآن 🏃‍♂️
+                    </button>
+                    ${league.startDate < new Date() ? '<div style="margin-top:20px; font-size:10px; color:#ef4444;">ملاحظة: إذا كانت هناك جريات قديمة، اطلب من المشرف "تحديث البيانات".</div>' : ''}
+                </div>`;
+            list.innerHTML = html;
+            return;
+        }
 
-                // 🔥 إضافة onclick لفتح البروفايل
-                // التعديل الجديد: استدعاء دالة البطل
-                const clickAttr = gov.mvp.uid ? `onclick="openLeagueHero('${gov.mvp.uid}')" style="cursor:pointer;"` : '';
+        // --- 1. Podium (Higher Priority) ---
+        // We show podium FIRST now, per user request to utilize space better at top
+        html += buildPodium(standings.slice(0, 3), league.quorum || 5);
+
+        // --- 2. League Summary Stats (Moved below podium) ---
+        const totalPlayers = standings.reduce((s, g) => s + g.playerCount, 0);
+        const totalDist = standings.reduce((s, g) => s + g.totalDist, 0);
+        const totalRuns = standings.reduce((s, g) => s + g.runCount, 0);
+
+        html += `
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:20px;">
+            <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); border-radius:12px; padding:12px; text-align:center;">
+                <div style="font-size:18px; font-weight:900; color:#10b981;">${totalPlayers}</div>
+                <div style="font-size:9px; color:#9ca3af; margin-top:2px;">لاعب نشط</div>
+            </div>
+            <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); border-radius:12px; padding:12px; text-align:center;">
+                <div style="font-size:18px; font-weight:900; color:#f59e0b;">${totalDist.toFixed(0)}</div>
+                <div style="font-size:9px; color:#9ca3af; margin-top:2px;">كم إجمالي</div>
+            </div>
+            <div style="background:rgba(99,102,241,0.1); border:1px solid rgba(99,102,241,0.2); border-radius:12px; padding:12px; text-align:center;">
+                <div style="font-size:18px; font-weight:900; color:#6366f1;">${totalRuns}</div>
+                <div style="font-size:9px; color:#9ca3af; margin-top:2px;">جرية</div>
+            </div>
+        </div>`;
+
+        // --- 3. Remaining Rows (Top 4+) ---
+        if (standings.length > 3) {
+            const maxScore = standings[0].score;
+            html += `<div style="padding-bottom:100px;">`; // Extra padding for bottom nav
+
+            // Header for rest list?
+            html += `<div style="font-size:12px; color:#9ca3af; margin-bottom:10px; padding:0 5px;">باقي الترتيب</div>`;
+
+            standings.slice(3).forEach((gov, idx) => {
+                const rank = idx + 4;
+                const percent = maxScore > 0 ? (gov.score / maxScore) * 100 : 0;
+                const infoBadge = gov.isPenalized
+                    ? `<span style="font-size:9px; color:#ef4444; background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:4px;">دعم مطلوب(${league.quorum || 5})</span>`
+                    : `<span style="font-size:9px; color:#9ca3af;">${gov.playerCount} لاعب • ${gov.totalDist.toFixed(0)} كم</span>`;
 
                 html += `
-                <div class="p-column p-${rank}">
-                    <div class="mvp-floating-card" ${clickAttr} title="اضغط لعرض بروفايل البطل">
-                        ${crown}
-                        <div class="mvp-avatar-frame" style="${mvpImgStyle}">${mvpContent}</div>
-                        <div class="mvp-name-block">
-                            <span class="mvp-label">بطل الفريق</span>
-                            <span class="mvp-name-text">${shortName}</span>
+                <div class="gov-list-item" style="position:relative; overflow:hidden;">
+                    <div style="display:flex; align-items:center; gap:12px; z-index:2; position:relative;">
+                        <div class="gov-rank-badge">${rank}</div>
+                        <div>
+                            <div style="font-weight:bold; color:#fff; font-size:14px;">${gov.name}</div>
+                            <div style="margin-top:2px;">${infoBadge}</div>
                         </div>
                     </div>
                     
-                    <div class="p-block">
-                        <div class="gov-info-block">
-                            <div class="gov-name-large">${gov.name}</div>
-                            <div class="gov-score-large">${gov.score.toFixed(0)}</div>
-                            <div class="gov-sub-label">نقطة قوة</div>
+                    <div style="z-index:2; text-align:left; display:flex; flex-direction:column; align-items:flex-end;">
+                        <div style="font-weight:900; color:var(--primary); font-size:16px;">${gov.score.toFixed(1)}</div>
+                        <!-- Mini MVP Avatar -->
+                         <div onclick="openLeagueHero('${gov.mvp.uid}')" style="display:flex; align-items:center; gap:4px; cursor:pointer; margin-top:2px;">
+                            ${gov.mvp.pic
+                        ? `<img src="${gov.mvp.pic}" style="width:16px; height:16px; border-radius:50%; object-fit:cover; border:1px solid rgba(255,255,255,0.3);">`
+                        : '<i class="ri-user-star-line" style="font-size:12px; color:#9ca3af;"></i>'}
+                            <span style="font-size:10px; color:#cbd5e1;">${gov.mvp.name.split(' ')[0]}</span>
                         </div>
-                        <i class="ri-map-pin-user-fill gov-bg-icon"></i>
+                    </div>
+
+                    <!-- Progress Bar Background -->
+                    <div style="position:absolute; bottom:0; left:0; height:2px; width:100%; background:rgba(255,255,255,0.05);">
+                        <div style="height:100%; background:var(--primary); width:${percent}%; opacity:0.5;"></div>
                     </div>
                 </div>`;
-            }
-        });
-        html += `</div>`; // End Podium
-
-        // --- القائمة ---
-        html += `<div style="padding-bottom:20px;">`;
-        const maxScore = leagueData[0].score;
-
-        leagueData.slice(3).forEach((gov, idx) => {
-            const rank = idx + 4;
-            const percent = (gov.score / maxScore) * 100;
-            const infoBadge = gov.isPenalized
-                ? `<span style="font-size:9px; color:#ef4444; background:rgba(239,68,68,0.1); padding:2px 6px; border-radius:4px;">دعم مطلوب (<${QUORUM})</span>`
-                : `<span style="font-size:9px; color:#9ca3af;">${gov.players} لاعب • ${gov.totalDist.toFixed(0)} كم</span>`;
-
-            // 🔥 جعلنا اسم بطل المحافظة يظهر هنا كمان وقابل للضغط (اختياري)
-            const mvpClick = gov.mvp.uid ? `onclick="viewUserProfile('${gov.mvp.uid}')"` : '';
-
-            html += `
-            <div class="gov-league-row">
-                <div style="z-index:2; display:flex; align-items:center; gap:10px;">
-                    <div style="font-size:12px; font-weight:bold; color:#6b7280; width:20px;">#${rank}</div>
-                    <div>
-                        <div style="font-weight:bold; color:#fff; font-size:14px;">${gov.name}</div>
-                        <div style="margin-top:2px;">${infoBadge}</div>
-                    </div>
-                </div>
-                
-                <div style="z-index:2; text-align:left; display:flex; flex-direction:column; align-items:flex-end;">
-                    <div style="font-weight:900; color:var(--primary); font-size:16px;">${gov.score.toFixed(1)}</div>
-                    <div ${mvpClick} style="font-size:9px; color:#9ca3af; cursor:pointer; display:flex; align-items:center; gap:3px;">
-                        <i class="ri-user-star-line"></i> ${gov.mvp.name.split(' ')[0]}
-                    </div>
-                </div>
-
-                <div style="position:absolute; bottom:0; left:0; height:3px; width:100%; background:rgba(255,255,255,0.05);">
-                    <div style="height:100%; background:var(--primary); width:${percent}%"></div>
-                </div>
-            </div>`;
-        });
-        html += `</div>`;
+            });
+            html += `</div>`;
+        } else {
+            html += `<div style="height:50px;"></div>`;
+        }
 
         list.innerHTML = html;
+
     } catch (e) {
-        console.error(e);
-        list.innerHTML = `<div style="text-align:center; color:#ef4444;">خطأ في تحميل البيانات</div>`;
+        console.error("League Error:", e);
+        list.innerHTML = `<div style="text-align:center; color:#ef4444; padding:30px;">خطأ في تحميل بيانات الدوري</div>`;
     }
 }
 
+// ==================== League Header Builder ====================
+// ==================== League Header Builder (Phase 7 - Custom Dropdown) ====================
+function buildLeagueHeader(league, allLeagues) {
+    const title = league ? league.title : 'دوري المحافظات';
+    const isActive = league && league.isActive;
 
+    // Date range
+    let dateRange = '';
+    if (league) {
+        const start = league.startDate.toDate();
+        const end = league.endDate.toDate();
+        const fmt = d => d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
+        dateRange = `${fmt(start)} → ${fmt(end)}`;
+    }
+
+    // Status badge text
+    const statusText = isActive ? 'موسم نشط' : 'موسم منتهي';
+    const statusColor = isActive ? '#10b981' : '#ef4444';
+
+    let html = `
+        <div class="league-hero-header">
+            <div class="league-hero-content">
+                <div class="league-season-badge">
+                    <span style="width:8px; height:8px; background:${statusColor}; border-radius:50%; box-shadow:0 0 5px ${statusColor};"></span>
+                    ${statusText}
+                </div>
+                
+                <h3 style="margin:0 0 5px; color:#fff; font-size:22px; font-weight:800; text-shadow:0 2px 10px rgba(0,0,0,0.3);">${title}</h3>
+                
+                <div style="font-size:12px; color:rgba(255,255,255,0.8); display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <i class="ri-calendar-event-line"></i> ${dateRange}
+                </div>
+            </div>
+        </div>`;
+
+    // Modern Custom Dropdown
+    if (allLeagues && allLeagues.length > 1) {
+        let dropdownItems = '';
+        const currentTitle = league ? league.title : 'اختر دوري';
+
+        allLeagues.forEach(l => {
+            const isSelected = league && l.id === league.id;
+            const activeDot = l.isActive ? '<span style="color:#10b981; margin-left:5px;">●</span>' : '';
+            const bgClass = isSelected ? 'active' : '';
+            dropdownItems += `
+                <div class="season-option-item ${bgClass}" onclick="loadRegionBattle('${l.id}')">
+                    <span>${l.title} ${activeDot}</span>
+                    ${isSelected ? '<i class="ri-check-line" style="color:#10b981;"></i>' : ''}
+                </div>`;
+        });
+
+        html += `
+        <div class="league-season-selector-wrapper">
+            <div class="season-trigger-btn" onclick="toggleSeasonMenu()">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="ri-history-line" style="color:#9ca3af;"></i>
+                    <span style="font-weight:600;">${title}</span>
+                </div>
+                <i class="ri-arrow-down-s-line" style="color:#9ca3af;"></i>
+            </div>
+            <div id="seasonDropdown" class="season-dropdown-menu">
+                <div style="font-size:10px; color:#6b7280; padding:5px 8px; font-weight:bold;">الدوريات المتاحة</div>
+                ${dropdownItems}
+            </div>
+        </div>`;
+    }
+
+    return html;
+}
+
+// Global toggle for dropdown
+window.toggleSeasonMenu = function () {
+    const el = document.getElementById('seasonDropdown');
+    if (el) {
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    }
+}
+
+// ==================== Podium Builder ====================
+// ==================== Podium Builder (Modern Phase 7) ====================
+function buildPodium(top3, quorum) {
+    if (!top3 || top3.length === 0) return '';
+
+    let html = `<div class="podium-container-modern">`;
+    const displayOrder = [1, 0, 2]; // Silver, Gold, Bronze (Idx)
+
+    displayOrder.forEach(idx => {
+        const gov = top3[idx];
+        if (!gov) return;
+
+        const rank = idx + 1;
+        const color = rank === 1 ? '#f59e0b' : (rank === 2 ? '#cbd5e1' : '#d97706');
+
+        // Shorten name
+        const nameParts = gov.mvp.name.split(' ');
+        const shortName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1][0]}.` : nameParts[0];
+
+        // Image or Initial
+        const mvpContent = gov.mvp.pic
+            ? `<img src="${gov.mvp.pic}" style="width:100%; height:100%; object-fit:cover;">`
+            : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1e293b; color:#fff; font-weight:bold; font-size:24px;">${shortName.charAt(0)}</div>`;
+
+        html += `
+            <div class="podium-step-modern podium-rank-${rank}">
+                <!-- Crown for 1st -->
+                ${rank === 1 ? '<div style="font-size:24px; margin-bottom:5px; animation:bounce 2s infinite;">👑</div>' : ''}
+                
+                <!-- Avatar -->
+                <div class="mvp-avatar-modern" onclick="openLeagueHero('${gov.mvp.uid}')">
+                    ${mvpContent}
+                </div>
+                
+                <!-- Pedestal -->
+                <div class="podium-pedestal">
+                    <div style="font-size:10px; opacity:0.7; letter-spacing:1px; margin-bottom:2px;">${rank === 1 ? 'GOLD' : (rank === 2 ? 'SILVER' : 'BRONZE')}</div>
+                    <div style="font-weight:900; font-size:14px; margin-bottom:4px; text-align:center; line-height:1.2;">${gov.name}</div>
+                    <div style="font-size:18px; font-weight:900; color:${color};">${gov.score.toFixed(0)}</div>
+                    
+                    <div style="margin-top:auto; padding-bottom:10px; font-size:9px; opacity:0.6; display:flex; flex-direction:column; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:3px;">
+                             <i class="ri-user-star-line"></i> <span>${shortName}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div>`;
+    return html;
+}
 
 
 // ==================== 🦸‍♂️ LEAGUE HERO DETAILS (Glass Edition) ====================
 
 async function openLeagueHero(uid) {
+    if (!uid) return;
     const modal = document.getElementById('modal-view-user');
     if (!modal) return;
 
@@ -1906,9 +1955,8 @@ async function openLeagueHero(uid) {
         document.getElementById('view-total-dist').innerText = monthTotal.toFixed(1) + " (الشهر)";
 
         // 3. Build Glass UI 💎
-        // هنا استخدمنا الكلاس الجديد hero-glass-card
         let logsHtml = `
-            <div id="hero-month-logs" class="hero-glass-card">
+                    <div id="hero-month-logs" class="hero-glass-card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h4 style="color:#f59e0b; margin:0; font-size:14px; display:flex; align-items:center; gap:5px;">
                         <i class="ri-history-line"></i> سجل مساهمات الشهر
@@ -1932,7 +1980,6 @@ async function openLeagueHero(uid) {
                 const day = r.dateObj.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' });
                 const pace = r.time ? ((r.time / r.dist)).toFixed(2) : '--';
 
-                // هنا استخدمنا hero-log-row
                 logsHtml += `
                     <div class="hero-log-row">
                         <div style="display:flex; align-items:center; gap:10px;">
@@ -1946,7 +1993,7 @@ async function openLeagueHero(uid) {
                 `;
             });
         }
-        logsHtml += `</div></div>`; // أغلق السكرول والكارت
+        logsHtml += `</div></div > `;
 
         const statsGrid = document.querySelector('#modal-view-user .stats-grid');
         if (statsGrid) {
@@ -1957,6 +2004,3 @@ async function openLeagueHero(uid) {
         console.error("Error fetching hero logs:", e);
     }
 }
-
-
-

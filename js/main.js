@@ -3,9 +3,9 @@
 /* ERS Main */
 
 /* ==================== Modal Helpers (Required for inline onclick) ==================== */
-function openModal(modalId){
+function openModal(modalId) {
     const modal = document.getElementById(modalId);
-    if(!modal) {
+    if (!modal) {
         console.warn('[openModal] Modal not found:', modalId);
         return;
     }
@@ -13,9 +13,9 @@ function openModal(modalId){
     document.body.classList.add('modal-open');
 }
 
-function closeModal(modalId){
+function closeModal(modalId) {
     const modal = document.getElementById(modalId);
-    if(!modal) {
+    if (!modal) {
         console.warn('[closeModal] Modal not found:', modalId);
         return;
     }
@@ -24,38 +24,38 @@ function closeModal(modalId){
     // لو مفيش أي مودال مفتوح، شيل الـ class
     const anyOpen = Array.from(document.querySelectorAll('.modal-overlay'))
         .some(el => (getComputedStyle(el).display !== 'none'));
-    if(!anyOpen) document.body.classList.remove('modal-open');
+    if (!anyOpen) document.body.classList.remove('modal-open');
 }
 
 // إغلاق المودال عند الضغط على الخلفية (overlay)
-function initModalSystem(){
+function initModalSystem() {
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         // منع تكرار ربط الليسنر
-        if(overlay.dataset._modalBound === '1') return;
+        if (overlay.dataset._modalBound === '1') return;
         overlay.dataset._modalBound = '1';
 
         overlay.addEventListener('click', (e) => {
             // اقفل فقط لو الضغط على الخلفية نفسها مش على محتوى المودال
-            if(e.target === overlay){
+            if (e.target === overlay) {
                 overlay.style.display = 'none';
                 const anyOpen = Array.from(document.querySelectorAll('.modal-overlay'))
                     .some(el => (getComputedStyle(el).display !== 'none'));
-                if(!anyOpen) document.body.classList.remove('modal-open');
+                if (!anyOpen) document.body.classList.remove('modal-open');
             }
         });
     });
 
     // ESC لإغلاق آخر مودال مفتوح
     document.addEventListener('keydown', (e) => {
-        if(e.key !== 'Escape') return;
+        if (e.key !== 'Escape') return;
         const openOverlays = Array.from(document.querySelectorAll('.modal-overlay'))
             .filter(el => (getComputedStyle(el).display !== 'none'));
         const last = openOverlays[openOverlays.length - 1];
-        if(last){
+        if (last) {
             last.style.display = 'none';
             const anyOpen = Array.from(document.querySelectorAll('.modal-overlay'))
                 .some(el => (getComputedStyle(el).display !== 'none'));
-            if(!anyOpen) document.body.classList.remove('modal-open');
+            if (!anyOpen) document.body.classList.remove('modal-open');
         }
     });
 }
@@ -159,9 +159,9 @@ async function saveWeeklyProof() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             img: imgUrl,
             note: note,
-            
+
             // 🔥 أهم حقل للأدمن 🔥
-            isWeeklyChallenge: true 
+            isWeeklyChallenge: true
         };
 
         // 1. الحفظ في الـ Feed العام
@@ -182,7 +182,7 @@ async function saveWeeklyProof() {
         // إعادة تعيين الزر
         btn.innerText = "تأكيد الإنجاز ✅";
         btn.disabled = false;
-        
+
         // تنظيف الحقول
         document.getElementById('weekly-proof-note').value = "";
         document.getElementById('weekly-uploaded-img-url').value = "";
@@ -200,95 +200,95 @@ async function saveWeeklyProof() {
 
 /* دالة عرض محتوى نافذة الجدول */
 function openPlanScheduleModal() {
-  const contentDiv = document.getElementById('plan-details-content');
+    const contentDiv = document.getElementById('plan-details-content');
 
-  // فتح النافذة
-  openModal('modal-my-plan');
+    // فتح النافذة
+    openModal('modal-my-plan');
 
-  const user = window.userData || (typeof userData !== 'undefined' ? userData : null);
-  const plan = user?.activePlan;
+    const user = window.userData || (typeof userData !== 'undefined' ? userData : null);
+    const plan = user?.activePlan;
 
-  if (!plan) {
-    if (contentDiv) contentDiv.innerHTML = '<p class="text-center">لا توجد خطة نشطة حالياً.</p>';
-    return;
-  }
-
-  // ---- Fix undefined weeks (fallback زي plan-hero) ----
-  const totalWeeks = Number.isFinite(+plan.totalWeeks) ? +plan.totalWeeks : 8;
-
-  // ---- نحسب الأسبوع الحالي من startDate (بنفس روح الكود الموجود عندك في app.js) ----
-  let currentWeek = 1;
-  try {
-    const start = new Date(plan.startDate);
-    const today = new Date();
-    start.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-    const diffDays = Math.floor((today - start) / (1000*60*60*24));
-    currentWeek = Math.max(1, Math.floor(diffDays / 7) + 1);
-  } catch(e) {}
-
-  // ---- Helper: session لكل يوم (نفس منطق getPlanTodaySession لكن parametrized) ----
-  function getPlanSessionForDay(planObj, dayInWeek){
-    const daysCount = parseInt(planObj.daysPerWeek) || 3;
-
-    let runDays = [];
-    if(daysCount === 3) runDays = [1, 3, 5];
-    else if(daysCount === 4) runDays = [1, 2, 4, 6];
-    else if(daysCount === 5) runDays = [1, 2, 3, 5, 6];
-    else runDays = [1, 2, 3, 4, 5, 6];
-
-    const isRunDay = runDays.includes(dayInWeek);
-
-    let title = 'راحة واستشفاء 🧘‍♂️';
-    let sub   = 'مشي خفيف + إطالة 8–10 دقايق.';
-    let mode  = 'recovery';
-
-    if (isRunDay) {
-      const targetNum = parseFloat(planObj.target);
-      const baseDist = (Number.isFinite(targetNum) ? (targetNum / daysCount) : 4);
-
-      if (dayInWeek === runDays[0]) {
-        title = `جري مريح (Easy)`;
-        sub   = `${(baseDist).toFixed(1)} كم • تنفّس مريح (RPE 3–4).`;
-        mode  = 'build';
-      } else if (dayInWeek === runDays[runDays.length-1]) {
-        title = `لونج رن (Long)`;
-        sub   = `${(baseDist * 1.2).toFixed(1)} كم • ثابت وبهدوء + جرعة ماء.`;
-        mode  = 'push';
-      } else {
-        title = `تمرين جودة (Speed/Tempo)`;
-        sub   = `${(baseDist * 0.8).toFixed(1)} كم • ركّز على الإيقاع بدون تهور.`;
-        mode  = 'push';
-      }
+    if (!plan) {
+        if (contentDiv) contentDiv.innerHTML = '<p class="text-center">لا توجد خطة نشطة حالياً.</p>';
+        return;
     }
 
-    return { title, sub, mode, isRunDay };
-  }
+    // ---- Fix undefined weeks (fallback زي plan-hero) ----
+    const totalWeeks = Number.isFinite(+plan.totalWeeks) ? +plan.totalWeeks : 8;
 
-  // ترتيب الأيام زي العرض الحالي عندك (السبت..الجمعة)
-  const weekDays = [
-    { ar:'السبت',    n:1 },
-    { ar:'الأحد',    n:2 },
-    { ar:'الإثنين',  n:3 },
-    { ar:'الثلاثاء', n:4 },
-    { ar:'الأربعاء', n:5 },
-    { ar:'الخميس',   n:6 },
-    { ar:'الجمعة',   n:7 },
-  ];
+    // ---- نحسب الأسبوع الحالي من startDate (بنفس روح الكود الموجود عندك في app.js) ----
+    let currentWeek = 1;
+    try {
+        const start = new Date(plan.startDate);
+        const today = new Date();
+        start.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+        currentWeek = Math.max(1, Math.floor(diffDays / 7) + 1);
+    } catch (e) { }
 
-  // نعرف “اليوم” علشان نميّزه
-  let todayN = null;
-  try{
-    const start = new Date(plan.startDate);
-    const today = new Date();
-    start.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
-    const diffDays = Math.floor((today - start) / (1000*60*60*24));
-    const dayNum = diffDays + 1;
-    todayN = ((dayNum - 1) % 7) + 1;
-  }catch(e){}
+    // ---- Helper: session لكل يوم (نفس منطق getPlanTodaySession لكن parametrized) ----
+    function getPlanSessionForDay(planObj, dayInWeek) {
+        const daysCount = parseInt(planObj.daysPerWeek) || 3;
 
-  let html = `
+        let runDays = [];
+        if (daysCount === 3) runDays = [1, 3, 5];
+        else if (daysCount === 4) runDays = [1, 2, 4, 6];
+        else if (daysCount === 5) runDays = [1, 2, 3, 5, 6];
+        else runDays = [1, 2, 3, 4, 5, 6];
+
+        const isRunDay = runDays.includes(dayInWeek);
+
+        let title = 'راحة واستشفاء 🧘‍♂️';
+        let sub = 'مشي خفيف + إطالة 8–10 دقايق.';
+        let mode = 'recovery';
+
+        if (isRunDay) {
+            const targetNum = parseFloat(planObj.target);
+            const baseDist = (Number.isFinite(targetNum) ? (targetNum / daysCount) : 4);
+
+            if (dayInWeek === runDays[0]) {
+                title = `جري مريح (Easy)`;
+                sub = `${(baseDist).toFixed(1)} كم • تنفّس مريح (RPE 3–4).`;
+                mode = 'build';
+            } else if (dayInWeek === runDays[runDays.length - 1]) {
+                title = `لونج رن (Long)`;
+                sub = `${(baseDist * 1.2).toFixed(1)} كم • ثابت وبهدوء + جرعة ماء.`;
+                mode = 'push';
+            } else {
+                title = `تمرين جودة (Speed/Tempo)`;
+                sub = `${(baseDist * 0.8).toFixed(1)} كم • ركّز على الإيقاع بدون تهور.`;
+                mode = 'push';
+            }
+        }
+
+        return { title, sub, mode, isRunDay };
+    }
+
+    // ترتيب الأيام زي العرض الحالي عندك (السبت..الجمعة)
+    const weekDays = [
+        { ar: 'السبت', n: 1 },
+        { ar: 'الأحد', n: 2 },
+        { ar: 'الإثنين', n: 3 },
+        { ar: 'الثلاثاء', n: 4 },
+        { ar: 'الأربعاء', n: 5 },
+        { ar: 'الخميس', n: 6 },
+        { ar: 'الجمعة', n: 7 },
+    ];
+
+    // نعرف “اليوم” علشان نميّزه
+    let todayN = null;
+    try {
+        const start = new Date(plan.startDate);
+        const today = new Date();
+        start.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((today - start) / (1000 * 60 * 60 * 24));
+        const dayNum = diffDays + 1;
+        todayN = ((dayNum - 1) % 7) + 1;
+    } catch (e) { }
+
+    let html = `
     <div style="background:rgba(255,255,255,0.05); padding:15px; border-radius:12px; margin-bottom:15px;">
       <h4 style="color:var(--primary); margin:0 0 5px 0;">${plan.target || plan.name || 'خطة تدريبية'}</h4>
       <div style="font-size:12px; color:#fff;">
@@ -301,13 +301,13 @@ function openPlanScheduleModal() {
     <div style="display:flex; flex-direction:column; gap:10px;">
   `;
 
-  weekDays.forEach(d => {
-    const s = getPlanSessionForDay(plan, d.n);
-    const isToday = (todayN === d.n);
-    const accent = (s.mode === 'recovery') ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.18)';
-    const border = (s.mode === 'recovery') ? 'rgba(16,185,129,0.35)' : 'rgba(59,130,246,0.35)';
+    weekDays.forEach(d => {
+        const s = getPlanSessionForDay(plan, d.n);
+        const isToday = (todayN === d.n);
+        const accent = (s.mode === 'recovery') ? 'rgba(16,185,129,0.18)' : 'rgba(59,130,246,0.18)';
+        const border = (s.mode === 'recovery') ? 'rgba(16,185,129,0.35)' : 'rgba(59,130,246,0.35)';
 
-    html += `
+        html += `
       <div style="
         background:rgba(0,0,0,0.18);
         padding:12px;
@@ -323,11 +323,11 @@ function openPlanScheduleModal() {
         <div style="margin-top:4px; font-size:11px; color:#d1d5db;">${s.sub}</div>
       </div>
     `;
-  });
+    });
 
-  html += `</div>`;
+    html += `</div>`;
 
-  if (contentDiv) contentDiv.innerHTML = html;
+    if (contentDiv) contentDiv.innerHTML = html;
 }
 
 // لو بتستخدم inline onclick
@@ -338,10 +338,10 @@ window.openPlanScheduleModal = openPlanScheduleModal;
 
 
 
-function openImageViewer(url){
-  const img = document.getElementById('image-viewer-img');
-  if(img) img.src = url;
-  openModal('modal-image-viewer');
+function openImageViewer(url) {
+    const img = document.getElementById('image-viewer-img');
+    if (img) img.src = url;
+    openModal('modal-image-viewer');
 }
 window.openImageViewer = openImageViewer;
 
@@ -369,8 +369,8 @@ let newWorker; // لتخزين الوركر الجديد بعد التحديث �
 
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').then(reg => {
-            
+        navigator.serviceWorker.register('./service-worker.js').then(reg => {
+
             // تهيئة بيانات المودال
             initUpdateCheck();
 
@@ -423,7 +423,7 @@ function updateHeroWeekDist() {
     const day = now.getDay(); // 0 (Sun) to 6 (Sat)
     // السبت هو 6، نحتاج العودة للوراء بمقدار (day+1)%7
     const diffToSaturday = (day === 6) ? 0 : (day + 1);
-    
+
     const startOfSat = new Date(now);
     startOfSat.setDate(now.getDate() - diffToSaturday);
     startOfSat.setHours(0, 0, 0, 0);
@@ -439,7 +439,7 @@ function updateHeroWeekDist() {
     });
 
     displayEl.innerText = weekTotal.toFixed(1);
-    
+
     // تحديث إحصائيات الهيرو الأخرى بالمرة
     if (typeof renderCoachHeroStats === 'function') renderCoachHeroStats();
 }
@@ -457,7 +457,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     // تخزين الحدث في المتغير العالمي لاستخدامه عند ضغط الزر
     window.deferredPrompt = e;
-    
+
     // البحث عن حاوية الزر وإظهارها فوراً
     const installContainer = document.getElementById('pwa-install-container');
     if (installContainer) {
@@ -482,7 +482,7 @@ document.addEventListener('click', async (e) => {
 
         // مسح الحدث وتصفيره
         window.deferredPrompt = null;
-        
+
         // إخفاء الزر
         const container = document.getElementById('pwa-install-container');
         if (container) container.style.display = 'none';
@@ -529,18 +529,18 @@ async function handleStravaResponse(code) {
         });
 
         const data = await response.json();
-        
+
         if (data.refresh_token) {
             // حفظ التوكن في حساب المستخدم بدقة
             await db.collection('users').doc(currentUser.uid).update({
                 stravaRefreshToken: data.refresh_token,
                 stravaConnected: true
             });
-            
+
             showToast("عاش! تم ربط استرافا بنجاح 🎉", "success");
             // تنظيف الرابط
             window.history.replaceState({}, document.title, window.location.pathname);
-            if(typeof updateUI === 'function') updateUI();
+            if (typeof updateUI === 'function') updateUI();
         }
     } catch (e) {
         console.error("Link Error:", e);

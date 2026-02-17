@@ -465,7 +465,7 @@
                     <div class="admin-tab" data-tab="inspector" onclick="switchAdminTab('inspector')">المراقب</div>
                     <div class="admin-tab" data-tab="studio" onclick="switchAdminTab('studio')">التحديات</div>
                     <div class="admin-tab" data-tab="coach" onclick="switchAdminTab('coach')">الكوتش</div>
-                    <div class="admin-tab" data-tab="league" onclick="switchAdminTab('league')">تشخيص الدوري 🏆</div>
+                    <div class="admin-tab" data-tab="league" onclick="switchAdminTab('league')">إدارة الدوري 🏆</div>
                     <div class="admin-tab" data-tab="users" onclick="switchAdminTab('users')">الأعضاء</div>
                 </div>
 
@@ -858,18 +858,80 @@
                 </div>
 
                 <div id="admin-league" class="admin-content-section">
-                    <div class="studio-header" style="margin-top:0; margin-bottom:  15px;">
-                        <h3 style="margin:0; color:#fff;">🏆 تشخيص دوري المحافظات</h3>
-                        <p style="font-size:10px; color:#9ca3af; margin:5px 0 0 0;">أداة متقدمة لفحص وإصلاح مشاكل الدوري
-                        </p>
+                    <div class="studio-header" style="margin-top:0; margin-bottom:15px;">
+                        <h3 style="margin:0; color:#fff;">🏆 إدارة دوري المحافظات</h3>
+                        <p style="font-size:10px; color:#9ca3af; margin:5px 0 0 0;">إنشاء وإدارة مواسم الدوري</p>
                     </div>
 
-                    <div id="league-diagnostics-container">
-                        <div style="text-align:center; padding:30px; color:#9ca3af;">
-                            <div style="font-size:40px; margin-bottom:10px;">🔍</div>
-                            <div>جاري تحميل أداة التشخيص...</div>
+                    <!-- Active League Status -->
+                    <div id="admin-league-status" style="margin-bottom:15px;">
+                        <div style="text-align:center; padding:20px; color:#9ca3af;">جاري التحميل...</div>
+                    </div>
+
+                    <!-- Create New League -->
+                    <div
+                        style="background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px; margin-bottom:15px;">
+                        <h4 style="color:#f59e0b; margin:0 0 12px; font-size:14px;">➕ بدء دوري جديد</h4>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <input type="text" id="league-title" placeholder="عنوان الدوري (مثال: دوري فبراير 2026)"
+                                style="padding:10px; font-size:12px;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div>
+                                    <label
+                                        style="font-size:10px; color:#9ca3af; margin-bottom:4px; display:block;">تاريخ
+                                        البداية</label>
+                                    <input type="date" id="league-start"
+                                        style="padding:10px; font-size:12px; width:100%;">
+                                </div>
+                                <div>
+                                    <label
+                                        style="font-size:10px; color:#9ca3af; margin-bottom:4px; display:block;">تاريخ
+                                        النهاية</label>
+                                    <input type="date" id="league-end"
+                                        style="padding:10px; font-size:12px; width:100%;">
+                                </div>
+                            </div>
+                            <div>
+                                <label style="font-size:10px; color:#9ca3af; margin-bottom:4px; display:block;">الحد
+                                    الأدنى للاعبين (النصاب)</label>
+                                <input type="number" id="league-quorum" value="5" min="1" max="20"
+                                    style="padding:10px; font-size:12px; width:80px;">
+                            </div>
+                            <button onclick="adminCreateLeague()" class="btn btn-primary"
+                                style="width:100%; margin-top:15px; background:linear-gradient(45deg, #f59e0b, #d97706); border:none;">
+                                ✨ إنشاء الدوري
+                            </button>
                         </div>
                     </div>
+
+                    <!-- Recalculate / Backfill Data (New) -->
+                    <div
+                        style="background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.2); border-radius:16px; padding:16px; margin-bottom:15px;">
+                        <h4
+                            style="color:#ef4444; margin:0 0 8px; font-size:14px; display:flex; align-items:center; gap:5px;">
+                            <i class="ri-database-2-line"></i> تحديث البيانات بأثر رجعي
+                        </h4>
+                        <p style="font-size:10px; color:#9ca3af; margin-bottom:12px;">
+                            استخدم هذا الزر فقط إذا كان الدوري قد بدأ بالفعل ولكن لا تظهر بيانات سابقة. سيقوم النظام
+                            بفحص جميع الجريات من تاريخ البداية.
+                        </p>
+                        <button onclick="adminRecalculateLeague()" class="btn"
+                            style="width:100%; background:rgba(239, 68, 68, 0.2); color:#ef4444; border:1px solid rgba(239, 68, 68, 0.3); font-size:12px;">
+                            🔄 إعادة حساب إحصائيات الدوري
+                        </button>
+
+                    </div>
+
+                    <!-- Old Diagnostics (kept for compatibility) -->
+                    <details
+                        style="background:rgba(30,41,59,0.4); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:12px;">
+                        <summary style="color:#9ca3af; font-size:12px; cursor:pointer;">🔧 أدوات التشخيص القديمة
+                        </summary>
+                        <div id="league-diagnostics-container" style="margin-top:10px;">
+                            <div style="text-align:center; padding:20px; color:#9ca3af; font-size:11px;">اضغط لتحميل
+                                أداة التشخيص</div>
+                        </div>
+                    </details>
                 </div>
 
 
@@ -1146,7 +1208,8 @@
                         </div>
                         <div class="goal-ring-wrapper">
                             <div class="goal-ring annual" id="annualGoalRing"
-                                style="border-color: rgba(251, 191, 36, 0.1);"></div>
+                                style="border-color: rgba(251, 191, 36, 0.1);">
+                            </div>
                             <div class="goal-icon" style="color: #fbbf24;"><i class="ri-vip-crown-2-fill"></i></div>
                         </div>
                     </div>
@@ -1183,7 +1246,8 @@
         <div class="badges-section" style="margin-top: 25px;">
             <h3 class="section-title">جدار البطولات 🎖️</h3>
             <div id="badges-grid" class="badges-grid">
-                <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...</div>
+                <div style="text-align:center; width:100%; color:#6b7280; font-size:12px;">جاري تلميع الكؤوس...
+                </div>
             </div>
         </div>
 
@@ -1333,7 +1397,7 @@
                     <i class="ri-share-forward-2-line"></i> إنشاء بطاقة مشاركة (ستوري) 📸
                 </button>
 
-                <button class="btn btn-primary" onclick="submitRun()"
+                <button id="save-run-btn" class="btn btn-primary" onclick="submitRun()"
                     style="width:100%; height:45px; font-weight:bold; font-size:15px; border-radius:10px;">
                     حفظ وتسجيل ✅
                 </button>
@@ -1876,6 +1940,7 @@
 
     <script src="js/coach.js"></script>
     <script src="js/ai-coach.js"></script>
+    <script src="js/league-service.js"></script>
     <script src="js/challenges.js"></script>
     <script src="js/podcast.js"></script>
     <script src="js/tracker.js"></script>
@@ -1884,17 +1949,8 @@
     <script src="js/main.js"></script>
 
 
-    <script>
-        // Avoid SW errors when opening the file locally (file:// => origin "null").
-        const isHttp = location.protocol === 'http:' || location.protocol === 'https:';
-        if (isHttp && 'serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then((reg) => console.log('Service Worker Registered 🟢', reg.scope))
-                    .catch((err) => console.log('Service Worker Error 🔴', err));
-            });
-        }
-    </script>
+
+    <!-- SW registration handled in main.js with update modal logic -->
 
     <div id="toast-container" class="toast-container"></div>
 

@@ -1,5 +1,8 @@
 /* ERS Activities - Final Clean Version V3.5 */
 
+let _isSubmitting = false; // حماية من الضغط المتكرر على زر الحفظ
+let _activityLogUnsubscribe = null; // لتتبع مستمع onSnapshot ومنع التسريب
+
 // ==================== 1. إدارة نافذة النشاط الجديد ====================
 
 function openNewRun() {
@@ -275,9 +278,12 @@ function removeImage() {
 // ==================== 3. حفظ النشاط (Submit) ====================
 
 async function submitRun() {
+    // 🔒 حماية من الضغط المتكرر (re-entry guard)
+    if (_isSubmitting) return;
+
     if (!navigator.onLine) return showToast("لا يوجد اتصال بالإنترنت ⚠️", "error");
 
-    const btn = document.getElementById('save-run-btn'); // تأكد أن الزر يحمل هذا الـ ID في HTML
+    const btn = document.getElementById('save-run-btn');
     const distInput = document.getElementById('log-dist');
     const timeInput = document.getElementById('log-time');
     const typeInput = document.getElementById('log-type');
@@ -298,7 +304,8 @@ async function submitRun() {
     const now = new Date();
     if (selectedDate > now) return showToast("لا يمكنك تسجيل نشاط في المستقبل! 🚀", "error");
 
-    // تعطيل الزر
+    // 🔒 تفعيل القفل + تعطيل الزر
+    _isSubmitting = true;
     if (btn) {
         btn.innerText = "جاري الحفظ...";
         btn.disabled = true;
@@ -321,39 +328,55 @@ async function submitRun() {
         };
 
         if (editingRunId) {
-            // --- حالة التعديل ---
-            await db.collection('users').doc(uid).collection('runs').doc(editingRunId).update(runData);
+            // --- حالة التعديل (Atomic Batch) ---
+            const editBatch = db.batch();
 
-            // تحديث إجمالي الشهر (لو في نفس الشهر)
+            // 1. تعديل الجرية
+            const editRunRef = db.collection('users').doc(uid).collection('runs').doc(editingRunId);
+            editBatch.update(editRunRef, runData);
+
+            // 2. تحديث إجمالي الشهر (لو في نفس الشهر)
             if (selectedDate.getMonth() === now.getMonth() && selectedDate.getFullYear() === now.getFullYear()) {
                 const distDiff = dist - editingOldDist;
                 if (distDiff !== 0) {
                     const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-                    await db.collection('users').doc(uid).update({
+                    const userRef = db.collection('users').doc(uid);
+                    editBatch.update(userRef, {
                         monthDist: firebase.firestore.FieldValue.increment(isRun ? distDiff : 0),
                         lastMonthKey: currentMonthKey
                     });
 
-                    // 🔥 Aggregated Stats Update (Edit)
-                    if (userData.region && isRun) {
-                        const regionKey = userData.region.trim();
-                        await db.collection('stats').doc('league').set({
-                            [regionKey]: {
-                                totalDist: firebase.firestore.FieldValue.increment(distDiff)
-                            },
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
+                    // 3. 🔥 تحديث الدوري الديناميكي (League 2.0)
+                    if (userData.region && isRun && window.LeagueService) {
+                        const activeLeague = await LeagueService.getActiveLeague();
+                        if (activeLeague) {
+                            const regionKey = userData.region.trim();
+                            // Edit = just increment the diff (no new player)
+                            LeagueService.addLeagueUpdateToBatch(
+                                editBatch, activeLeague.id, regionKey,
+                                uid, userData.name, userData.photoUrl,
+                                distDiff, 0, false
+                            );
+                        }
                     }
                 }
             }
+
+            // ✅ Commit كل العمليات مرة واحدة
+            await editBatch.commit();
             showToast("تم تعديل النشاط بنجاح ✏️", "success");
 
         } else {
-            // --- حالة الإضافة الجديدة ---
-            await db.collection('users').doc(uid).collection('runs').add(runData);
+            // --- حالة الإضافة الجديدة (Atomic Batch) ---
+            const batch = db.batch();
 
-            // إضافة للـ Feed العام
-            await db.collection('activity_feed').add({
+            // 1. إضافة الجرية (نولّد الـ ID يدويًا عشان نقدر نستخدم batch)
+            const newRunRef = db.collection('users').doc(uid).collection('runs').doc();
+            batch.set(newRunRef, runData);
+
+            // 2. إضافة للـ Feed العام
+            const newFeedRef = db.collection('activity_feed').doc();
+            batch.set(newFeedRef, {
                 uid: uid,
                 userName: userData.name,
                 userRegion: userData.region,
@@ -362,7 +385,8 @@ async function submitRun() {
                 likes: []
             });
 
-            // تحديث إحصائيات المستخدم
+            // 3. تحديث إحصائيات المستخدم
+            const userRef = db.collection('users').doc(uid);
             let updateFields = {
                 totalDist: firebase.firestore.FieldValue.increment(isRun ? dist : 0),
                 totalRuns: firebase.firestore.FieldValue.increment(isRun ? 1 : 0)
@@ -374,25 +398,35 @@ async function submitRun() {
                 updateFields.monthDist = firebase.firestore.FieldValue.increment(isRun ? dist : 0);
                 updateFields.lastMonthKey = currentMonthKey;
                 updateFields.lastRunDate = dateVal; // لتحديث الـ Streak
+            }
 
-                // 🔥 Aggregated Stats Update (New Run)
-                if (userData.region && isRun) {
+            batch.set(userRef, updateFields, { merge: true });
+
+            // 4. 🔥 تحديث الدوري الديناميكي (League 2.0)
+            if (userData.region && isRun && window.LeagueService) {
+                const activeLeague = await LeagueService.getActiveLeague();
+                if (activeLeague) {
                     const regionKey = userData.region.trim();
-                    const isNewActivePlayer = (userData.monthDist || 0) === 0; // تقريبي، لكن فعال
+                    const runDate = selectedDate;
+                    const leagueStart = activeLeague.startDate.toDate();
+                    const leagueEnd = activeLeague.endDate.toDate();
 
-                    await db.collection('stats').doc('league').set({
-                        [regionKey]: {
-                            totalDist: firebase.firestore.FieldValue.increment(dist),
-                            players: firebase.firestore.FieldValue.increment(isNewActivePlayer ? 1 : 0)
-                        },
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
+                    // فقط لو تاريخ الجرية داخل فترة الدوري
+                    if (runDate >= leagueStart && runDate <= leagueEnd) {
+                        const isNewPlayer = !(await LeagueService.isPlayerInLeague(activeLeague.id, regionKey, uid));
+                        LeagueService.addLeagueUpdateToBatch(
+                            batch, activeLeague.id, regionKey,
+                            uid, userData.name, userData.photoUrl,
+                            dist, parseInt(runData.time || 0), isNewPlayer
+                        );
+                    }
                 }
             }
 
-            await db.collection('users').doc(uid).set(updateFields, { merge: true });
+            // ✅ Commit كل العمليات مرة واحدة (تنجح كلها أو تفشل كلها)
+            await batch.commit();
 
-            // فحص الأوسمة الجديدة
+            // فحص الأوسمة الجديدة (بعد نجاح الحفظ)
             if (typeof checkNewBadges === 'function') checkNewBadges();
 
             showToast("تم حفظ النشاط بنجاح ✅", "success");
@@ -410,6 +444,7 @@ async function submitRun() {
         console.error(e);
         showToast("خطأ في الحفظ: " + e.message, "error");
     } finally {
+        _isSubmitting = false; // 🔓 فك القفل
         if (btn) {
             btn.innerText = "حفظ وتسجيل ✅";
             btn.disabled = false;
@@ -470,7 +505,13 @@ function loadActivityLog() {
     const list = document.getElementById('activity-log');
     if (!list || !currentUser) return;
 
-    db.collection('users').doc(currentUser.uid).collection('runs')
+    // 🔒 إلغاء المستمع السابق لمنع التسريب
+    if (_activityLogUnsubscribe) {
+        _activityLogUnsubscribe();
+        _activityLogUnsubscribe = null;
+    }
+
+    _activityLogUnsubscribe = db.collection('users').doc(currentUser.uid).collection('runs')
         .orderBy('timestamp', 'desc').limit(50).onSnapshot(snap => {
 
             if (snap.empty) {
@@ -547,6 +588,20 @@ async function deleteRun(id, dist, timestamp) {
             const dateObj = runData.timestamp ? runData.timestamp.toDate() : new Date();
 
             await db.collection('users').doc(uid).collection('runs').doc(id).delete();
+
+            // 🔥 حذف من الفيد العام (activity_feed) لمنع الأشباح في صفحة الفريق
+            try {
+                const feedSnap = await db.collection('activity_feed')
+                    .where('uid', '==', uid)
+                    .where('timestamp', '==', runData.timestamp)
+                    .limit(5)
+                    .get();
+                const feedDeletePromises = feedSnap.docs.map(doc => doc.ref.delete());
+                await Promise.all(feedDeletePromises);
+                console.log(`🗑️ تم حذف ${feedSnap.size} إدخالات من الفيد العام`);
+            } catch (feedErr) {
+                console.warn('تعذر حذف الفيد:', feedErr);
+            }
 
             // 1. خصم الإجماليات
             const updateLoad = {
@@ -638,7 +693,7 @@ function openRunDetail(runId) {
     openModal('modal-run-detail');
 }
 
-// ==================== 8. Strava Sync (Anti-Duplicate) ====================
+// ==================== 8. Strava Sync (Anti-Duplicate + Feed + Stats) ====================
 async function syncFromStrava(count = 30) {
     if (!window.STRAVA_CONFIG) return showToast("Strava غير مفعّل", "error");
 
@@ -646,8 +701,6 @@ async function syncFromStrava(count = 30) {
     if (btn) btn.innerText = "جاري المزامنة...";
 
     try {
-        // (الكود المختصر للمزامنة - يفترض وجود توكن في window.STRAVA_CONFIG أو userData)
-        // هذا الجزء يعتمد على إعدادات Auth.js الخاصة بك، سأضع المنطق العام
         const refreshToken = userData.stravaRefreshToken || window.STRAVA_CONFIG.REFRESH_TOKEN;
         if (!refreshToken) throw new Error("يرجى ربط الحساب أولاً");
 
@@ -670,9 +723,13 @@ async function syncFromStrava(count = 30) {
         });
         const activities = await res.json();
 
-        // 3. Filter & Save
+        // 3. Filter & Save (with Feed + Stats)
         const existingRuns = window._ersRunsCache || [];
+        const uid = currentUser.uid;
+        const now = new Date();
+        const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         let added = 0;
+        let totalDistAdded = 0;
 
         for (const act of activities) {
             if (act.type !== 'Run' && act.type !== 'Walk') continue;
@@ -680,26 +737,76 @@ async function syncFromStrava(count = 30) {
             // منع التكرار بواسطة Strava ID
             if (existingRuns.some(r => r.stravaId === act.id)) continue;
 
-            const dist = (act.distance / 1000).toFixed(2);
+            const dist = parseFloat((act.distance / 1000).toFixed(2));
+            const actDate = new Date(act.start_date);
+            const isRun = (act.type === 'Run');
             const runData = {
                 stravaId: act.id,
-                dist: parseFloat(dist),
+                dist: dist,
                 time: Math.round(act.moving_time / 60),
                 type: act.type,
                 dateStr: act.start_date.split('T')[0],
-                timestamp: firebase.firestore.Timestamp.fromDate(new Date(act.start_date)),
+                timestamp: firebase.firestore.Timestamp.fromDate(actDate),
                 source: 'Strava',
                 polyline: act.map?.summary_polyline || null,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            await db.collection('users').doc(currentUser.uid).collection('runs').add(runData);
+            // 🔥 Atomic Batch: runs + activity_feed + stats
+            const batch = db.batch();
+
+            // A. حفظ الجرية
+            const newRunRef = db.collection('users').doc(uid).collection('runs').doc();
+            batch.set(newRunRef, runData);
+
+            // B. إضافة للـ Feed العام (عشان تظهر في صفحة الفريق)
+            const newFeedRef = db.collection('activity_feed').doc();
+            batch.set(newFeedRef, {
+                uid: uid,
+                userName: userData.name,
+                userRegion: userData.region,
+                userPhoto: userData.photoUrl || null,
+                ...runData,
+                likes: []
+            });
+
+            // C. تحديث إحصائيات المستخدم
+            const userRef = db.collection('users').doc(uid);
+            let updateFields = {
+                totalDist: firebase.firestore.FieldValue.increment(isRun ? dist : 0),
+                totalRuns: firebase.firestore.FieldValue.increment(isRun ? 1 : 0)
+            };
+
+            // لو الجرية في الشهر الحالي
+            if (actDate.getMonth() === now.getMonth() && actDate.getFullYear() === now.getFullYear()) {
+                updateFields.monthDist = firebase.firestore.FieldValue.increment(isRun ? dist : 0);
+                updateFields.lastMonthKey = currentMonthKey;
+            }
+
+            batch.set(userRef, updateFields, { merge: true });
+
+            // D. تحديث إحصائيات الدوري
+            if (userData.region && isRun) {
+                const regionKey = userData.region.trim();
+                const leagueRef = db.collection('stats').doc('league');
+                batch.set(leagueRef, {
+                    [regionKey]: {
+                        totalDist: firebase.firestore.FieldValue.increment(dist)
+                    },
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+
+            await batch.commit();
             added++;
+            totalDistAdded += dist;
         }
 
         if (added > 0) {
-            showToast(`تم استيراد ${added} نشاط من Strava`, "success");
+            showToast(`تم استيراد ${added} نشاط من Strava (${totalDistAdded.toFixed(1)} كم) 🏃`, "success");
             loadActivityLog();
+            if (typeof updateUI === 'function') updateUI();
+            if (typeof loadActiveChallenges === 'function') loadActiveChallenges();
         } else {
             showToast("كل الأنشطة موجودة بالفعل 👍", "info");
         }
